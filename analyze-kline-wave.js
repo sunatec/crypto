@@ -1424,6 +1424,154 @@ function computeFibClusterInfo(pattern) {
   return { score, targets, mean, std, actual };
 }
 
+function detectImpulseInSegment(segmentPivots, direction) {
+  if (!Array.isArray(segmentPivots) || segmentPivots.length < 6) return null;
+  let best = null;
+  for (let i = 0; i <= segmentPivots.length - 6; i += 1) {
+    const seg = segmentPivots.slice(i, i + 6);
+    const hit = direction === 'up' ? checkUpImpulse(seg) : checkDownImpulse(seg);
+    if (!hit) continue;
+    if (!best || comparePatternPriority(hit, best) < 0) best = hit;
+  }
+  return best;
+}
+
+function calcSegmentRunningTotal(segmentPivots) {
+  if (!Array.isArray(segmentPivots) || segmentPivots.length === 0) return 0;
+  let hi = -Infinity;
+  let lo = Infinity;
+  for (const p of segmentPivots) {
+    hi = Math.max(hi, Number(p.price));
+    lo = Math.min(lo, Number(p.price));
+  }
+  if (!Number.isFinite(hi) || !Number.isFinite(lo)) return 0;
+  return Math.max(0, hi - lo);
+}
+
+function calcLargestSubwavePrice(segmentPivots) {
+  if (!Array.isArray(segmentPivots) || segmentPivots.length < 2) return 0;
+  let maxLen = 0;
+  for (let i = 1; i < segmentPivots.length; i += 1) {
+    const len = Math.abs(Number(segmentPivots[i].price) - Number(segmentPivots[i - 1].price));
+    if (Number.isFinite(len)) maxLen = Math.max(maxLen, len);
+  }
+  return maxLen;
+}
+
+function scoreNear(value, target, tolerance) {
+  if (!Number.isFinite(value) || !Number.isFinite(target) || !Number.isFinite(tolerance) || tolerance <= 0) return 0;
+  return clamp(1 - Math.abs(value - target) / tolerance, 0, 1);
+}
+
+function evaluateSingleZigzag(pattern, context = null) {
+  if (!pattern || pattern.type !== 'abc' || !pattern.lengths || !Array.isArray(pattern.points) || pattern.points.length < 4) {
+    return null;
+  }
+
+  const [p0, p1, p2, p3] = pattern.points;
+  const { a, b, c } = pattern.lengths;
+  const trend = pattern.direction;
+  const counter = trend === 'up' ? 'down' : 'up';
+  const sourcePivots = Array.isArray(context?.pivotsMicro) ? context.pivotsMicro : pattern.points;
+
+  const segA = buildSegmentPivots(sourcePivots, p0, p1);
+  const segB = buildSegmentPivots(sourcePivots, p1, p2);
+  const segC = buildSegmentPivots(sourcePivots, p2, p3);
+
+  const aImpulse = detectImpulseInSegment(segA, trend);
+  const cImpulse = detectImpulseInSegment(segC, trend);
+  const bLeg = analyzeLegSubwaves(sourcePivots, p1, p2, counter);
+  const bCorrective = bLeg.abcLike || !bLeg.impulseLike;
+
+  const bOverA = Math.abs(safeRatio(b, a) || 0);
+  const cOverB = Math.abs(safeRatio(c, b) || 0);
+  const cOverA = Math.abs(safeRatio(c, a) || 0);
+
+  const aTime = Math.max(1, Math.abs(p1.index - p0.index));
+  const bTime = Math.max(1, Math.abs(p2.index - p1.index));
+  const cTime = Math.max(1, Math.abs(p3.index - p2.index));
+  const bOverATime = bTime / aTime;
+  const cOverATime = cTime / aTime;
+  const cOverBTime = cTime / bTime;
+
+  const aRunningTotal = calcSegmentRunningTotal(segA);
+  const bRunningTotal = calcSegmentRunningTotal(segB);
+  const cRunningTotal = calcSegmentRunningTotal(segC);
+  const bLargestSubwave = calcLargestSubwavePrice(segB);
+  const cLargestSubwave = calcLargestSubwavePrice(segC);
+
+  const aMode = aImpulse?.mode || 'unknown';
+  const cMode = cImpulse?.mode || 'unknown';
+  const aFailure = aImpulse ? Math.abs(safeRatio(aImpulse.lengths?.w5, aImpulse.lengths?.w3) || 0) < 0.45 : false;
+  const cFailure = cImpulse ? Math.abs(safeRatio(cImpulse.lengths?.w5, cImpulse.lengths?.w3) || 0) < 0.45 : false;
+
+  const hardRules = {
+    structure_a_impulse_or_diagonal: Boolean(aImpulse),
+    structure_b_corrective: bCorrective,
+    structure_c_impulse_or_diagonal: Boolean(cImpulse),
+    structure_if_a_diagonal_c_not_diagonal: !(aMode === 'diagonal' && cMode === 'diagonal'),
+    structure_no_double_fifth_failure: !(aFailure && cFailure),
+    ratio_b_over_a_0_2_to_1_0: inRange(bOverA, 0.2, 1.0),
+    ratio_b_total_not_exceed_a_total: bRunningTotal <= aRunningTotal + 1e-8,
+    ratio_b_not_break_a_start: trend === 'up' ? p2.price > p0.price : p2.price < p0.price,
+    ratio_c_over_b_0_9_to_5: inRange(cOverB, 0.9, 5),
+    ratio_c_over_a_lt_5: cOverA < 5,
+    time_b_lt_10a: bOverATime <= 10,
+    time_c_lt_10a: cOverATime <= 10,
+    time_c_lt_10b: cOverBTime <= 10,
+  };
+
+  const hardEntries = Object.entries(hardRules);
+  const hardPassCount = hardEntries.filter(([, ok]) => ok).length;
+  const hardScore = hardPassCount / hardEntries.length;
+  const hardValid = hardEntries.every(([, ok]) => ok);
+
+  const guideScores = {
+    guide_b_not_near_a_start: clamp((1 - bOverA) / 0.5, 0, 1),
+    guide_b_largest_subwave_lt_a_total: clamp(1 - safeRatio(bLargestSubwave, aRunningTotal || 1), 0, 1),
+    guide_c_largest_subwave_lt_a_total: clamp(1 - safeRatio(cLargestSubwave, aRunningTotal || 1), 0, 1),
+    guide_b_ratio_common: Math.max(
+      scoreNear(bOverA, 0.382, 0.25),
+      scoreNear(bOverA, 0.5, 0.25),
+      scoreNear(bOverA, 0.618, 0.25),
+    ),
+    guide_c_ratio_common: Math.max(
+      scoreNear(cOverA, 1.0, 0.45),
+      scoreNear(cOverA, 0.618, 0.38),
+      scoreNear(cOverA, 1.618, 0.55),
+    ),
+    guide_c_not_far_over_1618: clamp(1 - Math.max(0, (cOverA - 1.618) / 1.2), 0, 1),
+    guide_failed_c_case: inRange(cOverB, 0.9, 1.0) ? 0.7 : 0.45,
+    guide_time_b_0_618_to_1_618: inRange(bOverATime, 0.618, 1.618) ? 1 : 0.35,
+    guide_time_c_window: inRange(cTime, aTime * 0.618, Math.min(aTime, bTime) * 1.618) ? 1 : 0.35,
+  };
+
+  const guideValues = Object.values(guideScores);
+  const guideScore = guideValues.reduce((acc, v) => acc + v, 0) / guideValues.length;
+  const score = hardValid
+    ? clamp(hardScore * 0.68 + guideScore * 0.32, 0, 1)
+    : clamp(hardScore * 0.55 + guideScore * 0.2, 0, 0.62);
+
+  return {
+    hardValid,
+    hardScore,
+    guideScore,
+    score,
+    failedHardRules: hardEntries.filter(([, ok]) => !ok).map(([k]) => k),
+    bOverA,
+    cOverB,
+    cOverA,
+    bOverATime,
+    cOverATime,
+    cOverBTime,
+    aRunningTotal,
+    bRunningTotal,
+    cRunningTotal,
+    bLargestSubwave,
+    cLargestSubwave,
+  };
+}
+
 function classifyCorrectionStructure(pattern, context = null) {
   if (!pattern) return { subtype: 'unknown', label: '未分类', score: 0.5 };
   if (pattern.type === 'wxy') return { subtype: 'complex', label: '复杂调整（WXY）', score: 0.85 };
@@ -1447,16 +1595,18 @@ function classifyCorrectionStructure(pattern, context = null) {
   const aFiveLike = legA ? legA.impulseLike || legA.swingCount >= 5 : bOverA < 0.786;
   const aThreeLike = legA ? legA.abcLike || legA.swingCount <= 4 : bOverA >= 0.786;
   const bThreeLike = legB ? legB.abcLike || (legB.swingCount >= 3 && legB.swingCount <= 4) : true;
+  const zigzagValidation = evaluateSingleZigzag(pattern, context);
 
-  const zigzag = aFiveLike && bThreeLike && bOverA <= 0.786 && cOverA >= 0.618;
+  const zigzag = aFiveLike && bThreeLike && bOverA <= 0.786 && cOverA >= 0.618 && Boolean(zigzagValidation?.hardValid);
   if (zigzag) {
     const retraceFit = clamp(1 - bOverA / 0.786, 0, 1);
     return {
       subtype: 'zigzag',
       label: '锯齿形（Zigzag 5-3-5）',
-      score: clamp(0.7 + retraceFit * 0.3, 0, 1),
+      score: clamp((0.48 + retraceFit * 0.15) + (zigzagValidation?.score || 0.6) * 0.37, 0, 1),
       legA,
       legB,
+      zigzagValidation,
     };
   }
 
@@ -1469,15 +1619,17 @@ function classifyCorrectionStructure(pattern, context = null) {
       score: clamp(0.7 + retraceCenter * 0.3, 0, 1),
       legA,
       legB,
+      zigzagValidation,
     };
   }
 
   return {
     subtype: 'complex',
     label: '复杂调整（Complex）',
-    score: 0.55,
+    score: clamp(0.5 + (zigzagValidation?.score || 0.5) * 0.1, 0, 1),
     legA,
     legB,
+    zigzagValidation,
   };
 }
 
@@ -2073,6 +2225,22 @@ function buildScenario(pattern, candles, last, indicators = null, context = null
         { name: 'B内部摆动数', value: String(correctionInfo.legB.swingCount) },
       );
     }
+    if (pattern.type === 'abc' && correctionInfo.zigzagValidation) {
+      const z = correctionInfo.zigzagValidation;
+      scenario.metrics.push(
+        { name: '单锯齿硬规则', value: z.hardValid ? 'pass' : 'fail' },
+        { name: '单锯齿硬规则得分', value: formatRatio(z.hardScore) },
+        { name: '单锯齿指引得分', value: formatRatio(z.guideScore) },
+        { name: 'B/A', value: formatRatio(z.bOverA) },
+        { name: 'C/B', value: formatRatio(z.cOverB) },
+        { name: 'C/A', value: formatRatio(z.cOverA) },
+        { name: 'B时间/A时间', value: formatRatio(z.bOverATime) },
+        { name: 'C时间/A时间', value: formatRatio(z.cOverATime) },
+      );
+      if (!z.hardValid && Array.isArray(z.failedHardRules) && z.failedHardRules.length > 0) {
+        scenario.metrics.push({ name: '单锯齿失败规则', value: z.failedHardRules.join(', ') });
+      }
+    }
   }
 
   return scenario;
@@ -2154,6 +2322,13 @@ function analyzeWave(candles, baseLookback, options = {}) {
   const trendOutlook = buildTrendOutlook(patternScenarios);
   const currentPosition = buildCurrentPositionSummary(last.close, rangePosition, primaryScenario);
   const tradingSetup = buildTradingSetup(primaryScenario, last.close);
+  const waveContext = buildWaveContextInsights(
+    patternScenarios,
+    trendOutlook,
+    primaryScenario,
+    last.close,
+    autoLookbacks,
+  );
 
   return {
     candleCount: candles.length,
@@ -2178,6 +2353,9 @@ function analyzeWave(candles, baseLookback, options = {}) {
     distanceToLowPct,
     trendOutlook,
     currentPosition,
+    microWavePosition: waveContext.microWavePosition,
+    macroTrendPosition: waveContext.macroTrendPosition,
+    majorBreakRisk: waveContext.majorBreakRisk,
     tradingSetup,
     indicatorsMeta: {
       atrPeriod,
@@ -2257,6 +2435,158 @@ function buildTrendOutlook(patternScenarios) {
     note: `候选浪型权重：偏多 ${upPct.toFixed(1)}% / 偏空 ${downPct.toFixed(1)}%`,
     upPct,
     downPct,
+  };
+}
+
+function parseLookbackFromScale(scale) {
+  if (typeof scale !== 'string') return null;
+  const match = /^lookback_(\d+)$/.exec(scale);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function pickTopScenarioByDirection(patternScenarios, direction) {
+  if (!Array.isArray(patternScenarios)) return null;
+  const list = patternScenarios
+    .filter((s) => s && s.direction === direction)
+    .sort((a, b) => (b.confidenceScore || 0) - (a.confidenceScore || 0));
+  return list[0] || null;
+}
+
+function pickScenarioByLookback(patternScenarios, lookback, preferredDirection = null) {
+  if (!Array.isArray(patternScenarios) || !Number.isFinite(lookback)) return null;
+  const list = patternScenarios
+    .filter((s) => parseLookbackFromScale(s?.scale) === lookback)
+    .filter((s) => (preferredDirection ? s.direction === preferredDirection : true))
+    .sort((a, b) => (b.confidenceScore || 0) - (a.confidenceScore || 0));
+  return list[0] || null;
+}
+
+function pickMacroBoundaryFromScenario(scenario) {
+  if (!scenario) return null;
+  if (scenario.invalidation && Number.isFinite(scenario.invalidation.value)) return Number(scenario.invalidation.value);
+  const pivots = Array.isArray(scenario.pivots) ? scenario.pivots : [];
+  if (pivots.length === 0) return null;
+  const prices = pivots.map((p) => Number(p.price)).filter((v) => Number.isFinite(v));
+  if (prices.length === 0) return null;
+  if (scenario.direction === 'up') return Math.min(...prices);
+  return Math.max(...prices);
+}
+
+function buildWaveContextInsights(patternScenarios, trendOutlook, primaryScenario, lastClose, scannedLookbacks = []) {
+  const lookbacks = Array.isArray(scannedLookbacks) && scannedLookbacks.length > 0
+    ? scannedLookbacks.slice().sort((a, b) => a - b)
+    : [];
+  const microLb = lookbacks.length > 0 ? lookbacks[0] : null;
+  const macroLb = lookbacks.length > 0 ? lookbacks[lookbacks.length - 1] : null;
+
+  const dominantDirection = (trendOutlook?.upPct || 0) >= (trendOutlook?.downPct || 0) ? 'up' : 'down';
+  const dominantPct = dominantDirection === 'up' ? (trendOutlook?.upPct || 0) : (trendOutlook?.downPct || 0);
+  const bestUp = pickTopScenarioByDirection(patternScenarios, 'up');
+  const bestDown = pickTopScenarioByDirection(patternScenarios, 'down');
+
+  const microWaveScenario =
+    pickScenarioByLookback(patternScenarios, microLb) ||
+    (dominantDirection === 'up' ? bestUp : bestDown) ||
+    primaryScenario ||
+    null;
+
+  const macroMainScenario =
+    pickScenarioByLookback(patternScenarios, macroLb, dominantDirection) ||
+    pickScenarioByLookback(patternScenarios, macroLb) ||
+    (dominantDirection === 'up' ? bestUp : bestDown) ||
+    primaryScenario ||
+    null;
+
+  const macroAltScenario = dominantDirection === 'up' ? bestDown : bestUp;
+
+  const microWavePosition = microWaveScenario
+    ? {
+      wave: microWaveScenario.currentWave || '浪位待确认',
+      stage: microWaveScenario.stage || '阶段待确认',
+      scenarioTitle: microWaveScenario.title || '主情景',
+      direction: microWaveScenario.direction || 'unknown',
+      confidenceScore: Number((microWaveScenario.confidenceScore || 0).toFixed(1)),
+      lookback: parseLookbackFromScale(microWaveScenario.scale),
+      note: `微观：基于 ${microWaveScenario.scale || 'unknown'}`,
+    }
+    : {
+      wave: '浪位不明',
+      stage: '暂无可靠微观结构',
+      scenarioTitle: 'n/a',
+      direction: 'unknown',
+      confidenceScore: 0,
+      lookback: null,
+      note: '微观定位失败：候选浪型不足',
+    };
+
+  const macroTrendPosition = {
+    dominantDirection,
+    dominantProbabilityPct: Number(dominantPct.toFixed(1)),
+    dominantScenario: macroMainScenario
+      ? {
+        title: macroMainScenario.title,
+        stage: macroMainScenario.stage,
+        currentWave: macroMainScenario.currentWave,
+        confidenceScore: Number((macroMainScenario.confidenceScore || 0).toFixed(1)),
+        scale: macroMainScenario.scale || 'unknown',
+        confirmation: macroMainScenario.confirmation || null,
+        invalidation: macroMainScenario.invalidation || null,
+      }
+      : null,
+    bullishPath: bestUp
+      ? {
+        title: bestUp.title,
+        currentWave: bestUp.currentWave,
+        confidenceScore: Number((bestUp.confidenceScore || 0).toFixed(1)),
+        triggerLevel: bestUp.confirmation?.value ?? null,
+        failureLevel: bestUp.invalidation?.value ?? null,
+      }
+      : null,
+    bearishPath: bestDown
+      ? {
+        title: bestDown.title,
+        currentWave: bestDown.currentWave,
+        confidenceScore: Number((bestDown.confidenceScore || 0).toFixed(1)),
+        triggerLevel: bestDown.confirmation?.value ?? null,
+        failureLevel: bestDown.invalidation?.value ?? null,
+      }
+      : null,
+    note: macroAltScenario
+      ? `宏观主推：${macroMainScenario?.title || 'n/a'}；备选路径：${macroAltScenario.title}`
+      : `宏观主推：${macroMainScenario?.title || 'n/a'}`,
+  };
+
+  const upReference = pickScenarioByLookback(patternScenarios, macroLb, 'up') || bestUp;
+  const majorLevel = pickMacroBoundaryFromScenario(upReference);
+  let breakProbability = null;
+
+  if (Number.isFinite(majorLevel)) {
+    const dist = (lastClose - majorLevel) / Math.max(1, Math.abs(lastClose));
+    const bearishWeight = clamp((trendOutlook?.downPct || 0) / 100, 0, 1);
+    const distanceRisk = dist <= 0 ? 1 : clamp(1 - dist / 0.12, 0, 1);
+    const structureFragility = upReference ? clamp(1 - (upReference.confidenceScore || 0) / 100, 0, 1) : 0.5;
+    const score = dist <= 0
+      ? 1
+      : clamp(bearishWeight * 0.55 + distanceRisk * 0.3 + structureFragility * 0.15, 0, 1);
+    breakProbability = {
+      referenceScenario: upReference?.title || 'n/a',
+      breakLevel: majorLevel,
+      probabilityPct: Number((score * 100).toFixed(1)),
+      distanceToLevelPct: Number((dist * 100).toFixed(2)),
+      bearishWeightPct: Number((bearishWeight * 100).toFixed(1)),
+      state: dist <= 0 ? 'already_broken' : (score >= 0.6 ? 'high_risk' : (score >= 0.4 ? 'medium_risk' : 'low_risk')),
+      note: dist <= 0
+        ? '价格已跌破大级别支撑，大级别上行浪型假设失效'
+        : '概率综合空头权重、价格与大级别边界距离、结构质量脆弱度',
+    };
+  }
+
+  return {
+    microWavePosition,
+    macroTrendPosition,
+    majorBreakRisk: breakProbability,
   };
 }
 
