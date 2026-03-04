@@ -29,6 +29,7 @@ function parseArgs(argv) {
     atrPeriod: 14,
     atrMultiplier: 1.5,
     rsiPeriod: 14,
+    brief: false,
     help: false,
   };
 
@@ -69,6 +70,8 @@ function parseArgs(argv) {
     } else if (item === '--rsi-period' && next) {
       args.rsiPeriod = Number(next);
       i += 1;
+    } else if (item === '--brief') {
+      args.brief = true;
     } else if (item === '--help' || item === '-h') {
       args.help = true;
     }
@@ -93,6 +96,7 @@ Options:
   --atr-period      ATR period for pivot noise filter, default: 14
   --atr-multiplier  Min pivot distance = ATR * multiplier, default: 1.5
   --rsi-period      RSI period for momentum-divergence checks, default: 14
+  --brief     Only output concise WXY narrative to console (no files)
 `);
 }
 
@@ -2178,6 +2182,25 @@ function buildScenario(pattern, candles, last, indicators = null, context = null
       { name: 'W长度', value: fmt(w) },
       { name: 'Y长度', value: fmt(y) },
     );
+
+    // ── WXY 前瞻叙述（下跌方向）──
+    const yExceedsW = y > w;
+    const yVsWLabel = yExceedsW ? `Y浪（${fmt(y)}）已超过W浪（${fmt(w)}）` : `Y浪（${fmt(y)}）尚未超过W浪（${fmt(w)}）`;
+    scenario.wxyNarrative = {
+      startPrice: p0.price,
+      wEndPrice: p3.price,
+      xEndPrice: p4.price,
+      yEndPrice: p7.price,
+      monitorPoint: p4.price,
+      yExceedsW,
+      narrativeLines: [
+        `从 ${fmt(p0.price)} 开始有可能是下行联合修正形WXY，`,
+        `（1）一种是Y浪大于X浪即跌破 ${fmt(p3.price)}（${yVsWLabel}）；`,
+        `（2）另一种是Y浪是三角形。`,
+        `监测点 ${fmt(p4.price)}（X浪高点），如果突破它更可能是（2）`,
+        `WXY以后或者继续发展到Z浪，或者向上突破`,
+      ],
+    };
   } else if (pattern.type === 'wxy' && pattern.direction === 'up') {
     const [p0, p1, p2, p3, p4, p5, p6, p7] = pattern.points;
     const { w, x, y } = pattern.lengths;
@@ -2204,6 +2227,25 @@ function buildScenario(pattern, candles, last, indicators = null, context = null
       { name: 'W长度', value: fmt(w) },
       { name: 'Y长度', value: fmt(y) },
     );
+
+    // ── WXY 前瞻叙述（上涨方向）──
+    const yExceedsW = y > w;
+    const yVsWLabel = yExceedsW ? `Y浪（${fmt(y)}）已超过W浪（${fmt(w)}）` : `Y浪（${fmt(y)}）尚未超过W浪（${fmt(w)}）`;
+    scenario.wxyNarrative = {
+      startPrice: p0.price,
+      wEndPrice: p3.price,
+      xEndPrice: p4.price,
+      yEndPrice: p7.price,
+      monitorPoint: p4.price,
+      yExceedsW,
+      narrativeLines: [
+        `从 ${fmt(p0.price)} 开始有可能是上行联合修正形WXY，`,
+        `（1）一种是Y浪大于X浪即超过 ${fmt(p3.price)}（${yVsWLabel}）；`,
+        `（2）另一种是Y浪是三角形。`,
+        `监测点 ${fmt(p4.price)}（X浪低点），如果跌破它更可能是（2）`,
+        `WXY以后或者继续发展到Z浪，或者向下突破`,
+      ],
+    };
   }
 
   if (pattern.type === 'impulse' || pattern.type === 'impulse_building') {
@@ -2355,6 +2397,7 @@ function analyzeWave(candles, baseLookback, options = {}) {
     currentPosition,
     microWavePosition: waveContext.microWavePosition,
     macroTrendPosition: waveContext.macroTrendPosition,
+    multiScaleWavePositions: waveContext.multiScaleWavePositions,
     majorBreakRisk: waveContext.majorBreakRisk,
     tradingSetup,
     indicatorsMeta: {
@@ -2500,6 +2543,60 @@ function buildWaveContextInsights(patternScenarios, trendOutlook, primaryScenari
     null;
 
   const macroAltScenario = dominantDirection === 'up' ? bestDown : bestUp;
+  const hierarchyDirection = macroMainScenario?.direction || dominantDirection;
+  const orderedLookbacks = lookbacks.slice().sort((a, b) => b - a);
+  const multiScaleWavePositions = orderedLookbacks.map((lb) => {
+    const aligned = pickScenarioByLookback(patternScenarios, lb, hierarchyDirection);
+    const fallback = aligned || pickScenarioByLookback(patternScenarios, lb);
+
+    if (!fallback) {
+      return {
+        lookback: lb,
+        scale: `lookback_${lb}`,
+        status: 'missing',
+        note: `lookback_${lb} 未识别到可用浪型`,
+      };
+    }
+
+    const pivots = Array.isArray(fallback.pivots) ? fallback.pivots : [];
+    return {
+      lookback: lb,
+      scale: fallback.scale || `lookback_${lb}`,
+      status: 'ok',
+      title: fallback.title,
+      direction: fallback.direction,
+      currentWave: fallback.currentWave,
+      stage: fallback.stage,
+      confidenceScore: Number((fallback.confidenceScore || 0).toFixed(1)),
+      barsSinceEnd: fallback.barsSinceEnd,
+      startPivot: pivots[0] || null,
+      endPivot: pivots[pivots.length - 1] || null,
+      waveLegs: fallback.waveLegs || [],
+      pivots,
+      alignedWithMacro: fallback.direction === hierarchyDirection,
+      note: fallback.direction === hierarchyDirection ? '与大周期主方向一致' : '与大周期主方向相反',
+    };
+  });
+
+  // --- 构建微观浪位叙述 ---
+  const buildMicroNarrative = (scenario) => {
+    if (!scenario) return '当前缺少足够的局部结构信息，无法给出微观浪位判断。';
+    const wave = scenario.currentWave || '浪位待确认';
+    const title = scenario.title || '未知浪型';
+    const score = (scenario.confidenceScore || 0).toFixed(1);
+    const dir = scenario.direction === 'down' ? '偏空' : '偏多';
+    const inv = scenario.invalidation;
+    const conf = scenario.confirmation;
+    const parts = [`当前微观结构识别为「${title}」（${dir}，评分 ${score}），正在运行的浪位为「${wave}」。`];
+    if (scenario.stage) parts.push(`阶段描述：${scenario.stage}。`);
+    if (inv && Number.isFinite(inv.value)) {
+      parts.push(`失效边界 ${fmt(inv.value)}（${inv.note || ''}）。`);
+    }
+    if (conf && Number.isFinite(conf.value)) {
+      parts.push(`延续确认位 ${fmt(conf.value)}（${conf.note || ''}）。`);
+    }
+    return parts.join('');
+  };
 
   const microWavePosition = microWaveScenario
     ? {
@@ -2510,6 +2607,9 @@ function buildWaveContextInsights(patternScenarios, trendOutlook, primaryScenari
       confidenceScore: Number((microWaveScenario.confidenceScore || 0).toFixed(1)),
       lookback: parseLookbackFromScale(microWaveScenario.scale),
       note: `微观：基于 ${microWaveScenario.scale || 'unknown'}`,
+      narrative: buildMicroNarrative(microWaveScenario),
+      waveLegs: microWaveScenario.waveLegs || [],
+      pivots: microWaveScenario.pivots || [],
     }
     : {
       wave: '浪位不明',
@@ -2519,7 +2619,89 @@ function buildWaveContextInsights(patternScenarios, trendOutlook, primaryScenari
       confidenceScore: 0,
       lookback: null,
       note: '微观定位失败：候选浪型不足',
+      narrative: '当前缺少足够的局部结构信息，无法给出微观浪位判断。',
     };
+
+  // --- 构建宏观多头叙述 ---
+  const buildBullishNarrative = (scenario) => {
+    if (!scenario) return '当前未识别到有效的多头浪型结构。';
+    const title = scenario.title || '未知结构';
+    const wave = scenario.currentWave || '浪位待确认';
+    const score = (scenario.confidenceScore || 0).toFixed(1);
+    const parts = [`多头视角（评分 ${score}）：`];
+    // 根据浪型类型生成不同的解读
+    if (scenario.patternType === 'wave3_building' || scenario.patternType === 'impulse_building') {
+      parts.push(`如果把此前的下跌视为更大级别上涨中的修正（第2浪/B浪），那么目前识别到的「${title}」表明修正可能已经结束。`);
+      parts.push(`当前正在走的是更大级别上涨推动浪的初期阶段（「${wave}」），一旦确认突破关键阻力，上行空间将打开。`);
+    } else if (scenario.patternType === 'abc' && scenario.direction === 'up') {
+      parts.push(`识别到「${title}」，如果此前的下跌是更大级别上涨中的修正浪，那么目前的上行 ABC 可能是新一轮主升浪的起步阶段。`);
+      parts.push(`当前处于「${wave}」。`);
+    } else {
+      parts.push(`识别到「${title}」，当前处于「${wave}」。如果这个结构得到确认，意味着向下的调整已经全部结束，更大级别上涨趋势回归。`);
+    }
+    if (scenario.confirmation && Number.isFinite(scenario.confirmation.value)) {
+      parts.push(`确认信号：上破 ${fmt(scenario.confirmation.value)}（${scenario.confirmation.note || ''}）。`);
+    }
+    if (scenario.invalidation && Number.isFinite(scenario.invalidation.value)) {
+      parts.push(`失效条件：跌破 ${fmt(scenario.invalidation.value)}（${scenario.invalidation.note || ''}）。`);
+    }
+    return parts.join('');
+  };
+
+  // --- 构建宏观空头叙述 ---
+  const buildBearishNarrative = (scenario) => {
+    if (!scenario) return '当前未识别到有效的空头浪型结构。';
+    const title = scenario.title || '未知结构';
+    const wave = scenario.currentWave || '浪位待确认';
+    const score = (scenario.confidenceScore || 0).toFixed(1);
+    const parts = [`空头视角（评分 ${score}）：`];
+    if (scenario.patternType === 'abc' && scenario.direction === 'down') {
+      // 判断是否C浪结束
+      const isCDone = wave.includes('C浪结束') || wave.includes('反弹');
+      if (isCDone) {
+        parts.push(`识别到「${title}」，C浪已疑似触底。但在空头剧本下，刚走完的 ABC 并不是调整的全部，它仅仅是更大级别复杂调整浪（如 W-X-Y）中的 W 浪（第一段下跌）。`);
+        parts.push(`当前正在走的是连接两段下跌的 X 浪（反弹修正浪），之后可能再次转头向下走 Y 浪（甚至跌破此前低点）。`);
+      } else {
+        parts.push(`识别到「${title}」，当前处于「${wave}」，下跌动能尚未耗尽。`);
+        parts.push(`在更大级别中，这可能是复合调整浪的一部分，后续下行空间仍然存在。`);
+      }
+    } else if (scenario.patternType === 'wxy') {
+      parts.push(`识别到「${title}」（复合调整），当前处于「${wave}」。这表明当前的下跌具备多层嵌套结构，整体调整尚未结束。`);
+    } else if (scenario.patternType === 'impulse' || scenario.patternType === 'impulse_building') {
+      parts.push(`识别到「${title}」，当前处于「${wave}」。下跌推动浪结构意味着更大级别的趋势方向偏空，当前的反弹可能是逆势修正。`);
+    } else {
+      parts.push(`识别到「${title}」，当前处于「${wave}」。空头浪型暗示上方压力较大，反弹可能受阻。`);
+    }
+    if (scenario.confirmation && Number.isFinite(scenario.confirmation.value)) {
+      parts.push(`延续确认：跌破 ${fmt(scenario.confirmation.value)}（${scenario.confirmation.note || ''}）。`);
+    }
+    if (scenario.invalidation && Number.isFinite(scenario.invalidation.value)) {
+      parts.push(`失效条件：上破 ${fmt(scenario.invalidation.value)}（${scenario.invalidation.note || ''}）。`);
+    }
+    return parts.join('');
+  };
+
+  // --- 构建破局点叙述 ---
+  const buildBreakpointNarrative = (bull, bear, close) => {
+    if (!bull && !bear) return '当前缺少多空双方的对立结构，无法确定明确的破局点。';
+    const keyLevel = bull?.invalidation?.value ?? bear?.invalidation?.value ?? null;
+    if (!Number.isFinite(keyLevel)) return '暂无明确的多空分界关键价位。';
+    const isAbove = close > keyLevel;
+    const dist = Math.abs(close - keyLevel);
+    const distPct = close > 0 ? ((dist / close) * 100).toFixed(2) : 'n/a';
+    const parts = [`破局关键位：${fmt(keyLevel)}（当前价 ${fmt(close)}，${isAbove ? '位于其上方' : '位于其下方'}，距离 ${distPct}%）。`];
+    if (bull?.invalidation && Number.isFinite(bull.invalidation.value)) {
+      parts.push(`若跌破 ${fmt(bull.invalidation.value)}，多头结构失效，空头剧本激活。`);
+    }
+    if (bear?.invalidation && Number.isFinite(bear.invalidation.value)) {
+      parts.push(`若上破 ${fmt(bear.invalidation.value)}，空头计数失效，多头剧本回归。`);
+    }
+    return parts.join('');
+  };
+
+  const bullishNarrative = buildBullishNarrative(bestUp);
+  const bearishNarrative = buildBearishNarrative(bestDown);
+  const breakpointNarrative = buildBreakpointNarrative(bestUp, bestDown, lastClose);
 
   const macroTrendPosition = {
     dominantDirection,
@@ -2533,26 +2715,37 @@ function buildWaveContextInsights(patternScenarios, trendOutlook, primaryScenari
         scale: macroMainScenario.scale || 'unknown',
         confirmation: macroMainScenario.confirmation || null,
         invalidation: macroMainScenario.invalidation || null,
+        waveLegs: macroMainScenario.waveLegs || [],
+        pivots: macroMainScenario.pivots || [],
       }
       : null,
     bullishPath: bestUp
       ? {
         title: bestUp.title,
         currentWave: bestUp.currentWave,
+        stage: bestUp.stage || '',
         confidenceScore: Number((bestUp.confidenceScore || 0).toFixed(1)),
         triggerLevel: bestUp.confirmation?.value ?? null,
         failureLevel: bestUp.invalidation?.value ?? null,
+        narrative: bullishNarrative,
+        waveLegs: bestUp.waveLegs || [],
+        pivots: bestUp.pivots || [],
       }
       : null,
     bearishPath: bestDown
       ? {
         title: bestDown.title,
         currentWave: bestDown.currentWave,
+        stage: bestDown.stage || '',
         confidenceScore: Number((bestDown.confidenceScore || 0).toFixed(1)),
         triggerLevel: bestDown.confirmation?.value ?? null,
         failureLevel: bestDown.invalidation?.value ?? null,
+        narrative: bearishNarrative,
+        waveLegs: bestDown.waveLegs || [],
+        pivots: bestDown.pivots || [],
       }
       : null,
+    breakpointNarrative,
     note: macroAltScenario
       ? `宏观主推：${macroMainScenario?.title || 'n/a'}；备选路径：${macroAltScenario.title}`
       : `宏观主推：${macroMainScenario?.title || 'n/a'}`,
@@ -2586,6 +2779,12 @@ function buildWaveContextInsights(patternScenarios, trendOutlook, primaryScenari
   return {
     microWavePosition,
     macroTrendPosition,
+    multiScaleWavePositions: {
+      anchorDirection: hierarchyDirection,
+      anchorLookback: macroLb,
+      note: `按 lookback 从大到小逐级定位；优先选择与大周期主方向一致的浪型`,
+      levels: multiScaleWavePositions,
+    },
     majorBreakRisk: breakProbability,
   };
 }
@@ -2925,6 +3124,151 @@ function buildReport(meta, analysis) {
   lines.push(`- 判断依据：${analysis.trendOutlook.note}`);
   lines.push('');
 
+  lines.push('## 多周期逐级浪位（从大到小）');
+  if (analysis.multiScaleWavePositions?.levels?.length > 0) {
+    const chain = analysis.multiScaleWavePositions;
+    const anchorLabel = chain.anchorDirection === 'down' ? '偏空' : '偏多';
+    const anchorLb = Number.isFinite(chain.anchorLookback) ? `lookback_${chain.anchorLookback}` : 'n/a';
+    lines.push(`- 锚定方向：${anchorLabel}（来源：${anchorLb}）`);
+    if (chain.note) {
+      lines.push(`- 说明：${chain.note}`);
+    }
+
+    for (const level of chain.levels) {
+      if (!level || level.status === 'missing') {
+        lines.push(`- ${level?.scale || 'unknown'}：未识别到可用浪型`);
+        continue;
+      }
+      const dirLabel = level.direction === 'down' ? '偏空' : '偏多';
+      lines.push(`- ${level.scale}：${level.title} | 方向：${dirLabel} | 评分：${level.confidenceScore}`);
+      lines.push(`  - 当前浪位：${level.currentWave || '浪位待确认'}`);
+      if (level.stage) lines.push(`  - 阶段：${level.stage}`);
+      if (Number.isFinite(level.barsSinceEnd)) lines.push(`  - 距结构终点：${level.barsSinceEnd} 根K线`);
+      if (level.startPivot && level.endPivot) {
+        lines.push(`  - 起止：${formatPivotPoint(level.startPivot)} -> ${formatPivotPoint(level.endPivot)}`);
+      }
+      lines.push(`  - 与大周期关系：${level.alignedWithMacro ? '同向' : '逆向'}`);
+    }
+  } else {
+    lines.push('- 暂无可用的多周期逐级浪位信息。');
+  }
+  lines.push('');
+
+  // ============= 新增：微观浪位定位 =============
+  // 辅助函数：输出波浪划分（枢轴 + 浪段）
+  const appendWaveSubdivision = (lines, waveLegs, pivots, indent = '') => {
+    if (Array.isArray(pivots) && pivots.length > 0) {
+      lines.push(`${indent}- 枢轴点划分：`);
+      for (const p of pivots) {
+        lines.push(`${indent}  - ${formatPivotPoint(p)}`);
+      }
+    }
+    if (Array.isArray(waveLegs) && waveLegs.length > 0) {
+      lines.push(`${indent}- 浪段路径：`);
+      for (const leg of waveLegs) {
+        lines.push(
+          `${indent}  - ${leg.name}: ${formatPivotPoint(leg.from)} -> ${formatPivotPoint(leg.to)} | 价格变化=${fmtSigned(leg.change)} | 用时=${leg.bars} 根K线 | 均量=${fmt(leg.volumeAvg)}`,
+        );
+      }
+    }
+  };
+
+  lines.push('## 微观浪位定位（现在正在走什么浪？）');
+  if (analysis.microWavePosition) {
+    const mp = analysis.microWavePosition;
+    lines.push(`- 当前浪位：${mp.wave}`);
+    lines.push(`- 阶段：${mp.stage}`);
+    lines.push(`- 来源浪型：${mp.scenarioTitle}`);
+    lines.push(`- 方向：${mp.direction === 'down' ? '偏空' : mp.direction === 'up' ? '偏多' : '未知'}`);
+    lines.push(`- 置信度：${mp.confidenceScore}`);
+    if (mp.narrative) {
+      lines.push(`- 叙述：${mp.narrative}`);
+    }
+    appendWaveSubdivision(lines, mp.waveLegs, mp.pivots);
+  } else {
+    lines.push('- 暂无可靠的微观浪位定位信息。');
+  }
+  lines.push('');
+
+  // ============= 新增：宏观趋势推演 =============
+  lines.push('## 宏观趋势推演（处于更大一级趋势的什么位置？）');
+  if (analysis.macroTrendPosition) {
+    const mt = analysis.macroTrendPosition;
+    const dominantLabel = mt.dominantDirection === 'up' ? '偏多' : '偏空';
+    lines.push(`- 主导方向：${dominantLabel}（概率权重 ${mt.dominantProbabilityPct}%）`);
+    if (mt.dominantScenario) {
+      lines.push(`- 主导情景：${mt.dominantScenario.title}（评分 ${mt.dominantScenario.confidenceScore}）`);
+      lines.push(`  - 阶段：${mt.dominantScenario.stage}`);
+      lines.push(`  - 当前浪位：${mt.dominantScenario.currentWave}`);
+      appendWaveSubdivision(lines, mt.dominantScenario.waveLegs, mt.dominantScenario.pivots, '  ');
+    }
+    lines.push(`- ${mt.note}`);
+    lines.push('');
+
+    // 多头路径
+    lines.push('### 可能性一：多头剧本（更大级别上涨趋势修正结束，开启新升浪）');
+    if (mt.bullishPath) {
+      const bp = mt.bullishPath;
+      lines.push(`- 浪型：${bp.title}（评分 ${bp.confidenceScore}）`);
+      lines.push(`- 当前浪位：${bp.currentWave}`);
+      if (bp.stage) lines.push(`- 阶段：${bp.stage}`);
+      if (Number.isFinite(bp.triggerLevel)) lines.push(`- 确认触发位：${fmt(bp.triggerLevel)}`);
+      if (Number.isFinite(bp.failureLevel)) lines.push(`- 失效点：${fmt(bp.failureLevel)}`);
+      if (bp.narrative) lines.push(`- 解读：${bp.narrative}`);
+      appendWaveSubdivision(lines, bp.waveLegs, bp.pivots);
+    } else {
+      lines.push('- 当前未识别到有效的多头浪型结构。');
+    }
+    lines.push('');
+
+    // 空头路径
+    lines.push('### 可能性二：空头剧本（复合调整浪中的反弹，随后还有下跌）');
+    if (mt.bearishPath) {
+      const br = mt.bearishPath;
+      lines.push(`- 浪型：${br.title}（评分 ${br.confidenceScore}）`);
+      lines.push(`- 当前浪位：${br.currentWave}`);
+      if (br.stage) lines.push(`- 阶段：${br.stage}`);
+      if (Number.isFinite(br.triggerLevel)) lines.push(`- 延续确认位：${fmt(br.triggerLevel)}`);
+      if (Number.isFinite(br.failureLevel)) lines.push(`- 失效点：${fmt(br.failureLevel)}`);
+      if (br.narrative) lines.push(`- 解读：${br.narrative}`);
+      appendWaveSubdivision(lines, br.waveLegs, br.pivots);
+    } else {
+      lines.push('- 当前未识别到有效的空头浪型结构。');
+    }
+    lines.push('');
+
+    // 破局点汇总
+    lines.push('### 破局点');
+    if (mt.breakpointNarrative) {
+      lines.push(`- ${mt.breakpointNarrative}`);
+    }
+  } else {
+    lines.push('- 暂无宏观趋势推演信息。');
+  }
+  lines.push('');
+
+  // ============= 新增：跌破大级别浪型风险 =============
+  lines.push('## 跌破大级别浪型风险评估');
+  if (analysis.majorBreakRisk) {
+    const risk = analysis.majorBreakRisk;
+    const stateMap = {
+      already_broken: '已跌破',
+      high_risk: '高风险',
+      medium_risk: '中风险',
+      low_risk: '低风险',
+    };
+    lines.push(`- 参考浪型：${risk.referenceScenario}`);
+    lines.push(`- 关键支撑位：${fmt(risk.breakLevel)}`);
+    lines.push(`- 跌破概率：${risk.probabilityPct}%`);
+    lines.push(`- 风险状态：${stateMap[risk.state] || risk.state}`);
+    lines.push(`- 当前价距该位置：${risk.distanceToLevelPct}%`);
+    lines.push(`- 空头权重贡献：${risk.bearishWeightPct}%`);
+    lines.push(`- 说明：${risk.note}`);
+  } else {
+    lines.push('- 暂无大级别浪型跌破风险数据（可能缺少有效的多头参考浪型）。');
+  }
+  lines.push('');
+
   lines.push('## 主情景判断');
   lines.push(`- 主浪型：${analysis.primaryScenario?.title || patternTitle(analysis.primaryPattern)}`);
   lines.push(`- 当前阶段：${analysis.stage}`);
@@ -2960,6 +3304,32 @@ function buildReport(meta, analysis) {
   }
   lines.push('');
 
+  // ============= WXY 联合修正前瞻叙述 =============
+  const wxyNarratives = [];
+  // 先从主情景提取
+  if (analysis.primaryScenario?.wxyNarrative) {
+    wxyNarratives.push(analysis.primaryScenario.wxyNarrative);
+  }
+  // 再从所有候选情景提取（去重，基于起始价格）
+  const seenStarts = new Set(wxyNarratives.map((n) => fmt(n.startPrice)));
+  for (const s of analysis.patternScenarios || []) {
+    if (s.wxyNarrative && !seenStarts.has(fmt(s.wxyNarrative.startPrice))) {
+      wxyNarratives.push(s.wxyNarrative);
+      seenStarts.add(fmt(s.wxyNarrative.startPrice));
+    }
+  }
+
+  if (wxyNarratives.length > 0) {
+    lines.push('## WXY联合修正前瞻');
+    for (const narr of wxyNarratives) {
+      lines.push('');
+      for (const line of narr.narrativeLines) {
+        lines.push(`- ${line}`);
+      }
+    }
+    lines.push('');
+  }
+
   lines.push('## 可能浪型（按优先级）');
   if (analysis.patternScenarios.length === 0) {
     lines.push('- 暂未识别出可用浪型，请扩大时间范围或调整 --lookback。');
@@ -2991,6 +3361,9 @@ function buildReport(meta, analysis) {
           .map((t) => `${t.name}=${fmt(t.value)}`)
           .join('；');
         lines.push(`   - 目标位：${briefTargets}`);
+      }
+      if (scenario.wxyNarrative) {
+        lines.push(`   - WXY前瞻：${scenario.wxyNarrative.narrativeLines[0]}${scenario.wxyNarrative.narrativeLines[1]}`);
       }
     });
   }
@@ -3055,6 +3428,162 @@ function buildReport(meta, analysis) {
   return lines.join('\n');
 }
 
+/**
+ * 精简版报告：只输出一个大周期浪型。
+ * 从最大 lookback 层级中取主导浪型，一目了然。
+ */
+function buildMacroReport(meta, analysis) {
+  const lines = [];
+
+  lines.push('# 大周期浪型分析');
+  lines.push('');
+  lines.push(`| 项目 | 值 |`);
+  lines.push(`|------|-----|`);
+  lines.push(`| 品种 | ${meta.product} |`);
+  lines.push(`| 周期 | ${meta.timeframe} |`);
+  lines.push(`| 时间范围 | ${formatToUtcOffset(meta.startUtc)} ~ ${formatToUtcOffset(meta.endUtc)}（${REPORT_TZ_LABEL}）|`);
+  lines.push(`| K线数量 | ${analysis.candleCount} |`);
+  lines.push(`| 区间 | ${fmt(analysis.low)} ~ ${fmt(analysis.high)} |`);
+  lines.push(`| 最新收盘 | **${fmt(analysis.lastClose)}**（${formatToUtcOffset(analysis.lastTimeUtc)}）|`);
+  lines.push(`| 区间位置 | ${fmtPctByRatio(analysis.rangePosition)} |`);
+  lines.push('');
+
+  // ─── 找到最大周期的那个浪型 ───
+  // 优先用 multiScaleWavePositions 的第一个（最大 lookback），否则用 macroTrendPosition.dominantScenario
+  let macroWave = null;
+
+  if (analysis.multiScaleWavePositions?.levels?.length > 0) {
+    // 第一个是最大 lookback
+    const biggestLevel = analysis.multiScaleWavePositions.levels.find((l) => l && l.status !== 'missing');
+    if (biggestLevel) {
+      macroWave = {
+        title: biggestLevel.title,
+        direction: biggestLevel.direction,
+        score: biggestLevel.confidenceScore,
+        currentWave: biggestLevel.currentWave,
+        stage: biggestLevel.stage,
+        scale: biggestLevel.scale,
+        startPivot: biggestLevel.startPivot,
+        endPivot: biggestLevel.endPivot,
+        barsSinceEnd: biggestLevel.barsSinceEnd,
+        waveLegs: biggestLevel.waveLegs || [],
+        pivots: biggestLevel.pivots || [],
+      };
+    }
+  }
+
+  // 如果 multiScale 没有，用 macroTrendPosition
+  if (!macroWave && analysis.macroTrendPosition?.dominantScenario) {
+    const ds = analysis.macroTrendPosition.dominantScenario;
+    macroWave = {
+      title: ds.title,
+      direction: analysis.macroTrendPosition.dominantDirection,
+      score: ds.confidenceScore,
+      currentWave: ds.currentWave,
+      stage: ds.stage,
+      scale: 'macro',
+      waveLegs: ds.waveLegs || [],
+      pivots: ds.pivots || [],
+    };
+  }
+
+  // 最后 fallback 到 primaryScenario
+  if (!macroWave && analysis.primaryScenario) {
+    const ps = analysis.primaryScenario;
+    macroWave = {
+      title: ps.title,
+      direction: ps.direction,
+      score: ps.confidenceScore,
+      currentWave: ps.currentWave,
+      stage: ps.stage || analysis.stage,
+      scale: ps.scale,
+      waveLegs: ps.waveLegs || [],
+      pivots: ps.pivots || [],
+    };
+  }
+
+  lines.push('## 大周期浪型');
+  if (macroWave) {
+    const dirEmoji = macroWave.direction === 'down' ? '🔴' : '🟢';
+    const dirText = macroWave.direction === 'down' ? '偏空' : '偏多';
+    lines.push('');
+    lines.push(`> **${dirEmoji} ${macroWave.title}**（${macroWave.scale}）`);
+    lines.push('');
+    lines.push(`| 项目 | 值 |`);
+    lines.push(`|------|-----|`);
+    lines.push(`| 方向 | ${dirEmoji} ${dirText} |`);
+    lines.push(`| 评分 | ${macroWave.score} |`);
+    lines.push(`| 当前浪位 | **${macroWave.currentWave || '待确认'}** |`);
+    lines.push(`| 阶段 | ${macroWave.stage || '-'} |`);
+    if (macroWave.startPivot && macroWave.endPivot) {
+      lines.push(`| 起点 | ${formatPivotPoint(macroWave.startPivot)} |`);
+      lines.push(`| 终点 | ${formatPivotPoint(macroWave.endPivot)} |`);
+    }
+    if (Number.isFinite(macroWave.barsSinceEnd)) {
+      lines.push(`| 距结构终点 | ${macroWave.barsSinceEnd} 根K线 |`);
+    }
+    lines.push('');
+
+    // ─── 浪段划分 ───
+    if (macroWave.waveLegs.length > 0) {
+      lines.push('### 浪段划分');
+      lines.push('');
+      lines.push('| 浪段 | 起点 | 终点 | 价格变化 | K线数 | 均量 |');
+      lines.push('|------|------|------|----------|-------|------|');
+      for (const leg of macroWave.waveLegs) {
+        const fromStr = `${leg.from.type}@${fmt(leg.from.price)}`;
+        const toStr = `${leg.to.type}@${fmt(leg.to.price)}`;
+        lines.push(`| **${leg.name}** | ${fromStr} | ${toStr} | ${fmtSigned(leg.change)} | ${leg.bars} | ${fmt(leg.volumeAvg)} |`);
+      }
+      lines.push('');
+    }
+  } else {
+    lines.push('- 暂未识别到大周期浪型。');
+  }
+  lines.push('');
+
+  // ─── 关键价位（简洁汇总）───
+  const hasLevels = analysis.primaryScenario?.invalidation || analysis.primaryScenario?.confirmation || analysis.targets?.length > 0;
+  if (hasLevels) {
+    lines.push('## 关键价位');
+    lines.push('');
+    lines.push(`| 类型 | 价格 | 说明 |`);
+    lines.push(`|------|------|------|`);
+    if (analysis.primaryScenario?.invalidation) {
+      const inv = analysis.primaryScenario.invalidation;
+      lines.push(`| ❌ 失效点 | ${fmt(inv.value)} | ${inv.note} |`);
+    }
+    if (analysis.primaryScenario?.confirmation) {
+      const conf = analysis.primaryScenario.confirmation;
+      lines.push(`| ✅ 确认位 | ${fmt(conf.value)} | ${conf.note} |`);
+    }
+    if (analysis.targets?.length > 0) {
+      for (const t of analysis.targets.slice(0, 3)) {
+        lines.push(`| 🎯 ${t.name} | ${fmt(t.value)} | ${t.note || '参考目标'} |`);
+      }
+    }
+    lines.push('');
+  }
+
+  // ─── 跌破风险（一行汇总）───
+  if (analysis.majorBreakRisk) {
+    const risk = analysis.majorBreakRisk;
+    const stateMap = {
+      already_broken: '🔴 已跌破',
+      high_risk: '🟠 高风险',
+      medium_risk: '🟡 中风险',
+      low_risk: '🟢 低风险',
+    };
+    lines.push(`> **跌破风险**：${stateMap[risk.state] || risk.state} — 支撑位 ${fmt(risk.breakLevel)}，${risk.note}`);
+    lines.push('');
+  }
+
+  lines.push('---');
+  lines.push('*本报告基于自动化艾略特波浪估计，属于概率推演，不构成投资建议。*');
+
+  return lines.join('\n');
+}
+
 function buildHtmlDashboard(payload) {
   const previewData = {
     meta: payload.meta,
@@ -3085,6 +3614,10 @@ function buildHtmlDashboard(payload) {
           stage: s.stage,
           currentWave: s.currentWave,
         })),
+      microWavePosition: payload.analysis.microWavePosition || null,
+      macroTrendPosition: payload.analysis.macroTrendPosition || null,
+      multiScaleWavePositions: payload.analysis.multiScaleWavePositions || null,
+      majorBreakRisk: payload.analysis.majorBreakRisk || null,
     },
   };
 
@@ -3112,6 +3645,19 @@ function buildHtmlDashboard(payload) {
     .muted { color: #94a2c9; }
     .good { color: #34d399; }
     .bad { color: #f87171; }
+    .warn { color: #fbbf24; }
+    .section-box { background: #151e3a; border: 1px solid #26314f; border-radius: 6px; padding: 10px 12px; margin: 8px 0; font-size: 12px; line-height: 1.6; }
+    .section-box p { margin: 4px 0; }
+    .path-label { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 4px; }
+    .path-bull { background: #064e3b; color: #34d399; }
+    .path-bear { background: #4c0519; color: #f87171; }
+    .risk-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+    .risk-low { background: #064e3b; color: #34d399; }
+    .risk-medium { background: #713f12; color: #fbbf24; }
+    .risk-high { background: #4c0519; color: #f87171; }
+    .risk-broken { background: #7f1d1d; color: #fecaca; }
+    .narrative { color: #b8c4e3; font-style: italic; margin-top: 4px; }
+    h4 { margin: 10px 0 6px; font-size: 13px; color: #7d8ec5; }
   </style>
 </head>
 <body>
@@ -3122,6 +3668,12 @@ function buildHtmlDashboard(payload) {
       <div id="meta" class="kv"></div>
       <div id="trend" class="kv"></div>
       <div id="stage" class="kv"></div>
+      <h3>微观浪位定位</h3>
+      <div id="micro-wave" class="section-box"></div>
+      <h3>宏观趋势推演</h3>
+      <div id="macro-trend" class="section-box"></div>
+      <h3>跌破大级别风险</h3>
+      <div id="break-risk" class="section-box"></div>
       <h3>主情景关键价位</h3>
       <ul id="levels"></ul>
       <h3>主情景目标位</h3>
@@ -3355,11 +3907,180 @@ function buildHtmlDashboard(payload) {
         li.textContent = (i + 1) + '. ' + s.title + ' | ' + s.bias + ' | 评分 ' + s.confidenceScore + ' | ' + s.currentWave;
         scenariosEl.appendChild(li);
       });
+
+      // === 微观浪位定位 ===
+      const microEl = document.getElementById('micro-wave');
+      const micro = analysis.microWavePosition;
+      if (micro) {
+        const dirLabel = micro.direction === 'down' ? '偏空' : micro.direction === 'up' ? '偏多' : '未知';
+        microEl.innerHTML = '<p><strong>当前浪位：</strong>' + (micro.wave || '-') + ' <span class="tag">' + dirLabel + '</span> <span class="tag">评分 ' + (micro.confidenceScore || 0) + '</span></p>' +
+          '<p><strong>来源浪型：</strong>' + (micro.scenarioTitle || '-') + '</p>' +
+          '<p><strong>阶段：</strong>' + (micro.stage || '-') + '</p>' +
+          (micro.narrative ? '<p class="narrative">' + micro.narrative + '</p>' : '');
+      } else {
+        microEl.innerHTML = '<p class="muted">暂无可靠微观浪位定位。</p>';
+      }
+
+      // === 宏观趋势推演 ===
+      const macroEl = document.getElementById('macro-trend');
+      const macro = analysis.macroTrendPosition;
+      if (macro) {
+        var macroHtml = '<p><strong>主导方向：</strong>' + (macro.dominantDirection === 'up' ? '<span class="good">偏多</span>' : '<span class="bad">偏空</span>') + ' <span class="tag">' + (macro.dominantProbabilityPct || 0) + '%</span></p>';
+        if (macro.dominantScenario) {
+          macroHtml += '<p><strong>主导情景：</strong>' + macro.dominantScenario.title + '（评分 ' + (macro.dominantScenario.confidenceScore || 0) + '）</p>';
+        }
+        // 多头路径
+        macroHtml += '<h4><span class="path-label path-bull">多头剧本</span></h4>';
+        if (macro.bullishPath) {
+          macroHtml += '<p>' + macro.bullishPath.title + ' | 浪位: ' + macro.bullishPath.currentWave + ' | 评分 ' + (macro.bullishPath.confidenceScore || 0) + '</p>';
+          if (macro.bullishPath.narrative) macroHtml += '<p class="narrative">' + macro.bullishPath.narrative + '</p>';
+        } else {
+          macroHtml += '<p class="muted">未识别到有效多头浪型。</p>';
+        }
+        // 空头路径
+        macroHtml += '<h4><span class="path-label path-bear">空头剧本</span></h4>';
+        if (macro.bearishPath) {
+          macroHtml += '<p>' + macro.bearishPath.title + ' | 浪位: ' + macro.bearishPath.currentWave + ' | 评分 ' + (macro.bearishPath.confidenceScore || 0) + '</p>';
+          if (macro.bearishPath.narrative) macroHtml += '<p class="narrative">' + macro.bearishPath.narrative + '</p>';
+        } else {
+          macroHtml += '<p class="muted">未识别到有效空头浪型。</p>';
+        }
+        // 破局点
+        if (macro.breakpointNarrative) {
+          macroHtml += '<h4>破局点</h4>';
+          macroHtml += '<p class="warn">' + macro.breakpointNarrative + '</p>';
+        }
+        macroEl.innerHTML = macroHtml;
+      } else {
+        macroEl.innerHTML = '<p class="muted">暂无宏观趋势推演信息。</p>';
+      }
+
+      // === 跌破大级别风险 ===
+      const riskEl = document.getElementById('break-risk');
+      const risk = analysis.majorBreakRisk;
+      if (risk) {
+        var riskClass = risk.state === 'already_broken' ? 'risk-broken' :
+          risk.state === 'high_risk' ? 'risk-high' :
+          risk.state === 'medium_risk' ? 'risk-medium' : 'risk-low';
+        var stateLabel = risk.state === 'already_broken' ? '已跌破' :
+          risk.state === 'high_risk' ? '高风险' :
+          risk.state === 'medium_risk' ? '中风险' : '低风险';
+        riskEl.innerHTML = '<p><strong>参考浪型：</strong>' + (risk.referenceScenario || '-') + '</p>' +
+          '<p><strong>关键支撑位：</strong>' + Number(risk.breakLevel).toFixed(2) + '</p>' +
+          '<p><strong>跌破概率：</strong>' + (risk.probabilityPct || 0) + '% <span class="risk-badge ' + riskClass + '">' + stateLabel + '</span></p>' +
+          '<p><strong>距离该位置：</strong>' + (risk.distanceToLevelPct || 0) + '%' + ' | <strong>空头权重：</strong>' + (risk.bearishWeightPct || 0) + '%</p>' +
+          '<p class="muted">' + (risk.note || '') + '</p>';
+      } else {
+        riskEl.innerHTML = '<p class="muted">暂无大级别跌破风险数据。</p>';
+      }
     })();
   </script>
 </body>
 </html>
 `;
+}
+
+/**
+ * --brief 模式：只输出最简洁的 WXY 联合修正叙述。
+ * 从整个数据区间的宏观结构合成 WXY：
+ *   - 起点 = 区间最低/最高（取时间在前的极值）
+ *   - W终点 = 区间最高/最低（对侧极值）
+ *   - X终点 = W之后的第一个显著回撤（从宏观枢轴中寻找）
+ * 如果合成失败，回退到已识别的 WXY 候选。
+ */
+function buildBriefWxyOutput(analysis, product, tf, candles) {
+  const lines = [];
+  lines.push(`[${product} ${tf}] WXY联合修正前瞻`);
+  lines.push('');
+
+  // ── 1. 从K线中定位区间极值 ──
+  let highIdx = 0;
+  let lowIdx = 0;
+  for (let i = 0; i < candles.length; i++) {
+    if (candles[i].high >= candles[highIdx].high) highIdx = i;
+    if (candles[i].low <= candles[lowIdx].low) lowIdx = i;
+  }
+  const rangeHigh = candles[highIdx].high;
+  const rangeLow = candles[lowIdx].low;
+
+  // 判断是上行 WXY（低在前）还是下行 WXY（高在前）
+  const isUp = lowIdx < highIdx;
+  const startPrice = isUp ? rangeLow : rangeHigh;
+  const wEndPrice = isUp ? rangeHigh : rangeLow;
+  const wEndIdx = isUp ? highIdx : lowIdx;
+
+  // ── 2. 从宏观枢轴中找 X 浪终点（W之后的第一个显著反向枢轴）──
+  const macroPivots = analysis.pivotsMacro || [];
+  let monitorPoint = null;
+
+  if (isUp) {
+    // 上行WXY：W到顶后回撤，X低点 = W之后的最深低点枢轴
+    const lowPivotsAfterW = macroPivots.filter((p) => p.index > wEndIdx && p.type === 'L');
+    if (lowPivotsAfterW.length > 0) {
+      monitorPoint = lowPivotsAfterW.reduce((min, p) => (p.price < min.price ? p : min), lowPivotsAfterW[0]).price;
+    }
+  } else {
+    // 下行WXY：W到底后反弹，X高点 = W之后的最高高点枢轴
+    const highPivotsAfterW = macroPivots.filter((p) => p.index > wEndIdx && p.type === 'H');
+    if (highPivotsAfterW.length > 0) {
+      monitorPoint = highPivotsAfterW.reduce((max, p) => (p.price > max.price ? p : max), highPivotsAfterW[0]).price;
+    }
+  }
+
+  // 回退：如果宏观枢轴找不到，从K线中找
+  if (monitorPoint === null) {
+    if (isUp) {
+      let minLow = rangeHigh;
+      for (let i = wEndIdx + 1; i < candles.length; i++) {
+        if (candles[i].low < minLow) minLow = candles[i].low;
+      }
+      monitorPoint = minLow;
+    } else {
+      let maxHigh = rangeLow;
+      for (let i = wEndIdx + 1; i < candles.length; i++) {
+        if (candles[i].high > maxHigh) maxHigh = candles[i].high;
+      }
+      monitorPoint = maxHigh;
+    }
+  }
+
+  // ── 3. 生成叙述 ──
+  lines.push(`${fmt(startPrice)} 开始有可能是联合修正形WXY，`);
+  if (isUp) {
+    lines.push(`（1）一种是Y浪大于X浪即超过 ${fmt(wEndPrice)}`);
+    lines.push(`（2）另一种是Y浪是三角形。`);
+    lines.push(`监测点 ${fmt(monitorPoint)}，如果跌破它更可能是（2）`);
+    lines.push(`WXY以后或者继续发展到Z浪，或者向下突破`);
+  } else {
+    lines.push(`（1）一种是Y浪大于X浪即跌破 ${fmt(wEndPrice)}`);
+    lines.push(`（2）另一种是Y浪是三角形。`);
+    lines.push(`监测点 ${fmt(monitorPoint)}，如果突破它更可能是（2）`);
+    lines.push(`WXY以后或者继续发展到Z浪，或者向上突破`);
+  }
+
+  // ── 4. 附加当前状态 ──
+  lines.push('');
+  lines.push(`── 当前状态 ──`);
+  lines.push(`最新收盘：${fmt(analysis.lastClose)}`);
+  lines.push(`区间：${fmt(rangeLow)} ~ ${fmt(rangeHigh)}`);
+
+  // 尝试从已识别的 WXY 中补充浪位信息
+  const wxyScenarios = (analysis.patternScenarios || []).filter((s) => s.wxyNarrative);
+  if (wxyScenarios.length > 0) {
+    // 选最大跨度的
+    wxyScenarios.sort((a, b) => {
+      const sa = Math.abs(a.wxyNarrative.wEndPrice - a.wxyNarrative.startPrice);
+      const sb = Math.abs(b.wxyNarrative.wEndPrice - b.wxyNarrative.startPrice);
+      return sb - sa;
+    });
+    const best = wxyScenarios[0];
+    lines.push(`识别到的最大WXY：从 ${fmt(best.wxyNarrative.startPrice)} 到 ${fmt(best.wxyNarrative.wEndPrice)}`);
+    lines.push(`当前浪位：${best.currentWave}（评分 ${best.confidenceScore}）`);
+    if (best.invalidation) lines.push(`失效点：${fmt(best.invalidation.value)}`);
+    if (best.confirmation) lines.push(`确认位：${fmt(best.confirmation.value)}`);
+  }
+
+  return lines.join('\n');
 }
 
 async function main() {
@@ -3413,6 +4134,39 @@ async function main() {
     rsiPeriod: Math.max(2, Math.floor(args.rsiPeriod)),
   });
 
+  // ── brief 模式：只输出简洁WXY叙述 + 保存到 md 和 json ──
+  if (args.brief) {
+    const briefText = buildBriefWxyOutput(analysis, args.product, args.tf, candlesWithUtc8);
+    console.log(briefText);
+
+    const briefMdPath = path.resolve(process.cwd(), args.report || `${baseName}_brief.md`);
+    const briefJsonPath = path.resolve(process.cwd(), args.out || `${baseName}.json`);
+
+    const briefPayload = {
+      meta: {
+        product: args.product,
+        timeframe: args.tf,
+        startUtc: toIsoNoMs(startDate),
+        endUtc: toIsoNoMs(endDate),
+        generatedAtUtc: toIsoNoMs(new Date()),
+        source: 'Coinbase Exchange candles API',
+        mode: 'brief',
+      },
+      candles: candlesWithUtc8,
+      analysis,
+    };
+
+    const briefHtmlPath = path.resolve(process.cwd(), args.html || `${baseName}.html`);
+
+    await fs.writeFile(briefMdPath, `${briefText}\n`, 'utf8');
+    await fs.writeFile(briefJsonPath, `${JSON.stringify(briefPayload, null, 2)}\n`, 'utf8');
+    await fs.writeFile(briefHtmlPath, `${buildHtmlDashboard(briefPayload)}\n`, 'utf8');
+    console.log(`\nSaved brief report: ${briefMdPath}`);
+    console.log(`Saved data JSON: ${briefJsonPath}`);
+    console.log(`Saved dashboard: ${briefHtmlPath}`);
+    return;
+  }
+
   const payload = {
     meta: {
       product: args.product,
@@ -3439,7 +4193,36 @@ async function main() {
   console.log(`Saved interactive dashboard: ${htmlPath}`);
 }
 
-main().catch((err) => {
-  console.error(err.message || err);
-  process.exit(1);
-});
+// Export core analysis functions for reuse by other scripts
+module.exports = {
+  analyzeWave,
+  buildReport,
+  buildMacroReport,
+  buildHtmlDashboard,
+  computeATR,
+  computeRSI,
+  detectPivots,
+  detectPatterns,
+  mergePatternCandidates,
+  buildScenario,
+  buildTrendOutlook,
+  buildCurrentPositionSummary,
+  buildTradingSetup,
+  buildWaveContextInsights,
+  buildWaveLegs,
+  formatToUtcOffset,
+  formatPivotPoint,
+  patternTitle,
+  fmt,
+  fmtSigned,
+  fmtPctByRatio,
+  REPORT_TZ_OFFSET_HOURS,
+  REPORT_TZ_LABEL,
+};
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err.message || err);
+    process.exit(1);
+  });
+}

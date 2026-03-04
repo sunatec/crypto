@@ -59,3 +59,14 @@ node analyze-kline-wave.js --product BTC-USD --tf 4h --start 2026-02-06T00:00:00
 
 Coinbase Exchange Candles API：  
 `https://api.exchange.coinbase.com/products/<product>/candles`
+
+对于analyze-kline-wave.js 我想执行一个脚本类似node analyze-kline-wave.js --product BTC-USD --tf 1h --start 2026-02-06T00:00:00+08:00 --end now  然后输出的内容：
+60.000开始有可能是联合形wxy，
+（1）一种是y浪大于x浪即超过72.233
+（2）另一种是y浪是三角形。
+监测点65.435，如果跌破它更可能是(2)
+wxy以后或者继续发展到z浪，或者向下突破
+
+
+
+
