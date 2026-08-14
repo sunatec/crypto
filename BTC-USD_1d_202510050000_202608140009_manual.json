@@ -1,0 +1,430 @@
+{
+  "meta": {
+    "product": "BTC-USD",
+    "timeframe": "1d",
+    "startUtc": "2025-10-04T16:00:00Z",
+    "endUtc": "2026-08-13T16:09:21Z",
+    "generatedAtUtc": "2026-08-13T16:10:45Z",
+    "source": "Coinbase Exchange candles API",
+    "sampleCount": 312,
+    "rangeHigh": 126296,
+    "rangeLow": 57717.55,
+    "latestClose": 63383.68,
+    "latestCloseTs": 1786579200
+  },
+  "pivotCount": 51,
+  "survivorCount": 62,
+  "eliminatedCount": 423,
+  "primary": {
+    "patternType": "impulse",
+    "mode": "strict",
+    "direction": "down",
+    "label": "推动浪（标准 Impulse）",
+    "degree": 2,
+    "points": [
+      {
+        "index": 22,
+        "type": "H",
+        "price": 116410.06,
+        "timestamp": 1761523200
+      },
+      {
+        "index": 30,
+        "type": "L",
+        "price": 98892.97,
+        "timestamp": 1762214400
+      },
+      {
+        "index": 37,
+        "type": "H",
+        "price": 107482,
+        "timestamp": 1762819200
+      },
+      {
+        "index": 47,
+        "type": "L",
+        "price": 80524.65,
+        "timestamp": 1763683200
+      },
+      {
+        "index": 54,
+        "type": "H",
+        "price": 93161.86,
+        "timestamp": 1764288000
+      },
+      {
+        "index": 57,
+        "type": "L",
+        "price": 83800,
+        "timestamp": 1764547200
+      }
+    ],
+    "measures": {
+      "price": 32610.059999999998,
+      "gross": 35885.41,
+      "movePct": 0.4456450291929242,
+      "hi": 116410.06,
+      "lo": 80524.65,
+      "first": {
+        "index": 22,
+        "type": "H",
+        "price": 116410.06,
+        "timestamp": 1761523200
+      },
+      "last": {
+        "index": 57,
+        "type": "L",
+        "price": 83800,
+        "timestamp": 1764547200
+      }
+    },
+    "guidelineScore": 2,
+    "guidelineTotal": 3,
+    "channelType": "parallel",
+    "fibRetracement": {
+      "from": 116410.06,
+      "to": 80524.65,
+      "levels": [
+        {
+          "ratio": 0.236,
+          "price": 88993.60676
+        },
+        {
+          "ratio": 0.382,
+          "price": 94232.87662
+        },
+        {
+          "ratio": 0.5,
+          "price": 98467.355
+        },
+        {
+          "ratio": 0.618,
+          "price": 102701.83338
+        },
+        {
+          "ratio": 0.7,
+          "price": 105644.43699999999
+        },
+        {
+          "ratio": 0.786,
+          "price": 108730.58226
+        }
+      ]
+    }
+  },
+  "degrees": [
+    {
+      "degree": 0,
+      "label": "0（最粗·大级别）",
+      "pivotCount": 6,
+      "childPivotCount": 10,
+      "primary": {
+        "patternType": "sideways",
+        "mode": "triple",
+        "direction": "up",
+        "label": "三重横向整理（Triple Sideways, w-x-y-xx-z）",
+        "degree": 0,
+        "points": [
+          {
+            "index": 47,
+            "type": "L",
+            "price": 80524.65,
+            "timestamp": 1763683200
+          },
+          {
+            "index": 101,
+            "type": "H",
+            "price": 97963.62,
+            "timestamp": 1768348800
+          },
+          {
+            "index": 124,
+            "type": "L",
+            "price": 60001,
+            "timestamp": 1770336000
+          },
+          {
+            "index": 213,
+            "type": "H",
+            "price": 82814.23,
+            "timestamp": 1778025600
+          },
+          {
+            "index": 269,
+            "type": "L",
+            "price": 57717.55,
+            "timestamp": 1782864000
+          },
+          {
+            "index": 289,
+            "type": "H",
+            "price": 66923.95,
+            "timestamp": 1784592000
+          }
+        ],
+        "measures": {
+          "price": -13600.699999999997,
+          "gross": 40246.06999999999,
+          "movePct": 0.6972934575358793,
+          "hi": 97963.62,
+          "lo": 57717.55,
+          "first": {
+            "index": 47,
+            "type": "L",
+            "price": 80524.65,
+            "timestamp": 1763683200
+          },
+          "last": {
+            "index": 289,
+            "type": "H",
+            "price": 66923.95,
+            "timestamp": 1784592000
+          }
+        },
+        "guidelineScore": 0,
+        "guidelineTotal": 0,
+        "channelType": "parallel",
+        "fibRetracement": {
+          "from": 80524.65,
+          "to": 66923.95,
+          "levels": [
+            {
+              "ratio": 0.236,
+              "price": 63714.184799999995
+            },
+            {
+              "ratio": 0.382,
+              "price": 61728.482599999996
+            },
+            {
+              "ratio": 0.5,
+              "price": 60123.6
+            },
+            {
+              "ratio": 0.618,
+              "price": 58518.7174
+            },
+            {
+              "ratio": 0.7,
+              "price": 57403.46
+            },
+            {
+              "ratio": 0.786,
+              "price": 56233.7998
+            }
+          ]
+        }
+      },
+      "note": null
+    },
+    {
+      "degree": 1,
+      "label": "1（中级别）",
+      "pivotCount": 12,
+      "childPivotCount": 28,
+      "primary": {
+        "patternType": "impulse",
+        "mode": "strict",
+        "direction": "down",
+        "label": "推动浪（标准 Impulse）",
+        "degree": 1,
+        "points": [
+          {
+            "index": 22,
+            "type": "H",
+            "price": 116410.06,
+            "timestamp": 1761523200
+          },
+          {
+            "index": 47,
+            "type": "L",
+            "price": 80524.65,
+            "timestamp": 1763683200
+          },
+          {
+            "index": 101,
+            "type": "H",
+            "price": 97963.62,
+            "timestamp": 1768348800
+          },
+          {
+            "index": 124,
+            "type": "L",
+            "price": 60001,
+            "timestamp": 1770336000
+          },
+          {
+            "index": 163,
+            "type": "H",
+            "price": 76022.6,
+            "timestamp": 1773705600
+          },
+          {
+            "index": 175,
+            "type": "L",
+            "price": 64938.66,
+            "timestamp": 1774742400
+          }
+        ],
+        "measures": {
+          "price": 51471.399999999994,
+          "gross": 56409.06,
+          "movePct": 0.9401353310778153,
+          "hi": 116410.06,
+          "lo": 60001,
+          "first": {
+            "index": 22,
+            "type": "H",
+            "price": 116410.06,
+            "timestamp": 1761523200
+          },
+          "last": {
+            "index": 175,
+            "type": "L",
+            "price": 64938.66,
+            "timestamp": 1774742400
+          }
+        },
+        "guidelineScore": 1,
+        "guidelineTotal": 3,
+        "channelType": "parallel",
+        "fibRetracement": {
+          "from": 116410.06,
+          "to": 60001,
+          "levels": [
+            {
+              "ratio": 0.236,
+              "price": 73313.53816
+            },
+            {
+              "ratio": 0.382,
+              "price": 81549.26092
+            },
+            {
+              "ratio": 0.5,
+              "price": 88205.53
+            },
+            {
+              "ratio": 0.618,
+              "price": 94861.79908
+            },
+            {
+              "ratio": 0.7,
+              "price": 99487.342
+            },
+            {
+              "ratio": 0.786,
+              "price": 104338.52116
+            }
+          ]
+        }
+      },
+      "note": null
+    },
+    {
+      "degree": 2,
+      "label": "2（最细·小级别）",
+      "pivotCount": 51,
+      "childPivotCount": null,
+      "primary": {
+        "patternType": "impulse",
+        "mode": "strict",
+        "direction": "down",
+        "label": "推动浪（标准 Impulse）",
+        "degree": 2,
+        "points": [
+          {
+            "index": 22,
+            "type": "H",
+            "price": 116410.06,
+            "timestamp": 1761523200
+          },
+          {
+            "index": 30,
+            "type": "L",
+            "price": 98892.97,
+            "timestamp": 1762214400
+          },
+          {
+            "index": 37,
+            "type": "H",
+            "price": 107482,
+            "timestamp": 1762819200
+          },
+          {
+            "index": 47,
+            "type": "L",
+            "price": 80524.65,
+            "timestamp": 1763683200
+          },
+          {
+            "index": 54,
+            "type": "H",
+            "price": 93161.86,
+            "timestamp": 1764288000
+          },
+          {
+            "index": 57,
+            "type": "L",
+            "price": 83800,
+            "timestamp": 1764547200
+          }
+        ],
+        "measures": {
+          "price": 32610.059999999998,
+          "gross": 35885.41,
+          "movePct": 0.4456450291929242,
+          "hi": 116410.06,
+          "lo": 80524.65,
+          "first": {
+            "index": 22,
+            "type": "H",
+            "price": 116410.06,
+            "timestamp": 1761523200
+          },
+          "last": {
+            "index": 57,
+            "type": "L",
+            "price": 83800,
+            "timestamp": 1764547200
+          }
+        },
+        "guidelineScore": 2,
+        "guidelineTotal": 3,
+        "channelType": "parallel",
+        "fibRetracement": {
+          "from": 116410.06,
+          "to": 80524.65,
+          "levels": [
+            {
+              "ratio": 0.236,
+              "price": 88993.60676
+            },
+            {
+              "ratio": 0.382,
+              "price": 94232.87662
+            },
+            {
+              "ratio": 0.5,
+              "price": 98467.355
+            },
+            {
+              "ratio": 0.618,
+              "price": 102701.83338
+            },
+            {
+              "ratio": 0.7,
+              "price": 105644.43699999999
+            },
+            {
+              "ratio": 0.786,
+              "price": 108730.58226
+            }
+          ]
+        }
+      },
+      "note": null
+    }
+  ],
+  "fibTimeResonanceCount": 259
+}

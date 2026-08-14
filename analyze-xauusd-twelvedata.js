@@ -8,6 +8,7 @@ const { execFile } = require('child_process');
 const {
     analyzeWave,
     buildReport,
+    buildManualAlternateOnlyReport,
     buildMacroReport,
     buildHtmlDashboard,
     formatToUtcOffset,
@@ -291,7 +292,7 @@ function parseArgs(argv) {
         out: null,
         report: null,
         html: null,
-        mode: 'full',
+        mode: 'start',
         lookback: 2,
         atrPeriod: 14,
         atrMultiplier: 1.5,
@@ -397,7 +398,7 @@ Options:
   --outputsize  Number of data points (1-5000), default: 300
   --out         Output JSON file path
   --report      Output markdown file path
-  --mode        Report mode: full (default) | macro (only large-cycle waves)
+  --mode        Report mode: start (default, only major-cycle possibilities from start time) | full | macro
   --html        Output interactive dashboard HTML path
   --lookback    Pivot lookback window, default: 2
   --atr-period       ATR period, default: 14
@@ -581,7 +582,9 @@ async function main() {
 
     const reportContent = args.mode === 'macro'
         ? buildMacroReport(meta, analysis)
-        : buildReport(meta, analysis);
+        : args.mode === 'full'
+            ? buildReport(meta, analysis)
+            : buildManualAlternateOnlyReport(meta, analysis);
     await fs.writeFile(reportPath, `${reportContent}\n`, 'utf8');
     console.log(`✅ Saved analysis MD:  ${reportPath} (mode: ${args.mode})`);
 

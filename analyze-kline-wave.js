@@ -518,8 +518,8 @@ function checkDownImpulse(p) {
 
   const strictValid =
     p[4].price < p[1].price &&
-    inRange(w2Retrace, 0.236, 0.886) &&
-    inRange(w3Extend, 1.0, 4.236);
+    w2Retrace > 0 &&
+    w2Retrace < 1;
 
   if (strictValid) {
     return {
@@ -537,7 +537,8 @@ function checkDownImpulse(p) {
     p[4].price < p[2].price &&
     p[5].price < p[1].price &&
     w3 < w1 &&
-    w5 < w3;
+    w5 < w3 &&
+    w4 < w2;
 
   if (!diagonalValid) return null;
   return {
@@ -578,8 +579,8 @@ function checkUpImpulse(p) {
 
   const strictValid =
     p[4].price > p[1].price &&
-    inRange(w2Retrace, 0.236, 0.886) &&
-    inRange(w3Extend, 1.0, 4.236);
+    w2Retrace > 0 &&
+    w2Retrace < 1;
 
   if (strictValid) {
     return {
@@ -597,7 +598,8 @@ function checkUpImpulse(p) {
     p[4].price > p[2].price &&
     p[5].price > p[1].price &&
     w3 < w1 &&
-    w5 < w3;
+    w5 < w3 &&
+    w4 < w2;
 
   if (!diagonalValid) return null;
   return {
@@ -635,9 +637,10 @@ function checkDownWave4(p) {
 
   const strictValid =
     p[4].price < p[1].price &&
-    inRange(w2Retrace, 0.236, 0.886) &&
-    inRange(w3Extend, 1.0, 4.236) &&
-    inRange(w4Retrace, 0.146, 0.886);
+    w2Retrace > 0 &&
+    w2Retrace < 1 &&
+    w4Retrace > 0 &&
+    w4Retrace < 1;
 
   if (strictValid) {
     return {
@@ -653,7 +656,8 @@ function checkDownWave4(p) {
   const diagonalValid =
     p[4].price >= p[1].price &&
     p[4].price < p[2].price &&
-    w3 < w1;
+    w3 < w1 &&
+    w4 < w2;
 
   if (!diagonalValid) return null;
   return {
@@ -691,9 +695,10 @@ function checkUpWave4(p) {
 
   const strictValid =
     p[4].price > p[1].price &&
-    inRange(w2Retrace, 0.236, 0.886) &&
-    inRange(w3Extend, 1.0, 4.236) &&
-    inRange(w4Retrace, 0.146, 0.886);
+    w2Retrace > 0 &&
+    w2Retrace < 1 &&
+    w4Retrace > 0 &&
+    w4Retrace < 1;
 
   if (strictValid) {
     return {
@@ -709,7 +714,8 @@ function checkUpWave4(p) {
   const diagonalValid =
     p[4].price <= p[1].price &&
     p[4].price > p[2].price &&
-    w3 < w1;
+    w3 < w1 &&
+    w4 < w2;
 
   if (!diagonalValid) return null;
   return {
@@ -826,7 +832,9 @@ function checkDownABC(p) {
   const a = p[0].price - p[1].price;
   const b = p[2].price - p[1].price;
   const c = p[2].price - p[3].price;
-  const valid = a > 0 && b > 0 && c > 0 && p[2].price < p[0].price && p[3].price < p[2].price;
+  // B may exceed the start of A in an expanded flat. Subtype-specific
+  // constraints are applied later, after inspecting the internal waves.
+  const valid = a > 0 && b > 0 && c > 0 && p[3].price < p[2].price;
 
   if (!valid) return null;
   return { type: 'abc', direction: 'down', points: p, lengths: { a, b, c } };
@@ -840,28 +848,31 @@ function checkUpABC(p) {
   const a = p[1].price - p[0].price;
   const b = p[1].price - p[2].price;
   const c = p[3].price - p[2].price;
-  const valid = a > 0 && b > 0 && c > 0 && p[2].price > p[0].price && p[3].price > p[2].price;
+  // B may exceed the start of A in an expanded flat.
+  const valid = a > 0 && b > 0 && c > 0 && p[3].price > p[2].price;
 
   if (!valid) return null;
   return { type: 'abc', direction: 'up', points: p, lengths: { a, b, c } };
 }
 
 function checkDownWXY(p) {
-  if (p.length !== 8) return null;
+  if (p.length !== 10) return null;
   const okType =
     p[0].type === 'H' && p[1].type === 'L' &&
     p[2].type === 'H' && p[3].type === 'L' &&
     p[4].type === 'H' && p[5].type === 'L' &&
-    p[6].type === 'H' && p[7].type === 'L';
+    p[6].type === 'H' && p[7].type === 'L' &&
+    p[8].type === 'H' && p[9].type === 'L';
   if (!okType) return null;
 
   const w = checkDownABC(p.slice(0, 4));
-  const y = checkDownABC(p.slice(4, 8));
-  if (!w || !y) return null;
+  const x = checkUpABC(p.slice(3, 7));
+  const y = checkDownABC(p.slice(6, 10));
+  if (!w || !x || !y) return null;
 
   const wNet = p[0].price - p[3].price;
-  const xNet = p[4].price - p[3].price;
-  const yNet = p[4].price - p[7].price;
+  const xNet = p[6].price - p[3].price;
+  const yNet = p[6].price - p[9].price;
   const xRetrace = safeRatio(xNet, wNet);
   const yOverW = safeRatio(yNet, wNet);
 
@@ -869,9 +880,9 @@ function checkDownWXY(p) {
     wNet > 0 &&
     xNet > 0 &&
     yNet > 0 &&
-    p[7].price < p[3].price &&
-    p[4].price < p[0].price &&
-    inRange(xRetrace, 0.146, 1.146) &&
+    p[9].price < p[3].price &&
+    p[6].price < p[0].price &&
+    inRange(xRetrace, 0.1, 1.0) &&
     inRange(yOverW, 0.382, 2.5);
 
   if (!valid) return null;
@@ -885,21 +896,23 @@ function checkDownWXY(p) {
 }
 
 function checkUpWXY(p) {
-  if (p.length !== 8) return null;
+  if (p.length !== 10) return null;
   const okType =
     p[0].type === 'L' && p[1].type === 'H' &&
     p[2].type === 'L' && p[3].type === 'H' &&
     p[4].type === 'L' && p[5].type === 'H' &&
-    p[6].type === 'L' && p[7].type === 'H';
+    p[6].type === 'L' && p[7].type === 'H' &&
+    p[8].type === 'L' && p[9].type === 'H';
   if (!okType) return null;
 
   const w = checkUpABC(p.slice(0, 4));
-  const y = checkUpABC(p.slice(4, 8));
-  if (!w || !y) return null;
+  const x = checkDownABC(p.slice(3, 7));
+  const y = checkUpABC(p.slice(6, 10));
+  if (!w || !x || !y) return null;
 
   const wNet = p[3].price - p[0].price;
-  const xNet = p[3].price - p[4].price;
-  const yNet = p[7].price - p[4].price;
+  const xNet = p[3].price - p[6].price;
+  const yNet = p[9].price - p[6].price;
   const xRetrace = safeRatio(xNet, wNet);
   const yOverW = safeRatio(yNet, wNet);
 
@@ -907,9 +920,9 @@ function checkUpWXY(p) {
     wNet > 0 &&
     xNet > 0 &&
     yNet > 0 &&
-    p[7].price > p[3].price &&
-    p[4].price > p[0].price &&
-    inRange(xRetrace, 0.146, 1.146) &&
+    p[9].price > p[3].price &&
+    p[6].price > p[0].price &&
+    inRange(xRetrace, 0.1, 1.0) &&
     inRange(yOverW, 0.382, 2.5);
 
   if (!valid) return null;
@@ -931,13 +944,13 @@ function detectPatterns(pivots, options = {}) {
   const scale = options.scale || 'base';
   const candidates = [];
 
-  for (let i = 0; i <= pivots.length - 8; i += 1) {
-    const segment = pivots.slice(i, i + 8);
+  for (let i = 0; i <= pivots.length - 10; i += 1) {
+    const segment = pivots.slice(i, i + 10);
     const down = checkDownWXY(segment);
     const up = checkUpWXY(segment);
 
-    if (down) candidates.push({ ...down, endIndex: i + 7, score: 280 + i, scale });
-    if (up) candidates.push({ ...up, endIndex: i + 7, score: 280 + i, scale });
+    if (down) candidates.push({ ...down, endIndex: i + 9, score: 280 + i, scale });
+    if (up) candidates.push({ ...up, endIndex: i + 9, score: 280 + i, scale });
   }
 
   for (let i = 0; i <= pivots.length - 6; i += 1) {
@@ -1178,7 +1191,7 @@ function getTimeSymmetryScore(pattern) {
   if (pattern.type === 'wxy') {
     const p = pattern.points;
     const tw = Math.max(1, p[3].index - p[0].index);
-    const ty = Math.max(1, p[7].index - p[4].index);
+    const ty = Math.max(1, p[9].index - p[6].index);
     const ratio = ty / tw;
     return inRange(ratio, 0.236, 4.236) ? 0.9 : 0.45;
   }
@@ -1283,8 +1296,8 @@ function hasDirectionalSubstructure(segmentPivots, direction, structureType) {
 function analyzeLegSubwaves(sourcePivots, fromPoint, toPoint, direction) {
   const segment = buildSegmentPivots(sourcePivots, fromPoint, toPoint);
   const swingCount = Math.max(0, segment.length - 1);
-  const impulseLike = hasDirectionalSubstructure(segment, direction, 'impulse') || swingCount >= 5;
-  const abcLike = hasDirectionalSubstructure(segment, direction, 'abc') || (swingCount >= 3 && swingCount <= 4);
+  const impulseLike = hasDirectionalSubstructure(segment, direction, 'impulse');
+  const abcLike = hasDirectionalSubstructure(segment, direction, 'abc');
   return {
     swingCount,
     impulseLike,
@@ -1295,7 +1308,6 @@ function analyzeLegSubwaves(sourcePivots, fromPoint, toPoint, direction) {
 
 function evaluateFractalValidation(pattern, context = null) {
   if (!pattern || !context?.pivotsMicro || !Array.isArray(context.pivotsMicro)) return 0.5;
-  if (pattern.scale !== 'macro') return 0.6;
 
   if (pattern.type === 'impulse') {
     const [p0, p1, p2, p3, p4, p5] = pattern.points;
@@ -1642,6 +1654,86 @@ function classifyCorrectionStructure(pattern, context = null) {
   };
 }
 
+function validatePatternHardRules(pattern, context = null) {
+  if (!pattern) return false;
+
+  const sourcePivots = Array.isArray(context?.pivotsMicro) ? context.pivotsMicro : [];
+  const hasFinerStructure = pattern.points.some((point, index) => (
+    index > 0
+    && sourcePivots.some((pivot) => (
+      pivot.index > pattern.points[index - 1].index
+      && pivot.index < point.index
+    ))
+  ));
+
+  // A candidate detected on the finest available pivot scale cannot prove its
+  // own subdivisions. Preserve it as unverified instead of treating missing
+  // lower-degree data as a failed Elliott rule.
+  if (!hasFinerStructure) return true;
+
+  const validateAbc = (abcPattern) => {
+    if (!abcPattern || sourcePivots.length === 0) return false;
+    const correction = classifyCorrectionStructure(abcPattern, context);
+    if (correction.subtype === 'zigzag') return Boolean(correction.zigzagValidation?.hardValid);
+    if (correction.subtype !== 'flat') return false;
+
+    const [p0, p1, p2, p3] = abcPattern.points;
+    const trend = abcPattern.direction;
+    const counter = trend === 'up' ? 'down' : 'up';
+    const a = analyzeLegSubwaves(sourcePivots, p0, p1, trend);
+    const b = analyzeLegSubwaves(sourcePivots, p1, p2, counter);
+    const c = analyzeLegSubwaves(sourcePivots, p2, p3, trend);
+    return a.abcLike && b.abcLike && c.impulseLike;
+  };
+
+  if (pattern.type === 'impulse') {
+    if (sourcePivots.length === 0) return false;
+    const trend = pattern.direction;
+    const counter = trend === 'up' ? 'down' : 'up';
+    const legs = pattern.points.slice(0, -1).map((from, index) => (
+      analyzeLegSubwaves(
+        sourcePivots,
+        from,
+        pattern.points[index + 1],
+        index % 2 === 0 ? trend : counter,
+      )
+    ));
+
+    if (pattern.mode === 'diagonal') {
+      // Ending diagonals are 3-3-3-3-3. Leading diagonals may have motive
+      // actionary legs, but their reactionary waves must still be corrective.
+      return legs.every((leg, index) => (
+        index % 2 === 0 ? (leg.abcLike || leg.impulseLike) : leg.abcLike
+      ));
+    }
+
+    return legs[0].impulseLike
+      && legs[1].abcLike
+      && legs[2].impulseLike
+      && legs[3].abcLike
+      && legs[4].impulseLike;
+  }
+
+  if (pattern.type === 'abc') {
+    return validateAbc(pattern);
+  }
+
+  if (pattern.type === 'wxy') {
+    const w = pattern.direction === 'up'
+      ? checkUpABC(pattern.points.slice(0, 4))
+      : checkDownABC(pattern.points.slice(0, 4));
+    const x = pattern.direction === 'up'
+      ? checkDownABC(pattern.points.slice(3, 7))
+      : checkUpABC(pattern.points.slice(3, 7));
+    const y = pattern.direction === 'up'
+      ? checkUpABC(pattern.points.slice(6, 10))
+      : checkDownABC(pattern.points.slice(6, 10));
+    return validateAbc(w) && validateAbc(x) && validateAbc(y);
+  }
+
+  return true;
+}
+
 function computePatternQuality(pattern, candles, indicators = null, context = null) {
   if (!pattern) return 0;
   const volumeScore = getVolumeConfirmationScore(pattern, candles);
@@ -1825,9 +1917,9 @@ function buildWaveLegs(pattern, candles = null, indicators = null) {
 
   if (pattern.type === 'wxy') {
     const labels = pattern.direction === 'down'
-      ? ['W-A（下跌）', 'W-B（反弹）', 'W-C（下跌）', 'X（反弹）', 'Y-A（下跌）', 'Y-B（反弹）', 'Y-C（下跌）']
-      : ['W-A（上涨）', 'W-B（回调）', 'W-C（上涨）', 'X（回调）', 'Y-A（上涨）', 'Y-B（回调）', 'Y-C（上涨）'];
-    for (let i = 0; i < 7; i += 1) {
+      ? ['W-A（下跌）', 'W-B（反弹）', 'W-C（下跌）', 'X-A（反弹）', 'X-B（回调）', 'X-C（反弹）', 'Y-A（下跌）', 'Y-B（反弹）', 'Y-C（下跌）']
+      : ['W-A（上涨）', 'W-B（回调）', 'W-C（上涨）', 'X-A（回调）', 'X-B（反弹）', 'X-C（回调）', 'Y-A（上涨）', 'Y-B（回调）', 'Y-C（上涨）'];
+    for (let i = 0; i < 9; i += 1) {
       addLeg(labels[i], pattern.points[i], pattern.points[i + 1]);
     }
     return legs;
@@ -2162,24 +2254,24 @@ function buildScenario(pattern, candles, last, indicators = null, context = null
       { name: 'C浪长度', value: fmt(c) },
     );
   } else if (pattern.type === 'wxy' && pattern.direction === 'down') {
-    const [p0, p1, p2, p3, p4, p5, p6, p7] = pattern.points;
+    const [p0, , , p3, , , p6, , p8, p9] = pattern.points;
     const { w, x, y } = pattern.lengths;
 
-    scenario.stage = last.close > p7.price
+    scenario.stage = last.close > p9.price
       ? 'WXY 下跌完成后的反弹阶段（复杂调整）'
       : 'WXY 下跌结构延伸中（复杂调整）';
-    scenario.currentWave = last.close > p7.price ? 'Y浪结束后反弹' : 'Y浪下跌进行中';
-    scenario.invalidation = { name: '失效点', value: p6.price, note: '有效上破Y-B，当前WXY计数减弱' };
-    scenario.confirmation = { name: '延续确认位', value: p7.price, note: '有效跌破Y-C，WXY下跌延续概率提升' };
+    scenario.currentWave = last.close > p9.price ? 'Y浪结束后反弹' : 'Y浪下跌进行中';
+    scenario.invalidation = { name: '失效点', value: p8.price, note: '有效上破Y-B，当前WXY计数减弱' };
+    scenario.confirmation = { name: '延续确认位', value: p9.price, note: '有效跌破Y-C，WXY下跌延续概率提升' };
     scenario.keyLevels.push(
       { name: 'W终点', value: p3.price, note: 'W段下跌完成位置' },
-      { name: 'X终点', value: p4.price, note: '连接浪反弹终点' },
-      { name: 'Y终点', value: p7.price, note: '当前复合调整关键支撑' },
+      { name: 'X终点', value: p6.price, note: '连接浪反弹终点' },
+      { name: 'Y终点', value: p9.price, note: '当前复合调整关键支撑' },
     );
     scenario.targets.push(
-      { name: 'Y=1.0W 参考', value: p4.price - w, note: '常见WXY等幅目标' },
-      { name: 'Y=1.272W 参考', value: p4.price - w * 1.272, note: '延伸目标' },
-      { name: 'Y=1.618W 参考', value: p4.price - w * 1.618, note: '强延伸目标' },
+      { name: 'Y=1.0W 参考', value: p6.price - w, note: '常见WXY等幅目标' },
+      { name: 'Y=1.272W 参考', value: p6.price - w * 1.272, note: '延伸目标' },
+      { name: 'Y=1.618W 参考', value: p6.price - w * 1.618, note: '强延伸目标' },
     );
     scenario.metrics.push(
       { name: 'X/W', value: formatRatio(safeRatio(x, w)) },
@@ -2194,37 +2286,37 @@ function buildScenario(pattern, candles, last, indicators = null, context = null
     scenario.wxyNarrative = {
       startPrice: p0.price,
       wEndPrice: p3.price,
-      xEndPrice: p4.price,
-      yEndPrice: p7.price,
-      monitorPoint: p4.price,
+      xEndPrice: p6.price,
+      yEndPrice: p9.price,
+      monitorPoint: p8.price,
       yExceedsW,
       narrativeLines: [
         `从 ${fmt(p0.price)} 开始有可能是下行联合修正形WXY，`,
         `（1）一种是Y浪大于X浪即跌破 ${fmt(p3.price)}（${yVsWLabel}）；`,
         `（2）另一种是Y浪是三角形。`,
-        `监测点 ${fmt(p4.price)}（X浪高点），如果突破它更可能是（2）`,
+        `监测点 ${fmt(p8.price)}（Y-B高点），如果突破它说明Y浪下行结构失效`,
         `WXY以后或者继续发展到Z浪，或者向上突破`,
       ],
     };
   } else if (pattern.type === 'wxy' && pattern.direction === 'up') {
-    const [p0, p1, p2, p3, p4, p5, p6, p7] = pattern.points;
+    const [p0, , , p3, , , p6, , p8, p9] = pattern.points;
     const { w, x, y } = pattern.lengths;
 
-    scenario.stage = last.close < p7.price
+    scenario.stage = last.close < p9.price
       ? 'WXY 上涨完成后的回撤阶段（复杂调整）'
       : 'WXY 上涨结构延伸中（复杂调整）';
-    scenario.currentWave = last.close < p7.price ? 'Y浪结束后回撤' : 'Y浪上涨进行中';
-    scenario.invalidation = { name: '失效点', value: p6.price, note: '有效下破Y-B，当前WXY计数减弱' };
-    scenario.confirmation = { name: '延续确认位', value: p7.price, note: '有效上破Y-C，WXY上涨延续概率提升' };
+    scenario.currentWave = last.close < p9.price ? 'Y浪结束后回撤' : 'Y浪上涨进行中';
+    scenario.invalidation = { name: '失效点', value: p8.price, note: '有效下破Y-B，当前WXY计数减弱' };
+    scenario.confirmation = { name: '延续确认位', value: p9.price, note: '有效上破Y-C，WXY上涨延续概率提升' };
     scenario.keyLevels.push(
       { name: 'W终点', value: p3.price, note: 'W段上涨完成位置' },
-      { name: 'X终点', value: p4.price, note: '连接浪回撤终点' },
-      { name: 'Y终点', value: p7.price, note: '当前复合调整关键压力' },
+      { name: 'X终点', value: p6.price, note: '连接浪回撤终点' },
+      { name: 'Y终点', value: p9.price, note: '当前复合调整关键压力' },
     );
     scenario.targets.push(
-      { name: 'Y=1.0W 参考', value: p4.price + w, note: '常见WXY等幅目标' },
-      { name: 'Y=1.272W 参考', value: p4.price + w * 1.272, note: '延伸目标' },
-      { name: 'Y=1.618W 参考', value: p4.price + w * 1.618, note: '强延伸目标' },
+      { name: 'Y=1.0W 参考', value: p6.price + w, note: '常见WXY等幅目标' },
+      { name: 'Y=1.272W 参考', value: p6.price + w * 1.272, note: '延伸目标' },
+      { name: 'Y=1.618W 参考', value: p6.price + w * 1.618, note: '强延伸目标' },
     );
     scenario.metrics.push(
       { name: 'X/W', value: formatRatio(safeRatio(x, w)) },
@@ -2239,15 +2331,15 @@ function buildScenario(pattern, candles, last, indicators = null, context = null
     scenario.wxyNarrative = {
       startPrice: p0.price,
       wEndPrice: p3.price,
-      xEndPrice: p4.price,
-      yEndPrice: p7.price,
-      monitorPoint: p4.price,
+      xEndPrice: p6.price,
+      yEndPrice: p9.price,
+      monitorPoint: p8.price,
       yExceedsW,
       narrativeLines: [
         `从 ${fmt(p0.price)} 开始有可能是上行联合修正形WXY，`,
         `（1）一种是Y浪大于X浪即超过 ${fmt(p3.price)}（${yVsWLabel}）；`,
         `（2）另一种是Y浪是三角形。`,
-        `监测点 ${fmt(p4.price)}（X浪低点），如果跌破它更可能是（2）`,
+        `监测点 ${fmt(p8.price)}（Y-B低点），如果跌破它说明Y浪上行结构失效`,
         `WXY以后或者继续发展到Z浪，或者向下突破`,
       ],
     };
@@ -2343,6 +2435,7 @@ function analyzeWave(candles, baseLookback, options = {}) {
   };
 
   const scenarioEntries = rankedPatterns
+    .filter((pattern) => validatePatternHardRules(pattern, qualityContext))
     .map((pattern) => ({ pattern, scenario: buildScenario(pattern, candles, last, indicators, qualityContext) }))
     .filter((entry) => Boolean(entry.scenario))
     .sort((a, b) => {
@@ -3539,6 +3632,46 @@ function getScenarioTargetsDetailed(scenario) {
     .filter((target) => Number.isFinite(target.value));
 }
 
+function buildAbcTargetAnchorSummary(scenario) {
+  if (!scenario || scenario.patternType !== 'abc') return null;
+  const legs = Array.isArray(scenario.waveLegs) ? scenario.waveLegs : [];
+  if (legs.length < 3) return null;
+  const legA = legs[0];
+  const legB = legs[1];
+  const legC = legs[2];
+  const aFrom = Number(legA?.from?.price);
+  const aTo = Number(legA?.to?.price);
+  const bTo = Number(legB?.to?.price);
+  const cFrom = Number(legC?.from?.price);
+
+  if (![aFrom, aTo, bTo, cFrom].every(Number.isFinite)) return null;
+  return `A浪 ${fmt(aFrom)} -> ${fmt(aTo)}；B浪回到 ${fmt(bTo)}；C浪自 ${fmt(cFrom)} 起算`;
+}
+
+function formatTargetReasonLabel(scenario, target) {
+  const name = target?.name || '目标位';
+  const note = target?.note || '参考目标';
+  if (scenario?.patternType === 'abc') {
+    const anchorSummary = buildAbcTargetAnchorSummary(scenario);
+    if (anchorSummary) {
+      return `${name}（${anchorSummary}）：${note}`;
+    }
+  }
+  return `${name}：${note}`;
+}
+
+function findAnchoredScenario(candidateScenarios, anchorPrice, direction = 'up', patternTypes = null) {
+  const matches = (candidateScenarios || []).filter((scenario) => {
+    if (!scenario || scenario.direction !== direction) return false;
+    if (Array.isArray(patternTypes) && !patternTypes.includes(scenario.patternType)) return false;
+    const start = getScenarioStartPrice(scenario);
+    return Number.isFinite(start) && Math.abs(start - anchorPrice) <= 2500;
+  });
+  if (matches.length === 0) return null;
+  matches.sort((a, b) => (Number(b?.confidenceScore) || 0) - (Number(a?.confidenceScore) || 0));
+  return matches[0];
+}
+
 function buildAnchoredTargetReasonSummary(candidateScenarios, anchorPrice, lastClose, direction = 'up', patternTypes = null) {
   const buckets = { near: [], mid: [], far: [] };
   for (const scenario of candidateScenarios || []) {
@@ -3550,7 +3683,7 @@ function buildAnchoredTargetReasonSummary(candidateScenarios, anchorPrice, lastC
       const distance = direction === 'down' ? lastClose - target.value : target.value - lastClose;
       if (!(distance > 0)) continue;
       const bucketName = distance <= 2000 ? 'near' : distance <= 5000 ? 'mid' : 'far';
-      buckets[bucketName].push(`${target.name}：${target.note}`);
+      buckets[bucketName].push(formatTargetReasonLabel(scenario, target));
     }
   }
 
@@ -3572,6 +3705,39 @@ function buildAnchoredTargetReasonSummary(candidateScenarios, anchorPrice, lastC
 
 function mergeTargetArrays(arrays, direction = 'up', limit = 3) {
   return uniqSortedNumbers((arrays || []).flatMap((items) => items || []), direction).slice(0, limit);
+}
+
+function getPullbackScenarioLabel(scenario) {
+  if (!scenario) return '下行小结构';
+  switch (scenario.patternType) {
+    case 'wave3_building':
+      return '下行第3浪/C浪构建';
+    case 'abc':
+      return '下行ABC';
+    case 'wxy':
+      return '下行WXY';
+    case 'impulse':
+      return '下行5浪';
+    case 'wave4_building':
+      return '下行第4浪构建';
+    default:
+      return scenario.title || '下行小结构';
+  }
+}
+
+function formatPullbackScenarioSegments(scenario) {
+  const legs = Array.isArray(scenario?.waveLegs) ? scenario.waveLegs : [];
+  if (legs.length === 0) {
+    const start = Number(getScenarioStartPrice(scenario));
+    const end = Number(getScenarioEndPrice(scenario));
+    if (Number.isFinite(start) && Number.isFinite(end)) {
+      return `${fmt(start)} -> ${fmt(end)}`;
+    }
+    return '分段信息不足';
+  }
+  return legs
+    .map((leg) => `${leg.name} ${fmt(Number(leg?.from?.price))} -> ${fmt(Number(leg?.to?.price))}`)
+    .join('；');
 }
 
 function buildAnchoredPullbackSummary(candidateScenarios, anchorHigh, lastClose, structuralLevel, patternTypes = null) {
@@ -3601,6 +3767,33 @@ function buildAnchoredPullbackSummary(candidateScenarios, anchorHigh, lastClose,
   const orderedReasonScenarios = matchedScenarios
     .filter((scenario) => Number.isFinite(Number(scenario?.confirmation?.value)) && Number(scenario.confirmation.value) < lastClose)
     .sort((a, b) => Number(b.confirmation.value) - Number(a.confirmation.value));
+
+  const firstSourceEntries = [];
+  const firstSourceDetailLines = [];
+  for (const target of firstTargets) {
+    const labels = [];
+    const detailParts = [];
+    for (const scenario of orderedReasonScenarios) {
+      const confirmation = Number(scenario?.confirmation?.value);
+      if (!Number.isFinite(confirmation) || Math.abs(confirmation - target) >= 1) continue;
+      const start = Number(getScenarioStartPrice(scenario));
+      const end = Number(getScenarioEndPrice(scenario));
+      const span = Number.isFinite(start) && Number.isFinite(end)
+        ? `（${fmt(start)} -> ${fmt(end)}）`
+        : '';
+      const label = `${getPullbackScenarioLabel(scenario)}${span}`;
+      if (!labels.includes(label)) labels.push(label);
+      const detail = `${getPullbackScenarioLabel(scenario)}：${formatPullbackScenarioSegments(scenario)}`;
+      if (!detailParts.includes(detail)) detailParts.push(detail);
+      if (labels.length >= 2) break;
+    }
+    if (labels.length > 0) {
+      firstSourceEntries.push(`${fmt(target)} <- ${labels.join(' / ')}`);
+    }
+    if (detailParts.length > 0) {
+      firstSourceDetailLines.push(`${fmt(target)}：${detailParts.join(' | ')}`);
+    }
+  }
 
   const firstReasons = [];
   for (const scenario of orderedReasonScenarios) {
@@ -3632,6 +3825,8 @@ function buildAnchoredPullbackSummary(candidateScenarios, anchorHigh, lastClose,
     firstTargets,
     middleTargets: buckets.near,
     deepTargets,
+    firstSourceEntries,
+    firstSourceDetailLines,
     firstReason: firstReasons.slice(0, 2).join('；') || '先看离当前最近的下破确认位，再看更低一级确认位。',
     middleReason: bucketReasons.near,
     deepReason,
@@ -3662,36 +3857,55 @@ function buildPullbackReasonPlainText(pullback, structuralLevel, endingLabel) {
   return lines.join('；');
 }
 
-function buildMajorAnchoredDiagonalNote(analysis, candidateScenarios, primaryScenario) {
+function resolveMajorManualStructureChain(analysis) {
   const pivots = Array.isArray(analysis?.pivotsMacro) ? analysis.pivotsMacro : [];
   const startPrice = Number(analysis?.low);
   const lastClose = Number(analysis?.lastClose);
   if (!Number.isFinite(startPrice) || !Number.isFinite(lastClose) || pivots.length < 4) return null;
 
-  const allHighs = pivots.filter((pivot) => pivot.type === 'H');
-  if (allHighs.length < 2) return null;
-  const wave3 = allHighs.reduce((max, pivot) => (pivot.price > max.price ? pivot : max), allHighs[0]);
-  const highsBeforeWave3 = allHighs.filter((pivot) => pivot.index < wave3.index);
-  if (highsBeforeWave3.length === 0) return null;
-  const wave1 = highsBeforeWave3[0];
+  const highs = pivots.filter((pivot) => pivot.type === 'H');
+  const lows = pivots.filter((pivot) => pivot.type === 'L');
+  if (highs.length < 2 || lows.length < 2) return null;
 
-  const lowsBetweenWave1AndWave3 = pivots.filter((pivot) => (
-    pivot.type === 'L'
-    && pivot.index > wave1.index
+  const wave1 = highs[0] || null;
+  if (!wave1) return null;
+
+  const wave3 = highs.find((pivot) => pivot.index > wave1.index && pivot.price > wave1.price);
+  if (!wave3) return null;
+
+  const wave2Candidates = lows.filter((pivot) => (
+    pivot.index > wave1.index
     && pivot.index < wave3.index
-    && Number(pivot.price) > startPrice
+    && pivot.price > startPrice
   ));
-  if (lowsBetweenWave1AndWave3.length === 0) return null;
-  const wave2 = lowsBetweenWave1AndWave3.reduce((min, pivot) => (pivot.price < min.price ? pivot : min), lowsBetweenWave1AndWave3[0]);
-  const lowsAfterWave3 = pivots.filter((pivot) => (
-    pivot.type === 'L'
-    && pivot.index > wave3.index
-    && Number(pivot.price) < lastClose
+  if (wave2Candidates.length === 0) return null;
+  const wave2 = wave2Candidates.reduce((min, pivot) => (pivot.price < min.price ? pivot : min), wave2Candidates[0]);
+
+  const wave4Candidates = lows.filter((pivot) => (
+    pivot.index > wave3.index
+    && pivot.price > wave2.price
   ));
-  if (lowsAfterWave3.length === 0) return null;
-  const wave4 = lowsAfterWave3.reduce((min, pivot) => (pivot.price < min.price ? pivot : min), lowsAfterWave3[0]);
+  if (wave4Candidates.length === 0) return null;
+  const wave4 = wave4Candidates.reduce((min, pivot) => (pivot.price < min.price ? pivot : min), wave4Candidates[0]);
 
   if (!(wave3.price > wave1.price && wave2.price > startPrice && wave4.price > wave2.price)) return null;
+
+  return {
+    startPrice,
+    lastClose,
+    wave1,
+    wave2,
+    wave3,
+    wave4,
+  };
+}
+
+function buildMajorAnchoredDiagonalNote(analysis, candidateScenarios) {
+  const chain = resolveMajorManualStructureChain(analysis);
+  if (!chain) return null;
+  const {
+    startPrice, lastClose, wave1, wave2, wave3, wave4,
+  } = chain;
 
   const targetBuckets = buildAnchoredDiagonalTargets(candidateScenarios, wave4.price, lastClose, 'up');
   const targetReasons = buildAnchoredTargetReasonSummary(
@@ -3701,23 +3915,17 @@ function buildMajorAnchoredDiagonalNote(analysis, candidateScenarios, primarySce
     'up',
     ['impulse_building', 'wave3_building', 'abc'],
   );
-  const pullback = buildAnchoredPullbackSummary(
-    candidateScenarios,
-    wave3.price,
-    lastClose,
-    wave4.price,
-    ['wave3_building', 'abc', 'impulse', 'wxy'],
-  );
+  const anchoredAbc = findAnchoredScenario(candidateScenarios, wave4.price, 'up', ['abc']);
+  const abcAnchorLine = anchoredAbc
+    ? `ABC目标锚点：${buildAbcTargetAnchorSummary(anchoredAbc)}。`
+    : null;
   const supportParts = [`结构失效位：${fmt(wave4.price)}`];
-  if (pullback.firstTargets.length > 0) {
-    supportParts.push(`回调先看：${formatTargetBucket(pullback.firstTargets)}`);
-  }
   const invalidationReason = `失效原因：若回落跌破第4浪低点 ${fmt(wave4.price)}，说明这段上涨已经不能继续按“第5浪延伸”来解释，引导楔形计数失效。`;
   const confirmLine = `延续条件：只要价格还站在第4浪低点 ${fmt(wave4.price)} 上方，并继续向上刷新第5浪高点，这套引导楔形计数就还能保留。`;
-  const stageLine = `当前阶段：只按大级别第5浪候选跟踪，不引用脚本主场景评分和短周期浪位。`;
+  const stageLine = '当前阶段：先把当前上涨按大级别第5浪候选跟踪。';
 
   return {
-    title: '备选结构一：引导楔形',
+    title: '结构推演一：引导楔形',
     lines: [
       `如果把 ${fmt(startPrice)} 以来的走势视为上行引导楔形，可按 1-2-3-4-5 结构继续跟踪。`,
       `1浪：${fmt(startPrice)} -> ${fmt(wave1.price)}；2浪：${fmt(wave1.price)} -> ${fmt(wave2.price)}；3浪：${fmt(wave2.price)} -> ${fmt(wave3.price)}；4浪：${fmt(wave3.price)} -> ${fmt(wave4.price)}；5浪：${fmt(wave4.price)} -> 当前。`,
@@ -3725,58 +3933,26 @@ function buildMajorAnchoredDiagonalNote(analysis, candidateScenarios, primarySce
       stageLine,
       `${supportParts.join('；')}。`,
       invalidationReason,
-      `若确认第5浪结束，回调目标：首看 ${formatTargetBucket(pullback.firstTargets)}；中继 ${formatTargetBucket(pullback.middleTargets)}；深回调 ${formatTargetBucket(pullback.deepTargets)}。`,
-      `回调原因：${buildPullbackReasonPlainText(pullback, wave4.price, '第5浪结束')}`,
       confirmLine,
+      abcAnchorLine,
       `第5浪上方目标：近端 ${formatTargetBucket(targetBuckets.near)}；中继 ${formatTargetBucket(targetBuckets.mid)}；延伸 ${formatTargetBucket(targetBuckets.far)}。`,
       `目标原因：近端看 ${targetReasons.near}；中继看 ${targetReasons.mid}；延伸看 ${targetReasons.far}`,
-    ],
+    ].filter(Boolean),
   };
 }
 
-function buildMajorAnchoredComboNote(analysis, candidateScenarios, primaryScenario) {
-  const pivots = Array.isArray(analysis?.pivotsMacro) ? analysis.pivotsMacro : [];
-  const startPrice = Number(analysis?.low);
-  const lastClose = Number(analysis?.lastClose);
-  if (!Number.isFinite(startPrice) || !Number.isFinite(lastClose) || pivots.length < 4) return null;
-
-  const allHighs = pivots.filter((pivot) => pivot.type === 'H');
-  if (allHighs.length < 2) return null;
-  const wave3 = allHighs.reduce((max, pivot) => (pivot.price > max.price ? pivot : max), allHighs[0]);
-  const highsBeforeWave3 = allHighs.filter((pivot) => pivot.index < wave3.index);
-  if (highsBeforeWave3.length === 0) return null;
-  const wave1 = highsBeforeWave3[0];
-
-  const lowsBetweenWave1AndWave3 = pivots.filter((pivot) => (
-    pivot.type === 'L'
-    && pivot.index > wave1.index
-    && pivot.index < wave3.index
-    && Number(pivot.price) > startPrice
-  ));
-  if (lowsBetweenWave1AndWave3.length === 0) return null;
-  const wave2 = lowsBetweenWave1AndWave3.reduce((min, pivot) => (pivot.price < min.price ? pivot : min), lowsBetweenWave1AndWave3[0]);
-  const lowsAfterWave3 = pivots.filter((pivot) => (
-    pivot.type === 'L'
-    && pivot.index > wave3.index
-    && Number(pivot.price) < lastClose
-  ));
-  if (lowsAfterWave3.length === 0) return null;
-  const wave4 = lowsAfterWave3.reduce((min, pivot) => (pivot.price < min.price ? pivot : min), lowsAfterWave3[0]);
-
-  if (!(wave3.price > wave1.price && wave2.price > startPrice && wave4.price > wave2.price)) return null;
+function buildMajorAnchoredComboNote(analysis, candidateScenarios) {
+  const chain = resolveMajorManualStructureChain(analysis);
+  if (!chain) return null;
+  const {
+    startPrice, lastClose, wave1, wave2, wave3, wave4,
+  } = chain;
 
   const comboTargets = buildAnchoredDiagonalTargets(
     (candidateScenarios || []).filter((scenario) => ['wxy', 'abc'].includes(scenario?.patternType)),
     wave4.price,
     lastClose,
     'up',
-  );
-  const pullback = buildAnchoredPullbackSummary(
-    candidateScenarios,
-    wave3.price,
-    lastClose,
-    wave4.price,
-    ['wxy', 'abc', 'wave3_building', 'impulse'],
   );
   const targetReasons = buildAnchoredTargetReasonSummary(
     candidateScenarios,
@@ -3785,23 +3961,17 @@ function buildMajorAnchoredComboNote(analysis, candidateScenarios, primaryScenar
     'up',
     ['wxy', 'abc'],
   );
+  const anchoredAbc = findAnchoredScenario(candidateScenarios, wave4.price, 'up', ['abc']);
+  const abcAnchorLine = anchoredAbc
+    ? `ABC目标锚点：${buildAbcTargetAnchorSummary(anchoredAbc)}。`
+    : null;
   const supportParts = [`结构失效位：${fmt(wave4.price)}`];
-  if (Number.isFinite(Number(primaryScenario?.invalidation?.value))) {
-    supportParts.push(`短线支撑关注：${fmt(primaryScenario.invalidation.value)}`);
-  }
-  const invalidationReason = Number.isFinite(Number(primaryScenario?.invalidation?.value))
-    ? `失效原因：短线若先失守 ${fmt(primaryScenario.invalidation.value)}，说明当前修正结构开始弱化（${primaryScenario.invalidation.note || '短线结构转弱'}）；若进一步跌破第二个 X 段低点 ${fmt(wave4.price)}，则 Z 段上行预期明显失效。`
-    : `失效原因：若回落跌破第二个 X 段低点 ${fmt(wave4.price)}，说明 Z 段上行预期减弱。`;
-  const confirmLevel = Number(primaryScenario?.confirmation?.value);
-  const confirmLine = Number.isFinite(confirmLevel)
-    ? `若 Z 段继续向上延伸，价格仍需重新站稳 ${fmt(confirmLevel)} 上方（${primaryScenario.confirmation.note || '突破后延续概率提升'}）。`
-    : `若 Z 段继续向上延伸，价格需继续保持在 ${fmt(wave3.price)} 上方并向上扩展。`;
-  const stageLine = primaryScenario?.currentWave
-    ? `当前阶段：把 ${fmt(wave4.price)} 以来的上涨视为 Z 段，细分结构暂按“${primaryScenario.currentWave}”跟踪。`
-    : `当前阶段：把 ${fmt(wave4.price)} 以来的上涨视为 Z 段。`;
+  const invalidationReason = `失效原因：若回落跌破第二个 X 段低点 ${fmt(wave4.price)}，说明 ${fmt(wave4.price)} 以来这段上涨已经不能继续按“Z 段延伸”来解释，联合形计数失效。`;
+  const confirmLine = `延续条件：只要价格还站在第二个 X 段低点 ${fmt(wave4.price)} 上方，并继续向上刷新 Z 段高点，这套联合形计数就还能保留。`;
+  const stageLine = `当前阶段：先把 ${fmt(wave4.price)} 以来的上涨当作 Z 段候选跟踪。`;
 
   return {
-    title: '备选结构二：联合形（W-X-Y-X-Z）',
+    title: '结构推演二：联合形（W-X-Y-X-Z）',
     lines: [
       `如果把 ${fmt(startPrice)} 以来的走势视为联合形，这组拐点链更接近 W-X-Y-X-Z，而不是标准推动浪。`,
       `W段：${fmt(startPrice)} -> ${fmt(wave1.price)}；X段：${fmt(wave1.price)} -> ${fmt(wave2.price)}；Y段：${fmt(wave2.price)} -> ${fmt(wave3.price)}；X段：${fmt(wave3.price)} -> ${fmt(wave4.price)}；Z段：${fmt(wave4.price)} -> 当前。`,
@@ -3809,12 +3979,11 @@ function buildMajorAnchoredComboNote(analysis, candidateScenarios, primaryScenar
       stageLine,
       `${supportParts.join('；')}。`,
       invalidationReason,
-      `若确认 Z 段结束，回调目标：首看 ${formatTargetBucket(pullback.firstTargets)}；中继 ${formatTargetBucket(pullback.middleTargets)}；深回调 ${formatTargetBucket(pullback.deepTargets)}。`,
-      `回调原因：${buildPullbackReasonPlainText(pullback, wave4.price, 'Z段结束')}`,
       confirmLine,
+      abcAnchorLine,
       `Z 段上方目标：近端 ${formatTargetBucket(comboTargets.near)}；中继 ${formatTargetBucket(comboTargets.mid)}；延伸 ${formatTargetBucket(comboTargets.far)}。`,
       `目标原因：近端看 ${targetReasons.near}；中继看 ${targetReasons.mid}；延伸看 ${targetReasons.far}`,
-    ],
+    ].filter(Boolean),
   };
 }
 
@@ -3842,108 +4011,248 @@ function pickRepresentativeByFamilyOrder(representatives, familyKeys, preferredD
   return pickRepresentativeScenario(matches);
 }
 
+function collectScenarioLevelsAbovePrice(scenario, price, ceiling = Infinity) {
+  const values = [];
+  for (const level of scenario?.keyLevels || []) {
+    const value = Number(level?.value);
+    if (Number.isFinite(value) && value > price && value <= ceiling) values.push(value);
+  }
+  const invalidation = Number(scenario?.invalidation?.value);
+  if (Number.isFinite(invalidation) && invalidation > price && invalidation <= ceiling) values.push(invalidation);
+  const confirmation = Number(scenario?.confirmation?.value);
+  if (Number.isFinite(confirmation) && confirmation > price && confirmation <= ceiling) values.push(confirmation);
+  return uniqSortedNumbers(values, 'up');
+}
+
+function buildGenericPullbackBand(candidateScenarios, dominantScenario, direction, lastClose) {
+  if (!dominantScenario || !direction || !Number.isFinite(lastClose)) return null;
+  const span = Math.max(getScenarioSpan(dominantScenario), Math.abs(lastClose) * 0.08, 40);
+  const sameDirectionScenarios = (candidateScenarios || []).filter((scenario) => (
+    scenario
+    && scenario.direction === direction
+  ));
+  if (sameDirectionScenarios.length === 0) return null;
+  const nearScenarios = sameDirectionScenarios.filter((scenario) => {
+    const lookback = parseLookbackFromScale(scenario?.scale);
+    return !Number.isFinite(lookback) || lookback <= 8;
+  });
+  const relatedScenarios = nearScenarios.length > 0 ? nearScenarios : sameDirectionScenarios;
+
+  const lowerFloor = lastClose + span * 0.25;
+  const ceiling = lastClose + span * 0.5;
+  const preferredTargetValues = uniqSortedNumbers(
+    relatedScenarios.flatMap((scenario) => (scenario?.targets || [])
+      .filter((target) => /1\.272|1\.618|扩展|延伸|强势|强延伸/.test(`${target?.name || ''}${target?.note || ''}`))
+      .map((target) => Number(target?.value)))
+      .filter((value) => value >= lowerFloor && value <= ceiling),
+    'up',
+  );
+  const fallbackTargetValues = uniqSortedNumbers(
+    relatedScenarios.flatMap((scenario) => getScenarioTargetValues(scenario))
+      .filter((value) => value >= lowerFloor && value <= ceiling),
+    'up',
+  );
+  const targetValues = preferredTargetValues.length > 0 ? preferredTargetValues : fallbackTargetValues;
+  if (targetValues.length === 0) return null;
+
+  const rawLow = targetValues[0];
+  const bandWidthCap = Math.max(span * 0.14, Math.abs(lastClose) * 0.018, 35);
+  const upperCandidates = uniqSortedNumbers(
+    relatedScenarios.flatMap((scenario) => collectScenarioLevelsAbovePrice(scenario, lastClose, ceiling))
+      .filter((value) => value >= rawLow && value <= rawLow + bandWidthCap),
+    'up',
+  );
+  const rawHigh = upperCandidates.length > 0 ? upperCandidates[upperCandidates.length - 1] : Math.min(rawLow + bandWidthCap, ceiling);
+
+  return {
+    low: Math.floor(rawLow) - 1,
+    high: Math.ceil(rawHigh) + 2,
+    rawLow,
+    rawHigh,
+  };
+}
+
+function buildGenericMajorCyclePossibilityNote(meta, analysis, candidateScenarios) {
+  const macro = analysis?.macroTrendPosition || null;
+  const dominantScenario = macro?.dominantScenario || null;
+  const dominantDirection = macro?.dominantDirection || dominantScenario?.direction || null;
+  const lastClose = Number(analysis?.lastClose);
+  if (!dominantScenario || !dominantDirection || !Number.isFinite(lastClose)) return null;
+
+  const legs = Array.isArray(dominantScenario.waveLegs) ? dominantScenario.waveLegs : [];
+  if (dominantDirection === 'down' && legs.length >= 3) {
+    const firstLen = Math.abs(Number(legs[0]?.change));
+    const thirdLen = Math.abs(Number(legs[2]?.change));
+    const ratio = firstLen > 0 ? thirdLen / firstLen : null;
+    const band = buildGenericPullbackBand(candidateScenarios, dominantScenario, dominantDirection, lastClose);
+    const lines = [
+      '从开始时间看，这里更像已经走了 3 段下跌。',
+    ];
+    if (Number.isFinite(ratio)) {
+      if (ratio > 1.618) {
+        lines.push(`其中第3段长度约为第1段的 ${ratio.toFixed(3)} 倍，已经超过 1.618，有发展为推动浪的风险。`);
+      } else {
+        lines.push(`其中第3段长度约为第1段的 ${ratio.toFixed(3)} 倍，暂时先按三段式下跌跟踪。`);
+      }
+    }
+    if (band) {
+      lines.push(`关注压力带 ${band.low}--${band.high}。`);
+      lines.push('如果冲不过去，注意再次下跌的风险。');
+    } else if (Number.isFinite(Number(dominantScenario.invalidation?.value))) {
+      lines.push(`上方先关注 ${fmt(Number(dominantScenario.invalidation.value))} 一带。`);
+      lines.push('如果反弹受阻，注意再次下跌的风险。');
+    }
+    return {
+      title: '大周期可能性：空头剧本',
+      lines,
+    };
+  }
+
+  if (dominantDirection === 'up' && legs.length >= 3) {
+    const firstLen = Math.abs(Number(legs[0]?.change));
+    const thirdLen = Math.abs(Number(legs[2]?.change));
+    const ratio = firstLen > 0 ? thirdLen / firstLen : null;
+    const lines = [
+      '从开始时间看，这里更像已经走了 3 段上涨。',
+    ];
+    if (Number.isFinite(ratio)) {
+      if (ratio > 1.618) {
+        lines.push(`其中第3段长度约为第1段的 ${ratio.toFixed(3)} 倍，已经超过 1.618，有发展为推动浪的风险。`);
+      } else {
+        lines.push(`其中第3段长度约为第1段的 ${ratio.toFixed(3)} 倍，暂时先按三段式上涨跟踪。`);
+      }
+    }
+    if (Number.isFinite(Number(dominantScenario.invalidation?.value))) {
+      lines.push(`下方先关注 ${fmt(Number(dominantScenario.invalidation.value))} 一带。`);
+      lines.push('如果跌回去并失守，注意再次转弱的风险。');
+    }
+    return {
+      title: '大周期可能性：多头剧本',
+      lines,
+    };
+  }
+
+  return null;
+}
+
+function buildCompletedImpulseReboundNote(meta, analysis, candidateScenarios) {
+  const lastClose = Number(analysis?.lastClose);
+  const rangeHigh = Number(analysis?.high);
+  const rangeLow = Number(analysis?.low);
+  if (!Number.isFinite(lastClose)) return null;
+
+  const completedDownImpulses = (candidateScenarios || [])
+    .filter((scenario) => (
+      scenario
+      && scenario.patternType === 'impulse'
+      && scenario.direction === 'down'
+      && /反弹/.test(`${scenario.currentWave || ''}${scenario.stage || ''}`)
+    ));
+  if (completedDownImpulses.length === 0) return null;
+
+  const majorImpulse = completedDownImpulses.slice().sort((a, b) => {
+    const startA = Number(getScenarioStartPrice(a));
+    const startB = Number(getScenarioStartPrice(b));
+    const distA = Number.isFinite(rangeHigh) && Number.isFinite(startA) ? Math.abs(startA - rangeHigh) : Number.POSITIVE_INFINITY;
+    const distB = Number.isFinite(rangeHigh) && Number.isFinite(startB) ? Math.abs(startB - rangeHigh) : Number.POSITIVE_INFINITY;
+    if (distA !== distB) return distA - distB;
+    return compareScenarioPriority(a, b);
+  })[0];
+  if (!majorImpulse) return null;
+
+  const localSupportScenario = completedDownImpulses
+    .filter((scenario) => Number.isFinite(Number(scenario?.invalidation?.value)) && Number(scenario.invalidation.value) < lastClose)
+    .sort((a, b) => Number(b.invalidation.value) - Number(a.invalidation.value))[0] || null;
+
+  const reboundResistance = [
+    ...(majorImpulse?.targets || []),
+    ...(majorImpulse?.keyLevels || []),
+  ]
+    .map((level) => ({
+      value: Number(level?.value),
+      weight: /0\.382/.test(`${level?.name || ''}${level?.note || ''}`) ? 0
+        : /0\.5|0\.500/.test(`${level?.name || ''}${level?.note || ''}`) ? 1
+          : /0\.618/.test(`${level?.name || ''}${level?.note || ''}`) ? 2
+            : /反弹阻力|回撤/.test(`${level?.name || ''}${level?.note || ''}`) ? 3
+              : 10,
+    }))
+    .filter((item) => Number.isFinite(item.value) && item.value > lastClose)
+    .sort((a, b) => (a.weight - b.weight) || (a.value - b.value))[0]?.value;
+
+  const supportLevel = Number(localSupportScenario?.invalidation?.value);
+  const fallbackResistance = collectScenarioLevelsAbovePrice(majorImpulse, lastClose)[0];
+  const resistanceLevel = Number.isFinite(reboundResistance) ? reboundResistance : fallbackResistance;
+
+  const deferredDownsideTarget = (majorImpulse?.targets || [])
+    .map((target) => ({
+      value: Number(target?.value),
+      score: /1\.0xW1|等长/.test(`${target?.name || ''}${target?.note || ''}`) ? 0
+        : /0\.618xW1/.test(`${target?.name || ''}${target?.note || ''}`) ? 1
+          : 10,
+    }))
+    .filter((item) => Number.isFinite(item.value) && item.value < rangeLow)
+    .sort((a, b) => (a.score - b.score) || (b.value - a.value))[0]?.value;
+
+  const startPrice = Number(getScenarioStartPrice(majorImpulse));
+  const impulseLine = Number.isFinite(startPrice)
+    ? `从 ${fmt(startPrice)} 开始，算法更倾向这里已经走出完整的五段下跌，可先按向下推动浪跟踪。`
+    : '算法更倾向这里已经走出完整的五段下跌，可先按向下推动浪跟踪。';
+  const stageLine = majorImpulse?.momentumState === 'bullish_divergence'
+    ? `当前浪位为「${majorImpulse.currentWave}」，末段出现动能背离，这段下跌更像已经结束，价格正在进入反弹修正。`
+    : `当前浪位为「${majorImpulse.currentWave}」，这段下跌更像已经告一段落，价格正在进入反弹修正。`;
+
+  const lines = [
+    impulseLine,
+    stageLine,
+  ];
+
+  if (Number.isFinite(supportLevel)) {
+    lines.push(`短线只要维持在 ${fmt(supportLevel)} 上方，反弹仍有继续上冲的动力。`);
+  }
+  if (Number.isFinite(resistanceLevel)) {
+    lines.push(`上方先关注 ${fmt(resistanceLevel)} 一带的反弹压力。`);
+  }
+  if (Number.isFinite(deferredDownsideTarget)) {
+    lines.push(`但由于这轮下跌尚未完成对 ${fmt(deferredDownsideTarget)} 一带等长/扩展目标的测试，当前更偏反弹而不是反转，若反弹受阻仍要防范再次下探。`);
+  } else if (Number.isFinite(Number(majorImpulse?.confirmation?.value))) {
+    lines.push(`若反弹受阻，仍要防范再次回落测试 ${fmt(Number(majorImpulse.confirmation.value))} 一带。`);
+  }
+
+  return {
+    title: '大周期可能性：五浪下跌后的反弹',
+    lines,
+  };
+}
+
 function buildManualAlternateStructureNotes(meta, analysis) {
   const patternScenarios = Array.isArray(analysis?.patternScenarios) ? analysis.patternScenarios : [];
-  const primaryScenario = analysis?.primaryScenario || null;
   const lastClose = Number(analysis?.lastClose);
   if (patternScenarios.length === 0 || !Number.isFinite(lastClose)) return [];
 
   const candidateScenarios = patternScenarios.filter((scenario) => (
     scenario
-    && ['impulse_building', 'wave3_building', 'wave4_building', 'wxy', 'abc'].includes(scenario.patternType)
-    && Number.isFinite(Number(scenario.confidenceScore))
+    && ['impulse_building', 'wave3_building', 'wave4_building', 'wxy', 'abc', 'impulse'].includes(scenario.patternType)
   ));
   if (candidateScenarios.length === 0) return [];
 
-  const representatives = buildRepresentativeMap(candidateScenarios);
-  const selected = [];
-  const preferredDirection = primaryScenario?.direction
-    || ((analysis?.trendOutlook?.upPct || 0) >= (analysis?.trendOutlook?.downPct || 0) ? 'up' : 'down');
-  const anchorPrice = preferredDirection === 'down' ? Number(analysis?.high) : Number(analysis?.low);
-  const rangeSize = Math.abs(Number(analysis?.high) - Number(analysis?.low));
-  const anchorTolerance = Math.max(300, rangeSize * 0.08);
+  const completedImpulseNote = buildCompletedImpulseReboundNote(meta, analysis, candidateScenarios);
+  if (completedImpulseNote) return [completedImpulseNote];
 
-  const anchoredScenarios = candidateScenarios.filter((scenario) => {
-    if (preferredDirection && scenario.direction !== preferredDirection) return false;
-    const start = getScenarioStartPrice(scenario);
-    return Number.isFinite(start) && Number.isFinite(anchorPrice) && Math.abs(start - anchorPrice) <= anchorTolerance;
-  });
-  const anchoredRepresentatives = buildRepresentativeMap(anchoredScenarios);
-
-  const anchoredMotive = pickRepresentativeByFamilyOrder(
-    anchoredRepresentatives,
-    ['leading_diagonal', 'wave3_building', 'impulse_building', 'wave4_building'],
-    preferredDirection,
-  );
-  const anchoredCorrective = pickRepresentativeByFamilyOrder(
-    anchoredRepresentatives,
-    ['wxy', 'abc'],
-    preferredDirection,
-  );
-
-  const majorDiagonalNote = preferredDirection === 'up'
-    ? buildMajorAnchoredDiagonalNote(analysis, candidateScenarios, primaryScenario)
-    : null;
-  const majorComboNote = preferredDirection === 'up'
-    ? buildMajorAnchoredComboNote(analysis, candidateScenarios, primaryScenario)
-    : null;
+  const preferredDirection = 'up';
   const notes = [];
-  if (majorDiagonalNote) {
-    notes.push(majorDiagonalNote);
-  }
-  if (majorComboNote) {
-    notes.push(majorComboNote);
-  }
 
-  for (const scenario of [anchoredMotive, anchoredCorrective]) {
-    if (!scenario) continue;
-    if (selected.some((picked) => getScenarioFamilyKey(picked) === getScenarioFamilyKey(scenario))) continue;
-    if (majorDiagonalNote && getScenarioFamilyKey(scenario) === 'leading_diagonal') continue;
-    if (majorComboNote && isCorrectiveFamilyKey(getScenarioFamilyKey(scenario))) continue;
-    selected.push(scenario);
+  const majorDiagonalNote = buildMajorAnchoredDiagonalNote(analysis, candidateScenarios);
+  const majorComboNote = buildMajorAnchoredComboNote(analysis, candidateScenarios);
+
+  if (preferredDirection === 'up' && majorDiagonalNote) notes.push(majorDiagonalNote);
+  if (preferredDirection === 'up' && majorComboNote) notes.push(majorComboNote);
+
+  if (notes.length === 0) {
+    const genericNote = buildGenericMajorCyclePossibilityNote(meta, analysis, candidateScenarios);
+    if (genericNote) notes.push(genericNote);
   }
 
-  if (selected.length === 0) {
-    if (primaryScenario) {
-      selected.push(primaryScenario);
-    } else {
-      const firstScenario = pickRepresentativeScenario([...representatives.values()]);
-      if (firstScenario) selected.push(firstScenario);
-    }
-  }
-
-  if (selected.length < 2) {
-    const baseScenario = selected[0] || primaryScenario || pickRepresentativeScenario([...representatives.values()]);
-    const contrastingScenario = pickContrastingScenario(
-      representatives,
-      getScenarioFamilyKey(baseScenario),
-      preferredDirection,
-    );
-    if (contrastingScenario && !selected.some((picked) => getScenarioFamilyKey(picked) === getScenarioFamilyKey(contrastingScenario))) {
-      selected.push(contrastingScenario);
-    }
-  }
-
-  if (selected.length < 2 && primaryScenario) {
-    if (!selected.some((picked) => getScenarioFamilyKey(picked) === getScenarioFamilyKey(primaryScenario))) {
-      selected.push(primaryScenario);
-    }
-  }
-
-  if (selected.length < 2) {
-    const fallbackScenario = pickRepresentativeScenario(
-      [...representatives.values()].filter((scenario) => !selected.some((picked) => getScenarioFamilyKey(picked) === getScenarioFamilyKey(scenario))),
-    );
-    if (fallbackScenario) {
-      selected.push(fallbackScenario);
-    }
-  }
-
-  const scenarioNotes = selected
-    .slice(0, Math.max(0, 2 - notes.length))
-    .map((scenario, index) => buildManualAlternateNote(scenario, index + notes.length, lastClose));
-
-  return [...notes, ...scenarioNotes].slice(0, 2);
+  return notes.slice(0, 2);
 }
 
 function buildManualAlternateOnlyReport(meta, analysis) {
@@ -3961,11 +4270,11 @@ function buildManualAlternateOnlyReport(meta, analysis) {
   lines.push(`- 距离区间高点：${fmtPctByRatio(analysis.distanceToHighPct)}`);
   lines.push(`- 距离区间低点：${fmtPctByRatio(analysis.distanceToLowPct)}`);
   lines.push('');
-  lines.push('## 手动备选结构推演');
+  lines.push('## 算法结构推演');
 
   if (manualAlternateNotes.length === 0) {
     lines.push('');
-    lines.push('- 当前条件下没有可输出的手动备选结构推演。');
+    lines.push('- 当前条件下没有可输出的算法结构推演。');
     return lines.join('\n');
   }
 
@@ -4211,7 +4520,7 @@ function buildReport(meta, analysis) {
   */
   }
   if (manualAlternateNotes.length > 0) {
-    lines.push('## 手动备选结构推演');
+    lines.push('## 算法结构推演');
     for (const note of manualAlternateNotes) {
       lines.push('');
       lines.push(`### ${note.title}`);
@@ -4643,8 +4952,8 @@ function buildHtmlDashboard(payload) {
 
         if (type === 'wxy') {
           const alpha = scale === 'macro'
-            ? ['0', 'W-A', 'W-B', 'W-C', 'X', 'Y-A', 'Y-B', 'Y-C']
-            : ['0', 'w-a', 'w-b', 'w-c', 'x', 'y-a', 'y-b', 'y-c'];
+            ? ['0', 'W-A', 'W-B', 'W-C', 'X-A', 'X-B', 'X-C', 'Y-A', 'Y-B', 'Y-C']
+            : ['0', 'w-a', 'w-b', 'w-c', 'x-a', 'x-b', 'x-c', 'y-a', 'y-b', 'y-c'];
           return alpha.slice(0, count);
         }
 
@@ -4909,6 +5218,27 @@ function buildBriefWxyOutput(analysis, product, tf, candles) {
   const lines = [];
   lines.push(`[${product} ${tf}] WXY联合修正前瞻`);
   lines.push('');
+
+  const confirmedWxy = (analysis.patternScenarios || [])
+    .filter((scenario) => scenario?.patternType === 'wxy' && scenario?.wxyNarrative)
+    .sort((a, b) => (Number(b.confidenceScore) || 0) - (Number(a.confidenceScore) || 0))[0] || null;
+  if (!confirmedWxy) {
+    lines.push('未识别到满足 W-X-Y 内部结构约束的联合修正。');
+    lines.push('当前不强行套用 WXY 计数；请查看完整报告中的有效候选和失效位。');
+    return lines.join('\n');
+  }
+
+  const confirmedStart = Number(confirmedWxy.wxyNarrative.startPrice);
+  const confirmedWEnd = Number(confirmedWxy.wxyNarrative.wEndPrice);
+  const confirmedXEnd = Number(confirmedWxy.wxyNarrative.xEndPrice);
+  const confirmedYEnd = Number(confirmedWxy.wxyNarrative.yEndPrice);
+  lines.push(`已确认候选：${confirmedWxy.title}（评分 ${confirmedWxy.confidenceScore}）`);
+  lines.push(`W：${fmt(confirmedStart)} -> ${fmt(confirmedWEnd)}`);
+  lines.push(`X：${fmt(confirmedWEnd)} -> ${fmt(confirmedXEnd)}`);
+  lines.push(`Y：${fmt(confirmedXEnd)} -> ${fmt(confirmedYEnd)}`);
+  if (confirmedWxy.invalidation) lines.push(`结构失效位：${fmt(confirmedWxy.invalidation.value)}`);
+  if (confirmedWxy.confirmation) lines.push(`延续确认位：${fmt(confirmedWxy.confirmation.value)}`);
+  return lines.join('\n');
 
   // ── 1. 从K线中定位区间极值 ──
   let highIdx = 0;
@@ -5252,6 +5582,14 @@ module.exports = {
   computeRSI,
   detectPivots,
   detectPatterns,
+  checkUpImpulse,
+  checkDownImpulse,
+  checkUpABC,
+  checkDownABC,
+  checkUpWXY,
+  checkDownWXY,
+  validatePatternHardRules,
+  buildBriefWxyOutput,
   mergePatternCandidates,
   buildScenario,
   buildTrendOutlook,
