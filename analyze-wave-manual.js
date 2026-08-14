@@ -2207,6 +2207,7 @@ function buildDegreeChain(degrees) {
       label: d.label,
       pivotCount: d.pivots.length,
       primary: d.primary,
+      alternates: d.alternates,
       childPivotCount,
       note: d.primary
         ? null
@@ -2225,6 +2226,80 @@ function candidateBasisNote(candidate) {
   const ratioRules = manual.rules.filter((r) => r.layer === 'ratio' && r.basis);
   if (ratioRules.length === 0) return null;
   return ratioRules.map((r) => `${r.id} → basis=${r.basis}`).join('; ');
+}
+
+// ---- 7.0 联合形分腿明细（详细浪型，w/x/y/xx/z 逐腿展开）----
+//
+// 仅针对联合形候选（双/三重横向整理、双/三锯齿）：对每条腿在细粒度枢轴上
+// 重新跑一次候选扫描，取排名第一的幸存候选作为该腿自身的具体子浪型命名。
+// 只展开这一层（该子浪型自身若又是联合形，不再继续往下展开）。
+
+const UNION_LEG_NAMES = {
+  double: ['w', 'x', 'y'],
+  triple: ['w', 'x', 'y', 'xx', 'z'],
+};
+
+function isUnionCandidate(candidate) {
+  if (!candidate) return false;
+  const { patternType, mode } = candidate;
+  if (patternType === 'sideways' && (mode === 'double' || mode === 'triple')) return true;
+  if (patternType === 'zigzag' && (mode === 'double' || mode === 'triple')) return true;
+  return false;
+}
+
+function identifyLegSubPattern(fineContext, candles, fromPoint, toPoint) {
+  const seg = buildSegmentPivots(fineContext.pivotsFine, fromPoint, toPoint);
+  if (seg.length < 4) return null;
+  const { survivors } = scanCandidates(seg, candles, fineContext);
+  if (survivors.length === 0) return null;
+  return rankSurvivors(survivors)[0];
+}
+
+function legRatioText(patternType, mainMeasures, connMeasures) {
+  const r = safeRatio(connMeasures.gross, mainMeasures.gross);
+  if (r === null) return '';
+  const pct = (r * 100).toFixed(1);
+  return patternType === 'sideways'
+    ? `｜回撤比 ${pct}%（阈值≥70%）`
+    : `｜回撤比 ${pct}%（无强制阈值，仅供参考）`;
+}
+
+function buildLegLines(candidate, fineContext, candles) {
+  if (!isUnionCandidate(candidate) || !fineContext || !candles) return [];
+  const names = UNION_LEG_NAMES[candidate.mode];
+  const points = candidate.points;
+  if (!names || !points || points.length !== names.length + 1) return [];
+
+  const lines = [];
+  for (let i = 0; i < names.length; i += 1) {
+    const p0 = points[i];
+    const p1 = points[i + 1];
+    const isConnector = i % 2 === 1;
+    const legDirection = isConnector
+      ? (candidate.direction === 'up' ? 'down' : 'up')
+      : candidate.direction;
+    const measures = computeMeasures([p0, p1], legDirection, candles);
+
+    const sub = identifyLegSubPattern(fineContext, candles, p0, p1);
+    let subText;
+    if (sub) {
+      const dirLabel = sub.direction === 'up' ? '上涨' : '下跌';
+      subText = `${sub.label} · ${dirLabel}`;
+    } else {
+      const shape = legShape(fineContext.pivotsFine, p0, p1, legDirection);
+      subText = `未能识别出具体子形态，仅确认为调整浪（非驱动浪）（细粒度枢轴 ${shape.pivotCount} 个）`;
+    }
+
+    let ratioSuffix = '';
+    if (isConnector) {
+      const mainMeasures = computeMeasures([points[i - 1], points[i]], candidate.direction, candles);
+      ratioSuffix = legRatioText(candidate.patternType, mainMeasures, measures);
+    }
+
+    const range = `[${formatToUtcOffset(new Date(p0.timestamp * 1000))} ~ ${formatToUtcOffset(new Date(p1.timestamp * 1000))}]`;
+    lines.push(`${names[i]}浪：${subText} ${range} ${fmtNum(p0.price)} → ${fmtNum(p1.price)}${ratioSuffix}`);
+  }
+  return lines;
 }
 
 function describeCandidate(candidate) {
@@ -2248,10 +2323,23 @@ function renderConsoleSummary(result) {
   lines.push('波浪理论详解 · 验证手册分析（否定法 + 多级别）');
   lines.push('='.repeat(60));
 
+  const fineContext = { pivotsFine: result.pivotsFine };
+
   if (Array.isArray(result.degreeChain) && result.degreeChain.length > 0) {
     lines.push('\n【多级别概览（自顶向下：级别越小越粗）】');
     for (const entry of result.degreeChain) {
       lines.push(degreeChainLine(entry));
+      if (entry.primary && isUnionCandidate(entry.primary)) {
+        for (const legLine of buildLegLines(entry.primary, fineContext, result.candles)) {
+          lines.push(`      · ${legLine}`);
+        }
+      }
+      if (Array.isArray(entry.alternates) && entry.alternates.length > 0) {
+        lines.push('      备选（均通过规则闸门，按指引得分排序）：');
+        entry.alternates.forEach((alt, idx) => {
+          lines.push(`        ${idx + 1}. ${describeCandidate(alt)} — 指引 ${alt.evalResult.hits.length}/${alt.evalResult.manual.guidelines.length}`);
+        });
+      }
     }
     const coarse = result.degreeChain.find((e) => e.primary);
     if (coarse) {
@@ -2275,6 +2363,13 @@ function renderConsoleSummary(result) {
   }
   const basisNote = candidateBasisNote(p);
   if (basisNote) lines.push(`  比率判据基准：${basisNote}`);
+
+  if (isUnionCandidate(p)) {
+    lines.push('  分腿明细：');
+    for (const legLine of buildLegLines(p, fineContext, result.candles)) {
+      lines.push(`    · ${legLine}`);
+    }
+  }
 
   if (result.alternates.length > 0) {
     lines.push('\n【备选浪型（均通过规则闸门，按指引得分排序）】');
@@ -2341,6 +2436,7 @@ function renderDegreeOverviewMd(result) {
   lines.push('');
 
   // 逐级别主选的通道 + 斐波
+  const fineContext = { pivotsFine: result.pivotsFine };
   for (const entry of result.degreeChain) {
     if (!entry.primary) continue;
     lines.push(`### 级别 ${entry.label} 主选详情`);
@@ -2352,6 +2448,20 @@ function renderDegreeOverviewMd(result) {
     lines.push(`- 价格/运行总量：${fmtNum(p.measures.price)} / ${fmtNum(p.measures.gross)}`);
     lines.push(`- 命中指引：${p.evalResult.hits.length}/${p.evalResult.manual.guidelines.length}`);
     for (const l of renderToolsMd(p)) lines.push(l);
+    if (isUnionCandidate(p)) {
+      lines.push('- 分腿明细（w/x/y/xx/z）：');
+      for (const legLine of buildLegLines(p, fineContext, result.candles)) {
+        lines.push(`  - ${legLine}`);
+      }
+    }
+    if (Array.isArray(entry.alternates) && entry.alternates.length > 0) {
+      lines.push('');
+      lines.push('备选浪型（均通过规则闸门，按指引得分排序）：');
+      lines.push('');
+      entry.alternates.forEach((alt, idx) => {
+        lines.push(`${idx + 1}. **${describeCandidate(alt)}** — 指引 ${alt.evalResult.hits.length}/${alt.evalResult.manual.guidelines.length}`);
+      });
+    }
     lines.push('');
   }
 
@@ -2410,6 +2520,14 @@ function renderMarkdownReport(meta, result) {
   lines.push(`- 运行总量（gross）：${fmtNum(p.measures.gross)}`);
   lines.push(`- 价格运动百分比（movePct）：${p.measures.movePct !== null ? `${(p.measures.movePct * 100).toFixed(2)}%` : 'n/a'}`);
   lines.push('');
+  if (isUnionCandidate(p)) {
+    lines.push('### 分腿明细（w/x/y/xx/z）');
+    lines.push('');
+    for (const legLine of buildLegLines(p, { pivotsFine: result.pivotsFine }, result.candles)) {
+      lines.push(`- ${legLine}`);
+    }
+    lines.push('');
+  }
   lines.push('### 通过的规则（Rules）');
   lines.push('');
   for (const r of p.evalResult.manual.rules) {
@@ -2525,6 +2643,7 @@ async function analyze(candlesWithIndex, lookback, options = {}) {
     fibTime,
     pivots,
     pivotsFine,
+    candles: candlesWithIndex,
     survivors,
     eliminated,
     primary,
@@ -2624,6 +2743,7 @@ async function main() {
       pivotCount: entry.pivotCount,
       childPivotCount: entry.childPivotCount,
       primary: serializePrimary(entry.primary),
+      alternates: Array.isArray(entry.alternates) ? entry.alternates.map(serializePrimary) : [],
       note: entry.note,
     })),
     fibTimeResonanceCount: Array.isArray(result.fibTime) ? result.fibTime.length : 0,

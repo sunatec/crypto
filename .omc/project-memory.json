@@ -1,0 +1,74 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1786622031131,
+  "projectRoot": "/Users/mac/Fan/Dev/crypto",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "start": "ts-node test-binance.ts",
+      "dev": "ts-node-dev --respawn --transpile-only test-binance.ts"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 1,
+      "lastAccessed": 1786622031035,
+      "keyFiles": [
+        "OANDA_XAUUSD, 60_dd98a.csv"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "analyze-kline-wave.js",
+      "accessCount": 39,
+      "lastAccessed": 1786597019592,
+      "type": "file"
+    },
+    {
+      "path": "analyze-wave-manual.js",
+      "accessCount": 17,
+      "lastAccessed": 1786700995378,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
