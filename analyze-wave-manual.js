@@ -464,6 +464,82 @@ function detectPivots(candles, lookback = 2, options = {}) {
   return filtered;
 }
 
+/**
+ * 边界极值锚定（fix-boundary-and-inprogress-pivots）。
+ *
+ * detectPivots 要求转折点左右各有 lookback 根 K 线佐证，导致两类真实转折点被结构性丢弃：
+ *   1) 起点极值：贴近左边界的区间高/低点（如 BTC-USD 1d 起手的 126296 顶在第 2 根 K 线，
+ *      永远凑不满左侧确认窗口）——波浪计数几乎总要从一个大级别高/低点起锚，缺了它整段计数就错位。
+ *   2) 进行中腿：最新一根 K 线右侧没有未来数据，任何摆动都无法被确认，于是引擎只描述「已完成」
+ *      结构、终点停在最后一个已确认枢轴，看不到当前正在走的那一腿。
+ *
+ * 本函数在已清洗的枢轴序列两端各补一个锚点：
+ *   · 左端：first 枢轴之前的「反向极值」（first 是低点→取其之前最高点，反之亦然），标 boundary:'start'。
+ *   · 右端：last 枢轴之后的「反向极值」（last 是高点→取其之后最低点，反之亦然），标 provisional:true，
+ *     表示这是一条尚未被确认、随后续 K 线可能改写的进行中腿。
+ * 两个锚点的 type 都与相邻枢轴相反，故天然维持 H/L 交替；仅在确有更早/更晚 K 线时插入。
+ */
+function anchorBoundaryExtremes(candles, pivots) {
+  if (!Array.isArray(pivots) || pivots.length === 0 || !Array.isArray(candles) || candles.length === 0) {
+    return pivots;
+  }
+
+  const out = pivots.slice();
+
+  const first = out[0];
+  if (first.index > 0) {
+    const wantHigh = first.type === 'L';
+    let bestIdx = 0;
+    let bestVal = wantHigh ? -Infinity : Infinity;
+    for (let i = 0; i < first.index; i += 1) {
+      const c = candles[i];
+      if (!c) continue;
+      const v = wantHigh ? c.high : c.low;
+      if (wantHigh ? v > bestVal : v < bestVal) {
+        bestVal = v;
+        bestIdx = i;
+      }
+    }
+    if (Number.isFinite(bestVal) && bestIdx < first.index) {
+      out.unshift({
+        index: bestIdx,
+        type: wantHigh ? 'H' : 'L',
+        price: bestVal,
+        timestamp: candles[bestIdx].timestamp,
+        boundary: 'start',
+      });
+    }
+  }
+
+  const last = out[out.length - 1];
+  if (last.index < candles.length - 1) {
+    const wantHigh = last.type === 'L';
+    let bestIdx = last.index;
+    let bestVal = wantHigh ? -Infinity : Infinity;
+    for (let i = last.index + 1; i < candles.length; i += 1) {
+      const c = candles[i];
+      if (!c) continue;
+      const v = wantHigh ? c.high : c.low;
+      if (wantHigh ? v > bestVal : v < bestVal) {
+        bestVal = v;
+        bestIdx = i;
+      }
+    }
+    if (Number.isFinite(bestVal) && bestIdx > last.index) {
+      out.push({
+        index: bestIdx,
+        type: wantHigh ? 'H' : 'L',
+        price: bestVal,
+        timestamp: candles[bestIdx].timestamp,
+        provisional: true,
+        boundary: 'end',
+      });
+    }
+  }
+
+  return out;
+}
+
 // ============================================================
 // 2. 度量层（wave-measurement）：价格 / 运行总量 / 价格运动百分比
 // ============================================================
@@ -2158,10 +2234,13 @@ const DEGREE_CONFIGS = [
   { degree: 2, label: '2（最细·小级别）', lookbackMult: 1, atrMult: 1 },
 ];
 
-function scanAtDegree(candles, cfg, baseLookback, baseAtrMultiplier, atrSeries, pivotsFine) {
+function scanAtDegree(candles, cfg, baseLookback, baseAtrMultiplier, atrSeries, pivotsFine, options = {}) {
   const lookback = Math.max(1, Math.round(baseLookback * cfg.lookbackMult));
   const atrMultiplier = baseAtrMultiplier * cfg.atrMult;
-  const pivots = detectPivots(candles, lookback, { atrSeries, atrMultiplier });
+  const detected = detectPivots(candles, lookback, { atrSeries, atrMultiplier });
+  // 主流程通过 { anchorBoundary: true } 开启边界极值 + 进行中腿锚定；
+  // 直接单测 scanAtDegree 不传该选项，行为与历史一致。
+  const pivots = options.anchorBoundary ? anchorBoundaryExtremes(candles, detected) : detected;
   const fineContext = { pivotsFine };
   const mainScan = scanCandidates(pivots, candles, fineContext);
   const positionalScan = scanPositionalCandidates(pivots, pivotsFine, candles);
@@ -2305,7 +2384,14 @@ function buildLegLines(candidate, fineContext, candles) {
 function describeCandidate(candidate) {
   const dirLabel = candidate.direction === 'up' ? '上涨' : '下跌';
   const range = `[${formatToUtcOffset(new Date(candidate.startTime * 1000))} ~ ${formatToUtcOffset(new Date(candidate.endTime * 1000))}]`;
-  return `${candidate.label} · ${dirLabel} ${range}`;
+  const pts = candidate.points || [];
+  const startAnchored = pts[0] && pts[0].boundary === 'start';
+  const endProvisional = pts[pts.length - 1] && pts[pts.length - 1].provisional;
+  const marks = [];
+  if (startAnchored) marks.push('起点=区间极值锚点');
+  if (endProvisional) marks.push('末腿进行中·未确认');
+  const suffix = marks.length > 0 ? `（${marks.join('；')}）` : '';
+  return `${candidate.label} · ${dirLabel} ${range}${suffix}`;
 }
 
 function degreeChainLine(entry) {
@@ -2612,7 +2698,7 @@ async function analyze(candlesWithIndex, lookback, options = {}) {
 
   // 逐级别扫描（自顶向下：级别 0 最粗 → 级别 2 最细）
   const degrees = DEGREE_CONFIGS.map((cfg) =>
-    scanAtDegree(candlesWithIndex, cfg, lookback, atrMultiplier, atrSeries, pivotsFine));
+    scanAtDegree(candlesWithIndex, cfg, lookback, atrMultiplier, atrSeries, pivotsFine, { anchorBoundary: true }));
 
   for (const d of degrees) {
     attachTools(d.primary, candlesWithIndex);
@@ -2771,6 +2857,7 @@ module.exports = {
   parseArgs,
   computeATR,
   detectPivots,
+  anchorBoundaryExtremes,
   fetchCandles,
   transformCandles,
   computeMeasures,
