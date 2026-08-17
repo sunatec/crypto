@@ -1268,6 +1268,74 @@ function buildCountTree(finePivots, candles, options = {}) {
 //   · 失效点 = 顶层完成结构终点极值
 //   · 目标 = 双情景：回撤(逆结构=反弹/转势) + 扩展(顺结构=延续)，各条带依据；主选=与大趋势一致的那套
 
+// 当前反弹的「身份研判」（作者框架）：同一段反弹，身份不同→回撤参考不同→目标与之后走向不同。
+//   · XX 连接段：回撤"上一子浪"的 0.2/0.382/0.618；之后 Z 浪续跌
+//   · B 反弹：回撤"整段"的 0.5/0.618/0.7；之后 C 浪续跌
+//   · 推动 3 浪：反弹内部为五浪→趋势转、无上方回撤上限
+// 主次由反弹子浪性格定：五浪→推动3为主；三波→XX为主、B为备。
+function bounceHypotheses(structPoints, bounceChar) {
+  if (!Array.isArray(structPoints) || structPoints.length < 2) return null;
+  const start = structPoints[0];
+  const term = structPoints[structPoints.length - 1];
+  const prev = structPoints[structPoints.length - 2];
+  const structDown = term.price < start.price;
+  const s = structDown ? 1 : -1; // 反弹方向（逆结构）为正
+  const lastSub = Math.abs(term.price - prev.price);
+  const whole = Math.abs(start.price - term.price);
+  const up = (ratios, ref) => ratios.map((r) => ({ ratio: r, price: term.price + s * r * ref })); // 反弹上方目标
+  const dn = (ratios, ref) => ratios.map((r) => ({ ratio: r, price: term.price - s * r * ref })); // 跌破后延续目标
+  return {
+    term: term.price, startPrice: start.price, prevPrice: prev.price, lastSub, whole, structDown, bounceChar,
+    three: { targets: up([0.382, 0.5, 0.618], whole), note: '反弹内部若五浪→趋势转、上方无回撤上限（以整段回撤位作参考阻力）' },
+    xx: { targets: up([0.2, 0.382, 0.618], lastSub), down: dn([0.618, 1.0, 1.618], lastSub), aftermath: 'Z 浪下跌' },
+    b: { targets: up([0.5, 0.618, 0.7], whole), down: dn([0.618, 1.0], lastSub), aftermath: 'C 浪下跌', timing: '走完 C 通常耗时较长，时间上多半不够' },
+    lean: bounceChar === 'driving' ? 'three' : 'xx',
+  };
+}
+
+// 近端触发线（Q7）：取反弹第一条腿（结构终点→反弹首个反向枢轴）的 0.382/0.5/0.618 回撤
+function nearTermTrigger(termPivot, finePivots) {
+  if (!termPivot || !Array.isArray(finePivots)) return null;
+  const after = finePivots.filter((p) => p.index > termPivot.index);
+  if (!after.length) return null;
+  // 取反弹的极值（离终点最远的那个枢轴 = 反弹的摆动高/低），而非第一个小枢轴
+  const hi = after.reduce((acc, p) => (p.price > acc.price ? p : acc), after[0]);
+  const lo = after.reduce((acc, p) => (p.price < acc.price ? p : acc), after[0]);
+  const swing = Math.abs(hi.price - termPivot.price) >= Math.abs(lo.price - termPivot.price) ? hi : lo;
+  const amp = Math.abs(swing.price - termPivot.price);
+  if (amp <= 0) return null;
+  const s = swing.price > termPivot.price ? -1 : 1; // 回撤方向
+  const levels = [0.382, 0.5, 0.618].map((r) => ({ ratio: r, price: swing.price + s * r * amp }));
+  return { from: termPivot.price, to: swing.price, levels };
+}
+
+// 叙述化渲染（可读性 grilling 定稿：作者口吻，把参考浪/依据/之后走向揉进整句；
+// 每种身份一句有因果的话，而非带括号的价格；主选就近标注，全精度数字）。
+function renderBounceHypotheses(h, nearTerm) {
+  if (!h) return '';
+  const n = (v) => Math.round(v);
+  const px = (arr) => arr.filter((t) => t.price > 0).map((t) => n(t.price)).join(' / ');
+  const main = (k) => (h.lean === k ? '（主选）' : '');
+  const charCn = h.bounceChar === 'driving' ? '内部更像五浪（偏推动）'
+    : h.bounceChar === 'corrective' ? '内部更像三波（偏调整）'
+      : '内部结构还看不清';
+  const leanCn = h.lean === 'three' ? '推动 3 浪' : 'XX 连接浪';
+  const refLeg = `${n(h.prevPrice)}→${n(h.term)}`;
+  const wholeLeg = `${n(h.startPrice)}→${n(h.term)}`;
+  const L = [];
+  L.push(`眼下从 **${n(h.term)}** 起的这波反弹，身份还没定。按反弹${charCn}，**${leanCn}是主选**；三种可能各自的参考浪、目标、之后走向都不一样：`);
+  L.push('');
+  L.push(`- **若是 XX 连接浪**${main('xx')}：它是对上一子浪（${refLeg}，幅 ${n(h.lastSub)}）的反弹，通常吃掉该段的 0.2–0.618，也就是 **${px(h.xx.targets)}**；xx 可以是任意一种调整形态（横向收缩，或再冲一段、涨过前高都行），但走完之后是 **${h.xx.aftermath}**——若随后跌破 ${n(h.term)}，下看 ${px(h.xx.down)}。`);
+  L.push(`- **若是 B 反弹**：针对的是整段（${wholeLeg}，幅 ${n(h.whole)}），需要涨到 0.5/0.618/0.7 一线、即 **${px(h.b.targets)}**，之后是 **${h.b.aftermath}**——只是${h.b.timing}。`);
+  L.push(`- **若直接是推动 3 浪（转势）**${main('three')}：那上方 ${px(h.three.targets)} 一线只作参考阻力，前提是反弹内部得走成五浪；果真如此，趋势就此翻多、上方不再设回撤上限。`);
+  if (nearTerm) {
+    const lv = nearTerm.levels;
+    L.push('');
+    L.push(`近端看：这波反弹取 ${n(nearTerm.from)}→${n(nearTerm.to)} 这条腿，须站上 **${n(lv[0].price)}** 才算真正好转，否则回落 **${n(lv[2].price)}**（中间 ${n(lv[1].price)} 是分水岭）。`);
+  }
+  return L.join('\n');
+}
+
 function situationAssessment(tree, candles, finePivots) {
   if (!tree || tree.isLeaf || !tree.primary) return null;
   const p = tree.primary;
@@ -1291,66 +1359,70 @@ function situationAssessment(tree, candles, finePivots) {
   }
 
   const invalidation = topEnd.price;
-  const moveAmp = Math.abs(topStart.price - topEnd.price);
-  const lastLegAmp = p.points.length >= 2 ? Math.abs(topEnd.price - p.points[p.points.length - 2].price) : moveAmp;
-  const rDir = structDir === 'up' ? -1 : 1; // 回撤方向=逆结构
-  const eDir = structDir === 'up' ? 1 : -1; // 扩展方向=顺结构
-  const retrace = [0.382, 0.5, 0.618].map((r) => ({
-    price: topEnd.price + rDir * r * moveAmp,
-    basis: `${r} 回撤整段跌幅（${topStart.price.toFixed(0)}→${topEnd.price.toFixed(0)}）`,
-  }));
-  const extension = [0.618, 1.0, 1.618].map((r) => ({
-    price: topEnd.price + eDir * r * lastLegAmp,
-    basis: `末段${r}倍扩展（越过 ${topEnd.price.toFixed(0)}）`,
-  }));
-
-  // 回撤对应"逆结构"（反弹/转势），扩展对应"顺结构"（延续）
-  const bullScenario = { dir: 'up', targets: structDir === 'down' ? retrace : extension };
-  const bearScenario = { dir: 'down', targets: structDir === 'down' ? extension : retrace };
 
   return {
     topLabel: p.manual.label, topStart, topEnd, isMotive, structDir,
-    bigTrend, currentDir, roleChar, invalidation,
-    bullScenario, bearScenario, primary: bigTrend,
+    bigTrend, currentDir, roleChar, invalidation, primary: bigTrend,
+    // Q8=a：身份框架（XX/B/推动3）取代旧的看涨/看跌双情景
+    bounceHyp: bounceHypotheses(p.points, roleChar),
+    nearTerm: nearTermTrigger(topEnd, finePivots),
     channel: tree.channel, fibTimeWindows: tree.fibTimeWindows,
   };
 }
 
 function renderAssessment(a) {
   if (!a) return '# 现状研判\n\n（数据不足，暂无法研判）';
+  const n = (v) => Math.round(v);
   const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
   const roleCn = a.roleChar === 'driving'
-    ? '内部像五浪 → 更像"新趋势的 1 浪"（偏进攻）'
+    ? '内部像五浪，更像"新趋势的 1 浪"（偏进攻）'
     : a.roleChar === 'corrective'
-      ? '内部像三波 → 更像"修正的 A 浪"（偏反弹）'
-      : '内部结构待确认';
+      ? '内部像三波，更像"修正的 A 浪"（偏反弹）'
+      : '内部结构还看不清';
   const L = [];
   L.push('# 现状研判（先看这里）');
   L.push('');
   L.push('> 结论在前、历史计数在后作支撑。以下均为概率性研判，仅辅助、非确定，不构成买卖建议。');
   L.push('');
+
+  // ① —— 一段话说清"这段是什么、现在走到哪"
   L.push('## ① 当前处于什么浪型');
-  L.push(`- 上一段完整结构：**${a.topLabel} · ${dirCn(a.structDir)}**，止于 **${a.topEnd.price.toFixed(0)}**`);
-  if (a.currentDir) L.push(`- 当前：在其后走一段**尚未走完的${dirCn(a.currentDir)}**（${roleCn}）`);
   L.push('');
+  let s1 = `从 **${n(a.topStart.price)}** 到 **${n(a.topEnd.price)}** 这一整段，最像一个已经走完的 **${a.topLabel}**（方向${dirCn(a.structDir)}）。`;
+  if (a.currentDir) s1 += `此后从 **${n(a.topEnd.price)}** 起，正在走一段**还没走完的${dirCn(a.currentDir)}**——${roleCn}。`;
+  L.push(s1);
+  L.push('');
+
+  // ② —— 趋势 + 失效点，讲清"为什么"
   L.push('## ② 现在是什么趋势');
-  L.push(`- **大级别趋势：偏${a.bigTrend === 'up' ? '多' : '空'}** —— 因为上一段是${a.isMotive ? '**推动浪**（新趋势确立）' : '**调整浪**（修正完成、原趋势恢复）'}`);
-  if (a.currentDir) L.push(`- 当前波段：**${dirCn(a.currentDir)}**`);
-  L.push(`- **失效点：${a.invalidation.toFixed(0)}** —— ${a.structDir === 'down' ? '跌破' : '升破'}它，则上面的大级别判断作废、翻向另一情景`);
   L.push('');
-  L.push('## ③ 目标在哪（两套情景，每条附依据）');
-  const primaryUp = a.primary === 'up';
+  const trendWhy = a.isMotive
+    ? '上一段是**推动浪**，意味着新趋势已经确立'
+    : '上一段是**调整浪**，意味着这轮修正已经走完、原来的趋势正在恢复';
+  let s2 = `大级别看**偏${a.bigTrend === 'up' ? '多' : '空'}**——因为${trendWhy}；当前波段是${a.currentDir ? `**${dirCn(a.currentDir)}**` : '横向整理'}。`;
+  s2 += `这套判断有一条**失效点：${n(a.invalidation)}**——一旦${a.structDir === 'down' ? '跌破' : '升破'}它，上面的大局就作废、要翻到另一种情景去。`;
+  L.push(s2);
   L.push('');
-  L.push(`### ${primaryUp ? '【主选】' : '【备选】'}看涨：守住 ${a.invalidation.toFixed(0)} 则反弹/转势`);
-  a.bullScenario.targets.forEach((t) => L.push(`- **${t.price.toFixed(0)}**　依据：${t.basis}`));
+
+  // ③ —— 当前反弹的三身份，叙述化（作者口吻）
+  L.push('## ③ 目标在哪（当前反弹的三种身份）');
   L.push('');
-  L.push(`### ${primaryUp ? '【备选】' : '【主选】'}看跌：${a.structDir === 'down' ? '跌破' : '升破'} ${a.invalidation.toFixed(0)} 则延续`);
-  a.bearScenario.targets.forEach((t) => L.push(`- **${t.price.toFixed(0)}**　依据：${t.basis}`));
-  if (a.channel && a.channel.baseAt != null) L.push(`- 通道边界参考：**${a.channel.baseAt.toFixed(0)}**（艾略特通道）`);
-  if (a.fibTimeWindows && a.fibTimeWindows.length) {
+  if (a.bounceHyp) {
+    L.push(renderBounceHypotheses(a.bounceHyp, a.nearTerm));
+  } else {
+    L.push('当前没有明显在建的反弹，暂不研判身份。');
+  }
+  if (a.channel && a.channel.baseAt != null) {
     L.push('');
+    L.push(`另外，艾略特通道的下边界大约在 **${n(a.channel.baseAt)}**，可作一条参考支撑。`);
+  }
+  L.push('');
+
+  // ④ —— 时间窗
+  if (a.fibTimeWindows && a.fibTimeWindows.length) {
     L.push('## ④ 什么时候可能转（斐波时间窗，仅辅助）');
-    L.push(`- ${a.fibTimeWindows.map((w) => `${fmtTime(w.ts * 1000)}（${w.count}源）`).join('，')}`);
+    L.push('');
+    L.push(`多个枢轴的斐波时间在这几天重合，是潜在的转折时间窗：${a.fibTimeWindows.map((w) => `**${fmtTime(w.ts * 1000)}**（${w.count}源）`).join('、')}。`);
   }
   return L.join('\n');
 }
@@ -1411,7 +1483,24 @@ function evaluateExplicitCount(macroPoints, finePivots, candles, options = {}) {
   }
 
   results.sort((a, b) => compareCandidates(a.total, b.total));
-  return { direction, results };
+
+  // 当前反弹身份研判：反弹 = 用户结构终点 → 最新细枢轴；性格用 legCharacter
+  let bounceHyp = null;
+  let nearTerm = null;
+  const term = macroPoints[macroPoints.length - 1];
+  const edge = finePivots && finePivots.length ? finePivots[finePivots.length - 1] : null;
+  if (edge && edge.index > term.index) {
+    const lo = Math.min(term.index, edge.index);
+    const hi = Math.max(term.index, edge.index);
+    const bounceFine = finePivots.filter((x) => x.index >= lo && x.index <= hi);
+    let bounceChar = null;
+    if (bounceFine.length >= MIN_POINTS[CORRECTIVE]) {
+      bounceChar = legCharacter(bounceFine, candles, 0, { beamK: 3, maxDepth: 4 }).character;
+    }
+    bounceHyp = bounceHypotheses(macroPoints, bounceChar);
+    nearTerm = nearTermTrigger(term, finePivots);
+  }
+  return { direction, results, bounceHyp, nearTerm };
 }
 
 /**
@@ -1452,6 +1541,12 @@ function renderExplicitVerdict(evalResult) {
     });
     if (r.grammarViolations > 0) r.legNotes.forEach((n) => L.push(`   - ✗ ${n}`));
   });
+  if (evalResult.bounceHyp) {
+    L.push('');
+    L.push('#### 按这个数法，当前反弹的三种身份');
+    L.push('');
+    L.push(renderBounceHypotheses(evalResult.bounceHyp, evalResult.nearTerm));
+  }
   return L.join('\n');
 }
 
@@ -1817,6 +1912,9 @@ module.exports = {
   buildCountTree,
   situationAssessment,
   renderAssessment,
+  bounceHypotheses,
+  nearTermTrigger,
+  renderBounceHypotheses,
   renderTreeText,
   evaluateExplicitCount,
   pointsFromPrices,

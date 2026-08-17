@@ -89,20 +89,39 @@ test('金标准：给我的数法打分——用户 W-X-Y 在每种4点读法下
   assert.equal(xRule.pass, false, '联合形 x 回撤70%规则应不通过');
 });
 
-test('金标准：现状研判——顶层调整浪→大级别偏多、失效点=57717、双情景目标', () => {
+test('金标准：现状研判——大级别偏多、失效点=57717、身份框架(XX主选)', () => {
   const { tree } = buildGoldenTree();
   const a = tree.assessment;
   assert.ok(a, '应生成现状研判');
   assert.equal(a.bigTrend, 'up', '顶层为调整浪(向下)→修正完成→大级别偏多');
   assert.equal(a.invalidation, 57717.55, '失效点=顶层完成结构终点极值');
   assert.equal(a.currentDir, 'up', '当前波段=反弹向上');
-  assert.equal(a.bullScenario.targets.length, 3); // 回撤 0.382/0.5/0.618
-  assert.equal(a.bearScenario.targets.length, 3); // 扩展 0.618/1/1.618
-  // 看涨目标须在失效点上方、看跌目标须在其下方
-  assert.ok(a.bullScenario.targets.every((t2) => t2.price > a.invalidation));
-  assert.ok(a.bearScenario.targets.every((t2) => t2.price < a.invalidation));
-  // 每条目标都带依据
-  assert.ok([...a.bullScenario.targets, ...a.bearScenario.targets].every((t2) => typeof t2.basis === 'string' && t2.basis.length > 0));
+  const h = a.bounceHyp;
+  assert.ok(h, '应有当前反弹身份研判');
+  assert.equal(h.lean, 'xx', '反弹为三波→XX 主选');
+  // XX 上方目标在失效点上方、其下跌段在失效点下方
+  assert.ok(h.xx.targets.every((t2) => t2.price > a.invalidation));
+  assert.ok(h.xx.down.every((t2) => t2.price < a.invalidation));
+  // B 目标含 0.7×整段 ≈ 105722
+  const b07 = h.b.targets.find((t2) => t2.ratio === 0.7);
+  assert.ok(Math.abs(b07.price - 105722) < 500, `B 0.7目标应≈105722，实际 ${b07.price.toFixed(0)}`);
+  // 近端触发线取 57717→反弹首个高点
+  assert.ok(a.nearTerm && a.nearTerm.from === 57717.55);
+});
+
+test('金标准：--count 用户 W-X-Y 的身份研判——XX 复现作者 65766–82589', () => {
+  const candles = rawCandles.map((c, i) => ({ ...c, index: i }));
+  let fine = t.detectPivots(candles, 1, {});
+  fine = t.anchorBoundaryExtremes(candles, fine);
+  const pts = t.pointsFromPrices([126296, 80524.65, 97963.62, 57717.55], candles);
+  const ue = t.evaluateExplicitCount(pts, fine, candles);
+  const h = ue.bounceHyp;
+  assert.ok(h, '应有身份研判');
+  // 用户结构的"上一子浪"=Y(97963→57717)=40246；XX 0.2/0.618 ≈ 65766 / 82589
+  const xx02 = h.xx.targets.find((x) => x.ratio === 0.2);
+  const xx618 = h.xx.targets.find((x) => x.ratio === 0.618);
+  assert.ok(Math.abs(xx02.price - 65766) < 300, `XX 0.2 应≈65766，实际 ${xx02.price.toFixed(0)}`);
+  assert.ok(Math.abs(xx618.price - 82589) < 500, `XX 0.618 应≈82589，实际 ${xx618.price.toFixed(0)}`);
 });
 
 test('金标准：Markdown 报告非空且含进行中浪与计数树两节', () => {
