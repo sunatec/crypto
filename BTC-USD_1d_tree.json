@@ -3,10 +3,10 @@
     "product": "BTC-USD",
     "timeframe": "1d",
     "startUtc": "2025-10-04T16:00:00.000Z",
-    "endUtc": "2026-08-16T15:28:51.915Z",
-    "generatedAtUtc": "2026-08-16T15:30:03.942Z",
+    "endUtc": "2026-08-17T10:54:08.904Z",
+    "generatedAtUtc": "2026-08-17T10:54:11.014Z",
     "source": "Coinbase Exchange candles API",
-    "sampleCount": 315
+    "sampleCount": 316
   },
   "tree": {
     "isLeaf": false,
@@ -2174,24 +2174,24 @@
     },
     "fibTimeWindows": [
       {
-        "bar": 315,
-        "count": 6,
-        "timestamp": 1786924800
-      },
-      {
         "bar": 316,
         "count": 2,
         "timestamp": 1787011200
       },
       {
         "bar": 317,
-        "count": 4,
+        "count": 5,
         "timestamp": 1787097600
+      },
+      {
+        "bar": 318,
+        "count": 2,
+        "timestamp": 1787184000
       }
     ],
     "inProgress": {
       "from": 57717.55,
-      "to": 63123.68,
+      "to": 63658.48,
       "currentLegDir": "up",
       "note": "推断，非确定",
       "fibTargets": [
@@ -2208,6 +2208,145 @@
           "price": 62767.92666
         }
       ]
+    }
+  },
+  "inProgressTree": {
+    "status": "进行中/未确认",
+    "structDir": "up",
+    "swingExtreme": {
+      "price": 66923.95,
+      "type": "H",
+      "index": 289,
+      "timestamp": 1784592000
+    },
+    "swingCharacter": "corrective",
+    "invalidation": 57717.55,
+    "upStructure": {
+      "isLeaf": false,
+      "degree": 0,
+      "waveIndexInParent": null,
+      "patternId": "zigzag",
+      "label": "单锯齿（Zigzag 5-3-5）",
+      "direction": "up",
+      "points": [
+        {
+          "price": 57717.55,
+          "type": "L",
+          "index": 269,
+          "timestamp": 1782864000
+        },
+        {
+          "price": 65559.5,
+          "type": "H",
+          "index": 283,
+          "timestamp": 1784073600
+        },
+        {
+          "price": 62452.52,
+          "type": "L",
+          "index": 285,
+          "timestamp": 1784246400
+        },
+        {
+          "price": 66923.95,
+          "type": "H",
+          "index": 289,
+          "timestamp": 1784592000
+        }
+      ],
+      "fitScore": {
+        "tier1": 0,
+        "tier2": 0,
+        "tier3": -4,
+        "tier4": 0,
+        "grammarViolations": 0,
+        "penalized": false,
+        "violations": [],
+        "guidelineHits": 4,
+        "guidelineTotal": 5
+      },
+      "status": "完成",
+      "expectation": null,
+      "truncated": false,
+      "volumeNote": null,
+      "children": [
+        {
+          "isLeaf": true,
+          "degree": 1,
+          "waveIndexInParent": "a",
+          "status": "末级/不可再分",
+          "from": 57717.55,
+          "to": 65559.5
+        },
+        {
+          "isLeaf": true,
+          "degree": 1,
+          "waveIndexInParent": "b",
+          "status": "末级/不可再分",
+          "from": 65559.5,
+          "to": 62452.52
+        },
+        {
+          "isLeaf": true,
+          "degree": 1,
+          "waveIndexInParent": "c",
+          "status": "末级/不可再分",
+          "from": 62452.52,
+          "to": 66923.95
+        }
+      ],
+      "alternates": [
+        {
+          "patternId": "zigzag-double",
+          "label": "双锯齿（Double Zigzag w-x-y）",
+          "direction": "up",
+          "fitScore": {
+            "tier1": 1,
+            "tier2": 0.08044057608244834,
+            "tier3": -1,
+            "tier4": 0
+          }
+        },
+        {
+          "patternId": "zigzag-triple",
+          "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
+          "direction": "up",
+          "fitScore": {
+            "tier1": 1,
+            "tier2": 0.08588961166335767,
+            "tier3": -1,
+            "tier4": 0
+          }
+        }
+      ]
+    },
+    "currentPullback": {
+      "from": 66923.95,
+      "to": 63658.48,
+      "currentLegDir": "down",
+      "note": "回撤，推断非确定",
+      "fibTargets": [
+        {
+          "mult": 0.382,
+          "price": 63407.1052
+        },
+        {
+          "mult": 0.5,
+          "price": 62320.75
+        },
+        {
+          "mult": 0.618,
+          "price": 61234.3948
+        }
+      ],
+      "subtree": {
+        "isLeaf": true,
+        "degree": 0,
+        "waveIndexInParent": null,
+        "status": "末级/不可再分",
+        "from": 66923.95,
+        "to": 63658.48
+      }
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1786622031131,
+  "lastScanned": 1786953867417,
   "projectRoot": "/Users/mac/Fan/Dev/crypto",
   "techStack": {
     "languages": [
@@ -37,7 +37,8 @@
     "isMonorepo": false,
     "workspaces": [],
     "mainDirectories": [
-      "assets"
+      "assets",
+      "tests"
     ],
     "gitBranches": {
       "defaultBranch": "main",
@@ -50,9 +51,48 @@
       "path": "assets",
       "purpose": "Static assets",
       "fileCount": 1,
-      "lastAccessed": 1786622031035,
+      "lastAccessed": 1786953867373,
       "keyFiles": [
         "OANDA_XAUUSD, 60_dd98a.csv"
+      ]
+    },
+    "books": {
+      "path": "books",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786953867378,
+      "keyFiles": [
+        "波浪理论详解.epub"
+      ]
+    },
+    "openspec": {
+      "path": "openspec",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1786953867382,
+      "keyFiles": [
+        "config.yaml"
+      ]
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 4,
+      "lastAccessed": 1786953867382,
+      "keyFiles": [
+        "analyze-kline-wave.test.js",
+        "analyze-wave-manual.test.js",
+        "analyze-wave-tree.golden.test.js",
+        "analyze-wave-tree.test.js"
+      ]
+    },
+    "tests/fixtures": {
+      "path": "tests/fixtures",
+      "purpose": "Test fixtures",
+      "fileCount": 1,
+      "lastAccessed": 1786953867384,
+      "keyFiles": [
+        "btc-usd-1d-golden.json"
       ]
     }
   },
@@ -64,9 +104,21 @@
       "type": "file"
     },
     {
+      "path": "analyze-wave-tree.js",
+      "accessCount": 24,
+      "lastAccessed": 1786964221034,
+      "type": "file"
+    },
+    {
       "path": "analyze-wave-manual.js",
       "accessCount": 17,
       "lastAccessed": 1786700995378,
+      "type": "file"
+    },
+    {
+      "path": "BTC-USD_1d_tree.md",
+      "accessCount": 4,
+      "lastAccessed": 1786964059836,
       "type": "file"
     }
   ],

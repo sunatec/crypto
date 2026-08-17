@@ -2,62 +2,55 @@
   "meta": {
     "product": "BTC-USD",
     "timeframe": "1h",
-    "startUtc": "2026-06-30T16:00:00.000Z",
-    "endUtc": "2026-08-16T15:26:47.417Z",
-    "generatedAtUtc": "2026-08-16T15:29:19.124Z",
+    "startUtc": "2026-07-31T16:00:00.000Z",
+    "endUtc": "2026-08-17T10:54:11.049Z",
+    "generatedAtUtc": "2026-08-17T10:54:13.580Z",
     "source": "Coinbase Exchange candles API",
-    "sampleCount": 1128
+    "sampleCount": 403
   },
   "tree": {
     "isLeaf": false,
     "degree": 0,
     "waveIndexInParent": null,
-    "patternId": "zigzag-double",
-    "label": "双锯齿（Double Zigzag w-x-y）",
+    "patternId": "sideways-double",
+    "label": "双重横向整理（联合形 w-x-y）",
     "direction": "up",
     "points": [
       {
-        "price": 57717.55,
+        "price": 62209.81,
         "type": "L",
-        "index": 9,
-        "timestamp": 1782867600
+        "index": 26,
+        "timestamp": 1785607200
       },
       {
-        "price": 64658.85,
+        "price": 63730.49,
         "type": "H",
-        "index": 149,
-        "timestamp": 1783371600
+        "index": 54,
+        "timestamp": 1785708000
       },
       {
-        "price": 61453.09,
+        "price": 62210.14,
         "type": "L",
-        "index": 191,
-        "timestamp": 1783522800
+        "index": 64,
+        "timestamp": 1785744000
       },
       {
-        "price": 66923.95,
+        "price": 65426,
         "type": "H",
-        "index": 502,
-        "timestamp": 1784642400
+        "index": 222,
+        "timestamp": 1786312800
       }
     ],
     "fitScore": {
-      "tier1": 1,
-      "tier2": 0.027277873372282352,
-      "tier3": -1,
+      "tier1": 0,
+      "tier2": 0,
+      "tier3": 0,
       "tier4": 0,
       "grammarViolations": 0,
-      "penalized": true,
-      "violations": [
-        {
-          "id": "zigzag-double.ratio.y-vs-w-0.9-5",
-          "layer": "ratio",
-          "desc": "y浪价格须>w浪90%且<w浪5倍",
-          "overshoot": 0.027277873372282352
-        }
-      ],
-      "guidelineHits": 1,
-      "guidelineTotal": 3
+      "penalized": false,
+      "violations": [],
+      "guidelineHits": 0,
+      "guidelineTotal": 0
     },
     "status": "完成",
     "expectation": null,
@@ -73,39 +66,39 @@
         "direction": "up",
         "points": [
           {
-            "price": 57717.55,
+            "price": 62209.81,
             "type": "L",
-            "index": 9,
-            "timestamp": 1782867600
+            "index": 26,
+            "timestamp": 1785607200
           },
           {
-            "price": 63940.79,
+            "price": 63481.76,
             "type": "H",
-            "index": 127,
-            "timestamp": 1783292400
+            "index": 34,
+            "timestamp": 1785636000
           },
           {
-            "price": 61250,
+            "price": 62921.09,
             "type": "L",
-            "index": 141,
-            "timestamp": 1783342800
+            "index": 43,
+            "timestamp": 1785668400
           },
           {
-            "price": 64658.85,
+            "price": 63730.49,
             "type": "H",
-            "index": 149,
-            "timestamp": 1783371600
+            "index": 54,
+            "timestamp": 1785708000
           }
         ],
         "fitScore": {
           "tier1": 1,
           "tier2": 0,
-          "tier3": -4,
+          "tier3": -5,
           "tier4": 0,
           "grammarViolations": 1,
           "penalized": true,
           "violations": [],
-          "guidelineHits": 4,
+          "guidelineHits": 5,
           "guidelineTotal": 5
         },
         "status": null,
@@ -114,60 +107,186 @@
         "volumeNote": null,
         "children": [
           {
-            "isLeaf": false,
+            "isLeaf": true,
             "degree": 2,
             "waveIndexInParent": "a",
-            "patternId": "impulse-strict",
-            "label": "推动浪（标准 Impulse）",
-            "direction": "up",
+            "status": "末级/不可再分",
+            "from": 62209.81,
+            "to": 63481.76
+          },
+          {
+            "isLeaf": false,
+            "degree": 2,
+            "waveIndexInParent": "b",
+            "patternId": "zigzag-double",
+            "label": "双锯齿（Double Zigzag w-x-y）",
+            "direction": "down",
             "points": [
               {
-                "price": 57717.55,
-                "type": "L",
-                "index": 9,
-                "timestamp": 1782867600
-              },
-              {
-                "price": 59373.3,
+                "price": 63481.76,
                 "type": "H",
-                "index": 12,
-                "timestamp": 1782878400
+                "index": 34,
+                "timestamp": 1785636000
               },
               {
-                "price": 58242.82,
+                "price": 63345.03,
                 "type": "L",
-                "index": 20,
-                "timestamp": 1782907200
+                "index": 37,
+                "timestamp": 1785646800
               },
               {
-                "price": 61287.33,
+                "price": 63474,
                 "type": "H",
-                "index": 30,
-                "timestamp": 1782943200
+                "index": 39,
+                "timestamp": 1785654000
               },
               {
-                "price": 59520.02,
+                "price": 62921.09,
                 "type": "L",
-                "index": 32,
-                "timestamp": 1782950400
-              },
-              {
-                "price": 63940.79,
-                "type": "H",
-                "index": 127,
-                "timestamp": 1783292400
+                "index": 43,
+                "timestamp": 1785668400
               }
             ],
             "fitScore": {
-              "tier1": 1,
+              "tier1": 0,
               "tier2": 0,
-              "tier3": -2,
+              "tier3": -1,
               "tier4": 0,
-              "grammarViolations": 1,
-              "penalized": true,
+              "grammarViolations": 0,
+              "penalized": false,
               "violations": [],
-              "guidelineHits": 2,
+              "guidelineHits": 1,
               "guidelineTotal": 3
+            },
+            "status": null,
+            "expectation": null,
+            "truncated": true,
+            "volumeNote": null,
+            "children": [
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "w",
+                "status": "末级/不可再分",
+                "from": 63481.76,
+                "to": 63345.03
+              },
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "x",
+                "status": "末级/不可再分",
+                "from": 63345.03,
+                "to": 63474
+              },
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "y",
+                "status": "末级/不可再分",
+                "from": 63474,
+                "to": 62921.09
+              }
+            ],
+            "alternates": [
+              {
+                "patternId": "sideways-double",
+                "label": "双重横向整理（联合形 w-x-y）",
+                "direction": "down",
+                "fitScore": {
+                  "tier1": 1,
+                  "tier2": 0.5295110213795675,
+                  "tier3": 0,
+                  "tier4": 0
+                }
+              },
+              {
+                "patternId": "zigzag",
+                "label": "单锯齿（Zigzag 5-3-5）",
+                "direction": "down",
+                "fitScore": {
+                  "tier1": 1,
+                  "tier2": 0.639581657280736,
+                  "tier3": -1,
+                  "tier4": 0
+                }
+              }
+            ]
+          },
+          {
+            "isLeaf": false,
+            "degree": 2,
+            "waveIndexInParent": "c",
+            "patternId": "diagonal",
+            "label": "推动浪（终结楔形 Ending Diagonal）",
+            "direction": "up",
+            "points": [
+              {
+                "price": 62921.09,
+                "type": "L",
+                "index": 43,
+                "timestamp": 1785668400
+              },
+              {
+                "price": 63162.94,
+                "type": "H",
+                "index": 44,
+                "timestamp": 1785672000
+              },
+              {
+                "price": 62933.47,
+                "type": "L",
+                "index": 45,
+                "timestamp": 1785675600
+              },
+              {
+                "price": 63120.66,
+                "type": "H",
+                "index": 46,
+                "timestamp": 1785679200
+              },
+              {
+                "price": 62983.01,
+                "type": "L",
+                "index": 47,
+                "timestamp": 1785682800
+              },
+              {
+                "price": 63730.49,
+                "type": "H",
+                "index": 54,
+                "timestamp": 1785708000
+              }
+            ],
+            "fitScore": {
+              "tier1": 3,
+              "tier2": 2.7175108538349395,
+              "tier3": 0,
+              "tier4": 0,
+              "grammarViolations": 0,
+              "penalized": true,
+              "violations": [
+                {
+                  "id": "diagonal.pattern.wave3-exceeds-wave1-end",
+                  "layer": "pattern",
+                  "desc": "3浪须超过1浪的终点",
+                  "overshoot": 0.1748191027496292
+                },
+                {
+                  "id": "diagonal.pattern.wave3-not-shortest",
+                  "layer": "pattern",
+                  "desc": "3浪一定不是最短的",
+                  "overshoot": 0.22600785610916757
+                },
+                {
+                  "id": "diagonal.ratio.converging",
+                  "layer": "ratio",
+                  "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪",
+                  "overshoot": 2.316683894976143
+                }
+              ],
+              "guidelineHits": 0,
+              "guidelineTotal": 1
             },
             "status": null,
             "expectation": null,
@@ -179,303 +298,247 @@
                 "degree": 3,
                 "waveIndexInParent": "1",
                 "status": "末级/不可再分",
-                "from": 57717.55,
-                "to": 59373.3
+                "from": 62921.09,
+                "to": 63162.94
               },
               {
-                "isLeaf": false,
+                "isLeaf": true,
                 "degree": 3,
                 "waveIndexInParent": "2",
-                "patternId": "zigzag",
-                "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "down",
-                "points": [
-                  {
-                    "price": 59373.3,
-                    "type": "H",
-                    "index": 12,
-                    "timestamp": 1782878400
-                  },
-                  {
-                    "price": 58407.31,
-                    "type": "L",
-                    "index": 16,
-                    "timestamp": 1782892800
-                  },
-                  {
-                    "price": 59008.95,
-                    "type": "H",
-                    "index": 17,
-                    "timestamp": 1782896400
-                  },
-                  {
-                    "price": 58242.82,
-                    "type": "L",
-                    "index": 20,
-                    "timestamp": 1782907200
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": -3,
-                  "tier4": 0,
-                  "grammarViolations": 0,
-                  "penalized": false,
-                  "violations": [],
-                  "guidelineHits": 3,
-                  "guidelineTotal": 5
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": null,
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "a",
-                    "status": "末级/不可再分",
-                    "from": 59373.3,
-                    "to": 58407.31
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "b",
-                    "status": "末级/不可再分",
-                    "from": 58407.31,
-                    "to": 59008.95
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "c",
-                    "status": "末级/不可再分",
-                    "from": 59008.95,
-                    "to": 58242.82
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "zigzag-double",
-                    "label": "双锯齿（Double Zigzag w-x-y）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.026072329688815836,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  },
-                  {
-                    "patternId": "flat",
-                    "label": "平台形（Flat 3-3-5，基础版）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.11025402510822181,
-                      "tier3": 0,
-                      "tier4": 0
-                    }
-                  }
-                ]
+                "status": "末级/不可再分",
+                "from": 63162.94,
+                "to": 62933.47
               },
               {
-                "isLeaf": false,
+                "isLeaf": true,
                 "degree": 3,
                 "waveIndexInParent": "3",
-                "patternId": "diagonal",
-                "label": "推动浪（终结楔形 Ending Diagonal）",
-                "direction": "up",
-                "points": [
-                  {
-                    "price": 58242.82,
-                    "type": "L",
-                    "index": 20,
-                    "timestamp": 1782907200
-                  },
-                  {
-                    "price": 60473.99,
-                    "type": "H",
-                    "index": 23,
-                    "timestamp": 1782918000
-                  },
-                  {
-                    "price": 59716.09,
-                    "type": "L",
-                    "index": 25,
-                    "timestamp": 1782925200
-                  },
-                  {
-                    "price": 60289.64,
-                    "type": "H",
-                    "index": 27,
-                    "timestamp": 1782932400
-                  },
-                  {
-                    "price": 59797.67,
-                    "type": "L",
-                    "index": 28,
-                    "timestamp": 1782936000
-                  },
-                  {
-                    "price": 61287.33,
-                    "type": "H",
-                    "index": 30,
-                    "timestamp": 1782943200
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 3,
-                  "tier2": 1.1082003024721194,
-                  "tier3": -1,
-                  "tier4": 0,
-                  "grammarViolations": 0,
-                  "penalized": true,
-                  "violations": [
-                    {
-                      "id": "diagonal.pattern.wave3-exceeds-wave1-end",
-                      "layer": "pattern",
-                      "desc": "3浪须超过1浪的终点",
-                      "overshoot": 0.08262481119771183
-                    },
-                    {
-                      "id": "diagonal.pattern.wave3-not-shortest",
-                      "layer": "pattern",
-                      "desc": "3浪一定不是最短的",
-                      "overshoot": 0.614979257011666
-                    },
-                    {
-                      "id": "diagonal.ratio.converging",
-                      "layer": "ratio",
-                      "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪",
-                      "overshoot": 0.41059623426274167
-                    }
-                  ],
-                  "guidelineHits": 1,
-                  "guidelineTotal": 1
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": "量能背离：3浪均量≤1浪",
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "1",
-                    "status": "末级/不可再分",
-                    "from": 58242.82,
-                    "to": 60473.99
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "2",
-                    "status": "末级/不可再分",
-                    "from": 60473.99,
-                    "to": 59716.09
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "3",
-                    "status": "末级/不可再分",
-                    "from": 59716.09,
-                    "to": 60289.64
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "4",
-                    "status": "末级/不可再分",
-                    "from": 60289.64,
-                    "to": 59797.67
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "5",
-                    "status": "末级/不可再分",
-                    "from": 59797.67,
-                    "to": 61287.33
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "impulse-strict",
-                    "label": "推动浪（标准 Impulse）",
-                    "direction": "up",
-                    "fitScore": {
-                      "tier1": 4,
-                      "tier2": 1.2303126966450406,
-                      "tier3": -2,
-                      "tier4": 0
-                    }
-                  }
-                ]
+                "status": "末级/不可再分",
+                "from": 62933.47,
+                "to": 63120.66
               },
               {
                 "isLeaf": true,
                 "degree": 3,
                 "waveIndexInParent": "4",
                 "status": "末级/不可再分",
-                "from": 61287.33,
-                "to": 59520.02
+                "from": 63120.66,
+                "to": 62983.01
               },
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "5",
+                "status": "末级/不可再分",
+                "from": 62983.01,
+                "to": 63730.49
+              }
+            ],
+            "alternates": [
+              {
+                "patternId": "impulse-strict",
+                "label": "推动浪（标准 Impulse）",
+                "direction": "up",
+                "fitScore": {
+                  "tier1": 5,
+                  "tier2": 1.3112749188241017,
+                  "tier3": -2,
+                  "tier4": 0
+                }
+              }
+            ]
+          }
+        ],
+        "alternates": [
+          {
+            "patternId": "zigzag-double",
+            "label": "双锯齿（Double Zigzag w-x-y）",
+            "direction": "up",
+            "fitScore": {
+              "tier1": 1,
+              "tier2": 0.06430591016865815,
+              "tier3": -2,
+              "tier4": 0
+            }
+          },
+          {
+            "patternId": "sideways-double",
+            "label": "双重横向整理（联合形 w-x-y）",
+            "direction": "up",
+            "fitScore": {
+              "tier1": 1,
+              "tier2": 0.2354933089238682,
+              "tier3": 0,
+              "tier4": 0
+            }
+          }
+        ]
+      },
+      {
+        "isLeaf": true,
+        "degree": 1,
+        "waveIndexInParent": "x",
+        "status": "末级/不可再分",
+        "from": 63730.49,
+        "to": 62210.14
+      },
+      {
+        "isLeaf": false,
+        "degree": 1,
+        "waveIndexInParent": "y",
+        "patternId": "zigzag-double",
+        "label": "双锯齿（Double Zigzag w-x-y）",
+        "direction": "up",
+        "points": [
+          {
+            "price": 62210.14,
+            "type": "L",
+            "index": 64,
+            "timestamp": 1785744000
+          },
+          {
+            "price": 64988.78,
+            "type": "H",
+            "index": 124,
+            "timestamp": 1785960000
+          },
+          {
+            "price": 64087.41,
+            "type": "L",
+            "index": 141,
+            "timestamp": 1786021200
+          },
+          {
+            "price": 65426,
+            "type": "H",
+            "index": 222,
+            "timestamp": 1786312800
+          }
+        ],
+        "fitScore": {
+          "tier1": 1,
+          "tier2": 0.10201393487461523,
+          "tier3": -1,
+          "tier4": 0,
+          "grammarViolations": 0,
+          "penalized": true,
+          "violations": [
+            {
+              "id": "zigzag-double.ratio.y-vs-w-0.9-5",
+              "layer": "ratio",
+              "desc": "y浪价格须>w浪90%且<w浪5倍",
+              "overshoot": 0.10201393487461523
+            }
+          ],
+          "guidelineHits": 1,
+          "guidelineTotal": 3
+        },
+        "status": null,
+        "expectation": null,
+        "truncated": false,
+        "volumeNote": null,
+        "children": [
+          {
+            "isLeaf": false,
+            "degree": 2,
+            "waveIndexInParent": "w",
+            "patternId": "zigzag",
+            "label": "单锯齿（Zigzag 5-3-5）",
+            "direction": "up",
+            "points": [
+              {
+                "price": 62210.14,
+                "type": "L",
+                "index": 64,
+                "timestamp": 1785744000
+              },
+              {
+                "price": 64188.16,
+                "type": "H",
+                "index": 84,
+                "timestamp": 1785816000
+              },
+              {
+                "price": 63382.32,
+                "type": "L",
+                "index": 90,
+                "timestamp": 1785837600
+              },
+              {
+                "price": 64988.78,
+                "type": "H",
+                "index": 124,
+                "timestamp": 1785960000
+              }
+            ],
+            "fitScore": {
+              "tier1": 1,
+              "tier2": 0,
+              "tier3": -3,
+              "tier4": 0,
+              "grammarViolations": 1,
+              "penalized": true,
+              "violations": [],
+              "guidelineHits": 3,
+              "guidelineTotal": 5
+            },
+            "status": null,
+            "expectation": null,
+            "truncated": false,
+            "volumeNote": null,
+            "children": [
               {
                 "isLeaf": false,
                 "degree": 3,
-                "waveIndexInParent": "5",
+                "waveIndexInParent": "a",
                 "patternId": "impulse-strict",
                 "label": "推动浪（标准 Impulse）",
                 "direction": "up",
                 "points": [
                   {
-                    "price": 59520.02,
+                    "price": 62210.14,
                     "type": "L",
-                    "index": 32,
-                    "timestamp": 1782950400
+                    "index": 64,
+                    "timestamp": 1785744000
                   },
                   {
-                    "price": 61056.19,
+                    "price": 62790.86,
                     "type": "H",
-                    "index": 35,
-                    "timestamp": 1782961200
+                    "index": 65,
+                    "timestamp": 1785747600
                   },
                   {
-                    "price": 60014.94,
+                    "price": 62359.27,
                     "type": "L",
-                    "index": 39,
-                    "timestamp": 1782975600
+                    "index": 68,
+                    "timestamp": 1785758400
                   },
                   {
-                    "price": 62147.89,
+                    "price": 64032.43,
                     "type": "H",
-                    "index": 46,
-                    "timestamp": 1783000800
+                    "index": 75,
+                    "timestamp": 1785783600
                   },
                   {
-                    "price": 61074.21,
+                    "price": 63250,
                     "type": "L",
-                    "index": 48,
-                    "timestamp": 1783008000
+                    "index": 80,
+                    "timestamp": 1785801600
                   },
                   {
-                    "price": 63940.79,
+                    "price": 64188.16,
                     "type": "H",
-                    "index": 127,
-                    "timestamp": 1783292400
+                    "index": 84,
+                    "timestamp": 1785816000
                   }
                 ],
                 "fitScore": {
-                  "tier1": 1,
+                  "tier1": 0,
                   "tier2": 0,
                   "tier3": -3,
-                  "tier4": 0,
-                  "grammarViolations": 1,
-                  "penalized": true,
+                  "tier4": 1,
+                  "grammarViolations": 0,
+                  "penalized": false,
                   "violations": [],
                   "guidelineHits": 3,
                   "guidelineTotal": 3
@@ -490,95 +553,367 @@
                     "degree": 4,
                     "waveIndexInParent": "1",
                     "status": "末级/不可再分",
-                    "from": 59520.02,
-                    "to": 61056.19
+                    "from": 62210.14,
+                    "to": 62790.86
                   },
                   {
                     "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "2",
                     "status": "末级/不可再分",
-                    "from": 61056.19,
-                    "to": 60014.94
+                    "from": 62790.86,
+                    "to": 62359.27
                   },
                   {
                     "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "3",
                     "status": "末级/不可再分",
-                    "from": 60014.94,
-                    "to": 62147.89
+                    "from": 62359.27,
+                    "to": 64032.43
                   },
                   {
                     "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "4",
                     "status": "末级/不可再分",
-                    "from": 62147.89,
-                    "to": 61074.21
+                    "from": 64032.43,
+                    "to": 63250
                   },
+                  {
+                    "isLeaf": true,
+                    "degree": 4,
+                    "waveIndexInParent": "5",
+                    "status": "末级/不可再分",
+                    "from": 63250,
+                    "to": 64188.16
+                  }
+                ],
+                "alternates": [
+                  {
+                    "patternId": "diagonal",
+                    "label": "推动浪（终结楔形 Ending Diagonal）",
+                    "direction": "up",
+                    "fitScore": {
+                      "tier1": 2,
+                      "tier2": 2.945015712076481,
+                      "tier3": -1,
+                      "tier4": 1
+                    }
+                  }
+                ]
+              },
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "b",
+                "status": "末级/不可再分",
+                "from": 64188.16,
+                "to": 63382.32
+              },
+              {
+                "isLeaf": false,
+                "degree": 3,
+                "waveIndexInParent": "c",
+                "patternId": "diagonal",
+                "label": "推动浪（终结楔形 Ending Diagonal）",
+                "direction": "up",
+                "points": [
+                  {
+                    "price": 63382.32,
+                    "type": "L",
+                    "index": 90,
+                    "timestamp": 1785837600
+                  },
+                  {
+                    "price": 64497.24,
+                    "type": "H",
+                    "index": 103,
+                    "timestamp": 1785884400
+                  },
+                  {
+                    "price": 63884.14,
+                    "type": "L",
+                    "index": 105,
+                    "timestamp": 1785891600
+                  },
+                  {
+                    "price": 64538.23,
+                    "type": "H",
+                    "index": 116,
+                    "timestamp": 1785931200
+                  },
+                  {
+                    "price": 63814.8,
+                    "type": "L",
+                    "index": 117,
+                    "timestamp": 1785934800
+                  },
+                  {
+                    "price": 64988.78,
+                    "type": "H",
+                    "index": 124,
+                    "timestamp": 1785960000
+                  }
+                ],
+                "fitScore": {
+                  "tier1": 6,
+                  "tier2": 1.0987398696984343,
+                  "tier3": -1,
+                  "tier4": 0,
+                  "grammarViolations": 2,
+                  "penalized": true,
+                  "violations": [
+                    {
+                      "id": "diagonal.pattern.wave4-allowed-cross-wave1",
+                      "layer": "pattern",
+                      "desc": "楔形允许4浪切入1浪，但须落在2、1浪终点之间",
+                      "overshoot": 0.11309737400097321
+                    },
+                    {
+                      "id": "diagonal.pattern.wave4-not-retrace-100-of-3",
+                      "layer": "pattern",
+                      "desc": "4浪不能折返3浪的100%",
+                      "overshoot": 0.10600987631670887
+                    },
+                    {
+                      "id": "diagonal.pattern.wave3-not-shortest",
+                      "layer": "pattern",
+                      "desc": "3浪一定不是最短的",
+                      "overshoot": 0.41333010440210527
+                    },
+                    {
+                      "id": "diagonal.ratio.converging",
+                      "layer": "ratio",
+                      "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪",
+                      "overshoot": 0.46630251497864683
+                    }
+                  ],
+                  "guidelineHits": 1,
+                  "guidelineTotal": 1
+                },
+                "status": null,
+                "expectation": null,
+                "truncated": false,
+                "volumeNote": "量能背离：3浪均量≤1浪",
+                "children": [
                   {
                     "isLeaf": false,
                     "degree": 4,
-                    "waveIndexInParent": "5",
-                    "patternId": "impulse-strict",
-                    "label": "推动浪（标准 Impulse）",
+                    "waveIndexInParent": "1",
+                    "patternId": "diagonal",
+                    "label": "推动浪（终结楔形 Ending Diagonal）",
                     "direction": "up",
                     "points": [
                       {
-                        "price": 61074.21,
+                        "price": 63382.32,
                         "type": "L",
-                        "index": 48,
-                        "timestamp": 1783008000
+                        "index": 90,
+                        "timestamp": 1785837600
                       },
                       {
-                        "price": 61900,
+                        "price": 64200,
                         "type": "H",
-                        "index": 49,
-                        "timestamp": 1783011600
+                        "index": 95,
+                        "timestamp": 1785855600
                       },
                       {
-                        "price": 61162.79,
+                        "price": 63836.37,
                         "type": "L",
-                        "index": 56,
-                        "timestamp": 1783036800
+                        "index": 97,
+                        "timestamp": 1785862800
                       },
                       {
-                        "price": 63410,
+                        "price": 64369.46,
                         "type": "H",
-                        "index": 99,
-                        "timestamp": 1783191600
+                        "index": 98,
+                        "timestamp": 1785866400
                       },
                       {
-                        "price": 62384.08,
+                        "price": 63955.54,
                         "type": "L",
-                        "index": 113,
-                        "timestamp": 1783242000
+                        "index": 100,
+                        "timestamp": 1785873600
                       },
                       {
-                        "price": 63940.79,
+                        "price": 64497.24,
                         "type": "H",
-                        "index": 127,
-                        "timestamp": 1783292400
+                        "index": 103,
+                        "timestamp": 1785884400
                       }
                     ],
                     "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.010358491216333305,
-                      "tier3": -3,
-                      "tier4": 1,
+                      "tier1": 2,
+                      "tier2": 0.026424198103581577,
+                      "tier3": 0,
+                      "tier4": 0,
                       "grammarViolations": 0,
                       "penalized": true,
                       "violations": [
                         {
-                          "id": "impulse.ratio.wave2-retrace-range",
+                          "id": "diagonal.pattern.wave3-not-shortest",
+                          "layer": "pattern",
+                          "desc": "3浪一定不是最短的",
+                          "overshoot": 0.015894406498062816
+                        },
+                        {
+                          "id": "diagonal.ratio.converging",
                           "layer": "ratio",
-                          "desc": "2浪回撤须在1浪的23.6%~88.6%之间",
-                          "overshoot": 0.010358491216333305
+                          "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪",
+                          "overshoot": 0.010529791605518759
                         }
                       ],
-                      "guidelineHits": 3,
-                      "guidelineTotal": 3
+                      "guidelineHits": 0,
+                      "guidelineTotal": 1
+                    },
+                    "status": null,
+                    "expectation": null,
+                    "truncated": false,
+                    "volumeNote": "量能配合：3浪均量>1浪",
+                    "children": [
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "1",
+                        "status": "末级/不可再分",
+                        "from": 63382.32,
+                        "to": 64200
+                      },
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "2",
+                        "status": "末级/不可再分",
+                        "from": 64200,
+                        "to": 63836.37
+                      },
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "3",
+                        "status": "末级/不可再分",
+                        "from": 63836.37,
+                        "to": 64369.46
+                      },
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "4",
+                        "status": "末级/不可再分",
+                        "from": 64369.46,
+                        "to": 63955.54
+                      },
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "5",
+                        "status": "末级/不可再分",
+                        "from": 63955.54,
+                        "to": 64497.24
+                      }
+                    ],
+                    "alternates": [
+                      {
+                        "patternId": "impulse-strict",
+                        "label": "推动浪（标准 Impulse）",
+                        "direction": "up",
+                        "fitScore": {
+                          "tier1": 3,
+                          "tier2": 0.422416510278919,
+                          "tier3": -2,
+                          "tier4": 0
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "isLeaf": true,
+                    "degree": 4,
+                    "waveIndexInParent": "2",
+                    "status": "末级/不可再分",
+                    "from": 64497.24,
+                    "to": 63884.14
+                  },
+                  {
+                    "isLeaf": false,
+                    "degree": 4,
+                    "waveIndexInParent": "3",
+                    "patternId": "diagonal",
+                    "label": "推动浪（终结楔形 Ending Diagonal）",
+                    "direction": "up",
+                    "points": [
+                      {
+                        "price": 63884.14,
+                        "type": "L",
+                        "index": 105,
+                        "timestamp": 1785891600
+                      },
+                      {
+                        "price": 64465.45,
+                        "type": "H",
+                        "index": 106,
+                        "timestamp": 1785895200
+                      },
+                      {
+                        "price": 63991.78,
+                        "type": "L",
+                        "index": 107,
+                        "timestamp": 1785898800
+                      },
+                      {
+                        "price": 64480.49,
+                        "type": "H",
+                        "index": 109,
+                        "timestamp": 1785906000
+                      },
+                      {
+                        "price": 63934.64,
+                        "type": "L",
+                        "index": 111,
+                        "timestamp": 1785913200
+                      },
+                      {
+                        "price": 64538.23,
+                        "type": "H",
+                        "index": 116,
+                        "timestamp": 1785931200
+                      }
+                    ],
+                    "fitScore": {
+                      "tier1": 4,
+                      "tier2": 0.5944705582641261,
+                      "tier3": 0,
+                      "tier4": 0,
+                      "grammarViolations": 0,
+                      "penalized": true,
+                      "violations": [
+                        {
+                          "id": "diagonal.pattern.wave4-allowed-cross-wave1",
+                          "layer": "pattern",
+                          "desc": "楔形允许4浪切入1浪，但须落在2、1浪终点之间",
+                          "overshoot": 0.12063250786412402
+                        },
+                        {
+                          "id": "diagonal.pattern.wave4-not-retrace-100-of-3",
+                          "layer": "pattern",
+                          "desc": "4浪不能折返3浪的100%",
+                          "overshoot": 0.11692005483824665
+                        },
+                        {
+                          "id": "diagonal.pattern.wave3-not-shortest",
+                          "layer": "pattern",
+                          "desc": "3浪一定不是最短的",
+                          "overshoot": 0.1592953845624519
+                        },
+                        {
+                          "id": "diagonal.ratio.converging",
+                          "layer": "ratio",
+                          "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪",
+                          "overshoot": 0.1976226109993035
+                        }
+                      ],
+                      "guidelineHits": 0,
+                      "guidelineTotal": 1
                     },
                     "status": null,
                     "expectation": null,
@@ -590,66 +925,82 @@
                         "degree": 5,
                         "waveIndexInParent": "1",
                         "status": "末级/不可再分",
-                        "from": 61074.21,
-                        "to": 61900
+                        "from": 63884.14,
+                        "to": 64465.45
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "2",
                         "status": "末级/不可再分",
-                        "from": 61900,
-                        "to": 61162.79
+                        "from": 64465.45,
+                        "to": 63991.78
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "3",
                         "status": "末级/不可再分",
-                        "from": 61162.79,
-                        "to": 63410
+                        "from": 63991.78,
+                        "to": 64480.49
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "4",
                         "status": "末级/不可再分",
-                        "from": 63410,
-                        "to": 62384.08
+                        "from": 64480.49,
+                        "to": 63934.64
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "5",
                         "status": "末级/不可再分",
-                        "from": 62384.08,
-                        "to": 63940.79
+                        "from": 63934.64,
+                        "to": 64538.23
                       }
                     ],
                     "alternates": [
                       {
-                        "patternId": "diagonal",
-                        "label": "推动浪（终结楔形 Ending Diagonal）",
+                        "patternId": "impulse-strict",
+                        "label": "推动浪（标准 Impulse）",
                         "direction": "up",
                         "fitScore": {
-                          "tier1": 2,
-                          "tier2": 2.3779229368566224,
-                          "tier3": -1,
-                          "tier4": 1
+                          "tier1": 3,
+                          "tier2": 1.121648646649261,
+                          "tier3": -2,
+                          "tier4": 0
                         }
                       }
                     ]
+                  },
+                  {
+                    "isLeaf": true,
+                    "degree": 4,
+                    "waveIndexInParent": "4",
+                    "status": "末级/不可再分",
+                    "from": 64538.23,
+                    "to": 63814.8
+                  },
+                  {
+                    "isLeaf": true,
+                    "degree": 4,
+                    "waveIndexInParent": "5",
+                    "status": "末级/不可再分",
+                    "from": 63814.8,
+                    "to": 64988.78
                   }
                 ],
                 "alternates": [
                   {
-                    "patternId": "diagonal",
-                    "label": "推动浪（终结楔形 Ending Diagonal）",
+                    "patternId": "impulse-strict",
+                    "label": "推动浪（标准 Impulse）",
                     "direction": "up",
                     "fitScore": {
-                      "tier1": 3,
-                      "tier2": 0.8833626135925293,
-                      "tier3": 0,
+                      "tier1": 5,
+                      "tier2": 1.1531565430293245,
+                      "tier3": -2,
                       "tier4": 0
                     }
                   }
@@ -658,12 +1009,122 @@
             ],
             "alternates": [
               {
-                "patternId": "diagonal",
-                "label": "推动浪（终结楔形 Ending Diagonal）",
+                "patternId": "sideways-triple",
+                "label": "三重横向整理（联合形 w-x-y-xx-z）",
                 "direction": "up",
                 "fitScore": {
-                  "tier1": 3,
-                  "tier2": 1.799735751444978,
+                  "tier1": 1,
+                  "tier2": 0.3866195046577972,
+                  "tier3": 0,
+                  "tier4": 0
+                }
+              },
+              {
+                "patternId": "zigzag-double",
+                "label": "双锯齿（Double Zigzag w-x-y）",
+                "direction": "up",
+                "fitScore": {
+                  "tier1": 2,
+                  "tier2": 0.021425465869910846,
+                  "tier3": -1,
+                  "tier4": 0
+                }
+              }
+            ]
+          },
+          {
+            "isLeaf": false,
+            "degree": 2,
+            "waveIndexInParent": "x",
+            "patternId": "zigzag",
+            "label": "单锯齿（Zigzag 5-3-5）",
+            "direction": "down",
+            "points": [
+              {
+                "price": 64988.78,
+                "type": "H",
+                "index": 124,
+                "timestamp": 1785960000
+              },
+              {
+                "price": 64383.41,
+                "type": "L",
+                "index": 130,
+                "timestamp": 1785981600
+              },
+              {
+                "price": 64944.16,
+                "type": "H",
+                "index": 133,
+                "timestamp": 1785992400
+              },
+              {
+                "price": 64087.41,
+                "type": "L",
+                "index": 141,
+                "timestamp": 1786021200
+              }
+            ],
+            "fitScore": {
+              "tier1": 0,
+              "tier2": 0,
+              "tier3": -1,
+              "tier4": 0,
+              "grammarViolations": 0,
+              "penalized": false,
+              "violations": [],
+              "guidelineHits": 1,
+              "guidelineTotal": 5
+            },
+            "status": null,
+            "expectation": null,
+            "truncated": false,
+            "volumeNote": null,
+            "children": [
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "a",
+                "status": "末级/不可再分",
+                "from": 64988.78,
+                "to": 64383.41
+              },
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "b",
+                "status": "末级/不可再分",
+                "from": 64383.41,
+                "to": 64944.16
+              },
+              {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "c",
+                "status": "末级/不可再分",
+                "from": 64944.16,
+                "to": 64087.41
+              }
+            ],
+            "alternates": [
+              {
+                "patternId": "flat",
+                "label": "平台形（Flat 3-3-5，基础版）",
+                "direction": "down",
+                "fitScore": {
+                  "tier1": 0,
+                  "tier2": 0,
+                  "tier3": 0,
+                  "tier4": 0
+                }
+              },
+              {
+                "patternId": "flat-regular",
+                "label": "规则平台形（Regular Flat）",
+                "direction": "down",
+                "fitScore": {
+                  "tier1": 0,
+                  "tier2": 0,
                   "tier3": 0,
                   "tier4": 0
                 }
@@ -673,34 +1134,46 @@
           {
             "isLeaf": false,
             "degree": 2,
-            "waveIndexInParent": "b",
-            "patternId": "sideways-double",
-            "label": "双重横向整理（联合形 w-x-y）",
-            "direction": "down",
+            "waveIndexInParent": "y",
+            "patternId": "sideways-triple",
+            "label": "三重横向整理（联合形 w-x-y-xx-z）",
+            "direction": "up",
             "points": [
               {
-                "price": 63940.79,
-                "type": "H",
-                "index": 127,
-                "timestamp": 1783292400
-              },
-              {
-                "price": 63282,
-                "type": "L",
-                "index": 128,
-                "timestamp": 1783296000
-              },
-              {
-                "price": 63860,
-                "type": "H",
-                "index": 129,
-                "timestamp": 1783299600
-              },
-              {
-                "price": 61250,
+                "price": 64087.41,
                 "type": "L",
                 "index": 141,
-                "timestamp": 1783342800
+                "timestamp": 1786021200
+              },
+              {
+                "price": 64932.11,
+                "type": "H",
+                "index": 143,
+                "timestamp": 1786028400
+              },
+              {
+                "price": 64099.35,
+                "type": "L",
+                "index": 156,
+                "timestamp": 1786075200
+              },
+              {
+                "price": 65348.97,
+                "type": "H",
+                "index": 164,
+                "timestamp": 1786104000
+              },
+              {
+                "price": 64470.01,
+                "type": "L",
+                "index": 169,
+                "timestamp": 1786122000
+              },
+              {
+                "price": 65426,
+                "type": "H",
+                "index": 222,
+                "timestamp": 1786312800
               }
             ],
             "fitScore": {
@@ -724,48 +1197,40 @@
                 "degree": 3,
                 "waveIndexInParent": "w",
                 "status": "末级/不可再分",
-                "from": 63940.79,
-                "to": 63282
-              },
-              {
-                "isLeaf": true,
-                "degree": 3,
-                "waveIndexInParent": "x",
-                "status": "末级/不可再分",
-                "from": 63282,
-                "to": 63860
+                "from": 64087.41,
+                "to": 64932.11
               },
               {
                 "isLeaf": false,
                 "degree": 3,
-                "waveIndexInParent": "y",
+                "waveIndexInParent": "x",
                 "patternId": "zigzag",
                 "label": "单锯齿（Zigzag 5-3-5）",
                 "direction": "down",
                 "points": [
                   {
-                    "price": 63860,
+                    "price": 64932.11,
                     "type": "H",
-                    "index": 129,
-                    "timestamp": 1783299600
+                    "index": 143,
+                    "timestamp": 1786028400
                   },
                   {
-                    "price": 62562.01,
+                    "price": 64130.09,
                     "type": "L",
-                    "index": 137,
-                    "timestamp": 1783328400
+                    "index": 151,
+                    "timestamp": 1786057200
                   },
                   {
-                    "price": 62972.46,
+                    "price": 64489,
                     "type": "H",
-                    "index": 138,
-                    "timestamp": 1783332000
+                    "index": 154,
+                    "timestamp": 1786068000
                   },
                   {
-                    "price": 61250,
+                    "price": 64099.35,
                     "type": "L",
-                    "index": 141,
-                    "timestamp": 1783342800
+                    "index": 156,
+                    "timestamp": 1786075200
                   }
                 ],
                 "fitScore": {
@@ -789,24 +1254,24 @@
                     "degree": 4,
                     "waveIndexInParent": "a",
                     "status": "末级/不可再分",
-                    "from": 63860,
-                    "to": 62562.01
+                    "from": 64932.11,
+                    "to": 64130.09
                   },
                   {
                     "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "b",
                     "status": "末级/不可再分",
-                    "from": 62562.01,
-                    "to": 62972.46
+                    "from": 64130.09,
+                    "to": 64489
                   },
                   {
                     "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "c",
                     "status": "末级/不可再分",
-                    "from": 62972.46,
-                    "to": 61250
+                    "from": 64489,
+                    "to": 64099.35
                   }
                 ],
                 "alternates": [
@@ -815,284 +1280,19 @@
                     "label": "双锯齿（Double Zigzag w-x-y）",
                     "direction": "down",
                     "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  },
-                  {
-                    "patternId": "zigzag-triple",
-                    "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                    "direction": "down",
-                    "fitScore": {
                       "tier1": 1,
-                      "tier2": 0.06496035330723722,
+                      "tier2": 0.10101566714776913,
                       "tier3": -1,
                       "tier4": 0
                     }
-                  }
-                ]
-              }
-            ],
-            "alternates": [
-              {
-                "patternId": "zigzag",
-                "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 2,
-                  "tier2": 0.4,
-                  "tier3": -2,
-                  "tier4": 0
-                }
-              },
-              {
-                "patternId": "sideways-triple",
-                "label": "三重横向整理（联合形 w-x-y-xx-z）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 1,
-                  "tier2": 0.5482575806769392,
-                  "tier3": 0,
-                  "tier4": 0
-                }
-              }
-            ]
-          },
-          {
-            "isLeaf": true,
-            "degree": 2,
-            "waveIndexInParent": "c",
-            "status": "末级/不可再分",
-            "from": 61250,
-            "to": 64658.85
-          }
-        ],
-        "alternates": [
-          {
-            "patternId": "zigzag-triple",
-            "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-            "direction": "up",
-            "fitScore": {
-              "tier1": 3,
-              "tier2": 0,
-              "tier3": -2,
-              "tier4": 0
-            }
-          },
-          {
-            "patternId": "zigzag-double",
-            "label": "双锯齿（Double Zigzag w-x-y）",
-            "direction": "up",
-            "fitScore": {
-              "tier1": 3,
-              "tier2": 0.0859118793269164,
-              "tier3": -1,
-              "tier4": 0
-            }
-          }
-        ]
-      },
-      {
-        "isLeaf": false,
-        "degree": 1,
-        "waveIndexInParent": "x",
-        "patternId": "zigzag-double",
-        "label": "双锯齿（Double Zigzag w-x-y）",
-        "direction": "down",
-        "points": [
-          {
-            "price": 64658.85,
-            "type": "H",
-            "index": 149,
-            "timestamp": 1783371600
-          },
-          {
-            "price": 62583,
-            "type": "L",
-            "index": 166,
-            "timestamp": 1783432800
-          },
-          {
-            "price": 64199.93,
-            "type": "H",
-            "index": 168,
-            "timestamp": 1783440000
-          },
-          {
-            "price": 61453.09,
-            "type": "L",
-            "index": 191,
-            "timestamp": 1783522800
-          }
-        ],
-        "fitScore": {
-          "tier1": 0,
-          "tier2": 0,
-          "tier3": 0,
-          "tier4": 0,
-          "grammarViolations": 0,
-          "penalized": false,
-          "violations": [],
-          "guidelineHits": 0,
-          "guidelineTotal": 3
-        },
-        "status": null,
-        "expectation": null,
-        "truncated": false,
-        "volumeNote": null,
-        "children": [
-          {
-            "isLeaf": false,
-            "degree": 2,
-            "waveIndexInParent": "w",
-            "patternId": "zigzag",
-            "label": "单锯齿（Zigzag 5-3-5）",
-            "direction": "down",
-            "points": [
-              {
-                "price": 64658.85,
-                "type": "H",
-                "index": 149,
-                "timestamp": 1783371600
-              },
-              {
-                "price": 62740.47,
-                "type": "L",
-                "index": 157,
-                "timestamp": 1783400400
-              },
-              {
-                "price": 63830,
-                "type": "H",
-                "index": 164,
-                "timestamp": 1783425600
-              },
-              {
-                "price": 62583,
-                "type": "L",
-                "index": 166,
-                "timestamp": 1783432800
-              }
-            ],
-            "fitScore": {
-              "tier1": 0,
-              "tier2": 0,
-              "tier3": -5,
-              "tier4": 0,
-              "grammarViolations": 0,
-              "penalized": false,
-              "violations": [],
-              "guidelineHits": 5,
-              "guidelineTotal": 5
-            },
-            "status": null,
-            "expectation": null,
-            "truncated": false,
-            "volumeNote": null,
-            "children": [
-              {
-                "isLeaf": true,
-                "degree": 3,
-                "waveIndexInParent": "a",
-                "status": "末级/不可再分",
-                "from": 64658.85,
-                "to": 62740.47
-              },
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "b",
-                "patternId": "zigzag",
-                "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "up",
-                "points": [
-                  {
-                    "price": 62740.47,
-                    "type": "L",
-                    "index": 157,
-                    "timestamp": 1783400400
                   },
-                  {
-                    "price": 63390.08,
-                    "type": "H",
-                    "index": 159,
-                    "timestamp": 1783407600
-                  },
-                  {
-                    "price": 62923.26,
-                    "type": "L",
-                    "index": 160,
-                    "timestamp": 1783411200
-                  },
-                  {
-                    "price": 63830,
-                    "type": "H",
-                    "index": 164,
-                    "timestamp": 1783425600
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": -2,
-                  "tier4": 0,
-                  "grammarViolations": 0,
-                  "penalized": false,
-                  "violations": [],
-                  "guidelineHits": 2,
-                  "guidelineTotal": 5
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": null,
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "a",
-                    "status": "末级/不可再分",
-                    "from": 62740.47,
-                    "to": 63390.08
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "b",
-                    "status": "末级/不可再分",
-                    "from": 63390.08,
-                    "to": 62923.26
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "c",
-                    "status": "末级/不可再分",
-                    "from": 62923.26,
-                    "to": 63830
-                  }
-                ],
-                "alternates": [
                   {
                     "patternId": "flat",
                     "label": "平台形（Flat 3-3-5，基础版）",
-                    "direction": "up",
+                    "direction": "down",
                     "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": 0,
-                      "tier4": 0
-                    }
-                  },
-                  {
-                    "patternId": "flat-regular",
-                    "label": "规则平台形（Regular Flat）",
-                    "direction": "up",
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
+                      "tier1": 1,
+                      "tier2": 0.3607035093531659,
                       "tier3": 0,
                       "tier4": 0
                     }
@@ -1100,139 +1300,36 @@
                 ]
               },
               {
-                "isLeaf": true,
-                "degree": 3,
-                "waveIndexInParent": "c",
-                "status": "末级/不可再分",
-                "from": 63830,
-                "to": 62583
-              }
-            ],
-            "alternates": [
-              {
-                "patternId": "zigzag-double",
-                "label": "双锯齿（Double Zigzag w-x-y）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 1,
-                  "tier2": 0.06096887134698744,
-                  "tier3": -2,
-                  "tier4": 0
-                }
-              },
-              {
-                "patternId": "flat",
-                "label": "平台形（Flat 3-3-5，基础版）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 1,
-                  "tier2": 0.1886532237766089,
-                  "tier3": 0,
-                  "tier4": 0
-                }
-              }
-            ]
-          },
-          {
-            "isLeaf": true,
-            "degree": 2,
-            "waveIndexInParent": "x",
-            "status": "末级/不可再分",
-            "from": 62583,
-            "to": 64199.93
-          },
-          {
-            "isLeaf": false,
-            "degree": 2,
-            "waveIndexInParent": "y",
-            "patternId": "zigzag",
-            "label": "单锯齿（Zigzag 5-3-5）",
-            "direction": "down",
-            "points": [
-              {
-                "price": 64199.93,
-                "type": "H",
-                "index": 168,
-                "timestamp": 1783440000
-              },
-              {
-                "price": 61663.4,
-                "type": "L",
-                "index": 185,
-                "timestamp": 1783501200
-              },
-              {
-                "price": 62369.97,
-                "type": "H",
-                "index": 188,
-                "timestamp": 1783512000
-              },
-              {
-                "price": 61453.09,
-                "type": "L",
-                "index": 191,
-                "timestamp": 1783522800
-              }
-            ],
-            "fitScore": {
-              "tier1": 0,
-              "tier2": 0,
-              "tier3": -2,
-              "tier4": 0,
-              "grammarViolations": 0,
-              "penalized": false,
-              "violations": [],
-              "guidelineHits": 2,
-              "guidelineTotal": 5
-            },
-            "status": null,
-            "expectation": null,
-            "truncated": false,
-            "volumeNote": null,
-            "children": [
-              {
                 "isLeaf": false,
                 "degree": 3,
-                "waveIndexInParent": "a",
-                "patternId": "impulse-strict",
-                "label": "推动浪（标准 Impulse）",
-                "direction": "down",
+                "waveIndexInParent": "y",
+                "patternId": "zigzag-double",
+                "label": "双锯齿（Double Zigzag w-x-y）",
+                "direction": "up",
                 "points": [
                   {
-                    "price": 64199.93,
-                    "type": "H",
-                    "index": 168,
-                    "timestamp": 1783440000
-                  },
-                  {
-                    "price": 63177.61,
+                    "price": 64099.35,
                     "type": "L",
-                    "index": 174,
-                    "timestamp": 1783461600
+                    "index": 156,
+                    "timestamp": 1786075200
                   },
                   {
-                    "price": 63720.88,
+                    "price": 64416.1,
                     "type": "H",
-                    "index": 176,
-                    "timestamp": 1783468800
+                    "index": 158,
+                    "timestamp": 1786082400
                   },
                   {
-                    "price": 62447.04,
+                    "price": 64206.98,
                     "type": "L",
-                    "index": 178,
-                    "timestamp": 1783476000
+                    "index": 159,
+                    "timestamp": 1786086000
                   },
                   {
-                    "price": 63051.13,
+                    "price": 65348.97,
                     "type": "H",
-                    "index": 179,
-                    "timestamp": 1783479600
-                  },
-                  {
-                    "price": 61663.4,
-                    "type": "L",
-                    "index": 185,
-                    "timestamp": 1783501200
+                    "index": 164,
+                    "timestamp": 1786104000
                   }
                 ],
                 "fitScore": {
@@ -1249,483 +1346,31 @@
                 "status": null,
                 "expectation": null,
                 "truncated": false,
-                "volumeNote": "量能背离：3浪均量≤1浪",
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "1",
-                    "status": "末级/不可再分",
-                    "from": 64199.93,
-                    "to": 63177.61
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "2",
-                    "status": "末级/不可再分",
-                    "from": 63177.61,
-                    "to": 63720.88
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "3",
-                    "status": "末级/不可再分",
-                    "from": 63720.88,
-                    "to": 62447.04
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "4",
-                    "status": "末级/不可再分",
-                    "from": 62447.04,
-                    "to": 63051.13
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "5",
-                    "status": "末级/不可再分",
-                    "from": 63051.13,
-                    "to": 61663.4
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "diagonal",
-                    "label": "推动浪（终结楔形 Ending Diagonal）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 2,
-                      "tier2": 0.5902445289059219,
-                      "tier3": 0,
-                      "tier4": 0
-                    }
-                  }
-                ]
-              },
-              {
-                "isLeaf": true,
-                "degree": 3,
-                "waveIndexInParent": "b",
-                "status": "末级/不可再分",
-                "from": 61663.4,
-                "to": 62369.97
-              },
-              {
-                "isLeaf": true,
-                "degree": 3,
-                "waveIndexInParent": "c",
-                "status": "末级/不可再分",
-                "from": 62369.97,
-                "to": 61453.09
-              }
-            ],
-            "alternates": [
-              {
-                "patternId": "zigzag-triple",
-                "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 1,
-                  "tier2": 0.026419227675439364,
-                  "tier3": -2,
-                  "tier4": 0
-                }
-              },
-              {
-                "patternId": "zigzag-double",
-                "label": "双锯齿（Double Zigzag w-x-y）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 2,
-                  "tier2": 0.13134873232329158,
-                  "tier3": 0,
-                  "tier4": 0
-                }
-              }
-            ]
-          }
-        ],
-        "alternates": [
-          {
-            "patternId": "sideways-double",
-            "label": "双重横向整理（联合形 w-x-y）",
-            "direction": "down",
-            "fitScore": {
-              "tier1": 0,
-              "tier2": 0,
-              "tier3": 0,
-              "tier4": 0
-            }
-          },
-          {
-            "patternId": "sideways-triple",
-            "label": "三重横向整理（联合形 w-x-y-xx-z）",
-            "direction": "down",
-            "fitScore": {
-              "tier1": 1,
-              "tier2": 0.1886532237766089,
-              "tier3": 0,
-              "tier4": 0
-            }
-          }
-        ]
-      },
-      {
-        "isLeaf": false,
-        "degree": 1,
-        "waveIndexInParent": "y",
-        "patternId": "zigzag-double",
-        "label": "双锯齿（Double Zigzag w-x-y）",
-        "direction": "up",
-        "points": [
-          {
-            "price": 61453.09,
-            "type": "L",
-            "index": 191,
-            "timestamp": 1783522800
-          },
-          {
-            "price": 65559.5,
-            "type": "H",
-            "index": 359,
-            "timestamp": 1784127600
-          },
-          {
-            "price": 62452.52,
-            "type": "L",
-            "index": 405,
-            "timestamp": 1784293200
-          },
-          {
-            "price": 66923.95,
-            "type": "H",
-            "index": 502,
-            "timestamp": 1784642400
-          }
-        ],
-        "fitScore": {
-          "tier1": 0,
-          "tier2": 0,
-          "tier3": -1,
-          "tier4": 0,
-          "grammarViolations": 0,
-          "penalized": false,
-          "violations": [],
-          "guidelineHits": 1,
-          "guidelineTotal": 3
-        },
-        "status": null,
-        "expectation": null,
-        "truncated": false,
-        "volumeNote": null,
-        "children": [
-          {
-            "isLeaf": false,
-            "degree": 2,
-            "waveIndexInParent": "w",
-            "patternId": "zigzag-double",
-            "label": "双锯齿（Double Zigzag w-x-y）",
-            "direction": "up",
-            "points": [
-              {
-                "price": 61453.09,
-                "type": "L",
-                "index": 191,
-                "timestamp": 1783522800
-              },
-              {
-                "price": 64669.42,
-                "type": "H",
-                "index": 237,
-                "timestamp": 1783688400
-              },
-              {
-                "price": 61750.9,
-                "type": "L",
-                "index": 314,
-                "timestamp": 1783965600
-              },
-              {
-                "price": 65559.5,
-                "type": "H",
-                "index": 359,
-                "timestamp": 1784127600
-              }
-            ],
-            "fitScore": {
-              "tier1": 0,
-              "tier2": 0,
-              "tier3": 0,
-              "tier4": 0,
-              "grammarViolations": 0,
-              "penalized": false,
-              "violations": [],
-              "guidelineHits": 0,
-              "guidelineTotal": 3
-            },
-            "status": null,
-            "expectation": null,
-            "truncated": false,
-            "volumeNote": null,
-            "children": [
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "w",
-                "patternId": "zigzag-double",
-                "label": "双锯齿（Double Zigzag w-x-y）",
-                "direction": "up",
-                "points": [
-                  {
-                    "price": 61453.09,
-                    "type": "L",
-                    "index": 191,
-                    "timestamp": 1783522800
-                  },
-                  {
-                    "price": 62596.59,
-                    "type": "H",
-                    "index": 201,
-                    "timestamp": 1783558800
-                  },
-                  {
-                    "price": 61636.05,
-                    "type": "L",
-                    "index": 202,
-                    "timestamp": 1783562400
-                  },
-                  {
-                    "price": 64669.42,
-                    "type": "H",
-                    "index": 237,
-                    "timestamp": 1783688400
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": 0,
-                  "tier4": 0,
-                  "grammarViolations": 0,
-                  "penalized": false,
-                  "violations": [],
-                  "guidelineHits": 0,
-                  "guidelineTotal": 3
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
                 "volumeNote": null,
                 "children": [
                   {
-                    "isLeaf": false,
+                    "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "w",
-                    "patternId": "zigzag",
-                    "label": "单锯齿（Zigzag 5-3-5）",
-                    "direction": "up",
-                    "points": [
-                      {
-                        "price": 61453.09,
-                        "type": "L",
-                        "index": 191,
-                        "timestamp": 1783522800
-                      },
-                      {
-                        "price": 62343.04,
-                        "type": "H",
-                        "index": 193,
-                        "timestamp": 1783530000
-                      },
-                      {
-                        "price": 61905.45,
-                        "type": "L",
-                        "index": 197,
-                        "timestamp": 1783544400
-                      },
-                      {
-                        "price": 62596.59,
-                        "type": "H",
-                        "index": 201,
-                        "timestamp": 1783558800
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -3,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": false,
-                      "violations": [],
-                      "guidelineHits": 3,
-                      "guidelineTotal": 5
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": null,
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "a",
-                        "status": "末级/不可再分",
-                        "from": 61453.09,
-                        "to": 62343.04
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "b",
-                        "status": "末级/不可再分",
-                        "from": 62343.04,
-                        "to": 61905.45
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "c",
-                        "status": "末级/不可再分",
-                        "from": 61905.45,
-                        "to": 62596.59
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "zigzag-double",
-                        "label": "双锯齿（Double Zigzag w-x-y）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 0.030096237250929147,
-                          "tier3": -1,
-                          "tier4": 0
-                        }
-                      },
-                      {
-                        "patternId": "flat",
-                        "label": "平台形（Flat 3-3-5，基础版）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 0.2975688842872366,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      }
-                    ]
+                    "status": "末级/不可再分",
+                    "from": 64099.35,
+                    "to": 64416.1
                   },
                   {
                     "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "x",
                     "status": "末级/不可再分",
-                    "from": 62596.59,
-                    "to": 61636.05
+                    "from": 64416.1,
+                    "to": 64206.98
                   },
                   {
-                    "isLeaf": false,
+                    "isLeaf": true,
                     "degree": 4,
                     "waveIndexInParent": "y",
-                    "patternId": "zigzag",
-                    "label": "单锯齿（Zigzag 5-3-5）",
-                    "direction": "up",
-                    "points": [
-                      {
-                        "price": 61636.05,
-                        "type": "L",
-                        "index": 202,
-                        "timestamp": 1783562400
-                      },
-                      {
-                        "price": 63226.2,
-                        "type": "H",
-                        "index": 207,
-                        "timestamp": 1783580400
-                      },
-                      {
-                        "price": 62403.42,
-                        "type": "L",
-                        "index": 212,
-                        "timestamp": 1783598400
-                      },
-                      {
-                        "price": 64669.42,
-                        "type": "H",
-                        "index": 237,
-                        "timestamp": 1783688400
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -4,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": false,
-                      "violations": [],
-                      "guidelineHits": 4,
-                      "guidelineTotal": 5
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": null,
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "a",
-                        "status": "末级/不可再分",
-                        "from": 61636.05,
-                        "to": 63226.2
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "b",
-                        "status": "末级/不可再分",
-                        "from": 63226.2,
-                        "to": 62403.42
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "c",
-                        "status": "末级/不可再分",
-                        "from": 62403.42,
-                        "to": 64669.42
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "zigzag-double",
-                        "label": "双锯齿（Double Zigzag w-x-y）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 0,
-                          "tier2": 0,
-                          "tier3": -3,
-                          "tier4": 0
-                        }
-                      },
-                      {
-                        "patternId": "flat",
-                        "label": "平台形（Flat 3-3-5，基础版）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 0.26082445052353387,
-                          "tier3": -1,
-                          "tier4": 0
-                        }
-                      }
-                    ]
+                    "status": "末级/不可再分",
+                    "from": 64206.98,
+                    "to": 65348.97
                   }
                 ],
                 "alternates": [
@@ -1734,64 +1379,72 @@
                     "label": "双重横向整理（联合形 w-x-y）",
                     "direction": "up",
                     "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
+                      "tier1": 1,
+                      "tier2": 0.05684970120647044,
                       "tier3": 0,
                       "tier4": 0
                     }
                   },
                   {
-                    "patternId": "zigzag-triple",
-                    "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
+                    "patternId": "zigzag",
+                    "label": "单锯齿（Zigzag 5-3-5）",
                     "direction": "up",
                     "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -1,
+                      "tier1": 1,
+                      "tier2": 0.11242232257826458,
+                      "tier3": -2,
                       "tier4": 0
                     }
                   }
                 ]
               },
               {
+                "isLeaf": true,
+                "degree": 3,
+                "waveIndexInParent": "xx",
+                "status": "末级/不可再分",
+                "from": 65348.97,
+                "to": 64470.01
+              },
+              {
                 "isLeaf": false,
                 "degree": 3,
-                "waveIndexInParent": "x",
+                "waveIndexInParent": "z",
                 "patternId": "zigzag",
                 "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "down",
+                "direction": "up",
                 "points": [
                   {
-                    "price": 64669.42,
-                    "type": "H",
-                    "index": 237,
-                    "timestamp": 1783688400
-                  },
-                  {
-                    "price": 62033,
+                    "price": 64470.01,
                     "type": "L",
-                    "index": 310,
-                    "timestamp": 1783951200
+                    "index": 169,
+                    "timestamp": 1786122000
                   },
                   {
-                    "price": 62908,
+                    "price": 65150.16,
                     "type": "H",
-                    "index": 311,
-                    "timestamp": 1783954800
+                    "index": 190,
+                    "timestamp": 1786197600
                   },
                   {
-                    "price": 61750.9,
+                    "price": 64675.22,
                     "type": "L",
-                    "index": 314,
-                    "timestamp": 1783965600
+                    "index": 203,
+                    "timestamp": 1786244400
+                  },
+                  {
+                    "price": 65426,
+                    "type": "H",
+                    "index": 222,
+                    "timestamp": 1786312800
                   }
                 ],
                 "fitScore": {
-                  "tier1": 1,
+                  "tier1": 2,
                   "tier2": 0,
                   "tier3": -3,
                   "tier4": 0,
-                  "grammarViolations": 1,
+                  "grammarViolations": 2,
                   "penalized": true,
                   "violations": [],
                   "guidelineHits": 3,
@@ -1808,64 +1461,70 @@
                     "waveIndexInParent": "a",
                     "patternId": "diagonal",
                     "label": "推动浪（终结楔形 Ending Diagonal）",
-                    "direction": "down",
+                    "direction": "up",
                     "points": [
                       {
-                        "price": 64669.42,
-                        "type": "H",
-                        "index": 237,
-                        "timestamp": 1783688400
-                      },
-                      {
-                        "price": 63608.54,
+                        "price": 64470.01,
                         "type": "L",
-                        "index": 244,
-                        "timestamp": 1783713600
+                        "index": 169,
+                        "timestamp": 1786122000
                       },
                       {
-                        "price": 64458.7,
+                        "price": 65076.06,
                         "type": "H",
-                        "index": 262,
-                        "timestamp": 1783778400
+                        "index": 173,
+                        "timestamp": 1786136400
                       },
                       {
-                        "price": 63588.2,
+                        "price": 64789.89,
                         "type": "L",
-                        "index": 278,
-                        "timestamp": 1783836000
+                        "index": 176,
+                        "timestamp": 1786147200
                       },
                       {
-                        "price": 64388.01,
+                        "price": 65035.56,
                         "type": "H",
-                        "index": 296,
-                        "timestamp": 1783900800
+                        "index": 179,
+                        "timestamp": 1786158000
                       },
                       {
-                        "price": 62033,
+                        "price": 64880,
                         "type": "L",
-                        "index": 310,
-                        "timestamp": 1783951200
+                        "index": 188,
+                        "timestamp": 1786190400
+                      },
+                      {
+                        "price": 65150.16,
+                        "type": "H",
+                        "index": 190,
+                        "timestamp": 1786197600
                       }
                     ],
                     "fitScore": {
-                      "tier1": 2,
-                      "tier2": 1.578774225171559,
+                      "tier1": 3,
+                      "tier2": 0.1978853618130776,
                       "tier3": -1,
                       "tier4": 0,
                       "grammarViolations": 0,
                       "penalized": true,
                       "violations": [
                         {
+                          "id": "diagonal.pattern.wave3-exceeds-wave1-end",
+                          "layer": "pattern",
+                          "desc": "3浪须超过1浪的终点",
+                          "overshoot": 0.06682616945796599
+                        },
+                        {
                           "id": "diagonal.pattern.wave3-not-shortest",
                           "layer": "pattern",
                           "desc": "3浪一定不是最短的",
-                          "overshoot": 0.17945479224794308
+                          "overshoot": 0.09064998519397735
                         },
                         {
                           "id": "diagonal.ratio.converging",
                           "layer": "ratio",
                           "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪",
-                          "overshoot": 1.399319432923616
+                          "overshoot": 0.040409207161134254
                         }
                       ],
                       "guidelineHits": 1,
@@ -1881,50 +1540,149 @@
                         "degree": 5,
                         "waveIndexInParent": "1",
                         "status": "末级/不可再分",
-                        "from": 64669.42,
-                        "to": 63608.54
+                        "from": 64470.01,
+                        "to": 65076.06
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "2",
                         "status": "末级/不可再分",
-                        "from": 63608.54,
-                        "to": 64458.7
+                        "from": 65076.06,
+                        "to": 64789.89
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "3",
                         "status": "末级/不可再分",
-                        "from": 64458.7,
-                        "to": 63588.2
+                        "from": 64789.89,
+                        "to": 65035.56
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "4",
                         "status": "末级/不可再分",
-                        "from": 63588.2,
-                        "to": 64388.01
+                        "from": 65035.56,
+                        "to": 64880
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "5",
                         "status": "末级/不可再分",
-                        "from": 64388.01,
-                        "to": 62033
+                        "from": 64880,
+                        "to": 65150.16
                       }
                     ],
                     "alternates": [
                       {
                         "patternId": "impulse-strict",
                         "label": "推动浪（标准 Impulse）",
+                        "direction": "up",
+                        "fitScore": {
+                          "tier1": 4,
+                          "tier2": 0.6647377400115151,
+                          "tier3": -2,
+                          "tier4": 0
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "isLeaf": false,
+                    "degree": 4,
+                    "waveIndexInParent": "b",
+                    "patternId": "zigzag",
+                    "label": "单锯齿（Zigzag 5-3-5）",
+                    "direction": "down",
+                    "points": [
+                      {
+                        "price": 65150.16,
+                        "type": "H",
+                        "index": 190,
+                        "timestamp": 1786197600
+                      },
+                      {
+                        "price": 64990.39,
+                        "type": "L",
+                        "index": 192,
+                        "timestamp": 1786204800
+                      },
+                      {
+                        "price": 65107.98,
+                        "type": "H",
+                        "index": 193,
+                        "timestamp": 1786208400
+                      },
+                      {
+                        "price": 64675.22,
+                        "type": "L",
+                        "index": 203,
+                        "timestamp": 1786244400
+                      }
+                    ],
+                    "fitScore": {
+                      "tier1": 0,
+                      "tier2": 0,
+                      "tier3": -1,
+                      "tier4": 0,
+                      "grammarViolations": 0,
+                      "penalized": false,
+                      "violations": [],
+                      "guidelineHits": 1,
+                      "guidelineTotal": 5
+                    },
+                    "status": null,
+                    "expectation": null,
+                    "truncated": false,
+                    "volumeNote": null,
+                    "children": [
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "a",
+                        "status": "末级/不可再分",
+                        "from": 65150.16,
+                        "to": 64990.39
+                      },
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "b",
+                        "status": "末级/不可再分",
+                        "from": 64990.39,
+                        "to": 65107.98
+                      },
+                      {
+                        "isLeaf": true,
+                        "degree": 5,
+                        "waveIndexInParent": "c",
+                        "status": "末级/不可再分",
+                        "from": 65107.98,
+                        "to": 64675.22
+                      }
+                    ],
+                    "alternates": [
+                      {
+                        "patternId": "zigzag-double",
+                        "label": "双锯齿（Double Zigzag w-x-y）",
                         "direction": "down",
                         "fitScore": {
-                          "tier1": 3,
-                          "tier2": 0.9696496222228087,
+                          "tier1": 0,
+                          "tier2": 0,
+                          "tier3": 0,
+                          "tier4": 0
+                        }
+                      },
+                      {
+                        "patternId": "zigzag-triple",
+                        "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
+                        "direction": "down",
+                        "fitScore": {
+                          "tier1": 0,
+                          "tier2": 0,
                           "tier3": -1,
                           "tier4": 0
                         }
@@ -1932,150 +1690,59 @@
                     ]
                   },
                   {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "b",
-                    "status": "末级/不可再分",
-                    "from": 62033,
-                    "to": 62908
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "c",
-                    "status": "末级/不可再分",
-                    "from": 62908,
-                    "to": 61750.9
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "zigzag-double",
-                    "label": "双锯齿（Double Zigzag w-x-y）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.11246570321431824,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  },
-                  {
-                    "patternId": "zigzag-triple",
-                    "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.37142857142857133,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  }
-                ]
-              },
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "y",
-                "patternId": "zigzag",
-                "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "up",
-                "points": [
-                  {
-                    "price": 61750.9,
-                    "type": "L",
-                    "index": 314,
-                    "timestamp": 1783965600
-                  },
-                  {
-                    "price": 65235.25,
-                    "type": "H",
-                    "index": 350,
-                    "timestamp": 1784095200
-                  },
-                  {
-                    "price": 64435.2,
-                    "type": "L",
-                    "index": 351,
-                    "timestamp": 1784098800
-                  },
-                  {
-                    "price": 65559.5,
-                    "type": "H",
-                    "index": 359,
-                    "timestamp": 1784127600
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": -2,
-                  "tier4": 0,
-                  "grammarViolations": 0,
-                  "penalized": false,
-                  "violations": [],
-                  "guidelineHits": 2,
-                  "guidelineTotal": 5
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": null,
-                "children": [
-                  {
                     "isLeaf": false,
                     "degree": 4,
-                    "waveIndexInParent": "a",
+                    "waveIndexInParent": "c",
                     "patternId": "impulse-strict",
                     "label": "推动浪（标准 Impulse）",
                     "direction": "up",
                     "points": [
                       {
-                        "price": 61750.9,
+                        "price": 64675.22,
                         "type": "L",
-                        "index": 314,
-                        "timestamp": 1783965600
+                        "index": 203,
+                        "timestamp": 1786244400
                       },
                       {
-                        "price": 62806,
+                        "price": 64957.16,
                         "type": "H",
-                        "index": 325,
-                        "timestamp": 1784005200
+                        "index": 211,
+                        "timestamp": 1786273200
                       },
                       {
-                        "price": 63517,
+                        "price": 64863.16,
                         "type": "L",
-                        "index": 334,
-                        "timestamp": 1784037600
+                        "index": 212,
+                        "timestamp": 1786276800
                       },
                       {
-                        "price": 64918,
+                        "price": 65252.99,
                         "type": "H",
-                        "index": 335,
-                        "timestamp": 1784041200
+                        "index": 214,
+                        "timestamp": 1786284000
                       },
                       {
-                        "price": 64249.47,
+                        "price": 65028.16,
                         "type": "L",
-                        "index": 337,
-                        "timestamp": 1784048400
+                        "index": 220,
+                        "timestamp": 1786305600
                       },
                       {
-                        "price": 65235.25,
+                        "price": 65426,
                         "type": "H",
-                        "index": 350,
-                        "timestamp": 1784095200
+                        "index": 222,
+                        "timestamp": 1786312800
                       }
                     ],
                     "fitScore": {
                       "tier1": 0,
                       "tier2": 0,
-                      "tier3": -3,
-                      "tier4": 1,
+                      "tier3": -2,
+                      "tier4": 0,
                       "grammarViolations": 0,
                       "penalized": false,
                       "violations": [],
-                      "guidelineHits": 3,
+                      "guidelineHits": 2,
                       "guidelineTotal": 3
                     },
                     "status": null,
@@ -2088,40 +1755,40 @@
                         "degree": 5,
                         "waveIndexInParent": "1",
                         "status": "末级/不可再分",
-                        "from": 61750.9,
-                        "to": 62806
+                        "from": 64675.22,
+                        "to": 64957.16
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "2",
                         "status": "末级/不可再分",
-                        "from": 62806,
-                        "to": 63517
+                        "from": 64957.16,
+                        "to": 64863.16
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "3",
                         "status": "末级/不可再分",
-                        "from": 63517,
-                        "to": 64918
+                        "from": 64863.16,
+                        "to": 65252.99
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "4",
                         "status": "末级/不可再分",
-                        "from": 64918,
-                        "to": 64249.47
+                        "from": 65252.99,
+                        "to": 65028.16
                       },
                       {
                         "isLeaf": true,
                         "degree": 5,
                         "waveIndexInParent": "5",
                         "status": "末级/不可再分",
-                        "from": 64249.47,
-                        "to": 65235.25
+                        "from": 65028.16,
+                        "to": 65426
                       }
                     ],
                     "alternates": [
@@ -2131,1368 +1798,34 @@
                         "direction": "up",
                         "fitScore": {
                           "tier1": 2,
-                          "tier2": 1.3580331298211215,
-                          "tier3": 0,
-                          "tier4": 1
+                          "tier2": 1.1663995206464393,
+                          "tier3": -1,
+                          "tier4": 0
                         }
                       }
                     ]
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "b",
-                    "status": "末级/不可再分",
-                    "from": 65235.25,
-                    "to": 64435.2
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "c",
-                    "status": "末级/不可再分",
-                    "from": 64435.2,
-                    "to": 65559.5
                   }
                 ],
                 "alternates": [
-                  {
-                    "patternId": "zigzag-triple",
-                    "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                    "direction": "up",
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0,
-                      "tier3": -2,
-                      "tier4": 0
-                    }
-                  },
                   {
                     "patternId": "zigzag-double",
                     "label": "双锯齿（Double Zigzag w-x-y）",
                     "direction": "up",
                     "fitScore": {
                       "tier1": 2,
-                      "tier2": 0.1408118601397816,
-                      "tier3": 0,
-                      "tier4": 0
-                    }
-                  }
-                ]
-              }
-            ],
-            "alternates": [
-              {
-                "patternId": "sideways-double",
-                "label": "双重横向整理（联合形 w-x-y）",
-                "direction": "up",
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": 0,
-                  "tier4": 0
-                }
-              },
-              {
-                "patternId": "zigzag-triple",
-                "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                "direction": "up",
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": 0,
-                  "tier4": 0
-                }
-              }
-            ]
-          },
-          {
-            "isLeaf": false,
-            "degree": 2,
-            "waveIndexInParent": "x",
-            "patternId": "zigzag-double",
-            "label": "双锯齿（Double Zigzag w-x-y）",
-            "direction": "down",
-            "points": [
-              {
-                "price": 65559.5,
-                "type": "H",
-                "index": 359,
-                "timestamp": 1784127600
-              },
-              {
-                "price": 63798.96,
-                "type": "L",
-                "index": 380,
-                "timestamp": 1784203200
-              },
-              {
-                "price": 64847.44,
-                "type": "H",
-                "index": 383,
-                "timestamp": 1784214000
-              },
-              {
-                "price": 62452.52,
-                "type": "L",
-                "index": 405,
-                "timestamp": 1784293200
-              }
-            ],
-            "fitScore": {
-              "tier1": 0,
-              "tier2": 0,
-              "tier3": -1,
-              "tier4": 0,
-              "grammarViolations": 0,
-              "penalized": false,
-              "violations": [],
-              "guidelineHits": 1,
-              "guidelineTotal": 3
-            },
-            "status": null,
-            "expectation": null,
-            "truncated": false,
-            "volumeNote": null,
-            "children": [
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "w",
-                "patternId": "zigzag",
-                "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "down",
-                "points": [
-                  {
-                    "price": 65559.5,
-                    "type": "H",
-                    "index": 359,
-                    "timestamp": 1784127600
-                  },
-                  {
-                    "price": 64345.38,
-                    "type": "L",
-                    "index": 369,
-                    "timestamp": 1784163600
-                  },
-                  {
-                    "price": 64946.07,
-                    "type": "H",
-                    "index": 373,
-                    "timestamp": 1784178000
-                  },
-                  {
-                    "price": 63798.96,
-                    "type": "L",
-                    "index": 380,
-                    "timestamp": 1784203200
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": -4,
-                  "tier4": 0,
-                  "grammarViolations": 0,
-                  "penalized": false,
-                  "violations": [],
-                  "guidelineHits": 4,
-                  "guidelineTotal": 5
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": null,
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "a",
-                    "status": "末级/不可再分",
-                    "from": 65559.5,
-                    "to": 64345.38
-                  },
-                  {
-                    "isLeaf": false,
-                    "degree": 4,
-                    "waveIndexInParent": "b",
-                    "patternId": "zigzag",
-                    "label": "单锯齿（Zigzag 5-3-5）",
-                    "direction": "up",
-                    "points": [
-                      {
-                        "price": 64345.38,
-                        "type": "L",
-                        "index": 369,
-                        "timestamp": 1784163600
-                      },
-                      {
-                        "price": 64694.44,
-                        "type": "H",
-                        "index": 371,
-                        "timestamp": 1784170800
-                      },
-                      {
-                        "price": 64488.75,
-                        "type": "L",
-                        "index": 372,
-                        "timestamp": 1784174400
-                      },
-                      {
-                        "price": 64946.07,
-                        "type": "H",
-                        "index": 373,
-                        "timestamp": 1784178000
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 0,
                       "tier2": 0,
                       "tier3": -3,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": false,
-                      "violations": [],
-                      "guidelineHits": 3,
-                      "guidelineTotal": 5
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": null,
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "a",
-                        "status": "末级/不可再分",
-                        "from": 64345.38,
-                        "to": 64694.44
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "b",
-                        "status": "末级/不可再分",
-                        "from": 64694.44,
-                        "to": 64488.75
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "c",
-                        "status": "末级/不可再分",
-                        "from": 64488.75,
-                        "to": 64946.07
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "zigzag-double",
-                        "label": "双锯齿（Double Zigzag w-x-y）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 0,
-                          "tier2": 0,
-                          "tier3": -1,
-                          "tier4": 0
-                        }
-                      },
-                      {
-                        "patternId": "flat",
-                        "label": "平台形（Flat 3-3-5，基础版）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 0.3331150262292707,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "c",
-                    "status": "末级/不可再分",
-                    "from": 64946.07,
-                    "to": 63798.96
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "zigzag-double",
-                    "label": "双锯齿（Double Zigzag w-x-y）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -2,
                       "tier4": 0
                     }
                   },
-                  {
-                    "patternId": "zigzag-triple",
-                    "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -2,
-                      "tier4": 0
-                    }
-                  }
-                ]
-              },
-              {
-                "isLeaf": true,
-                "degree": 3,
-                "waveIndexInParent": "x",
-                "status": "末级/不可再分",
-                "from": 63798.96,
-                "to": 64847.44
-              },
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "y",
-                "patternId": "zigzag",
-                "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "down",
-                "points": [
-                  {
-                    "price": 64847.44,
-                    "type": "H",
-                    "index": 383,
-                    "timestamp": 1784214000
-                  },
-                  {
-                    "price": 62588,
-                    "type": "L",
-                    "index": 400,
-                    "timestamp": 1784275200
-                  },
-                  {
-                    "price": 63303.38,
-                    "type": "H",
-                    "index": 403,
-                    "timestamp": 1784286000
-                  },
-                  {
-                    "price": 62452.52,
-                    "type": "L",
-                    "index": 405,
-                    "timestamp": 1784293200
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 1,
-                  "tier2": 0,
-                  "tier3": -3,
-                  "tier4": 0,
-                  "grammarViolations": 1,
-                  "penalized": true,
-                  "violations": [],
-                  "guidelineHits": 3,
-                  "guidelineTotal": 5
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": null,
-                "children": [
-                  {
-                    "isLeaf": false,
-                    "degree": 4,
-                    "waveIndexInParent": "a",
-                    "patternId": "impulse-strict",
-                    "label": "推动浪（标准 Impulse）",
-                    "direction": "down",
-                    "points": [
-                      {
-                        "price": 64847.44,
-                        "type": "H",
-                        "index": 383,
-                        "timestamp": 1784214000
-                      },
-                      {
-                        "price": 63940.36,
-                        "type": "L",
-                        "index": 385,
-                        "timestamp": 1784221200
-                      },
-                      {
-                        "price": 64197.15,
-                        "type": "H",
-                        "index": 390,
-                        "timestamp": 1784239200
-                      },
-                      {
-                        "price": 63330.3,
-                        "type": "L",
-                        "index": 394,
-                        "timestamp": 1784253600
-                      },
-                      {
-                        "price": 63663.38,
-                        "type": "H",
-                        "index": 395,
-                        "timestamp": 1784257200
-                      },
-                      {
-                        "price": 62588,
-                        "type": "L",
-                        "index": 400,
-                        "timestamp": 1784275200
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 2,
-                      "tier2": 0.058056637598813125,
-                      "tier3": -1,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": true,
-                      "violations": [
-                        {
-                          "id": "impulse.pattern.wave3-not-shortest",
-                          "layer": "pattern",
-                          "desc": "3浪一定不是1/3/5浪中最短的",
-                          "overshoot": 0.044351104643474804
-                        },
-                        {
-                          "id": "impulse.ratio.wave3-extend-range",
-                          "layer": "ratio",
-                          "desc": "3浪相对1浪的扩展须在1~4.236倍之间",
-                          "overshoot": 0.013705532955338322
-                        }
-                      ],
-                      "guidelineHits": 1,
-                      "guidelineTotal": 3
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": "量能背离：3浪均量≤1浪",
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "1",
-                        "status": "末级/不可再分",
-                        "from": 64847.44,
-                        "to": 63940.36
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "2",
-                        "status": "末级/不可再分",
-                        "from": 63940.36,
-                        "to": 64197.15
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "3",
-                        "status": "末级/不可再分",
-                        "from": 64197.15,
-                        "to": 63330.3
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "4",
-                        "status": "末级/不可再分",
-                        "from": 63330.3,
-                        "to": 63663.38
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "5",
-                        "status": "末级/不可再分",
-                        "from": 63663.38,
-                        "to": 62588
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "diagonal",
-                        "label": "推动浪（终结楔形 Ending Diagonal）",
-                        "direction": "down",
-                        "fitScore": {
-                          "tier1": 3,
-                          "tier2": 1.3528671817168525,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "b",
-                    "status": "末级/不可再分",
-                    "from": 62588,
-                    "to": 63303.38
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "c",
-                    "status": "末级/不可再分",
-                    "from": 63303.38,
-                    "to": 62452.52
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "zigzag-triple",
-                    "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.04662913562971701,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  },
-                  {
-                    "patternId": "zigzag-double",
-                    "label": "双锯齿（Double Zigzag w-x-y）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.1276634054801406,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  }
-                ]
-              }
-            ],
-            "alternates": [
-              {
-                "patternId": "zigzag-triple",
-                "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": -2,
-                  "tier4": 0
-                }
-              },
-              {
-                "patternId": "sideways-double",
-                "label": "双重横向整理（联合形 w-x-y）",
-                "direction": "down",
-                "fitScore": {
-                  "tier1": 1,
-                  "tier2": 0.14922207309769994,
-                  "tier3": 0,
-                  "tier4": 0
-                }
-              }
-            ]
-          },
-          {
-            "isLeaf": false,
-            "degree": 2,
-            "waveIndexInParent": "y",
-            "patternId": "zigzag",
-            "label": "单锯齿（Zigzag 5-3-5）",
-            "direction": "up",
-            "points": [
-              {
-                "price": 62452.52,
-                "type": "L",
-                "index": 405,
-                "timestamp": 1784293200
-              },
-              {
-                "price": 64918.7,
-                "type": "H",
-                "index": 442,
-                "timestamp": 1784426400
-              },
-              {
-                "price": 63702.01,
-                "type": "L",
-                "index": 470,
-                "timestamp": 1784527200
-              },
-              {
-                "price": 66923.95,
-                "type": "H",
-                "index": 502,
-                "timestamp": 1784642400
-              }
-            ],
-            "fitScore": {
-              "tier1": 1,
-              "tier2": 0,
-              "tier3": -4,
-              "tier4": 0,
-              "grammarViolations": 1,
-              "penalized": true,
-              "violations": [],
-              "guidelineHits": 4,
-              "guidelineTotal": 5
-            },
-            "status": null,
-            "expectation": null,
-            "truncated": false,
-            "volumeNote": null,
-            "children": [
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "a",
-                "patternId": "impulse-strict",
-                "label": "推动浪（标准 Impulse）",
-                "direction": "up",
-                "points": [
-                  {
-                    "price": 62452.52,
-                    "type": "L",
-                    "index": 405,
-                    "timestamp": 1784293200
-                  },
-                  {
-                    "price": 63459.93,
-                    "type": "H",
-                    "index": 406,
-                    "timestamp": 1784296800
-                  },
-                  {
-                    "price": 62788.45,
-                    "type": "L",
-                    "index": 407,
-                    "timestamp": 1784300400
-                  },
-                  {
-                    "price": 64353.56,
-                    "type": "H",
-                    "index": 410,
-                    "timestamp": 1784311200
-                  },
-                  {
-                    "price": 63840.64,
-                    "type": "L",
-                    "index": 415,
-                    "timestamp": 1784329200
-                  },
-                  {
-                    "price": 64918.7,
-                    "type": "H",
-                    "index": 442,
-                    "timestamp": 1784426400
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 1,
-                  "tier2": 0,
-                  "tier3": -3,
-                  "tier4": 1,
-                  "grammarViolations": 1,
-                  "penalized": true,
-                  "violations": [],
-                  "guidelineHits": 3,
-                  "guidelineTotal": 3
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": "量能背离：3浪均量≤1浪",
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "1",
-                    "status": "末级/不可再分",
-                    "from": 62452.52,
-                    "to": 63459.93
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "2",
-                    "status": "末级/不可再分",
-                    "from": 63459.93,
-                    "to": 62788.45
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "3",
-                    "status": "末级/不可再分",
-                    "from": 62788.45,
-                    "to": 64353.56
-                  },
-                  {
-                    "isLeaf": false,
-                    "degree": 4,
-                    "waveIndexInParent": "4",
-                    "patternId": "zigzag",
-                    "label": "单锯齿（Zigzag 5-3-5）",
-                    "direction": "down",
-                    "points": [
-                      {
-                        "price": 64353.56,
-                        "type": "H",
-                        "index": 410,
-                        "timestamp": 1784311200
-                      },
-                      {
-                        "price": 63914.24,
-                        "type": "L",
-                        "index": 412,
-                        "timestamp": 1784318400
-                      },
-                      {
-                        "price": 64186.05,
-                        "type": "H",
-                        "index": 413,
-                        "timestamp": 1784322000
-                      },
-                      {
-                        "price": 63840.64,
-                        "type": "L",
-                        "index": 415,
-                        "timestamp": 1784329200
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -3,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": false,
-                      "violations": [],
-                      "guidelineHits": 3,
-                      "guidelineTotal": 5
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": null,
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "a",
-                        "status": "末级/不可再分",
-                        "from": 64353.56,
-                        "to": 63914.24
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "b",
-                        "status": "末级/不可再分",
-                        "from": 63914.24,
-                        "to": 64186.05
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "c",
-                        "status": "末级/不可再分",
-                        "from": 64186.05,
-                        "to": 63840.64
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "zigzag-double",
-                        "label": "双锯齿（Double Zigzag w-x-y）",
-                        "direction": "down",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 0.027746872661294893,
-                          "tier3": -1,
-                          "tier4": 0
-                        }
-                      },
-                      {
-                        "patternId": "flat",
-                        "label": "平台形（Flat 3-3-5，基础版）",
-                        "direction": "down",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 0.22889030105646027,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "isLeaf": false,
-                    "degree": 4,
-                    "waveIndexInParent": "5",
-                    "patternId": "impulse-strict",
-                    "label": "推动浪（标准 Impulse）",
-                    "direction": "up",
-                    "points": [
-                      {
-                        "price": 63840.64,
-                        "type": "L",
-                        "index": 415,
-                        "timestamp": 1784329200
-                      },
-                      {
-                        "price": 63992.77,
-                        "type": "H",
-                        "index": 418,
-                        "timestamp": 1784340000
-                      },
-                      {
-                        "price": 63873.07,
-                        "type": "L",
-                        "index": 421,
-                        "timestamp": 1784350800
-                      },
-                      {
-                        "price": 64212,
-                        "type": "H",
-                        "index": 428,
-                        "timestamp": 1784376000
-                      },
-                      {
-                        "price": 63921.6,
-                        "type": "L",
-                        "index": 429,
-                        "timestamp": 1784379600
-                      },
-                      {
-                        "price": 64918.7,
-                        "type": "H",
-                        "index": 442,
-                        "timestamp": 1784426400
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.4678235719450436,
-                      "tier3": -2,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": true,
-                      "violations": [
-                        {
-                          "id": "impulse.pattern.wave4-not-cross-wave1",
-                          "layer": "pattern",
-                          "desc": "推动浪的4浪不能切入1浪",
-                          "overshoot": 0.4678235719450436
-                        }
-                      ],
-                      "guidelineHits": 2,
-                      "guidelineTotal": 3
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": "量能背离：3浪均量≤1浪",
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "1",
-                        "status": "末级/不可再分",
-                        "from": 63840.64,
-                        "to": 63992.77
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "2",
-                        "status": "末级/不可再分",
-                        "from": 63992.77,
-                        "to": 63873.07
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "3",
-                        "status": "末级/不可再分",
-                        "from": 63873.07,
-                        "to": 64212
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "4",
-                        "status": "末级/不可再分",
-                        "from": 64212,
-                        "to": 63921.6
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "5",
-                        "status": "末级/不可再分",
-                        "from": 63921.6,
-                        "to": 64918.7
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "diagonal",
-                        "label": "推动浪（终结楔形 Ending Diagonal）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 5.554262801551408,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "diagonal",
-                    "label": "推动浪（终结楔形 Ending Diagonal）",
-                    "direction": "up",
-                    "fitScore": {
-                      "tier1": 3,
-                      "tier2": 1.120569306020919,
-                      "tier3": 0,
-                      "tier4": 1
-                    }
-                  }
-                ]
-              },
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "b",
-                "patternId": "zigzag",
-                "label": "单锯齿（Zigzag 5-3-5）",
-                "direction": "down",
-                "points": [
-                  {
-                    "price": 64918.7,
-                    "type": "H",
-                    "index": 442,
-                    "timestamp": 1784426400
-                  },
-                  {
-                    "price": 64238.08,
-                    "type": "L",
-                    "index": 452,
-                    "timestamp": 1784462400
-                  },
-                  {
-                    "price": 64855.93,
-                    "type": "H",
-                    "index": 462,
-                    "timestamp": 1784498400
-                  },
-                  {
-                    "price": 63702.01,
-                    "type": "L",
-                    "index": 470,
-                    "timestamp": 1784527200
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 0,
-                  "tier2": 0,
-                  "tier3": -2,
-                  "tier4": 0,
-                  "grammarViolations": 0,
-                  "penalized": false,
-                  "violations": [],
-                  "guidelineHits": 2,
-                  "guidelineTotal": 5
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": true,
-                "volumeNote": null,
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "a",
-                    "status": "末级/不可再分",
-                    "from": 64918.7,
-                    "to": 64238.08
-                  },
-                  {
-                    "isLeaf": false,
-                    "degree": 4,
-                    "waveIndexInParent": "b",
-                    "patternId": "zigzag",
-                    "label": "单锯齿（Zigzag 5-3-5）",
-                    "direction": "up",
-                    "points": [
-                      {
-                        "price": 64238.08,
-                        "type": "L",
-                        "index": 452,
-                        "timestamp": 1784462400
-                      },
-                      {
-                        "price": 64701.9,
-                        "type": "H",
-                        "index": 457,
-                        "timestamp": 1784480400
-                      },
-                      {
-                        "price": 64248,
-                        "type": "L",
-                        "index": 458,
-                        "timestamp": 1784484000
-                      },
-                      {
-                        "price": 64855.93,
-                        "type": "H",
-                        "index": 462,
-                        "timestamp": 1784498400
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -1,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": false,
-                      "violations": [],
-                      "guidelineHits": 1,
-                      "guidelineTotal": 5
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": null,
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "a",
-                        "status": "末级/不可再分",
-                        "from": 64238.08,
-                        "to": 64701.9
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "b",
-                        "status": "末级/不可再分",
-                        "from": 64701.9,
-                        "to": 64248
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "c",
-                        "status": "末级/不可再分",
-                        "from": 64248,
-                        "to": 64855.93
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "flat",
-                        "label": "平台形（Flat 3-3-5，基础版）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 0,
-                          "tier2": 0,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      },
-                      {
-                        "patternId": "flat-regular",
-                        "label": "规则平台形（Regular Flat）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 0,
-                          "tier2": 0,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "c",
-                    "status": "末级/不可再分",
-                    "from": 64855.93,
-                    "to": 63702.01
-                  }
-                ],
-                "alternates": [
                   {
                     "patternId": "flat",
                     "label": "平台形（Flat 3-3-5，基础版）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  },
-                  {
-                    "patternId": "flat-regular",
-                    "label": "规则平台形（Regular Flat）",
-                    "direction": "down",
-                    "fitScore": {
-                      "tier1": 0,
-                      "tier2": 0,
-                      "tier3": -1,
-                      "tier4": 0
-                    }
-                  }
-                ]
-              },
-              {
-                "isLeaf": false,
-                "degree": 3,
-                "waveIndexInParent": "c",
-                "patternId": "impulse-strict",
-                "label": "推动浪（标准 Impulse）",
-                "direction": "up",
-                "points": [
-                  {
-                    "price": 63702.01,
-                    "type": "L",
-                    "index": 470,
-                    "timestamp": 1784527200
-                  },
-                  {
-                    "price": 65015.8,
-                    "type": "H",
-                    "index": 475,
-                    "timestamp": 1784545200
-                  },
-                  {
-                    "price": 64010,
-                    "type": "L",
-                    "index": 478,
-                    "timestamp": 1784556000
-                  },
-                  {
-                    "price": 65756.09,
-                    "type": "H",
-                    "index": 482,
-                    "timestamp": 1784570400
-                  },
-                  {
-                    "price": 64986.6,
-                    "type": "L",
-                    "index": 483,
-                    "timestamp": 1784574000
-                  },
-                  {
-                    "price": 66923.95,
-                    "type": "H",
-                    "index": 502,
-                    "timestamp": 1784642400
-                  }
-                ],
-                "fitScore": {
-                  "tier1": 2,
-                  "tier2": 0.022225774286609233,
-                  "tier3": -3,
-                  "tier4": 0,
-                  "grammarViolations": 1,
-                  "penalized": true,
-                  "violations": [
-                    {
-                      "id": "impulse.pattern.wave4-not-cross-wave1",
-                      "layer": "pattern",
-                      "desc": "推动浪的4浪不能切入1浪",
-                      "overshoot": 0.022225774286609233
-                    }
-                  ],
-                  "guidelineHits": 3,
-                  "guidelineTotal": 3
-                },
-                "status": null,
-                "expectation": null,
-                "truncated": false,
-                "volumeNote": "量能配合：3浪均量>1浪",
-                "children": [
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "1",
-                    "status": "末级/不可再分",
-                    "from": 63702.01,
-                    "to": 65015.8
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "2",
-                    "status": "末级/不可再分",
-                    "from": 65015.8,
-                    "to": 64010
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "3",
-                    "status": "末级/不可再分",
-                    "from": 64010,
-                    "to": 65756.09
-                  },
-                  {
-                    "isLeaf": true,
-                    "degree": 4,
-                    "waveIndexInParent": "4",
-                    "status": "末级/不可再分",
-                    "from": 65756.09,
-                    "to": 64986.6
-                  },
-                  {
-                    "isLeaf": false,
-                    "degree": 4,
-                    "waveIndexInParent": "5",
-                    "patternId": "impulse-strict",
-                    "label": "推动浪（标准 Impulse）",
-                    "direction": "up",
-                    "points": [
-                      {
-                        "price": 64986.6,
-                        "type": "L",
-                        "index": 483,
-                        "timestamp": 1784574000
-                      },
-                      {
-                        "price": 65400,
-                        "type": "H",
-                        "index": 485,
-                        "timestamp": 1784581200
-                      },
-                      {
-                        "price": 65046,
-                        "type": "L",
-                        "index": 486,
-                        "timestamp": 1784584800
-                      },
-                      {
-                        "price": 65619.3,
-                        "type": "H",
-                        "index": 489,
-                        "timestamp": 1784595600
-                      },
-                      {
-                        "price": 65115.68,
-                        "type": "L",
-                        "index": 490,
-                        "timestamp": 1784599200
-                      },
-                      {
-                        "price": 66923.95,
-                        "type": "H",
-                        "index": 502,
-                        "timestamp": 1784642400
-                      }
-                    ],
-                    "fitScore": {
-                      "tier1": 1,
-                      "tier2": 0.6877600387034318,
-                      "tier3": -2,
-                      "tier4": 0,
-                      "grammarViolations": 0,
-                      "penalized": true,
-                      "violations": [
-                        {
-                          "id": "impulse.pattern.wave4-not-cross-wave1",
-                          "layer": "pattern",
-                          "desc": "推动浪的4浪不能切入1浪",
-                          "overshoot": 0.6877600387034318
-                        }
-                      ],
-                      "guidelineHits": 2,
-                      "guidelineTotal": 3
-                    },
-                    "status": null,
-                    "expectation": null,
-                    "truncated": false,
-                    "volumeNote": "量能背离：3浪均量≤1浪",
-                    "children": [
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "1",
-                        "status": "末级/不可再分",
-                        "from": 64986.6,
-                        "to": 65400
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "2",
-                        "status": "末级/不可再分",
-                        "from": 65400,
-                        "to": 65046
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "3",
-                        "status": "末级/不可再分",
-                        "from": 65046,
-                        "to": 65619.3
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "4",
-                        "status": "末级/不可再分",
-                        "from": 65619.3,
-                        "to": 65115.68
-                      },
-                      {
-                        "isLeaf": true,
-                        "degree": 5,
-                        "waveIndexInParent": "5",
-                        "status": "末级/不可再分",
-                        "from": 65115.68,
-                        "to": 66923.95
-                      }
-                    ],
-                    "alternates": [
-                      {
-                        "patternId": "diagonal",
-                        "label": "推动浪（终结楔形 Ending Diagonal）",
-                        "direction": "up",
-                        "fitScore": {
-                          "tier1": 1,
-                          "tier2": 3.3741412675374707,
-                          "tier3": 0,
-                          "tier4": 0
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "alternates": [
-                  {
-                    "patternId": "diagonal",
-                    "label": "推动浪（终结楔形 Ending Diagonal）",
                     "direction": "up",
                     "fitScore": {
                       "tier1": 2,
-                      "tier2": 0.4746268429505456,
-                      "tier3": 0,
+                      "tier2": 0.0024469392255881727,
+                      "tier3": -1,
                       "tier4": 0
                     }
                   }
@@ -3500,24 +1833,24 @@
               }
             ],
             "alternates": [
+              {
+                "patternId": "sideways-double",
+                "label": "双重横向整理（联合形 w-x-y）",
+                "direction": "up",
+                "fitScore": {
+                  "tier1": 1,
+                  "tier2": 0.00467901419104593,
+                  "tier3": 0,
+                  "tier4": 0
+                }
+              },
               {
                 "patternId": "zigzag-double",
                 "label": "双锯齿（Double Zigzag w-x-y）",
                 "direction": "up",
                 "fitScore": {
                   "tier1": 1,
-                  "tier2": 0,
-                  "tier3": -2,
-                  "tier4": 0
-                }
-              },
-              {
-                "patternId": "zigzag-triple",
-                "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
-                "direction": "up",
-                "fitScore": {
-                  "tier1": 2,
-                  "tier2": 0.08957983602170154,
+                  "tier2": 0.03468682598934812,
                   "tier3": -1,
                   "tier4": 0
                 }
@@ -3527,24 +1860,24 @@
         ],
         "alternates": [
           {
-            "patternId": "sideways-double",
-            "label": "双重横向整理（联合形 w-x-y）",
+            "patternId": "zigzag-triple",
+            "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
             "direction": "up",
             "fitScore": {
-              "tier1": 0,
-              "tier2": 0,
-              "tier3": 0,
+              "tier1": 1,
+              "tier2": 0.10877544585770352,
+              "tier3": -2,
               "tier4": 0
             }
           },
           {
-            "patternId": "flat",
-            "label": "平台形（Flat 3-3-5，基础版）",
+            "patternId": "zigzag",
+            "label": "单锯齿（Zigzag 5-3-5）",
             "direction": "up",
             "fitScore": {
-              "tier1": 1,
+              "tier1": 2,
               "tier2": 0,
-              "tier3": -1,
+              "tier3": -3,
               "tier4": 0
             }
           }
@@ -3557,19 +1890,19 @@
         "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
         "direction": "up",
         "fitScore": {
-          "tier1": 1,
-          "tier2": 0.07522172869143419,
+          "tier1": 0,
+          "tier2": 0,
           "tier3": -1,
           "tier4": 0
         }
       },
       {
-        "patternId": "sideways-double",
-        "label": "双重横向整理（联合形 w-x-y）",
+        "patternId": "zigzag-double",
+        "label": "双锯齿（Double Zigzag w-x-y）",
         "direction": "up",
         "fitScore": {
           "tier1": 1,
-          "tier2": 0.34023062785686414,
+          "tier2": 0.12857142857142864,
           "tier3": 0,
           "tier4": 0
         }
@@ -3577,47 +1910,493 @@
     ],
     "channel": {
       "channelType": "parallel",
-      "baseAt": 74219.6058241758,
-      "railAt": 78287.41351648349,
+      "baseAt": 62212.88421052633,
+      "railAt": 63733.32105263159,
       "note": "连 0 与 b 为基线，过 a 作平行线（c 到达 a 的 1 倍时正好触通道边缘）",
-      "exitHint": "价格于 2026-07-21 23:00:00 收盘跌破通道下轨（67856.87），提示该双锯齿（Double Zigzag w-x-y）可能已完成"
+      "exitHint": null
     },
     "fibTimeWindows": [
       {
-        "bar": 1128,
-        "count": 2,
-        "timestamp": 1786896000
-      },
-      {
-        "bar": 1129,
-        "count": 2,
-        "timestamp": 1786899600
-      },
-      {
-        "bar": 1130,
+        "bar": 403,
         "count": 4,
-        "timestamp": 1786903200
+        "timestamp": 1786964400
+      },
+      {
+        "bar": 404,
+        "count": 4,
+        "timestamp": 1786968000
+      },
+      {
+        "bar": 405,
+        "count": 3,
+        "timestamp": 1786971600
       }
     ],
     "inProgress": {
-      "from": 66923.95,
-      "to": 63050,
+      "from": 65426,
+      "to": 63213.82,
       "currentLegDir": "down",
       "note": "推断，非确定",
       "fibTargets": [
         {
           "mult": 0.618,
-          "price": 66419.06254
+          "price": 65180.134880000005
         },
         {
           "mult": 1,
-          "price": 66106.98
+          "price": 65028.16
         },
         {
           "mult": 1.618,
-          "price": 65602.09254
+          "price": 64782.29488000001
         }
       ]
+    }
+  },
+  "inProgressTree": {
+    "status": "进行中/未确认",
+    "structDir": "down",
+    "swingExtreme": {
+      "price": 62468.21,
+      "type": "L",
+      "index": 334,
+      "timestamp": 1786716000
+    },
+    "swingCharacter": "corrective",
+    "invalidation": 65426,
+    "upStructure": {
+      "isLeaf": false,
+      "degree": 0,
+      "waveIndexInParent": null,
+      "patternId": "zigzag",
+      "label": "单锯齿（Zigzag 5-3-5）",
+      "direction": "down",
+      "points": [
+        {
+          "price": 65426,
+          "type": "H",
+          "index": 222,
+          "timestamp": 1786312800
+        },
+        {
+          "price": 63158,
+          "type": "L",
+          "index": 267,
+          "timestamp": 1786474800
+        },
+        {
+          "price": 64416.3,
+          "type": "H",
+          "index": 284,
+          "timestamp": 1786536000
+        },
+        {
+          "price": 62468.21,
+          "type": "L",
+          "index": 334,
+          "timestamp": 1786716000
+        }
+      ],
+      "fitScore": {
+        "tier1": 0,
+        "tier2": 0,
+        "tier3": -3,
+        "tier4": 0,
+        "grammarViolations": 0,
+        "penalized": false,
+        "violations": [],
+        "guidelineHits": 3,
+        "guidelineTotal": 5
+      },
+      "status": "完成",
+      "expectation": null,
+      "truncated": false,
+      "volumeNote": null,
+      "children": [
+        {
+          "isLeaf": false,
+          "degree": 1,
+          "waveIndexInParent": "a",
+          "patternId": "impulse-strict",
+          "label": "推动浪（标准 Impulse）",
+          "direction": "down",
+          "points": [
+            {
+              "price": 65426,
+              "type": "H",
+              "index": 222,
+              "timestamp": 1786312800
+            },
+            {
+              "price": 64772.66,
+              "type": "L",
+              "index": 224,
+              "timestamp": 1786320000
+            },
+            {
+              "price": 65341.83,
+              "type": "H",
+              "index": 225,
+              "timestamp": 1786323600
+            },
+            {
+              "price": 63733.03,
+              "type": "L",
+              "index": 242,
+              "timestamp": 1786384800
+            },
+            {
+              "price": 64439.38,
+              "type": "H",
+              "index": 260,
+              "timestamp": 1786449600
+            },
+            {
+              "price": 63158,
+              "type": "L",
+              "index": 267,
+              "timestamp": 1786474800
+            }
+          ],
+          "fitScore": {
+            "tier1": 0,
+            "tier2": 0,
+            "tier3": -2,
+            "tier4": 1,
+            "grammarViolations": 0,
+            "penalized": false,
+            "violations": [],
+            "guidelineHits": 2,
+            "guidelineTotal": 3
+          },
+          "status": null,
+          "expectation": null,
+          "truncated": false,
+          "volumeNote": "量能配合：3浪均量>1浪",
+          "children": [
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "1",
+              "status": "末级/不可再分",
+              "from": 65426,
+              "to": 64772.66
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "2",
+              "status": "末级/不可再分",
+              "from": 64772.66,
+              "to": 65341.83
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "3",
+              "status": "末级/不可再分",
+              "from": 65341.83,
+              "to": 63733.03
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "4",
+              "status": "末级/不可再分",
+              "from": 63733.03,
+              "to": 64439.38
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "5",
+              "status": "末级/不可再分",
+              "from": 64439.38,
+              "to": 63158
+            }
+          ],
+          "alternates": [
+            {
+              "patternId": "diagonal",
+              "label": "推动浪（终结楔形 Ending Diagonal）",
+              "direction": "down",
+              "fitScore": {
+                "tier1": 2,
+                "tier2": 2.0479782565988027,
+                "tier3": -1,
+                "tier4": 1
+              }
+            }
+          ]
+        },
+        {
+          "isLeaf": false,
+          "degree": 1,
+          "waveIndexInParent": "b",
+          "patternId": "zigzag",
+          "label": "单锯齿（Zigzag 5-3-5）",
+          "direction": "up",
+          "points": [
+            {
+              "price": 63158,
+              "type": "L",
+              "index": 267,
+              "timestamp": 1786474800
+            },
+            {
+              "price": 63847.97,
+              "type": "H",
+              "index": 274,
+              "timestamp": 1786500000
+            },
+            {
+              "price": 63531.76,
+              "type": "L",
+              "index": 278,
+              "timestamp": 1786514400
+            },
+            {
+              "price": 64416.3,
+              "type": "H",
+              "index": 284,
+              "timestamp": 1786536000
+            }
+          ],
+          "fitScore": {
+            "tier1": 0,
+            "tier2": 0,
+            "tier3": -3,
+            "tier4": 0,
+            "grammarViolations": 0,
+            "penalized": false,
+            "violations": [],
+            "guidelineHits": 3,
+            "guidelineTotal": 5
+          },
+          "status": null,
+          "expectation": null,
+          "truncated": false,
+          "volumeNote": null,
+          "children": [
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "a",
+              "status": "末级/不可再分",
+              "from": 63158,
+              "to": 63847.97
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "b",
+              "status": "末级/不可再分",
+              "from": 63847.97,
+              "to": 63531.76
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "c",
+              "status": "末级/不可再分",
+              "from": 63531.76,
+              "to": 64416.3
+            }
+          ],
+          "alternates": [
+            {
+              "patternId": "zigzag-double",
+              "label": "双锯齿（Double Zigzag w-x-y）",
+              "direction": "up",
+              "fitScore": {
+                "tier1": 0,
+                "tier2": 0,
+                "tier3": -1,
+                "tier4": 0
+              }
+            },
+            {
+              "patternId": "zigzag-triple",
+              "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
+              "direction": "up",
+              "fitScore": {
+                "tier1": 1,
+                "tier2": 0.047085017850070875,
+                "tier3": -1,
+                "tier4": 0
+              }
+            }
+          ]
+        },
+        {
+          "isLeaf": false,
+          "degree": 1,
+          "waveIndexInParent": "c",
+          "patternId": "diagonal",
+          "label": "推动浪（终结楔形 Ending Diagonal）",
+          "direction": "down",
+          "points": [
+            {
+              "price": 64416.3,
+              "type": "H",
+              "index": 284,
+              "timestamp": 1786536000
+            },
+            {
+              "price": 63235.88,
+              "type": "L",
+              "index": 291,
+              "timestamp": 1786561200
+            },
+            {
+              "price": 63949.9,
+              "type": "H",
+              "index": 301,
+              "timestamp": 1786597200
+            },
+            {
+              "price": 62772.84,
+              "type": "L",
+              "index": 312,
+              "timestamp": 1786636800
+            },
+            {
+              "price": 63635.97,
+              "type": "H",
+              "index": 318,
+              "timestamp": 1786658400
+            },
+            {
+              "price": 62468.21,
+              "type": "L",
+              "index": 334,
+              "timestamp": 1786716000
+            }
+          ],
+          "fitScore": {
+            "tier1": 0,
+            "tier2": 0,
+            "tier3": 0,
+            "tier4": 0,
+            "grammarViolations": 0,
+            "penalized": false,
+            "violations": [],
+            "guidelineHits": 0,
+            "guidelineTotal": 1
+          },
+          "status": null,
+          "expectation": null,
+          "truncated": false,
+          "volumeNote": "量能背离：3浪均量≤1浪",
+          "children": [
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "1",
+              "status": "末级/不可再分",
+              "from": 64416.3,
+              "to": 63235.88
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "2",
+              "status": "末级/不可再分",
+              "from": 63235.88,
+              "to": 63949.9
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "3",
+              "status": "末级/不可再分",
+              "from": 63949.9,
+              "to": 62772.84
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "4",
+              "status": "末级/不可再分",
+              "from": 62772.84,
+              "to": 63635.97
+            },
+            {
+              "isLeaf": true,
+              "degree": 2,
+              "waveIndexInParent": "5",
+              "status": "末级/不可再分",
+              "from": 63635.97,
+              "to": 62468.21
+            }
+          ],
+          "alternates": [
+            {
+              "patternId": "impulse-strict",
+              "label": "推动浪（标准 Impulse）",
+              "direction": "down",
+              "fitScore": {
+                "tier1": 2,
+                "tier2": 0.3398183010388162,
+                "tier3": -1,
+                "tier4": 0
+              }
+            }
+          ]
+        }
+      ],
+      "alternates": [
+        {
+          "patternId": "diagonal",
+          "label": "推动浪（终结楔形 Ending Diagonal）",
+          "direction": "down",
+          "fitScore": {
+            "tier1": 1,
+            "tier2": 0,
+            "tier3": -1,
+            "tier4": 0
+          }
+        },
+        {
+          "patternId": "zigzag-triple",
+          "label": "三锯齿（Triple Zigzag w-x-y-xx-z）",
+          "direction": "down",
+          "fitScore": {
+            "tier1": 2,
+            "tier2": 0.04277326106594333,
+            "tier3": -2,
+            "tier4": 0
+          }
+        }
+      ]
+    },
+    "currentPullback": {
+      "from": 62468.21,
+      "to": 63213.82,
+      "currentLegDir": "up",
+      "note": "回撤，推断非确定",
+      "fibTargets": [
+        {
+          "mult": 0.382,
+          "price": 63598.08578
+        },
+        {
+          "mult": 0.5,
+          "price": 63947.104999999996
+        },
+        {
+          "mult": 0.618,
+          "price": 64296.12422
+        }
+      ],
+      "subtree": {
+        "isLeaf": true,
+        "degree": 0,
+        "waveIndexInParent": null,
+        "status": "末级/不可再分",
+        "from": 62468.21,
+        "to": 63213.82
+      }
     }
   }
 }
