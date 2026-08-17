@@ -1744,6 +1744,33 @@ function fmtTime(input, offsetHours = 8) {
   return `${s.getUTCFullYear()}-${pad2(s.getUTCMonth() + 1)}-${pad2(s.getUTCDate())} ${pad2(s.getUTCHours())}:${pad2(s.getUTCMinutes())}`;
 }
 
+// 秒级时间戳：YYYY-MM-DD HH:mm:ss（默认 UTC+8），报告头用
+function fmtTimeSec(input, offsetHours = 8) {
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) return String(input);
+  const s = new Date(d.getTime() + offsetHours * 3600 * 1000);
+  return `${s.getUTCFullYear()}-${pad2(s.getUTCMonth() + 1)}-${pad2(s.getUTCDate())} ${pad2(s.getUTCHours())}:${pad2(s.getUTCMinutes())}:${pad2(s.getUTCSeconds())}`;
+}
+
+// 报告头（分析报告元信息块）
+function renderReportMeta(meta) {
+  const n2 = (v) => (v == null ? '—' : Number(v).toFixed(2));
+  const L = [];
+  L.push('# 分析报告');
+  L.push('');
+  L.push(`- 品种：${meta.product}`);
+  L.push(`- 周期：${meta.timeframe}`);
+  L.push(`- 时间范围（UTC+8）：${fmtTimeSec(meta.startUtc)} ~ ${fmtTimeSec(meta.endUtc)}`);
+  L.push(`- 样本数量：${meta.sampleCount} 根K线`);
+  L.push(`- 区间最高/最低：${n2(meta.rangeHigh)} / ${n2(meta.rangeLow)}`);
+  if (meta.lastClose != null) {
+    L.push(`- 最新收盘：${n2(meta.lastClose)}（${fmtTimeSec(meta.lastCloseTs * 1000)} UTC+8）`);
+  }
+  L.push(`- 生成时间：${fmtTimeSec(meta.generatedAtUtc)}（UTC+8）`);
+  L.push(`- 数据来源：${meta.source}`);
+  return L.join('\n');
+}
+
 // 文件名用的紧凑时间戳：YYYYMMDDHHmm（默认 UTC+8）
 function stampCompact(input, offsetHours = 8) {
   const d = input instanceof Date ? input : new Date(input);
@@ -1845,9 +1872,6 @@ function renderNarrative(meta, tree) {
   const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
   const fmtTs = (sec) => fmtTime(sec * 1000); // 枢轴 timestamp 是秒，需 ×1000
   L.push('# BTC 数浪（大白话版）');
-  L.push('');
-  L.push(`- 品种：${meta.product}　周期：${meta.timeframe}`);
-  L.push(`- 区间：${fmtTime(meta.startUtc)} ~ ${fmtTime(meta.endUtc)}（共 ${meta.sampleCount} 根K线）`);
   L.push('');
 
   if (!tree || tree.isLeaf || !tree.primary) {
@@ -1965,6 +1989,11 @@ function renderNarrative(meta, tree) {
 
 function renderMarkdownReport(meta, tree, userEval) {
   const lines = [];
+  // 分析报告头（元信息）
+  lines.push(renderReportMeta(meta));
+  lines.push('');
+  lines.push('---');
+  lines.push('');
   // 现状研判放最前（结论先行，Q9=a）
   if (tree && tree.assessment) {
     lines.push(renderAssessment(tree.assessment));
@@ -1988,6 +2017,10 @@ function renderMarkdownReport(meta, tree, userEval) {
   lines.push('<details><summary>技术细节（含规则打分，可略过）</summary>');
   lines.push('');
   lines.push(`- 生成时间：${fmtTime(meta.generatedAtUtc)}（UTC+8）｜数据来源：${meta.source}`);
+  lines.push('> 评分方法：否定法（Negation Method）。规则（Rules）是硬性闸门：全过规则的候选永远优先于有违规的候选；');
+  lines.push('> 指引（Guidelines）只用于给同档候选排名，不能抵消规则的失败。RSI 等书外技术指标不参与判定。');
+  lines.push('> 优雅降级：当某段没有任何一种数法能全过规则时（真实行情常见），引擎不返回空，而是退取「违规最少、越界最小」的一种，标注为存疑（penalized），仅供参考。');
+  lines.push('>');
   lines.push('> 术语：`违规×N`=不满足 N 条硬规则；`越界`=违反程度；`指引x/y`=命中软性指引数；');
   lines.push('> `衰竭`=末端未达极值；`跨级别+N`=交替/浪个性等加分；`末级/不可再分`=该段太小不再拆。');
   lines.push('');
@@ -2038,11 +2071,16 @@ async function main() {
     if (pts) userEval = evaluateExplicitCount(pts, fine, candles);
   }
 
+  const last = candles.length ? candles[candles.length - 1] : null;
   const meta = {
     product: args.product, timeframe: args.tf,
     startUtc: start.toISOString(), endUtc: end.toISOString(),
     generatedAtUtc: new Date().toISOString(),
     source: 'Coinbase Exchange candles API', sampleCount: candles.length,
+    rangeHigh: candles.length ? Math.max(...candles.map((c) => c.high)) : null,
+    rangeLow: candles.length ? Math.min(...candles.map((c) => c.low)) : null,
+    lastClose: last ? last.close : null,
+    lastCloseTs: last ? last.timestamp : null,
   };
 
   const safeProduct = args.product.replace(/[^A-Za-z0-9-]/g, '_');
