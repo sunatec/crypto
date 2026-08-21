@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"node -e '\\nconst m = require(\\\"./analyze-wave-tree.js\\\");\\n(async()=>{\\n  const tf = m.TIMEFRAMES[\\\"1d\\\"];\\n  const start = new Date(\\\"2025-10-04T16:00:00.000Z\\\"), end = new Date();\\n  con...",
-  "error": "Exit code 1\n[eval]:19\n}catch{}\n ^^^^^\nExpected ',', got 'catch'\n\nSyntaxError: Unexpected token 'catch'\n    at makeContextifyScript (node:internal/vm:194:14)\n    at compileScript (node:internal/process/execution:388:10)\n    at evalTypeScript (node:internal/process/execution:260:22)\n    at node:internal/main/eval_string:71:3\n\nNode.js v24.4.1",
-  "timestamp": "2026-08-17T11:16:26.269Z",
-  "retry_count": 1
-}

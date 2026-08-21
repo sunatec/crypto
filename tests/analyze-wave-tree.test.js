@@ -17,6 +17,13 @@ const {
   crossDegreeHits,
   computeExpectation,
   triangleGross,
+  significanceRank,
+  significantShortlist,
+  indexCombinations,
+  computeIncompleteness,
+  legProportionViolated,
+  directionalSpanToNow,
+  directionalTopSpan,
 } = require('../analyze-wave-tree.js');
 
 // 复用 manual 测试里的点构造思路：按 3 根蜡烛等间距排布
@@ -97,11 +104,15 @@ test('coarsenByPairs：8→6 删掉最小振幅的内部相邻对，保端点与
 test('buildCountTree：干净上涨推动浪→impulse-strict 且 tier1=0，五腿皆末级', () => {
   const fine = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [200, 'H'], [170, 'L'], [250, 'H']]);
   const candles = makeCandlesFromAnchors(fine);
-  const tree = buildCountTree(fine, candles, { maxDepth: 6 });
-  assert.equal(tree.primary.patternId, 'impulse-strict');
-  assert.equal(tree.primary.score.tier1, 0);
-  assert.equal(tree.primary.children.length, 5);
-  assert.ok(tree.primary.children.every((c) => c.isLeaf));
+  // 限定 allowedRoles=['driving']：本测试验证的是「impulse-strict 自身的拆解是否正确」，
+  // 与「它是否压过其它 corrective 读法（如跳过中间摆动的紧凑锯齿）」无关——后者是
+  // rank-competing-wave-counts 搜索补全后的合法竞争结果，同一组数据现在可能同时存在
+  // 多种零违规读法（详见该 change 的 tasks.md 3.7 一节），不是这里要测的东西。
+  const node = decompose(fine, candles, ['driving'], 0, { beamK: 3, maxDepth: 6, cache: new Map() });
+  assert.equal(node.primary.patternId, 'impulse-strict');
+  assert.equal(node.primary.score.tier1, 0);
+  assert.equal(node.primary.children.length, 5);
+  assert.ok(node.primary.children.every((c) => c.isLeaf));
 });
 
 test('终止（Q7）：4点调整段在只允许 driving 时无法成形→叶子', () => {
@@ -119,14 +130,25 @@ test('文法+嵌套：强制 corrective 解读，a/c 腿递归为 driving 推动
     [200, 'H'], [175, 'L'], [240, 'H'], [215, 'L'], [260, 'H'],            // c: 5浪
   ]);
   const candles = makeCandlesFromAnchors(fine);
-  const node = decompose(fine, candles, ['corrective'], 0, { beamK: 3, maxDepth: 6 });
-
+  // beamK 调大到 10（而非 3）：搜索补全后，同一组数据里跳过中间摆动的紧凑锯齿读法
+  // （如 100→175→150→260）也会零违规、且按指引命中数排到 primary——那是合法的
+  // 搜索完整性效果（见 rank-competing-wave-counts），不是本测试要验证的东西。本测试
+  // 验证的是「a(100→200 完整5浪)-b-c(150→260 完整5浪) 这个具体读法本身，其 a/c 腿
+  // 能否正确递归拆解成 driving 子结构、文法零违规」——故直接在候选池里定位这个具体
+  // 读法来断言，而不假设它必然是 primary。
+  const node = decompose(fine, candles, ['corrective'], 0, { beamK: 10, maxDepth: 6, cache: new Map() });
   assert.equal(node.isLeaf, false);
-  assert.equal(node.primary.patternId, 'zigzag'); // 平台形 b 回撤不足70%被比下去
-  assert.equal(node.primary.score.tier1, 0);      // 自身规则 + 文法均无违规
-  assert.equal(node.primary.score.grammarViolations, 0);
 
-  const [aChild, bChild, cChild] = node.primary.children;
+  const all = [node.primary, ...(node.alternates || [])];
+  const target = all.find((c) => c.points.length === 4
+    && Math.abs(c.points[0].price - 100) < 1e-6 && Math.abs(c.points[1].price - 200) < 1e-6
+    && Math.abs(c.points[2].price - 150) < 1e-6 && Math.abs(c.points[3].price - 260) < 1e-6);
+  assert.ok(target, '候选池里应能找到 a(100→200)-b(→150)-c(→260) 这个完整读法');
+  assert.equal(target.patternId, 'zigzag'); // 平台形 b 回撤不足70%被比下去
+  assert.equal(target.score.tier1, 0);      // 自身规则 + 文法均无违规
+  assert.equal(target.score.grammarViolations, 0);
+
+  const [aChild, bChild, cChild] = target.children;
   assert.equal(aChild.isLeaf, false, 'a腿应被递归拆解');
   assert.equal(aChild.primary.klass, 'driving');
   assert.equal(aChild.primary.score.tier1, 0);
@@ -174,14 +196,19 @@ test('computeExpectation：给出末腿方向与斐波完成区间，标注推�
 });
 
 test('进行中浪：末点带 provisional → 主链末腿标进行中并附预期', () => {
-  // 干净上涨推动浪，末点标 provisional（模拟进行中的第5浪）
+  // 6 点数据，末点标 provisional（模拟末腿仍在进行中）。搜索补全后（见
+  // rank-competing-wave-counts）这组数据的顶层竞争 primary 是零违规的单锯齿
+  // （3腿：a/b/c），而非直觉上的5浪推动——两者对同一组价格都合法零违规，
+  // 引擎按指引命中数选出前者，与本测试要验证的「provisional 标注机制」无关，
+  // 故按当前真实 primary 断言腿数，而非依赖它是哪种具体形态。
   const fine = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [200, 'H'], [170, 'L'], [250, 'H']]);
   fine[fine.length - 1].provisional = true;
   const candles = makeCandlesFromAnchors(fine);
   const tree = buildCountTree(fine, candles, { maxDepth: 6, trimTop: false });
+  const expectedLegs = tree.primary.points.length - 1;
   assert.equal(tree.primary.status, '进行中');
-  assert.equal(tree.primary.currentWave, 5);
-  assert.equal(tree.primary.totalWaves, 5);
+  assert.equal(tree.primary.currentWave, expectedLegs);
+  assert.equal(tree.primary.totalWaves, expectedLegs);
   assert.ok(tree.primary.expectation, '应附完成区间预期');
   assert.equal(tree.primary.expectation.note, '推断，非确定');
 });
@@ -307,4 +334,71 @@ test('selectBest：存在全过者时不选降级候选', () => {
   const { primary } = selectBest(scored, 3);
   assert.equal(primary.tier1, 0);
   assert.equal(primary.penalized, false);
+});
+
+// ------------------------------------------------------------
+// rank-competing-wave-counts：搜索补全 / 在建打分 / 腿间比例闸门
+// ------------------------------------------------------------
+
+test('significantShortlist：拓扑存活序——两个大摆动挤掉夹在中间的小噪音', () => {
+  // 两个巨大摆动(500高、50低)之间夹了两对几乎贴着彼此的小噪音枢轴(498/499/497/498.5)
+  const fine = finePivots([
+    [100, 'L'], [500, 'H'], [498, 'L'], [499, 'H'], [497, 'L'], [498.5, 'H'], [50, 'L'], [496, 'H'],
+  ]);
+  const sl = significantShortlist(fine, 2);
+  const prices = sl.map((i) => fine[i].price);
+  assert.deepEqual(prices.slice().sort((a, b) => a - b), [50, 500], '短名单应恰好是两个大摆动，挤掉中间小噪音');
+});
+
+test('indexCombinations：保持相对顺序、恰选 k 个的所有组合', () => {
+  assert.deepEqual(indexCombinations([10, 20, 30], 2), [[10, 20], [10, 30], [20, 30]]);
+  assert.deepEqual(indexCombinations([1, 2], 0), [[]]);
+  assert.deepEqual(indexCombinations([1], 2), []); // k > n 时无解
+});
+
+test('computeIncompleteness：末点非provisional恒为0；provisional按末腿完成度估计', () => {
+  const done = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [200, 'H']]);
+  assert.equal(computeIncompleteness(done), 0);
+
+  const justStarted = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [121, 'H']]);
+  justStarted[3].provisional = true; // 末腿仅走1，参考腿(前段最大)50 —— 几乎没走
+  assert.ok(computeIncompleteness(justStarted) > 0.9, '刚起步的末腿惩罚应接近1');
+
+  const nearlyDone = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [175, 'H']]);
+  nearlyDone[3].provisional = true; // 末腿55，已超过参考腿50
+  assert.equal(computeIncompleteness(nearlyDone), 0, '末腿已达/超过参考腿量级，惩罚应为0');
+});
+
+test('legProportionViolated：腿间比例闸门——畸长腿判真，均衡腿判假', () => {
+  const balanced = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [170, 'H']]); // 50,30,50
+  assert.equal(legProportionViolated(balanced), false);
+
+  const skewed = finePivots([[100, 'L'], [150, 'H'], [145, 'L'], [500, 'H']]); // 50,5,355 → 比71
+  assert.equal(legProportionViolated(skewed), true);
+
+  const singleLeg = finePivots([[100, 'L'], [200, 'H']]); // 只一条腿，无兄弟浪可比
+  assert.equal(legProportionViolated(singleLeg), false);
+});
+
+test('directionalSpanToNow：起点同框架A，终点延伸到最后一个细枢轴而非另一极值', () => {
+  const fine = finePivots([[100, 'L'], [300, 'H'], [50, 'L'], [200, 'H'], [150, 'L']]);
+  const a = directionalTopSpan(fine);
+  const b = directionalSpanToNow(fine);
+  assert.deepEqual(a.map((p) => p.price), [300, 50]); // A：全局高→全局低，止步于此
+  assert.deepEqual(b.map((p) => p.price), [300, 50, 200, 150]); // B：同起点，延伸到now
+  assert.equal(a[0].price, b[0].price, '两框架起点应相同');
+});
+
+test('框架B端到端：解开焊死后，全局低点之后的走势能被纳入更高级别的在建候选', () => {
+  // 126→100→110→57(全局低，框架A止于此)→90→62(provisional，仍高于57、故57仍是全局低)
+  const fine = finePivots([[126, 'H'], [100, 'L'], [110, 'H'], [57, 'L'], [90, 'H'], [62, 'L']]);
+  fine[fine.length - 1].provisional = true;
+  const candles = makeCandlesFromAnchors(fine);
+  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4 });
+  assert.equal(tree.primary.points[tree.primary.points.length - 1].price, 57, '框架A仍止于全局低点，未受影响');
+  assert.ok(tree.frameworkB && tree.frameworkB.primary, '应生成框架B（区间延伸到now）且能匹配出形态');
+  assert.equal(tree.frameworkB.primary.points[0].price, 126, '框架B与框架A同起点');
+  const bEnd = tree.frameworkB.primary.points[tree.frameworkB.primary.points.length - 1];
+  assert.equal(bEnd.price, 62, '框架B终点延伸到now（最后一个细枢轴）');
+  assert.ok(bEnd.provisional, '框架B末点应标provisional');
 });

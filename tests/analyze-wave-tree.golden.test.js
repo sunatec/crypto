@@ -50,11 +50,20 @@ test('金标准：存在当前进行中腿（缺陷2不得回归）', () => {
   assert.equal(s.inProgress.from, 57717.55); // 顶层结构止于主趋势低点57717，之后为进行中反弹
 });
 
-test('金标准：优雅降级——顶层无完美计数时带 penalized 违规标记（Q3=b）', () => {
+test('金标准：搜索补全后能找到真正零违规的顶层读法（rank-competing-wave-counts）', () => {
+  // 本测试原断言「真实整段套不出零违规单形态，应降级」——那正是
+  // rank-competing-wave-counts 要修的缺陷：旧版 segmentations() 每形态只回一个
+  // 贪心坍缩结果，126296→84400→97964→57718 这个零违规的单锯齿读法从未被生成/打分。
+  // 搜索补全后，对这份固化的金标准数据，顶层主选确认是 tier1=0（已用独立的
+  // evaluateExplicitCount 路径交叉核对，非 bug；见该 change 的 proposal.md）。
+  // 优雅降级机制本身（无人零违规时退取最轻违规者）仍由 selectBest 的专门单测覆盖，
+  // 不因这里换了断言而失去覆盖。
   const { tree } = buildGoldenTree();
   const s = t.serializeTree(tree);
-  assert.ok(s.fitScore.tier1 >= 1, '真实整段套不出零违规单形态，应降级');
-  assert.equal(s.fitScore.penalized, true);
+  assert.equal(s.fitScore.tier1, 0, '搜索补全后应能找到零违规顶层读法');
+  assert.equal(s.fitScore.penalized, false);
+  assert.equal(s.patternId, 'zigzag');
+  assert.deepEqual(s.points.map((p) => p.price), [126296, 84400, 97963.62, 57717.55]);
 });
 
 test('金标准：序列化 schema 完整且可 round-trip', () => {

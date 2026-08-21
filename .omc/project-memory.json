@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1786953867417,
+  "lastScanned": 1787286887407,
   "projectRoot": "/Users/mac/Fan/Dev/crypto",
   "techStack": {
     "languages": [
@@ -51,7 +51,7 @@
       "path": "assets",
       "purpose": "Static assets",
       "fileCount": 1,
-      "lastAccessed": 1786953867373,
+      "lastAccessed": 1787286887297,
       "keyFiles": [
         "OANDA_XAUUSD, 60_dd98a.csv"
       ]
@@ -60,7 +60,7 @@
       "path": "books",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1786953867378,
+      "lastAccessed": 1787286887297,
       "keyFiles": [
         "波浪理论详解.epub"
       ]
@@ -69,7 +69,7 @@
       "path": "openspec",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1786953867382,
+      "lastAccessed": 1787286887339,
       "keyFiles": [
         "config.yaml"
       ]
@@ -78,7 +78,7 @@
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 4,
-      "lastAccessed": 1786953867382,
+      "lastAccessed": 1787286887357,
       "keyFiles": [
         "analyze-kline-wave.test.js",
         "analyze-wave-manual.test.js",
@@ -90,7 +90,7 @@
       "path": "tests/fixtures",
       "purpose": "Test fixtures",
       "fileCount": 1,
-      "lastAccessed": 1786953867384,
+      "lastAccessed": 1787286887368,
       "keyFiles": [
         "btc-usd-1d-golden.json"
       ]
@@ -98,27 +98,75 @@
   },
   "hotPaths": [
     {
+      "path": "analyze-wave-tree.js",
+      "accessCount": 127,
+      "lastAccessed": 1787226171763,
+      "type": "file"
+    },
+    {
       "path": "analyze-kline-wave.js",
       "accessCount": 39,
       "lastAccessed": 1786597019592,
       "type": "file"
     },
     {
-      "path": "analyze-wave-tree.js",
-      "accessCount": 35,
-      "lastAccessed": 1786964998274,
+      "path": "analyze-wave-manual.js",
+      "accessCount": 19,
+      "lastAccessed": 1787195799612,
       "type": "file"
     },
     {
-      "path": "analyze-wave-manual.js",
-      "accessCount": 17,
-      "lastAccessed": 1786700995378,
+      "path": "tests/analyze-wave-tree.test.js",
+      "accessCount": 14,
+      "lastAccessed": 1787196951700,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/rank-competing-wave-counts/design.md",
+      "accessCount": 10,
+      "lastAccessed": 1787223613658,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/rank-competing-wave-counts/tasks.md",
+      "accessCount": 6,
+      "lastAccessed": 1787197043972,
       "type": "file"
     },
     {
       "path": "BTC-USD_1d_tree.md",
       "accessCount": 4,
       "lastAccessed": 1786964059836,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/rank-competing-wave-counts/proposal.md",
+      "accessCount": 2,
+      "lastAccessed": 1787135739628,
+      "type": "file"
+    },
+    {
+      "path": "tests/analyze-wave-tree.golden.test.js",
+      "accessCount": 2,
+      "lastAccessed": 1787196673494,
+      "type": "file"
+    },
+    {
+      "path": "BTC-USD_1d_202510050000_202608201214_tree.md",
+      "accessCount": 2,
+      "lastAccessed": 1787199276043,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/rank-competing-wave-counts/specs/wave-count-tree/spec.md",
+      "accessCount": 1,
+      "lastAccessed": 1787134686942,
+      "type": "file"
+    },
+    {
+      "path": "openspec/changes/rank-competing-wave-counts/specs/wave-fit-scoring/spec.md",
+      "accessCount": 1,
+      "lastAccessed": 1787134717465,
       "type": "file"
     }
   ],
