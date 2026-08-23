@@ -1,1 +1,13 @@
-﻿node_modules
+node_modules
+
+# 生成的波浪分析报告（每次运行的产物，非源码）
+BTC-USD_*.md
+BTC-USD_*.json
+*_tree.md
+*_tree.json
+*_structured.md
+
+# OMC 会话与运行时状态噪声
+.omc/state/
+.omc/sessions/
+.omc/project-memory.json
