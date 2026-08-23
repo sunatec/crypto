@@ -76,6 +76,12 @@ const LAYER_ORDER = { pattern: 0, ratio: 1, time: 2 };
 // 越界超过此归一化阈值即算「严重违规/致命伤」（书外工程阈值，可后审调整）。
 const SEVERE_OVERSHOOT = 0.5;
 
+// 文法违规（子腿性格无法胜任所需角色）在 tier2(越界和) 里的固定权重（structured-wave-report §2.4）。
+// 此前文法违规只计 tier1 条数、tier2 记 0，导致"结构性格不对"的候选在越界维度白占便宜、平票压过
+// "仅差一丝比例"的候选。给它一个权重后，"腿性格根本不对"这类结构硬伤不再被当作比小比例越界更轻。
+// 取 0.25：重于常见的小比例越界(如 0.5%~2%)，与较大比例越界(~19%)量级相当；可后审标定。
+const GRAMMAR_OVERSHOOT = 0.25;
+
 /**
  * 比率型判据的归一化结果：要求 r ∈ [lo, hi]（hi 可为 Infinity 表示单侧）。
  */
@@ -802,6 +808,40 @@ function seqOf(direction, points) {
   return arr;
 }
 
+// 几何交替校验：内部宏观点必须是相邻宏观点里的真极值——H 高于左右相邻、L 低于左右相邻。
+// 类型交替(H/L)不足以保证方向真反转：下跌途中的"更低的高点(lower-high)"被选作连接浪的
+// 向上目标时，"L→H"这条腿反而在下降，形态方向反了却仍过类型检查。这类骨架非近失、是结构
+// 无效（连接浪/回撤浪没真正反向），须硬淘汰。所有合法形态（含收缩/扩散三角、扩散平台）都满足此式。
+function macroAlternates(pts) {
+  if (!Array.isArray(pts) || pts.length < 3) return true;
+  for (let i = 1; i < pts.length - 1; i += 1) {
+    const p = pts[i];
+    if (p.type === 'H') {
+      if (!(p.price > pts[i - 1].price && p.price > pts[i + 1].price)) return false;
+    } else if (!(p.price < pts[i - 1].price && p.price < pts[i + 1].price)) return false;
+  }
+  return true;
+}
+
+// 宏观腿端点须为跨度内真极值（macro-endpoint-span-extreme）：每个内部宏观点，须是其左右相邻
+// 宏观点之间那一段 segFine 细枢轴里的真极值——去 H 的严格高于窗口内每个细枢轴、去 L 的严格
+// 低于。堵住"用更低的高点/更高的低点当端点、把真极值埋进腿里"的退化骨架（如 a 段收在 65705、
+// 内部却藏着更高的 66924）。比 macroAlternates 更强并包含它（相邻宏观点也在窗口内）。
+function legEndpointsSpanExtreme(pts, segFine) {
+  if (!Array.isArray(pts) || pts.length < 3 || !Array.isArray(segFine)) return true;
+  for (let i = 1; i < pts.length - 1; i += 1) {
+    const p = pts[i];
+    const lo = pts[i - 1].index;
+    const hi = pts[i + 1].index;
+    for (const f of segFine) {
+      if (f.index <= lo || f.index >= hi) continue;
+      if (p.type === 'H') { if (f.price > p.price) return false; }
+      else if (f.price < p.price) return false;
+    }
+  }
+  return true;
+}
+
 const PATTERNS = [
   {
     id: 'impulse-strict', klass: DRIVING, points: 6,
@@ -1181,7 +1221,22 @@ function legCharacter(legFine, candles, depth, opts) {
   else if (dS && cS) character = compareCandidates(dS, cS) <= 0 ? 'driving' : 'corrective';
   else if (dS) character = 'driving';
   else if (cS) character = 'corrective';
-  return { character, drivingNode: asDrv, correctiveNode: asCorr };
+  // canDrive/canCorrect（grammar-role-fulfillment）：这条腿「能否胜任」某角色 = 该方向存在
+  // 干净拆解（tier1=0）。文法判定用它，而非「最佳性格 character」——歧义腿（两者都干净）应能
+  // 胜任任一角色，不因「驱动优先」的 character 在调整位被误报违规。
+  return { character, drivingNode: asDrv, correctiveNode: asCorr, canDrive: !!dClean, canCorrect: !!cClean };
+}
+
+// 文法违规判据（grammar-role-fulfillment §2）：这条腿是否「无法胜任」所需角色。
+// 胜任 = 所需方向存在干净拆解（canDrive/canCorrect）。歧义腿（两者都干净）胜任任一角色→不违规。
+// 仅当所需方向拆不干净时才违规；当两方向都拆不干净时，退回旧口径（用最佳性格 character 判），
+// 避免「腿本身成不了任何干净结构」时漏判。
+function grammarViolatesRole(lc, requiredChar) {
+  if (!lc) return false;
+  if (lc.canDrive || lc.canCorrect) {
+    return requiredChar === 'driving' ? !lc.canDrive : !lc.canCorrect;
+  }
+  return !!(lc.character && lc.character !== requiredChar);
 }
 
 function decompose(segFine, candles, allowedRoles, depth, opts) {
@@ -1221,6 +1276,8 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
 
     for (const pts of segmentations(segFine, pat.points)) {
       if (!pts.every((p, i) => p.type === seq[i])) continue;
+      if (!macroAlternates(pts)) continue; // 快筛：淘汰"下降的连接浪"（lower-high 当上冲目标）
+      if (!legEndpointsSpanExtreme(pts, segFine)) continue; // 淘汰"端点非跨度极值"（真极值被埋进腿里）
 
       const measures = computeMeasures(pts, direction, candles);
       // 书 3.16 特例：三角形的运行总量按「最长子浪高低差」口径纠正
@@ -1268,6 +1325,9 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
     // 文法：逐腿递归拆解（childRoles 可为类别 driving/corrective 或具体形态 id 如 'zigzag'）
     const children = [];
     let grammarViolations = 0;
+    const grammarNotes = []; // 文法违规明细（供报告"违规原因"展示，Q2=a）
+    const legLabels = waveLabelsFor(pat.id);
+    const charCn = (c) => (c === 'driving' ? '驱动浪(五浪)' : '调整浪(三波)');
     for (let i = 0; i < pat.childRoles.length; i += 1) {
       const childFine = sliceFine(segFine, pts[i], pts[i + 1]);
       const childRole = pat.childRoles[i];
@@ -1279,9 +1339,16 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
         const childNode = (childRole === DRIVING ? (lc.drivingNode || lc.correctiveNode) : lc.correctiveNode)
           || leafNode(childFine, childRole);
         children.push(childNode);
-        // 文法违规：这条腿的真实性格与所需性格相反（如 a浪须驱动、实测更像三波调整；
-        // 或 W浪须调整、实测更像五浪推动）。性格判不出（太短）则不计违规。
-        if (lc.character && lc.character !== requiredChar) grammarViolations += 1;
+        // 文法违规（grammar-role-fulfillment）：这条腿「无法胜任」所需角色时才违规——
+        // 即所需方向拆不出干净结构。歧义腿（两种都干净）胜任任一角色，不再因驱动优先误报。
+        if (grammarViolatesRole(lc, requiredChar)) {
+          grammarViolations += 1;
+          grammarNotes.push({
+            kind: 'grammar',
+            desc: `${legLabels[i] || `第${i + 1}腿`} 须为${charCn(requiredChar)}，走不成干净的${charCn(requiredChar)}（更像${charCn(lc.character)}）`,
+            overshoot: 0,
+          });
+        }
       } else {
         children.push(leafNode(childFine, childRole));
       }
@@ -1299,8 +1366,11 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
     // tier4 跨级别指引（需 children，故此处计算）；衰竭与量能为注记（不评分）
     const tier4 = crossDegreeHits(candidate);
     const totalTier1 = score.tier1 + grammarViolations;
+    // 文法违规带越界权重计入 tier2（structured-wave-report §2.4）：不再让"结构性格不对"
+    // 在越界维度白占便宜、平票压过"仅差一丝比例"的候选。
+    const totalTier2 = score.tier2 + grammarViolations * GRAMMAR_OVERSHOOT;
     const incompleteness = computeIncompleteness(pts); // 框架A候选恒为0（末点非provisional）
-    candidate.score = { ...score, tier1: totalTier1, grammarViolations, tier4, incompleteness, complexity: patternComplexity(pat.id), penalized: totalTier1 > 0 };
+    candidate.score = { ...score, tier1: totalTier1, tier2: totalTier2, grammarViolations, grammarNotes, tier4, incompleteness, complexity: patternComplexity(pat.id), penalized: totalTier1 > 0 };
     candidate.truncated = Number.isFinite(measures.price) && Number.isFinite(measures.gross)
       && measures.price < measures.gross - 1e-6;
     candidate.volumeNote = volumeNote(candidate, candles);
@@ -1526,7 +1596,13 @@ function buildCountTree(finePivots, candles, options = {}) {
     const topSpanB = directionalSpanToNow(finePivots);
     if (topSpanB.length > topSpan.length) {
       const optsB = { ...opts, cache: new Map() };
-      tree.frameworkB = decompose(topSpanB, candles, [DRIVING, CORRECTIVE], 0, optsB);
+      const naiveB = decompose(topSpanB, candles, [DRIVING, CORRECTIVE], 0, optsB);
+      // now 落在顺势新极值时，朴素框架B 能拟合（终点类型匹配）→ 直接用。
+      // now 落在逆势极值（反弹高点/回抽低点）时，朴素框架B 因首尾类型不匹配返回空叶子
+      // （model-unfinished-final-wave）→ 改用"复用框架A、末浪进行中"的逆势框架B。
+      tree.frameworkB = (naiveB && naiveB.primary)
+        ? naiveB
+        : buildCounterTrendFrameworkB(tree, finePivots);
     }
   }
   return tree;
@@ -1927,14 +2003,42 @@ function serializeMultiDegree(tree, tfLabel) {
 // ③沿用 tree.inProgressStruct——框架A的所有候选共享同一个终点（全局低点），
 // 所以「现在在哪」对每条候选都一样，不需要重算。
 
+// 汇总一个候选的全部违规原因（规则违规 + 文法违规），供报告展示（违规原因写进文档）。
+// 规则违规来自 score.failed（带 desc + overshoot 越界程度）；文法违规来自 score.grammarNotes。
+function candidateViolations(candidate) {
+  const s = candidate && candidate.score;
+  if (!s) return [];
+  const rules = (s.failed || []).map((f) => ({ kind: 'rule', desc: f.desc, overshoot: f.overshoot || 0 }));
+  const grammar = (s.grammarNotes || []).map((g) => ({ kind: 'grammar', desc: g.desc, overshoot: g.overshoot || 0 }));
+  // 越界大的排前（更重的违规先显示）
+  return [...rules, ...grammar].sort((a, b) => (b.overshoot || 0) - (a.overshoot || 0));
+}
+
+// 违规原因一句话（供两份报告共用）：赘述规则本身 + 越界的定性程度。
+// 不再显示 "(差 0.5%)" 这种归一化数值——它易被误当"差0.5个百分点"（实际 y 是 w 的 87.9%、
+// 差 2.1 个百分点，归一化后才 0.005）。改为叙述规则 + 差一丝/差一点/差较多，并附归一化越界值。
+function fmtViolReason(v) {
+  if (!v) return '';
+  if (v.kind === 'grammar' || !v.overshoot) return v.desc;
+  const o = v.overshoot;
+  const mag = o < 0.02 ? '差一丝' : (o < 0.1 ? '差一点' : (o < 0.3 ? '差较多' : '差很远'));
+  return `${v.desc}（${mag}，归一化越界 ${o.toFixed(3)}）`;
+}
+
 function candidateLegs(candidate) {
   const labels = waveLabelsFor(candidate.patternId);
   const pts = candidate.points;
+  const lastIdx = pts.length - 2; // 末腿在 legs 里的下标
   const legs = [];
   for (let i = 0; i < pts.length - 1; i += 1) {
-    // 末腿若落在 provisional 末点上（框架B：区间延伸到 now），该腿仍在成形中，
-    // 不能标"完成"——框架A终点=全局极值已确认，故其所有宏观腿恒为"完成"。
-    const status = pts[i + 1].provisional ? '⏳ 进行中' : '完成';
+    // 末腿状态三态：
+    //   · 落在 provisional 末点（朴素框架B：区间延伸到 now）→「⏳ 进行中」
+    //   · 逆势框架B 的末浪进行中（finalWaveInProgress）→「⏳ 延伸中」——终点(全局极值)只是
+    //     末浪内部拐点，之后可能延伸出新极值
+    //   · 其余（框架A：终点=全局极值已确认）→「完成」
+    let status = '完成';
+    if (pts[i + 1].provisional) status = '⏳ 进行中';
+    else if (candidate.finalWaveInProgress && i === lastIdx) status = '⏳ 延伸中';
     legs.push({ name: labels[i] || String(i + 1), from: pts[i].price, to: pts[i + 1].price, status });
   }
   return legs;
@@ -1966,6 +2070,43 @@ function gateFrameworkBCandidate(c) {
       failed: [...(c.score.failed || []), { id: 'leg-proportion-gate', layer: 'ratio', desc: `同级兄弟浪振幅比超过${LEG_PROPORTION_MAX_RATIO}倍（防大跌+反弹畸长塞入）`, overshoot: 0 }],
       penalized: true,
     },
+  };
+}
+
+// 框架B 逆势末浪进行中（model-unfinished-final-wave §3.1）：当 now 处于逆势极值（反弹高点/
+// 回抽低点），朴素框架B（decompose 到 now）会因首尾类型不匹配返回空。此时改为复用框架A 的
+// 顶层数法（同宏观骨架），但把其「最后一个宏观浪」重新解读为「进行中、还没终结在全局极值」——
+// 全局极值只是末浪内部的一个拐点，当前逆势走势是末浪内部的回撤，之后可能延伸出新极值。
+// 返回 { primary, alternates, counterTrend:true }，与朴素框架B 同形，供 buildRankedCounts 消费。
+function buildCounterTrendFrameworkB(tree, finePivots) {
+  const p = tree && tree.primary;
+  if (!p || !Array.isArray(p.points) || p.points.length < 2) return null;
+  const term = p.points[p.points.length - 1]; // 框架A 末点 = 全局极值（如 57718 L）
+  const now = Array.isArray(finePivots) && finePivots.length ? finePivots[finePivots.length - 1] : null;
+  if (!now || !now.provisional) return null;
+  if (now.index <= term.index) return null;     // now 未越过全局极值 → 无后续走势
+  if (now.type === term.type) return null;       // now 与末点同型（顺势新极值）→ 朴素框架B 已能处理，不走这里
+
+  const down = p.direction === 'down';           // 净向下 → 末浪延伸=新低；净向上 → 新高
+  const sgn = down ? -1 : 1;
+  const lastLegAmp = Math.abs(term.price - p.points[p.points.length - 2].price);
+  // 末浪延伸的投影极值：从全局极值按末腿幅度的 0.382/0.618/1.0 倍继续（推断、非确定）
+  const projection = [0.382, 0.618, 1.0].map((m) => ({ mult: m, price: term.price + sgn * lastLegAmp * m }));
+  // 未完成度：当前逆势回撤越深 → "末浪还在延伸"越不可能（越可能已见底/见顶）→ 惩罚越大。
+  const retraceRatio = lastLegAmp > 0 ? Math.min(1, Math.abs(now.price - term.price) / lastLegAmp) : 1;
+
+  const reframe = (c) => ({
+    ...c,
+    finalWaveInProgress: true,
+    projection,
+    retraceFrom: term,
+    retraceNow: now,
+    score: { ...c.score, incompleteness: retraceRatio },
+  });
+  return {
+    counterTrend: true,
+    primary: reframe(p),
+    alternates: (tree.alternates || []).slice(0, 3).map(reframe), // 只带前几族，避免把整张A表复制一遍
   };
 }
 
@@ -2002,6 +2143,11 @@ function buildRankedCounts(tree) {
     label: c.manual.label,
     direction: c.direction,
     legs: candidateLegs(c),
+    violations: candidateViolations(c), // 违规原因明细（规则+文法），md/json 同源
+    // 逆势框架B 的"末浪进行中"标记与投影，供渲染层展示"57718只是拐点、投影新低"
+    finalWaveInProgress: !!c.finalWaveInProgress,
+    projection: c.projection || null,
+    invalidation: c.retraceFrom ? c.retraceFrom.price : null,
     score: { tier1: c.score.tier1, tier2: c.score.tier2, incompleteness: c.score.incompleteness || 0, complexity: c.score.complexity, penalized: c.score.penalized },
   }));
 }
@@ -2012,7 +2158,7 @@ function renderRankedCounts(tree) {
   const n = (v) => Math.round(v);
   const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
   const scoreTag = (s) => (s.tier1 === 0 ? '✅ 规则全过' : `❌ 违规×${s.tier1}`);
-  const framingTag = (f) => (f === 'B' ? '⏳ 在建（框架B：区间延伸到now，当前是其内部子腿）' : '✅ 已完成（框架A：区间止于全局极值）');
+  const fmtViol = fmtViolReason; // 共用：赘述规则 + 定性越界程度（不再显示易误解的归一化%）
   const L = [];
   L.push('# 数法排名（现在的浪型是什么，按吻合排序）');
   L.push('');
@@ -2020,17 +2166,40 @@ function renderRankedCounts(tree) {
   L.push('> 候选池含两种框架：**框架A**——大跌到全局极值即算完成；**框架B**——区间延伸到现在，当前走势可能只是更高级别、尚未走完的浪的内部子腿（"读法2"）。');
   L.push('');
 
+  // 框架标签：框架A 的"完成"软化为"待确认"（model-unfinished-final-wave §3.2）；
+  // 框架B 分「末浪进行中（逆势）」与「区间延伸到now（顺势）」两种措辞。
+  const framingLine = (item) => {
+    const ext = item.legs.length ? item.legs[item.legs.length - 1].to : null;
+    const dn = item.direction === 'down';
+    if (item.framing === 'A') {
+      return ext != null
+        ? `✅ 完成（待确认）：末浪终结于全局极值 **${n(ext)}**；若${dn ? '跌破' : '升破'} **${n(ext)}** 则末浪可能延伸、见框架B 读法`
+        : '✅ 完成（待确认，框架A：区间止于全局极值）';
+    }
+    if (item.finalWaveInProgress) {
+      const proj = (item.projection || []).map((t) => n(t.price)).join(' / ');
+      return `⏳ 末浪进行中（框架B）：**${n(item.invalidation)}** 不是终点、只是末浪内部拐点；当前逆势走势是末浪的回撤，之后可能延伸出新${dn ? '低' : '高'}——投影 **${proj}**（推断）。重回极值另一侧则视为末浪已完成、见底/见顶`;
+    }
+    return '⏳ 在建（框架B：区间延伸到now，当前是其内部子腿）';
+  };
+
   const [primary, ...alts] = ranked;
-  L.push(`## ✅ 主选：${primary.label}（${dirCn(primary.direction)}）`);
+  L.push(`## ${primary.framing === 'A' ? '✅' : '⏳'} 主选：${primary.label}（${dirCn(primary.direction)}）`);
   L.push('');
-  L.push(`${framingTag(primary.framing)}`);
+  L.push(framingLine(primary));
   L.push('');
   let tag = scoreTag(primary.score);
   if (primary.score.tier1) tag += `（越界 ${primary.score.tier2.toFixed(3)}）`;
   if (primary.score.incompleteness > 0) tag += `｜未完成度 ${(primary.score.incompleteness * 100).toFixed(0)}%`;
   L.push(tag);
   L.push('');
-  L.push('**① 已走完的腿（末腿若标"⏳进行中"即②当前在哪）：**');
+  // 违规原因写全（Q1a/Q2a/Q3a）：主选逐条列，规则+文法都带
+  if (primary.violations && primary.violations.length) {
+    L.push('**⚠️ 违规原因：**');
+    primary.violations.forEach((v) => L.push(`- ${fmtViol(v)}`));
+    L.push('');
+  }
+  L.push('**① 各宏观腿（末腿若标"⏳进行中/延伸中"即当前所在）：**');
   primary.legs.forEach((l) => L.push(`- ${l.name} 腿：${n(l.from)} → ${n(l.to)}（${l.status}）`));
   L.push('');
   if (primary.framing === 'A' && tree.inProgressStruct) {
@@ -2041,15 +2210,26 @@ function renderRankedCounts(tree) {
   if (alts.length) {
     L.push('## 备选');
     L.push('');
-    L.push('| 排名 | 框架 | 浪型 | 方向 | 腿 | 评分 |');
-    L.push('|---|---|---|---|---|---|');
+    L.push('| 排名 | 框架 | 浪型 | 方向 | 腿 | 评分 | 违规原因（最重一条） |');
+    L.push('|---|---|---|---|---|---|---|');
     alts.forEach((c, i) => {
-      const legsStr = c.legs.map((l) => `${l.name}:${n(l.from)}→${n(l.to)}${l.status === '⏳ 进行中' ? '⏳' : ''}`).join(' ');
+      const legsStr = c.legs.map((l) => `${l.name}:${n(l.from)}→${n(l.to)}${(l.status === '⏳ 进行中' || l.status === '⏳ 延伸中') ? '⏳' : ''}`).join(' ');
       let sc = scoreTag(c.score);
       if (c.score.incompleteness > 0) sc += `(未完${(c.score.incompleteness * 100).toFixed(0)}%)`;
-      L.push(`| 备选${i + 1} | ${c.framing === 'B' ? '⏳B' : 'A'} | ${c.label} | ${dirCn(c.direction)} | ${legsStr} | ${sc} |`);
+      const fr = c.framing === 'B' ? (c.finalWaveInProgress ? '⏳B末浪' : '⏳B') : 'A';
+      // Q4a：备选只列最重的一条违规原因（violations 已按越界降序，取首条）；规则全过则留空
+      const why = (c.violations && c.violations.length) ? fmtViol(c.violations[0]) : '—';
+      L.push(`| 备选${i + 1} | ${fr} | ${c.label} | ${dirCn(c.direction)} | ${legsStr} | ${sc} | ${why} |`);
     });
     L.push('');
+    // 若有"末浪进行中"的框架B 备选，补一行投影说明（否则表里只有"延伸中"三字、没数）
+    const cb = alts.find((c) => c.finalWaveInProgress);
+    if (cb) {
+      const proj = (cb.projection || []).map((t) => n(t.price)).join(' / ');
+      L.push(`> ⏳B末浪：${cb.label} 的末浪可能未走完——**${n(cb.invalidation)}** 只是拐点，若${cb.direction === 'down' ? '跌破' : '升破'}则延伸新${cb.direction === 'down' ? '低' : '高'}，投影 **${proj}**（推断）。`);
+      L.push(`> （这是"顶层数法"这一轴的看跌可能；下方「结论」节的 XX/B 反弹身份是"反弹在更大结构里是什么"这一轴的同一看跌可能，两者互为印证、非重复。）`);
+      L.push('');
+    }
   }
   return L.join('\n');
 }
@@ -2215,7 +2395,7 @@ function evaluateExplicitCount(macroPoints, finePivots, candles, options = {}) {
       return { desc: r.desc, pass: res.pass, overshoot: res.overshoot };
     });
 
-    // 文法：逐腿判定「五浪(驱动) vs 三波(调整)」性格，与所需性格相反才算违规（与 decompose 一致）
+    // 文法：逐腿判「能否胜任所需角色」，无法胜任才违规（grammar-role-fulfillment，与 decompose 一致）
     let grammarViolations = 0;
     const legNotes = [];
     for (let i = 0; i < pat.childRoles.length; i += 1) {
@@ -2224,10 +2404,11 @@ function evaluateExplicitCount(macroPoints, finePivots, candles, options = {}) {
       if (childFine.length >= rolePoints(role)) {
         const requiredChar = role === DRIVING ? 'driving' : 'corrective';
         const lc = legCharacter(childFine, candles, 1, opts);
-        if (lc.character && lc.character !== requiredChar) {
+        if (grammarViolatesRole(lc, requiredChar)) {
           grammarViolations += 1;
           const cn = (c) => (c === 'driving' ? '驱动浪(五浪)' : '调整浪(三波)');
-          legNotes.push(`第${i + 1}腿（须为${cn(requiredChar)}）实测更像${cn(lc.character)}`);
+          // 歧义腿已不违规；能到这里说明所需方向拆不干净，据实说明它实测更像哪种
+          legNotes.push(`第${i + 1}腿（须为${cn(requiredChar)}）走不成干净的${cn(requiredChar)}（实测更像${cn(lc.character)}）`);
         }
       }
     }
@@ -2692,6 +2873,262 @@ function renderMarkdownReport(meta, tree, userEval) {
   return lines.join('\n');
 }
 
+// ============================================================
+// 8. 结构化波浪分析报告（structured-wave-report）：固定 7 节、自然语言、不替换现有报告
+// ============================================================
+
+// 强弱分档（探索 B + 6节 b）：不给概率，用 高/中/低——按 违规数 + 越界 + 未完成度客观分。
+function strengthTier(score) {
+  if (!score) return '低';
+  const t1 = score.tier1 || 0;
+  const t2 = score.tier2 || 0;
+  const inc = score.incompleteness || 0;
+  if (t1 === 0 && inc < 0.5) return '高';            // 规则全过且非明显在建
+  if (t1 <= 1 && t2 < 0.05 && inc < 0.5) return '高'; // 仅差一丝比例
+  if (t1 >= 2 || t2 >= 0.5) return '低';              // 多违规 或 大越界
+  return '中';                                        // 其余：1违规 / 规则全过但在建
+}
+
+// 一条腿的时长（K线根数）
+function legBars(a, b) { return Math.abs((b.index || 0) - (a.index || 0)); }
+
+// wave-3 结构验证清单（探索 C：只做书内结构验证，不引入动量）：判"新推动3浪"前逐条查。
+// 面向"低点之后的上涨"（structUp）；数据不足则标"无法验证"。
+function wave3Checklist(tree) {
+  const ips = tree && tree.inProgressStruct;
+  if (!ips || !ips.upTree || !ips.upTree.primary || !ips.structUp) return null;
+  const up = ips.upTree.primary;
+  const start = ips.invalidation;            // 上涨起点（全局低，如 57718）= 候选第1浪起点
+  const nowP = ips.pullback ? ips.pullback.to.price : ips.swingExtreme.price;
+  const w1High = up.points[1] ? up.points[1].price : null;   // 首个上冲子腿的顶 = 候选第1浪高点
+  const w2Low = up.points[2] ? up.points[2].price : null;    // 其后回撤低 = 候选第2浪低点
+  // 前一轮下跌的关键结构高点：主结构里最后一个高点（如 W-X-Y 的 x 顶）
+  const priorHighs = (tree.primary ? tree.primary.points : []).filter((p) => p.type === 'H');
+  const priorKeyHigh = priorHighs.length ? priorHighs[priorHighs.length - 1].price : null;
+  const R = Math.round;
+  const chk = (item, pass, note) => ({ item, pass, note });
+  return [
+    chk('存在可识别的第1浪', w1High != null, w1High != null ? `首上冲腿 ${R(start)}→${R(w1High)}` : '上涨内部拆不出第1子腿'),
+    chk('存在符合规则的第2浪', w2Low != null, w2Low != null ? `其后回撤到 ${R(w2Low)}` : '无明显第2浪回撤'),
+    chk('第2浪未跌破第1浪起点', w2Low == null ? false : w2Low > start, w2Low != null ? `回撤低 ${R(w2Low)} vs 起点 ${R(start)}` : '—'),
+    chk('当前突破第1浪高点', w1High != null && nowP > w1High, `现价 ${R(nowP)} vs 第1浪高 ${w1High != null ? R(w1High) : '?'}`),
+    chk('内部形成五浪推动', ips.swingChar === 'driving', `上冲段内部实测像 ${ips.swingChar === 'driving' ? '五浪' : '三波'}`),
+    chk('突破前一轮下跌关键结构高点', priorKeyHigh != null && nowP > priorKeyHigh, `现价 ${R(nowP)} vs 关键高 ${priorKeyHigh != null ? R(priorKeyHigh) : '?'}`),
+  ];
+}
+
+/**
+ * 结构化波浪分析报告：固定 7 节、自然语言。复用现有派生（tree/parentDegree/bounceHyp/
+ * inProgressStruct/数法排名），只做组织与叙述，不臆造数字。
+ */
+function renderStructuredReport(meta, tree, candles, fine) {
+  const R = (v) => (v == null ? '—' : Math.round(v));
+  const n2 = (v) => (v == null ? '—' : Number(v).toFixed(2));
+  const fmtTs = (sec) => fmtTime(sec * 1000);
+  const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
+  const L = [];
+  L.push(`# ${meta.product} 波浪结构分析`);
+  L.push('');
+
+  // ── 1. 分析范围 ──
+  L.push('## 1. 分析范围');
+  L.push('');
+  L.push(`- 品种：${meta.product}`);
+  L.push(`- 周期：${meta.timeframe}`);
+  L.push(`- 时间范围（UTC+8）：${fmtTimeSec(meta.startUtc)} ~ ${fmtTimeSec(meta.endUtc)}`);
+  L.push(`- 样本数量：${meta.sampleCount} 根K线`);
+  L.push(`- 区间最高/最低：${n2(meta.rangeHigh)} / ${n2(meta.rangeLow)}`);
+  if (meta.lastClose != null) L.push(`- 最新收盘：${n2(meta.lastClose)}（${fmtTimeSec(meta.lastCloseTs * 1000)} UTC+8）`);
+  L.push(`- 生成时间：${fmtTimeSec(meta.generatedAtUtc)}（UTC+8）`);
+  L.push(`- 数据来源：${meta.source}`);
+  L.push('');
+
+  if (!tree || tree.isLeaf || !tree.primary) {
+    L.push('数据不足，暂时数不出浪型。');
+    return L.join('\n');
+  }
+
+  const p = tree.primary;
+  const labels = waveLabelsFor(p.patternId);
+  const ranked = buildRankedCounts(tree) || [];
+  const pd = deriveParentDegree(tree);
+  const bh = tree.assessment && tree.assessment.bounceHyp;
+  const ips = tree.inProgressStruct;
+
+  // ── 2. 关键转折点 ──
+  L.push('## 2. 关键转折点');
+  L.push('');
+  L.push('| 序号 | 日期 | 价格 | 类型 | 暂定浪型位置 |');
+  L.push('|---|---|---:|---|---|');
+  const tps = p.points.slice();
+  // 追加低点之后的在建关键点（摆动极值 + now），标为"其后在建"
+  if (ips && ips.swingExtreme && ips.swingExtreme.index > tps[tps.length - 1].index) tps.push(ips.swingExtreme);
+  tps.forEach((pt, i) => {
+    let pos;
+    if (i < p.points.length) {
+      pos = i === 0 ? `${labels[0] || '起'} 浪起点` : `${labels[i - 1] || `第${i}`} 浪终点`;
+    } else {
+      pos = `${p.direction === 'down' ? '低点后' : '高点后'}在建段极值`;
+    }
+    L.push(`| ${i + 1} | ${fmtTs(pt.timestamp)} | ${n2(pt.price)} | ${pt.type} | ${pos} |`);
+  });
+  L.push('');
+
+  // ── 3. 已完成浪型 ──
+  L.push('## 3. 已完成浪型');
+  L.push('');
+  const dropAmp = Math.abs(p.points[0].price - p.points[p.points.length - 1].price);
+  L.push(`从 **${R(p.points[0].price)}** ${dirCn(p.direction)}至 **${R(p.points[p.points.length - 1].price)}** 这一整段，主方案划分为 **${plainLabel(p.patternId)}**。`);
+  L.push('');
+  const legAmps = [];
+  const legBarsArr = [];
+  for (let i = 0; i < p.points.length - 1; i += 1) {
+    legAmps.push(Math.abs(p.points[i + 1].price - p.points[i].price));
+    legBarsArr.push(legBars(p.points[i], p.points[i + 1]));
+  }
+  p.children.forEach((c, i) => {
+    const lab = labels[i] || `第${i + 1}`;
+    const a = p.points[i];
+    const b = p.points[i + 1];
+    const inner = (c.isLeaf || !c.primary) ? '较小、不再细分' : plainLabel(c.primary.patternId);
+    L.push(`- **${lab} 浪** · ${dirCn(b.price >= a.price ? 'up' : 'down')}：${R(a.price)}（${fmtTs(a.timestamp)}） → ${R(b.price)}（${fmtTs(b.timestamp)}）；内部结构：${inner}`);
+  });
+  L.push('');
+  L.push(`- 价格比例：各腿幅度 ${legAmps.map(R).join(' : ')}`);
+  L.push(`- 时间比例：各腿K线数 ${legBarsArr.join(' : ')}`);
+  L.push('');
+  // 选择理由 / 为何不是其它形态：从全部候选（非仅去重后的 top）里找该形态的最优代表、引用其违规
+  L.push('**为何是该结构、而非其它：**');
+  const allCands = [tree.primary, ...(tree.alternates || [])];
+  const whyNot = (patId, patName) => {
+    if (p.patternId === patId) return null; // 主方案本身就是它，不用"为何不是"
+    const c = allCands.find((x) => x.patternId === patId);
+    if (!c) return `- 不是${patName}：这段数不出该形态（首尾/点数不符）`;
+    const vs = candidateViolations(c);
+    const v = vs.length ? vs[0].desc : '评分更低';
+    return `- 不是${patName}：该读法${c.score.tier1 ? `违规×${c.score.tier1}（${v}）` : '虽合规但简约度/吻合更低'}`;
+  };
+  [['zigzag', '单一锯齿'], ['impulse-strict', '五浪推动'], ['flat', '平台形']].forEach(([id, nm]) => {
+    const s = whyNot(id, nm); if (s) L.push(s);
+  });
+  // 主方案自身的瑕疵：把违规规则赘述清楚（不只报"越界 0.005"这种归一化数值）
+  const primViol = (ranked[0] && ranked[0].violations) ? ranked[0].violations : [];
+  if (primViol.length) {
+    L.push(`- 主方案自身唯一瑕疵：${primViol.map(fmtViolReason).join('；')}——是所有候选里最轻的。`);
+  }
+  L.push(`- 选择理由：主方案 ${plainLabel(p.patternId)} 在同台竞争里${p.score.tier1 ? `违规最少（×${p.score.tier1}）` : '规则全过'}，各腿方向、内部结构与价格关系最自洽。`);
+  L.push('');
+
+  // ── 4. 当前主方案（低点之后的在建行情）──
+  L.push('## 4. 当前主方案');
+  L.push('');
+  if (pd && pd.primary && bh) {
+    const P = pd.primary;
+    const term = R(pd.dropEnd);
+    const isXX = P.key === 'combination';
+    const corrObj = isXX
+      ? `上一子浪（${R(bh.prevPrice)}→${R(bh.term)}，幅 ${R(bh.lastSub)}）`
+      : `整段完整结构（${R(bh.startPrice)}→${R(bh.term)}，幅 ${R(bh.whole)}）`;
+    const tgt = isXX ? bh.xx.targets : (P.key === 'flat' ? bh.b.targets : bh.three.targets);
+    const tgtStr = (tgt || []).filter((t) => t.price > 0).map((t) => R(t.price)).join(' / ');
+    // 两种级别叫法（用户要求）：升一级看＝X 连接浪；同级别看＝已完成 w-x-y 的 xx 连接段，
+    // 之后接 z 则整段延伸成 w-x-y-xx-z（三锯齿/三重）。
+    const doneDouble = p.patternId === 'zigzag-double' || p.patternId === 'sideways-double';
+    const dualNote = (isXX && doneDouble)
+      ? `——两种叫法：升一级看是 **X 连接浪**；同级别看是已完成 w-x-y 的 **xx 连接段**，若之后再接 z 浪，整段就延伸成 **w-x-y-xx-z**`
+      : '';
+    L.push(`- 当前浪型：**${P.curLabel}**（大跌在更大结构里是 ${P.dropLabel} 浪，现在这波${dirCn(tree.assessment.currentDir)}是其后的 ${P.curLabel}）${dualNote}`);
+    L.push(`- 修正对象：${corrObj}`);
+    L.push(`- 计算基准：${isXX ? '上一子浪的幅度' : '整段结构的幅度'}`);
+    L.push(`- 比例规则：${isXX ? '连接浪常吃该段 0.2–0.618' : (P.key === 'flat' ? 'B 浪常回撤整段 0.5/0.618/0.7' : '转势推动，上方目标作参考阻力')}`);
+    L.push(`- 目标价格：**${tgtStr || '—'}**（推断，非确定）`);
+    L.push(`- 确认条件：${isXX ? `内部维持三波、回撤到位后转跌（走完转 Z 浪）` : 'B 浪须涨到回撤带、之后转 C 浪下跌'}`);
+    L.push(`- 失效条件：跌破 **${term}**（跌破则此数法作废、见框架B/更低目标）`);
+  } else {
+    L.push('- 当前无明显在建反弹，暂不研判。');
+  }
+  L.push('');
+
+  // ── 5. 备选方案 ──
+  L.push('## 5. 备选方案');
+  L.push('');
+  if (pd && bh) {
+    const alts = pd.all.filter((c) => c !== pd.primary);
+    alts.slice(0, 3).forEach((c) => {
+      const isB = c.key === 'flat' || c.key === 'zigzag';
+      const isImp = c.key === 'impulse';
+      const corr = isImp ? '（转势：57718 结束整个调整、之后为新推动）'
+        : (isB ? `针对整段完整结构（${R(bh.startPrice)}→${R(bh.term)}）` : `针对上一子浪（${R(bh.prevPrice)}→${R(bh.term)}）`);
+      const tgt = isImp ? bh.three.targets : (isB ? bh.b.targets : bh.xx.targets);
+      const tgtStr = (tgt || []).filter((t) => t.price > 0).map((t) => R(t.price)).join(' / ');
+      const stat = c.rank === 'eliminated' ? `已淘汰（${c.elimReason}）` : '保留';
+      L.push(`- **${c.parentCn}**（${stat}）：修正对象＝${corr}；目标 ${tgtStr || '—'}。`);
+    });
+  }
+  L.push('');
+
+  // ── 6. 方案排序（高/中/低，不给概率）──
+  L.push('## 6. 方案排序');
+  L.push('');
+  L.push('| 方案 | 强弱 | 支持依据 | 不利因素 | 确认条件 |');
+  L.push('|---|---|---|---|---|');
+  if (pd) {
+    pd.all.forEach((c) => {
+      const tier = c.rank === 'primary' ? '高' : (c.rank === 'eliminated' ? '低' : '中');
+      const support = c.basis || '—';
+      const against = c.rank === 'eliminated' ? c.elimReason : '尚未确认、需继续验证';
+      let confirm = '—';
+      if (c.key === 'combination') confirm = '回撤到位后转跌、跌破 57718 走 Z';
+      else if (c.key === 'flat') confirm = '涨到整段 0.5–0.7 回撤带后转 C';
+      else if (c.key === 'impulse') confirm = '内部走出完整五浪并突破关键前高（见 wave-3 验证）';
+      else if (c.key === 'zigzag') confirm = '（需 A 浪为五浪推动，当前不满足）';
+      L.push(`| ${c.parentCn}（大跌=${c.dropLabel}） | ${tier} | ${support} | ${against} | ${confirm} |`);
+    });
+  }
+  L.push('');
+  // wave-3 验证清单（判"新推动3浪"前的书内结构验证，去动能）
+  const w3 = wave3Checklist(tree);
+  if (w3) {
+    L.push('**"新推动 3 浪"方案的结构验证（书内、不含动量；不得因涨幅大直接判 3 浪）：**');
+    w3.forEach((c) => L.push(`- ${c.pass ? '✅' : '❌'} ${c.item}（${c.note}）`));
+    const passN = w3.filter((c) => c.pass).length;
+    L.push('');
+    L.push(`→ ${passN}/${w3.length} 项通过。${passN < w3.length ? '关键项未过，暂不提升"新推动 3 浪"档位。' : '全过，可提升该方案档位。'}`);
+    L.push('');
+  }
+
+  // ── 7. 最终分析话术 ──
+  L.push('## 7. 最终分析话术');
+  L.push('');
+  const s = [];
+  s.push(`从 **${R(p.points[0].price)}** ${dirCn(p.direction)}至 **${R(p.points[p.points.length - 1].price)}** 的行情，目前优先看作一组 **${plainLabel(p.patternId)}**。`);
+  if (p.points.length >= 4) {
+    const seg = [];
+    p.children.forEach((c, i) => {
+      const lab = labels[i] || `第${i + 1}`;
+      const a = p.points[i]; const b = p.points[i + 1];
+      seg.push(`${lab} 浪从 ${R(a.price)} ${dirCn(b.price >= a.price ? 'up' : 'down')}至 ${R(b.price)}`);
+    });
+    s.push(`其中，${seg.join('；')}。`);
+  }
+  if (pd && pd.primary && bh) {
+    const P = pd.primary;
+    const isXX = P.key === 'combination';
+    const tgt = isXX ? bh.xx.targets : (P.key === 'flat' ? bh.b.targets : bh.three.targets);
+    const tp = (tgt || []).filter((t) => t.price > 0).map((t) => R(t.price));
+    const tgtStr = tp.length ? `${tp[0]}–${tp[tp.length - 1]}` : '—';
+    const doneDouble2 = p.patternId === 'zigzag-double' || p.patternId === 'sideways-double';
+    s.push(`从 **${R(pd.dropEnd)}** 开始的${dirCn(tree.assessment.currentDir)}，当前优先考虑 **${P.curLabel}**${isXX && doneDouble2 ? '（同级别看即已完成 w-x-y 的 xx 连接段，之后接 z 则延伸成 w-x-y-xx-z）' : ''}，同时保留更大级别 B 浪与新推动浪两种可能。`);
+    if (isXX) s.push(`如果属于 XX 连接浪，它主要针对前面的上一子浪（${R(bh.prevPrice)}→${R(bh.term)}）修正，按书中回撤规则，目标区间约 **${tgtStr}**；走完之后转 Z 浪下跌（即整段成 w-x-y-xx-z）。`);
+    s.push(`如果属于更大级别 B 浪，则针对整段（${R(bh.startPrice)}→${R(bh.term)}）修正，0.7 回撤位约 **${R((bh.b.targets.find((t) => t.ratio === 0.7) || {}).price)}**。`);
+    s.push(`更强势的备选是 ${R(pd.dropEnd)} 已结束整个调整、之后为新一轮推动浪；但只有当上涨内部走出完整五浪、并突破关键前高后，才能提高"第 3 浪"方案的概率。`);
+  }
+  L.push(s.join(''));
+  L.push('');
+  L.push('> 以上为概率性研判、非确定，不构成买卖建议；所有数字由本次 K 线自动计算。');
+  return L.join('\n');
+}
+
 async function main() {
   const args = manual.parseArgs(process.argv.slice(2));
   if (args.help) {
@@ -2750,6 +3187,9 @@ async function main() {
     parentDegree: serializeMultiDegree(tree, args.tf),
   }, null, 2), 'utf8');
   await fs.writeFile(reportName, renderMarkdownReport(meta, tree, userEval), 'utf8');
+  // 新增：结构化 7 节报告（structured-wave-report，A=a 新增输出、不替换现有报告）
+  const structuredName = args.structured || `${safeProduct}_${args.tf}_${stamp}_structured.md`;
+  await fs.writeFile(structuredName, renderStructuredReport(meta, tree, candles, fine), 'utf8');
 }
 
 if (require.main === module) {
@@ -2799,11 +3239,15 @@ module.exports = {
   PATTERNS,
   MIN_POINTS,
   seqOf,
+  macroAlternates,
+  legEndpointsSpanExtreme,
+  candidateViolations,
   coarsenByPairs,
   segmentations,
   sliceFine,
   triangleGross,
   legCharacter,
+  grammarViolatesRole,
   crossDegreeHits,
   volumeNote,
   decompose,
@@ -2821,6 +3265,7 @@ module.exports = {
   indexCombinations,
   computeIncompleteness,
   legProportionViolated,
+  buildCounterTrendFrameworkB,
   buildRankedCounts,
   renderRankedCounts,
   serializeRankedCounts,
@@ -2837,5 +3282,8 @@ module.exports = {
   plainLabel,
   renderNarrative,
   renderMarkdownReport,
+  renderStructuredReport,
+  strengthTier,
+  wave3Checklist,
   main,
 };

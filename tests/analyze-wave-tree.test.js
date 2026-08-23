@@ -24,6 +24,13 @@ const {
   legProportionViolated,
   directionalSpanToNow,
   directionalTopSpan,
+  buildCounterTrendFrameworkB,
+  macroAlternates,
+  grammarViolatesRole,
+  legEndpointsSpanExtreme,
+  candidateViolations,
+  strengthTier,
+  renderStructuredReport,
 } = require('../analyze-wave-tree.js');
 
 // 复用 manual 测试里的点构造思路：按 3 根蜡烛等间距排布
@@ -401,4 +408,168 @@ test('框架B端到端：解开焊死后，全局低点之后的走势能被纳�
   const bEnd = tree.frameworkB.primary.points[tree.frameworkB.primary.points.length - 1];
   assert.equal(bEnd.price, 62, '框架B终点延伸到now（最后一个细枢轴）');
   assert.ok(bEnd.provisional, '框架B末点应标provisional');
+  assert.ok(!tree.frameworkB.counterTrend, 'now是顺势极值(L)→走朴素框架B，非逆势末浪');
+});
+
+test('框架B逆势末浪（model-unfinished-final-wave）：now在反弹高点时不空缺，改标末浪进行中', () => {
+  // 下跌到全局低57，之后反弹到79(H, provisional) —— now是逆势反弹高点，朴素框架B会因
+  // 「下行形态须终结于L、而止点是H」返回空；应改用「复用框架A、末浪进行中」的逆势框架B。
+  const fine = finePivots([[126, 'H'], [100, 'L'], [110, 'H'], [57, 'L'], [79, 'H']]);
+  fine[fine.length - 1].provisional = true;
+  const candles = makeCandlesFromAnchors(fine);
+  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4 });
+
+  assert.ok(tree.frameworkB && tree.frameworkB.primary, '逆势反弹高点处框架B不得空缺');
+  assert.equal(tree.frameworkB.counterTrend, true, '应走逆势末浪路径');
+  const bp = tree.frameworkB.primary;
+  assert.equal(bp.finalWaveInProgress, true, '框架B主选应标末浪进行中');
+  // 末点仍是全局极值57（不强行终结在now=79），且投影为跌破57的新低
+  assert.equal(bp.points[bp.points.length - 1].price, 57, '框架B末点=全局极值（不是now）');
+  assert.ok(Array.isArray(bp.projection) && bp.projection.length === 3, '应给末浪延伸投影');
+  assert.ok(bp.projection.every((t) => t.price < 57), '下跌末浪延伸投影须在全局低点57下方');
+  assert.ok(bp.score.incompleteness > 0, '末浪进行中应带未完成度惩罚');
+});
+
+test('candidateViolations：规则违规+文法违规合并，按越界降序，供报告展示原因', () => {
+  const c = {
+    score: {
+      failed: [{ desc: 'y浪须>w浪90%', overshoot: 0.005 }, { desc: 'x浪回撤须≥70%', overshoot: 0.19 }],
+      grammarNotes: [{ kind: 'grammar', desc: '第2腿须调整、实测像五浪', overshoot: 0 }],
+    },
+  };
+  const v = candidateViolations(c);
+  assert.equal(v.length, 3, '规则2 + 文法1 = 3 条');
+  assert.equal(v[0].desc, 'x浪回撤须≥70%', '越界最大(0.19)排最前');
+  assert.equal(v[0].kind, 'rule');
+  assert.equal(v[v.length - 1].kind, 'grammar', '文法(越界0)排最后');
+  // 无违规 → 空
+  assert.deepEqual(candidateViolations({ score: { failed: [], grammarNotes: [] } }), []);
+});
+
+test('legEndpointsSpanExtreme：端点须为跨度真极值，内部藏更极端点则淘汰', () => {
+  const fp = (seq) => seq.map(([price, type], i) => ({ index: i, type, price }));
+  // 端点非极值：a 段 L57718→H65705，但两宏观点之间(索引1..3)藏着更高的 66924
+  const segBad = fp([[57718, 'L'], [64669, 'H'], [66924, 'H'], [65705, 'H'], [62209, 'L'], [79500, 'H']]);
+  const ptsBad = [segBad[0], segBad[3], segBad[4], segBad[5]]; // 57718→65705→62209→79500
+  assert.equal(legEndpointsSpanExtreme(ptsBad, segBad), false, '65705 内部藏着更高的66924→淘汰');
+
+  // 端点即极值：把 a 顶取在真极值 66924
+  const ptsGood = [segBad[0], segBad[2], segBad[4], segBad[5]]; // 57718→66924→62209→79500
+  assert.equal(legEndpointsSpanExtreme(ptsGood, segBad), true, '66924 是该段真极值→通过');
+
+  // 收缩三角样例（highs 递降但各自仍是局部段极值）不被误伤
+  const segTri = fp([[300, 'H'], [220, 'L'], [290, 'H'], [230, 'L'], [280, 'H'], [240, 'L']]);
+  assert.equal(legEndpointsSpanExtreme(segTri, segTri), true, '收缩三角每个宏观点仍是局部极值→通过');
+});
+
+test('grammarViolatesRole：歧义腿胜任任一角色不违规；只能胜任一方的按角色判', () => {
+  // 歧义腿：两种拆解都干净 → 放在调整位或驱动位都不违规
+  const ambiguous = { character: 'driving', canDrive: true, canCorrect: true };
+  assert.equal(grammarViolatesRole(ambiguous, 'corrective'), false, '歧义腿放调整位不违规');
+  assert.equal(grammarViolatesRole(ambiguous, 'driving'), false, '歧义腿放驱动位不违规');
+
+  // 只能干净走五浪：放在调整位仍违规（无法胜任调整角色）
+  const driveOnly = { character: 'driving', canDrive: true, canCorrect: false };
+  assert.equal(grammarViolatesRole(driveOnly, 'corrective'), true, '只能五浪的腿放调整位应违规');
+  assert.equal(grammarViolatesRole(driveOnly, 'driving'), false, '放驱动位不违规');
+
+  // 只能干净走三波：放在驱动位仍违规
+  const corrOnly = { character: 'corrective', canDrive: false, canCorrect: true };
+  assert.equal(grammarViolatesRole(corrOnly, 'driving'), true, '只能三波的腿放驱动位应违规');
+  assert.equal(grammarViolatesRole(corrOnly, 'corrective'), false);
+
+  // 两种都拆不干净：退回旧口径（用最佳性格 character 判）
+  const neitherClean = { character: 'corrective', canDrive: false, canCorrect: false };
+  assert.equal(grammarViolatesRole(neitherClean, 'driving'), true, '退回旧口径：最佳性格≠所需→违规');
+  assert.equal(grammarViolatesRole(neitherClean, 'corrective'), false);
+});
+
+test('macroAlternates：淘汰"下降的连接浪"——lower-high 被选作上冲目标的退化骨架', () => {
+  // 下跌联合形被错误地选了下跌途中的"更低的高点"：L103517→H94641，H 比前一个 L 还低，
+  // "L→H"这条连接浪其实在下降。类型交替(H/L)通过，但几何上方向反了，须淘汰。
+  const bad = [
+    { type: 'H', price: 126296 }, { type: 'L', price: 103517 }, { type: 'H', price: 94641 },
+    { type: 'L', price: 84400 }, { type: 'H', price: 76023 }, { type: 'L', price: 57718 },
+  ];
+  assert.equal(macroAlternates(bad), false, 'H 低于相邻 L 的降序连接浪应判非法');
+
+  // 真正交替的联合形：x 连接浪向上回抽（82814 > 80525）
+  const good = [
+    { type: 'H', price: 126296 }, { type: 'L', price: 80525 }, { type: 'H', price: 82814 },
+    { type: 'L', price: 57718 },
+  ];
+  assert.equal(macroAlternates(good), true, '每个内部H高于相邻L、每个内部L低于相邻H → 合法');
+
+  // 干净五浪推动（下跌）：各内部点均为相邻真极值
+  const impulse = [
+    { type: 'H', price: 126296 }, { type: 'L', price: 103517 }, { type: 'H', price: 116410 },
+    { type: 'L', price: 84400 }, { type: 'H', price: 97964 }, { type: 'L', price: 57718 },
+  ];
+  assert.equal(macroAlternates(impulse), true);
+});
+
+test('端到端：报告排名表里不再出现"下降的连接浪"（几何退化骨架被源头拦截）', () => {
+  // 构造一个会诱发降序连接浪的下跌序列：夹着一个"更低的高点"
+  const fine = finePivots([
+    [126, 'H'], [103, 'L'], [116, 'H'], [84, 'L'], [94, 'H'], [80, 'L'], [90, 'H'], [57, 'L'],
+  ]);
+  const candles = makeCandlesFromAnchors(fine);
+  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 8 });
+  const all = [tree.primary, ...(tree.alternates || [])];
+  for (const c of all) {
+    // 每条宏观腿的方向必须与其端点类型一致：去 H 的腿必上行、去 L 的腿必下行
+    for (let i = 0; i < c.points.length - 1; i += 1) {
+      const a = c.points[i];
+      const b = c.points[i + 1];
+      if (b.type === 'H') assert.ok(b.price > a.price, `去H的腿必上行，实测 ${a.price}→${b.price}`);
+      else assert.ok(b.price < a.price, `去L的腿必下行，实测 ${a.price}→${b.price}`);
+    }
+  }
+});
+
+test('框架B逆势末浪：now越过全局极值但同型（顺势新低）时不触发逆势路径', () => {
+  // now=45(L)是顺势新低（比57更低）→ directionalSpanToNow 会把它纳入，朴素框架B 直接处理，
+  // 不应错误地走逆势末浪分支。构造：下跌一路到45新低（provisional）。
+  const fine = finePivots([[126, 'H'], [100, 'L'], [110, 'H'], [45, 'L']]);
+  fine[fine.length - 1].provisional = true;
+  const candles = makeCandlesFromAnchors(fine);
+  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4 });
+  // 全局低点就是 now 本身，directionalSpanToNow 与 directionalTopSpan 同长 → 不算B（无后续走势）
+  // 或朴素B可拟合；无论如何都不应是"逆势末浪"（counterTrend）
+  assert.ok(!(tree.frameworkB && tree.frameworkB.counterTrend), 'now为顺势新极值时不得走逆势末浪路径');
+});
+
+// ------------------------------------------------------------
+// structured-wave-report：分档 + 7 节报告
+// ------------------------------------------------------------
+
+test('strengthTier：按违规数/越界/未完成度分 高/中/低（不给概率）', () => {
+  assert.equal(strengthTier({ tier1: 0, tier2: 0, incompleteness: 0 }), '高');
+  assert.equal(strengthTier({ tier1: 1, tier2: 0.005, incompleteness: 0 }), '高'); // 差一丝
+  assert.equal(strengthTier({ tier1: 1, tier2: 0.2, incompleteness: 0 }), '中');
+  assert.equal(strengthTier({ tier1: 2, tier2: 0.5, incompleteness: 0 }), '低');
+  assert.equal(strengthTier({ tier1: 0, tier2: 0, incompleteness: 0.6 }), '中'); // 在建、未完成度高
+});
+
+test('结构化报告：7 节齐备 + 反弹必点修正对象 + wave-3 清单 + 不给概率百分比', () => {
+  const fine = finePivots([
+    [126, 'H'], [80, 'L'], [98, 'H'], [57, 'L'], [66, 'H'], [62, 'L'], [79, 'H'],
+  ]);
+  fine[fine.length - 1].provisional = true;
+  const candles = makeCandlesFromAnchors(fine);
+  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4 });
+  const meta = {
+    product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(),
+    generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: candles.length,
+    rangeHigh: 126, rangeLow: 57, lastClose: 79, lastCloseTs: Math.floor(Date.now() / 1000),
+  };
+  const md = renderStructuredReport(meta, tree, candles, fine);
+  ['## 1. 分析范围', '## 2. 关键转折点', '## 3. 已完成浪型', '## 4. 当前主方案',
+    '## 5. 备选方案', '## 6. 方案排序', '## 7. 最终分析话术'].forEach((h) => {
+    assert.ok(md.includes(h), `应含 ${h}`);
+  });
+  assert.ok(md.includes('修正对象'), '当前主方案须点明修正对象');
+  assert.ok(/结构验证|无法验证/.test(md), '应含 wave-3 结构验证或无法验证说明');
+  assert.ok(!md.includes('%概率') && !/概率\s*[:：]\s*\d/.test(md), '不得给概率百分比');
+  assert.ok(!md.includes('undefined') && !md.includes('NaN'), '不得有 undefined/NaN');
 });

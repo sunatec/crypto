@@ -50,20 +50,32 @@ test('金标准：存在当前进行中腿（缺陷2不得回归）', () => {
   assert.equal(s.inProgress.from, 57717.55); // 顶层结构止于主趋势低点57717，之后为进行中反弹
 });
 
-test('金标准：搜索补全后能找到真正零违规的顶层读法（rank-competing-wave-counts）', () => {
-  // 本测试原断言「真实整段套不出零违规单形态，应降级」——那正是
-  // rank-competing-wave-counts 要修的缺陷：旧版 segmentations() 每形态只回一个
-  // 贪心坍缩结果，126296→84400→97964→57718 这个零违规的单锯齿读法从未被生成/打分。
-  // 搜索补全后，对这份固化的金标准数据，顶层主选确认是 tier1=0（已用独立的
-  // evaluateExplicitCount 路径交叉核对，非 bug；见该 change 的 proposal.md）。
-  // 优雅降级机制本身（无人零违规时退取最轻违规者）仍由 selectBest 的专门单测覆盖，
-  // 不因这里换了断言而失去覆盖。
+test('金标准：优雅降级——顶层无几何合法的零违规计数，退取最轻违规者（penalized）', () => {
+  // 演进史：rank-competing-wave-counts 一度让本案例找到"零违规单锯齿"126296→84400→97964→
+  // 57718；但 macro-endpoint-span-extreme 揭示那套是几何伪清白——其 a 段(126296→84400)内部
+  // 藏着更低的 80524，84400 并非该段真极值，故被正确淘汰。用真极值（80524/97964/60001/82814
+  // 等）数时，这段真实大跌套不出零违规单形态（与最初的发现一致），退取最轻违规者并 penalized。
+  // 优雅降级机制本身另有 selectBest 专门单测覆盖。
   const { tree } = buildGoldenTree();
   const s = t.serializeTree(tree);
-  assert.equal(s.fitScore.tier1, 0, '搜索补全后应能找到零违规顶层读法');
-  assert.equal(s.fitScore.penalized, false);
-  assert.equal(s.patternId, 'zigzag');
-  assert.deepEqual(s.points.map((p) => p.price), [126296, 84400, 97963.62, 57717.55]);
+  assert.ok(s.fitScore.tier1 >= 1, '用真极值数时整段套不出零违规单形态，应降级');
+  assert.equal(s.fitScore.penalized, true);
+  // 端点须是各自跨度的真极值：a 段端点不得再是被更低点(80524)包住的 84400
+  assert.ok(!s.points.some((p) => p.price === 84400), 'a 段端点不应是非极值的 84400');
+});
+
+test('金标准：修平票后主选=W-X-Y 双锯齿，不再是结构不对的单锯齿（structured-wave-report §2.4）', () => {
+  // 文法违规带 tier2 越界权重后，"结构不对的单锯齿(文法违规,原 tier2=0)"不再平票压过
+  // "仅差 0.5% 比例的 W-X-Y(tier2=0.005)"。主选应对齐真实拟合，变为 W-X-Y。
+  const { tree } = buildGoldenTree();
+  assert.equal(tree.primary.patternId, 'zigzag-double', '主选应为双锯齿 W-X-Y');
+  assert.deepEqual(tree.primary.points.map((p) => p.price), [126296, 80524.65, 97963.62, 57717.55]);
+  // 单锯齿(文法违规)的 tier2 现在带权重、被压到 W-X-Y 之后
+  const all = [tree.primary, ...(tree.alternates || [])];
+  const single = all.find((c) => c.patternId === 'zigzag');
+  if (single && single.score.grammarViolations > 0) {
+    assert.ok(single.score.tier2 > tree.primary.score.tier2, '结构不对的单锯齿 tier2 应被权重压到主选之后');
+  }
 });
 
 test('金标准：序列化 schema 完整且可 round-trip', () => {
