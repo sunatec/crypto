@@ -100,6 +100,54 @@ node analyze-kline-wave.js --product BTC-USD --tf 1h --start 2026-02-06T00:00:00
 node analyze-kline-wave.js ... --full-report
 ```
 
+## 波浪计数引擎 analyze-wave-tree.js
+
+以《波浪理论详解》为准绳，对整段行情递归拆解，产出「最大级别 → 当前浪」计数树。核心特性：
+
+- **否定法排序（Negation Method）**：硬规则淘汰不合法数法、准则给存活者排序；若无零违规候选，退取「最轻违规者」并标注 `penalized`。
+- **框架 A / 框架 B**：A＝大跌到全局极值即算完成；B＝末浪进行中（如 `126296→now` 的 y 浪未走完），并对最后一个转折点之后的反弹做身份研判（XX 连接浪 / 更大级别 B 浪 / 新推动浪第 1、3 浪）。
+- **文法 + 几何双闸**：校验各腿角色能否履行（五浪 vs 三波），并要求连接浪方向交替、腿端点为该跨度真极值。
+- **七节结构化报告**：范围 / 关键转折点 / 已完成浪型（逐腿起止+内部结构+价格·时间比例+排除理由）/ 当前主方案 / 备选方案 / 方案排序 / 最终话术。反弹方案强制点明修正对象（XX→上一子浪、B→整段），wave-3 用书内结构验证（不看动量、不因涨幅大直接判 3 浪）。
+- 强弱用 **高/中/低** 分档，不给概率百分比；所有数字均由本次 K 线自动计算。
+
+### 快速使用
+
+```bash
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now
+```
+
+每次运行按 `UTC+8` 时间戳自动生成 3 个文件：
+
+- `<product>_<tf>_<start>_<end>_tree.json` — 计数树 + 进行中腿 + 排名 + 跨级别序列化
+- `<product>_<tf>_<start>_<end>_tree.md` — 大白话版分析报告
+- `<product>_<tf>_<start>_<end>_structured.md` — 七节结构化报告
+
+### 参数说明
+
+- `--product` 交易对，默认 `BTC-USD`
+- `--tf`, `--timeframe` 周期，支持：`5m | 1h | 4h | 1d | 1w | 1m | 1y`
+- `--start` 开始时间，ISO 字符串；默认 `end - 30d`
+- `--end` 结束时间，ISO 字符串或 `now`；默认 `now`
+- `--out` 输出 JSON 文件名；不填则自动命名
+- `--report` 输出大白话 Markdown 文件名；不填则自动命名
+- `--structured` 输出七节结构化 Markdown 文件名；不填则自动命名
+- `--count "p1,p2,p3,p4"` 喂入你自己的数法（一组转折价格），引擎逐条按规则打分并并入报告
+- `--help`, `-h` 显示帮助
+
+### 常用示例
+
+给引擎评判自己的数法（例如作者的 W-X-Y 双锯齿读法）：
+
+```bash
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now --count "126296,80524.65,97963.62,57717.55"
+```
+
+指定输出文件名：
+
+```bash
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now --out btc.json --report btc_tree.md --structured btc_structured.md
+```
+
 ## 数据来源
 
 Coinbase Exchange Candles API：
@@ -221,6 +269,3 @@ node analyze-xauusd-twelvedata.js xau 4h --report xau_4h.md --out xau_4h.json --
 - `<symbol>_<interval>_<start>_<end>.html`
 
 其中 `symbol` 会自动去掉 `/`，例如 `XAU/USD` 会变成 `XAUUSD`。
-
-
-node analyze-wave-manual.js --product BTC-USD --tf 1d --start 2025-10-06T00:00:00+08:00 --end now 为什么没有 126296.00-80524.65-97963.62-60001.00
