@@ -152,3 +152,48 @@ test('金标准：Markdown 报告非空且含进行中浪与计数树两节', ()
   assert.ok(md.includes('现在走到哪了'), '应含现在走到哪节');
   assert.ok(md.includes('技术细节'), '应含技术细节折叠节');
 });
+
+// ── gate-extending-final-leg-rules（延伸中末腿：终点锚真极值 + 可判定性规则闸门）──
+// 金标准 now(63123) 高于全局低点 57717.55 → 逆势回撤中，触发本次改动的两条机制。
+
+test('金标准：框架B主选末腿锚全局极值57717.55、标延伸中，非回撤价 (§2.1)', () => {
+  const { tree } = buildGoldenTree();
+  const rc = t.serializeRankedCounts(tree) || [];
+  const b = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress);
+  assert.ok(b, '应有末浪进行中的框架B候选');
+  const last = b.legs[b.legs.length - 1];
+  assert.equal(Math.round(last.to), 57718, '末腿终点=全局极值57718（不是now回撤价）');
+  assert.equal(last.status, '⏳ 延伸中', '末腿状态应为延伸中');
+});
+
+test('金标准：延伸中末腿的"y须>90%w"被闸门暂缓为待判、不计违规，tier1=0 (§2.2/2.3)', () => {
+  const { tree } = buildGoldenTree();
+  const rc = t.serializeRankedCounts(tree) || [];
+  // 双锯齿的 y 就是进行中末腿 → 该幅度下界规则可被延伸翻转 → deferred
+  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.label.includes('双锯齿'));
+  assert.ok(dz, '应有框架B双锯齿末浪进行中候选');
+  assert.equal(dz.score.tier1, 0, '闸门后规则全过（tier1=0）');
+  assert.ok((dz.deferred || []).some((d) => d.desc.includes('y浪价格须>w浪90%')), 'y须>90%w 应列为待判');
+  assert.ok(!(dz.violations || []).some((v) => v.desc.includes('y浪价格须>w浪90%')), 'y须>90%w 不应再计违规');
+});
+
+test('金标准：与末腿终点无关的规则(已完成的y)仍照计违规——闸门不误伤 (§2.2)', () => {
+  const { tree } = buildGoldenTree();
+  const rc = t.serializeRankedCounts(tree) || [];
+  // 三锯齿的进行中末腿是 z；其 y(97964→60001)已完成 → y-vs-w 规则可判定 → 仍是违规
+  const tz = rc.find((r) => r.framing === 'B' && r.label.includes('三锯齿'));
+  if (tz) {
+    assert.ok((tz.violations || []).some((v) => v.desc.includes('y浪价格须>w浪90%')),
+      '三锯齿已完成的y浪，其幅度规则应照计违规（非进行中末腿、可判定）');
+  }
+});
+
+test('金标准：闸门后tier1=0的框架B候选仍带未完成度惩罚、不顶替框架A主选 (§2.4)', () => {
+  const { tree } = buildGoldenTree();
+  const rc = t.serializeRankedCounts(tree) || [];
+  assert.equal(rc[0].framing, 'A', '主选仍是框架A（已完成候选）');
+  const b = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.score.tier1 === 0);
+  assert.ok(b, '应有规则全过的框架B末浪进行中候选');
+  assert.ok(b.score.incompleteness > 0, '即便规则全过仍带未完成度惩罚');
+  assert.ok(rc.indexOf(b) > 0, '排在框架A主选之后，不因规则全过顶替主选');
+});

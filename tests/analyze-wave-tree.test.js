@@ -396,19 +396,44 @@ test('directionalSpanToNow：起点同框架A，终点延伸到最后一个细�
   assert.equal(a[0].price, b[0].price, '两框架起点应相同');
 });
 
-test('框架B端到端：解开焊死后，全局低点之后的走势能被纳入更高级别的在建候选', () => {
-  // 126→100→110→57(全局低，框架A止于此)→90→62(provisional，仍高于57、故57仍是全局低)
+test('框架B端到端：now类型为L但高于全局低点(回撤中)→按逆势末浪处理，不被type误判 (gate-extending-final-leg-rules §2.1)', () => {
+  // 126→100→110→57(全局低，框架A止于此)→90→62(provisional)。now=62 类型是 L，但 62>57、
+  // 是反弹后的回撤低点而非顺势新低。旧实现基于 now.type 会误判为"顺势L→朴素框架B、终点62"；
+  // 修正后基于价格判据：now 高于全局低点 → 逆势末浪进行中，终点锚全局极值57、投影跌破57。
   const fine = finePivots([[126, 'H'], [100, 'L'], [110, 'H'], [57, 'L'], [90, 'H'], [62, 'L']]);
   fine[fine.length - 1].provisional = true;
   const candles = makeCandlesFromAnchors(fine);
   const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4 });
   assert.equal(tree.primary.points[tree.primary.points.length - 1].price, 57, '框架A仍止于全局低点，未受影响');
-  assert.ok(tree.frameworkB && tree.frameworkB.primary, '应生成框架B（区间延伸到now）且能匹配出形态');
-  assert.equal(tree.frameworkB.primary.points[0].price, 126, '框架B与框架A同起点');
-  const bEnd = tree.frameworkB.primary.points[tree.frameworkB.primary.points.length - 1];
-  assert.equal(bEnd.price, 62, '框架B终点延伸到now（最后一个细枢轴）');
-  assert.ok(bEnd.provisional, '框架B末点应标provisional');
-  assert.ok(!tree.frameworkB.counterTrend, 'now是顺势极值(L)→走朴素框架B，非逆势末浪');
+  assert.ok(tree.frameworkB && tree.frameworkB.primary, '逆势回撤中框架B不得空缺');
+  assert.equal(tree.frameworkB.counterTrend, true, 'now高于全局低点→走逆势末浪路径（与now类型L无关）');
+  const bp = tree.frameworkB.primary;
+  assert.equal(bp.finalWaveInProgress, true, '框架B主选应标末浪进行中');
+  assert.equal(bp.points[0].price, 126, '框架B与框架A同起点');
+  assert.equal(bp.points[bp.points.length - 1].price, 57, '框架B末点=全局极值57（不是回撤价62）');
+  assert.ok(bp.projection.every((t) => t.price < 57), '下跌末浪延伸投影须在全局低点57下方');
+});
+
+test('框架B端到端：末腿终点=区间极值的朴素候选被保留、与逆势末浪候选并存 (gate-extending-final-leg-rules §2.1)', () => {
+  // 126→100→110→57(全局低)→90→62(provisional)。除逆势末浪(终点57)外，凡把57当宏观拐点、
+  // 末腿90→62(单调下行、62即该腿真低点)的朴素候选满足不变量、应保留——两种读法并存竞争。
+  const fine = finePivots([[126, 'H'], [100, 'L'], [110, 'H'], [57, 'L'], [90, 'H'], [62, 'L']]);
+  fine[fine.length - 1].provisional = true;
+  const candles = makeCandlesFromAnchors(fine);
+  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4 });
+  const pool = [tree.frameworkB.primary, ...(tree.frameworkB.alternates || [])];
+  assert.ok(pool.some((c) => c.points[c.points.length - 1].price === 62 && !c.finalWaveInProgress),
+    '末腿单调到62(区间真低点)的朴素候选应保留（终点62、非末浪进行中）');
+  assert.ok(pool.some((c) => c.finalWaveInProgress && c.points[c.points.length - 1].price === 57),
+    '逆势末浪候选(终点57)同时并存');
+  // 不变量：任一框架B下跌候选，末腿终点不得高于其区间已达最低价
+  for (const c of pool) {
+    const pts = c.points;
+    const lo = Math.min(pts[pts.length - 2].index, pts[pts.length - 1].index);
+    const hi = Math.max(pts[pts.length - 2].index, pts[pts.length - 1].index);
+    const minInSpan = Math.min(...fine.filter((p) => p.index >= lo && p.index <= hi).map((p) => p.price));
+    assert.ok(pts[pts.length - 1].price <= minInSpan + 1e-6, `末腿终点${pts[pts.length - 1].price}不得高于区间最低${minInSpan}`);
+  }
 });
 
 test('框架B逆势末浪（model-unfinished-final-wave）：now在反弹高点时不空缺，改标末浪进行中', () => {
