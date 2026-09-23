@@ -31,6 +31,18 @@ const {
   candidateViolations,
   strengthTier,
   renderStructuredReport,
+  legCharacter,
+  annotateExtendingLegForks,
+  detectPivots,
+  anchorBoundaryExtremes,
+  serializeRankedCounts,
+  buildDoubleZigzagManual,
+  renderRankedCounts,
+  decimalPlaces,
+  inferPricePrecision,
+  resolvePricePrecision,
+  formatPrice,
+  fetchQuoteIncrement,
 } = require('../analyze-wave-tree.js');
 
 // 复用 manual 测试里的点构造思路：按 3 根蜡烛等间距排布
@@ -455,6 +467,200 @@ test('框架B逆势末浪（model-unfinished-final-wave）：now在反弹高点�
   assert.ok(bp.score.incompleteness > 0, '末浪进行中应带未完成度惩罚');
 });
 
+// ── mark-extending-leg-character-fork（进行中末腿"两可"性格分叉的保留与标注）──
+
+test('annotateExtendingLegForks：非两可腿(仅canCorrect，点数不足以成驱动)不加标注', () => {
+  // 4点干净单锯齿：点数(4) < 驱动最少所需(6)，legCharacter 内部连 asDrv 都不会去算 → canDrive
+  // 必为 false，是构造"非两可腿"最稳妥的方式（避免像 6 点上涨序列那样两种读法都可能碰巧两清）。
+  const cleanZigzag = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [200, 'H']]);
+  const candles = makeCandlesFromAnchors(cleanZigzag);
+  const opts = { beamK: 3, maxDepth: 6, cache: new Map() };
+  const lc = legCharacter(cleanZigzag, candles, 2, opts);
+  assert.equal(lc.canCorrect, true, '前提校验：4点单锯齿应能干净走三波');
+  assert.equal(lc.canDrive, false, '前提校验：4点(<驱动最少6点)不应能走驱动');
+
+  // 手工搭一条"末端成形链"：depth0(顶层腿) → depth1(此不两可腿)。lc.correctiveNode 就是原本
+  // 会被选中挂进树的节点（引用一致，legCharacter 复用同一 opts.cache 命中同一对象）。
+  const depth0LastChild = { isLeaf: false, primary: { children: [{ isLeaf: true }, lc.correctiveNode] } };
+  const candidate = { finalWaveInProgress: true, children: [{ isLeaf: true }, depth0LastChild] };
+  annotateExtendingLegForks(candidate, candles, opts);
+  assert.equal(candidate.altCharacter, undefined, '仅canCorrect的腿不应挂altCharacter');
+});
+
+test('annotateExtendingLegForks：只标depth≥1的两可腿，顶层腿本身(depth0)两可也不标 (design §2)', () => {
+  // 复用金标准 BTC fixture 里已知的两可腿 82814→57718（该腿驱动/调整读法均零违规，
+  // 在真实报告里位于 depth1；这里把同一节点分别放到 depth0 与 depth1 两个位置，验证只有
+  // depth1 会被标注、depth0 不会——纯粹测"取哪一层"这条判据，不依赖完整决策树构建）。
+  const rawCandles = require('./fixtures/btc-usd-1d-golden.json');
+  const candles = rawCandles.map((c, i) => ({ ...c, index: i }));
+  let fine = detectPivots(candles, 1, {});
+  fine = anchorBoundaryExtremes(candles, fine);
+  const ambiguousSeg = fine.filter((p) => p.index >= 213 && p.index <= 269); // 82814.23 → 57717.55
+  assert.equal(Math.round(ambiguousSeg[0].price), 82814);
+  assert.equal(Math.round(ambiguousSeg[ambiguousSeg.length - 1].price), 57718);
+
+  const opts = { beamK: 3, maxDepth: 6, cache: new Map() };
+  const lc = legCharacter(ambiguousSeg, candles, 2, opts);
+  assert.equal(lc.canDrive, true, '前提校验：该腿驱动读法零违规（与金标准一致）');
+  assert.equal(lc.canCorrect, true, '前提校验：该腿调整读法零违规（两可）');
+  const ambiguousNode = lc.correctiveNode; // 当前显示性格=调整（单锯齿），对侧=驱动
+
+  // (a) 放在 depth0：顶层候选自身的末腿就是这条两可腿 → 不应标注
+  const atDepth0 = { finalWaveInProgress: true, children: [{ isLeaf: true }, ambiguousNode] };
+  annotateExtendingLegForks(atDepth0, candles, opts);
+  assert.equal(atDepth0.altCharacter, undefined, '两可腿处于depth0（顶层腿本身）不应标注');
+
+  // (b) 放在 depth1：顶层腿内部还有一层，两可腿是内层的末腿 → 应标注
+  const depth0Wrapper = { isLeaf: false, primary: { children: [{ isLeaf: true }, ambiguousNode] } };
+  const atDepth1 = { finalWaveInProgress: true, children: [{ isLeaf: true }, depth0Wrapper] };
+  annotateExtendingLegForks(atDepth1, candles, opts);
+  assert.ok(atDepth1.altCharacter, '两可腿处于depth1应标注');
+  assert.equal(atDepth1.altCharacter.character, 'driving', '对侧读法=驱动');
+  assert.equal(Math.round(atDepth1.altCharacter.legFrom.price), 82814);
+  assert.equal(Math.round(atDepth1.altCharacter.legTo.price), 57718);
+});
+
+test('annotateExtendingLegForks：非finalWaveInProgress候选不处理（原样返回）', () => {
+  const candidate = { finalWaveInProgress: false, children: [{ isLeaf: true }] };
+  const result = annotateExtendingLegForks(candidate, [], { cache: new Map() });
+  assert.equal(result, candidate);
+  assert.equal(candidate.altCharacter, undefined);
+});
+
+// ── inline-extending-leg-fork-in-table（把"两可"分叉提示从表格下方脚注挪进"备选"表格）──
+// 不走完整 buildCountTree，直接给 renderRankedCounts 喂最小可用的 tree/candidate 形状
+// （与 candidateViolations 等既有单测同一手法），聚焦渲染层本身的行为。
+
+function fakeCandidate({ patternId, points, direction = 'down', finalWaveInProgress = false, altCharacter = null, label }) {
+  return {
+    manual: { label },
+    direction,
+    patternId,
+    points,
+    finalWaveInProgress,
+    altCharacter,
+    score: { tier1: 0, tier2: 0, incompleteness: 0, complexity: 1, failed: [], grammarNotes: [], deferred: [] },
+  };
+}
+
+test('价格格式回归：低价币的宏观腿不得被报告取整', () => {
+  const primary = fakeCandidate({
+    patternId: 'zigzag-double', label: '双锯齿（Double Zigzag w-x-y）',
+    points: [{ price: 7.563 }, { price: 1.184 }, { price: 2.589 }, { price: 0.707 }],
+  });
+  const md = renderRankedCounts({ primary, alternates: [] }, 4);
+  assert.match(md, /w 腿：7\.563 → 1\.184（完成）/);
+  assert.match(md, /y 腿：2\.589 → 0\.707（完成）/);
+});
+
+test('价格精度：优先 quote_increment，缺失时从 OHLC 推断，并去掉末尾零', async () => {
+  const candles = [{ open: 1.2, high: 1.4687, low: 0.707, close: 1.184 }];
+  assert.equal(decimalPlaces(0.0001), 4);
+  assert.equal(inferPricePrecision(candles), 4);
+  assert.equal(resolvePricePrecision('0.001', candles), 3, '交易所最小报价单位优先');
+  assert.equal(resolvePricePrecision(null, candles), 4, '无产品元数据时回退到OHLC');
+  assert.equal(formatPrice(1.2, 4), '1.2');
+  assert.equal(formatPrice(0.707, 4), '0.707');
+  assert.equal(formatPrice(80524.65, 2), '80524.65');
+
+  const increment = await fetchQuoteIncrement('ZRO-USD', async () => ({
+    ok: true,
+    json: async () => ({ quote_increment: '0.0001' }),
+  }));
+  assert.equal(increment, '0.0001');
+});
+
+const FAKE_ALT = {
+  legFrom: { price: 82814 },
+  legTo: { price: 57718 },
+  shownCharacter: 'corrective',
+  shownLabel: '单锯齿（Zigzag 5-3-5）',
+  character: 'driving',
+  label: '推动浪（标准 Impulse）',
+  points: [{ price: 82814, timestamp: 1000 }, { price: 57718, timestamp: 2000 }],
+};
+
+test('inline-extending-leg-fork-in-table：多腿候选(三锯齿5段)只有⏳末腿带"两可"后缀，其余腿不受影响', () => {
+  const primary = fakeCandidate({
+    patternId: 'zigzag-double', label: '双锯齿（Double Zigzag w-x-y）',
+    points: [{ price: 100 }, { price: 80 }, { price: 95 }, { price: 60 }],
+  });
+  const b1 = fakeCandidate({
+    patternId: 'zigzag-triple', label: '三锯齿（Triple Zigzag w-x-y-xx-z）',
+    finalWaveInProgress: true, altCharacter: FAKE_ALT,
+    points: [{ price: 126296 }, { price: 80525 }, { price: 97964 }, { price: 60001 }, { price: 82814 }, { price: 57718 }],
+  });
+  const tree = { primary, alternates: [], frameworkB: { primary: b1, alternates: [] } };
+  const md = renderRankedCounts(tree);
+  assert.ok(md.includes('z:82814→57718⏳两可:单锯齿/推动浪'), '末腿(z)应带内联两可后缀，紧跟在⏳之后');
+  assert.ok(!md.includes('w:126296→80525⏳'), 'w 腿不应被标⏳（非末腿）');
+  assert.ok(!/x:80525→97964[^\s]*两可/.test(md), 'x 腿不应带两可后缀');
+  assert.ok(!/y:97964→60001[^\s]*两可/.test(md), 'y 腿不应带两可后缀');
+  assert.ok(!/xx:60001→82814[^\s]*两可/.test(md), 'xx 腿不应带两可后缀');
+  assert.ok(md.includes('对侧点位：82814(1970-01-01) → 57718(1970-01-01)') || md.includes('对侧点位'), '表格下方应附对侧点位行');
+});
+
+test('inline-extending-leg-fork-in-table：主选(## 主选块)带altCharacter时维持完整解释句+独立点位行，不套用表格内联格式', () => {
+  const primary = fakeCandidate({
+    patternId: 'zigzag-double', label: '双锯齿（Double Zigzag w-x-y）',
+    finalWaveInProgress: true, altCharacter: FAKE_ALT,
+    points: [{ price: 97964 }, { price: 82814 }, { price: 57718 }],
+  });
+  const tree = { primary, alternates: [], frameworkB: null };
+  const md = renderRankedCounts(tree);
+  assert.ok(md.includes('两可：现取 **单锯齿（Zigzag 5-3-5）**，也可读作 **推动浪（标准 Impulse）**'), '主选块应保留完整解释句（非表格内联短格式）');
+  assert.ok(md.includes('对侧读法点位：'), '主选块应保留独立的"对侧读法点位"行（非表格下方精简附注）');
+  assert.ok(!md.includes('两可:单锯齿/推动浪'), '主选块不应出现表格式的紧凑"两可:A/B"后缀');
+});
+
+test('inline-extending-leg-fork-in-table：回归——不带altCharacter的候选行无后缀、表格下方无附注', () => {
+  const primary = fakeCandidate({
+    patternId: 'zigzag-double', label: '双锯齿（Double Zigzag w-x-y）',
+    points: [{ price: 100 }, { price: 80 }, { price: 95 }, { price: 60 }],
+  });
+  const b1 = fakeCandidate({
+    patternId: 'zigzag-triple', label: '三锯齿（Triple Zigzag w-x-y-xx-z）',
+    finalWaveInProgress: true, altCharacter: null,
+    points: [{ price: 126296 }, { price: 80525 }, { price: 97964 }, { price: 60001 }, { price: 82814 }, { price: 57718 }],
+  });
+  const tree = { primary, alternates: [], frameworkB: { primary: b1, alternates: [] } };
+  const md = renderRankedCounts(tree);
+  assert.ok(md.includes('z:82814→57718⏳'), '末腿仍应带⏳状态');
+  assert.ok(!md.includes('两可:'), '未两可的候选不应出现"两可:"后缀');
+  assert.ok(!md.includes('对侧点位'), '未两可的候选不应有对侧点位附注行');
+});
+
+// ── 书籍勘误：双锯齿"y浪须>w浪90%"由硬规则降为指引 ──
+// 原判据把上界(<5倍w，硬约束)与下界(>0.9倍w，实为通常倾向)揉进同一条规则，误读为"必须"。
+// 书籍原意：上界仍是规则，下界只是指引——y浪通常大于w浪的0.9倍，但不是必须。
+
+test('双锯齿手册：y浪下界(>0.9w)已改列为指引，rules 中只保留上界(<5w)', () => {
+  const manual = buildDoubleZigzagManual('up');
+  assert.ok(!manual.rules.some((r) => r.id === 'zigzag-double.ratio.y-vs-w-0.9-5'), '旧的合并规则不应再存在');
+  const upperRule = manual.rules.find((r) => r.id === 'zigzag-double.ratio.y-lt-5w');
+  assert.ok(upperRule, 'y浪上界(<5w)仍须是硬规则');
+  const lowerGuideline = manual.guidelines.find((g) => g.id === 'zigzag-double.guide.y-gt-0.9w');
+  assert.ok(lowerGuideline, 'y浪下界(>0.9w)应已降为指引');
+});
+
+test('双锯齿：y/w=0.85(<0.9但>0)不再计入规则违规，只是指引未命中', () => {
+  const manual = buildDoubleZigzagManual('up');
+  const points = [{ price: 0 }, { price: 100 }, { price: 50 }, { price: 135 }]; // w=100, y=85 → y/w=0.85
+  const ctx = { points, direction: 'up' };
+  const upperRule = manual.rules.find((r) => r.id === 'zigzag-double.ratio.y-lt-5w');
+  assert.equal(upperRule.test(ctx).pass, true, 'y/w=0.85 < 5，上界规则仍应通过');
+  const lowerGuideline = manual.guidelines.find((g) => g.id === 'zigzag-double.guide.y-gt-0.9w');
+  assert.equal(lowerGuideline.test(ctx).pass, false, 'y/w=0.85 < 0.9，指引未命中（但不算规则违规）');
+});
+
+test('双锯齿：y/w=6(>5)仍应违反上界硬规则', () => {
+  const manual = buildDoubleZigzagManual('up');
+  const points = [{ price: 0 }, { price: 100 }, { price: 50 }, { price: 650 }]; // w=100, y=600 → y/w=6
+  const ctx = { points, direction: 'up' };
+  const upperRule = manual.rules.find((r) => r.id === 'zigzag-double.ratio.y-lt-5w');
+  assert.equal(upperRule.test(ctx).pass, false, 'y/w=6 > 5，上界规则应违反');
+});
+
 test('candidateViolations：规则违规+文法违规合并，按越界降序，供报告展示原因', () => {
   const c = {
     score: {
@@ -597,4 +803,5 @@ test('结构化报告：7 节齐备 + 反弹必点修正对象 + wave-3 清单 +
   assert.ok(/结构验证|无法验证/.test(md), '应含 wave-3 结构验证或无法验证说明');
   assert.ok(!md.includes('%概率') && !/概率\s*[:：]\s*\d/.test(md), '不得给概率百分比');
   assert.ok(!md.includes('undefined') && !md.includes('NaN'), '不得有 undefined/NaN');
+  assert.ok(!md.includes('57718'), '结构化报告不得残留 BTC 专用硬编码价位');
 });

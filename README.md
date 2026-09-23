@@ -116,25 +116,32 @@ node analyze-kline-wave.js ... --full-report
 node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now
 ```
 
-每次运行按 `UTC+8` 时间戳自动生成 3 个文件：
+每次运行按 `UTC+8` 时间戳自动生成 2 个文件：
 
 - `<product>_<tf>_<start>_<end>_tree.json` — 计数树 + 进行中腿 + 排名 + 跨级别序列化
-- `<product>_<tf>_<start>_<end>_tree.md` — 大白话版分析报告
-- `<product>_<tf>_<start>_<end>_structured.md` — 七节结构化报告
+- `<product>_<tf>_<start>_<end>_tree.md` — 波浪分析报告（唯一 Markdown 输出）
 
 ### 参数说明
 
-- `--product` 交易对，默认 `BTC-USD`
-- `--tf`, `--timeframe` 周期，支持：`5m | 1h | 4h | 1d | 1w | 1m | 1y`
+- `--product` 代码，默认 `BTC-USD`。按格式自动识别市场：`BTC-USD`→加密货币（Coinbase）、6 位数字如 `600519`→A 股（东方财富，前复权）、纯字母如 `AAPL`→美股（Twelve Data，按拆股复权）
+- `--source coinbase|twelvedata|eastmoney` 手动指定数据源（如美股改用东方财富）
+- `--apikey` Twelve Data key（美股必需），也可设环境变量 `TWELVE_DATA_API_KEY`
+- `--tf`, `--timeframe` 周期，支持：`5m | 1h | 4h | 1d | 1w | 1m | 1y`；股票仅 `1d | 1w`（只用已收盘 K 线，不做子级别下钻）
 - `--start` 开始时间，ISO 字符串；默认 `end - 30d`
 - `--end` 结束时间，ISO 字符串或 `now`；默认 `now`
 - `--out` 输出 JSON 文件名；不填则自动命名
-- `--report` 输出大白话 Markdown 文件名；不填则自动命名
-- `--structured` 输出七节结构化 Markdown 文件名；不填则自动命名
+- `--report` 输出 Markdown 文件名；不填则自动命名
 - `--count "p1,p2,p3,p4"` 喂入你自己的数法（一组转折价格），引擎逐条按规则打分并并入报告
 - `--help`, `-h` 显示帮助
 
 ### 常用示例
+
+分析美股 / A 股：
+
+```bash
+node analyze-wave-tree.js --product AAPL --tf 1d --start 2022-01-01 --apikey YOUR_KEY
+node analyze-wave-tree.js --product 600519 --tf 1d --start 2021-01-01
+```
 
 给引擎评判自己的数法（例如作者的 W-X-Y 双锯齿读法）：
 
@@ -145,7 +152,7 @@ node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+
 指定输出文件名：
 
 ```bash
-node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now --out btc.json --report btc_tree.md --structured btc_structured.md
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now --out btc.json --report btc_tree.md
 ```
 
 ## 数据来源

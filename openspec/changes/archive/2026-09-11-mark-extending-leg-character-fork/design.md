@@ -66,16 +66,22 @@ annotateExtendingLegForks(candidate, finePivots, candles, opts):
 落点：`buildCounterTrendFrameworkB` 建好候选后，对其 primary 调用一次；或在 `buildRankedCounts`
 映射框架B 末浪候选时触发。`altCharacter` 透传到排名条目。
 
-## 4. 渲染（粒度2：只标跨性格分叉）
+## 4. 渲染（粒度2：只标跨性格分叉 + 展开对侧读法自身点位）
 
-在报告里该腿处（或框架B 末浪的说明行附近）加一句：
+在报告里该腿处（或框架B 末浪的说明行附近）加一句，随后附一行对侧读法的点位序列：
 
 ```
 ⏳ 末端腿 82814→57718 两可：现取 3波（单锯齿），也可读作 5浪（推动浪，同样零违规）；
    改此性格则该结构不再是双锯齿、翻向推动族。（更深子腿亦可能两可。）
+   对侧读法点位：82814(2025-08-19) → 71200(2025-09-02) → 79500(2025-09-10) → 63400(2025-09-24) → 68900(2025-10-01) → 57718(2025-10-05)
 ```
 
-`_tree.json` 对应节点加 `altCharacter` 字段（md/json 同源）。**不罗列同性格近似形态**（联合形/三锯齿
+点位序列取 `altCharacter.points`（即 `lc.drivingNode.primary.points` / `lc.correctiveNode.primary.points`
+中未被采用的那份，`decompose` 已算出、只是原先被调用点丢弃——**不新增计算**，价格/日期沿用既有
+`fmtTs`/`price` 惯例，逐点用 `→` 连接，与 [analyze-wave-tree.js:3268](analyze-wave-tree.js:3268) 一带的
+既有点位渲染风格一致）。**不递归下钻**去这份对侧读法内部再找新的两可分叉（粒度3，仍是非目标）。
+
+`_tree.json` 对应节点加 `altCharacter` 字段，含 `points`（md/json 同源）。**不罗列同性格近似形态**（联合形/三锯齿
 等，粒度1 噪音，仍按现有去重压掉），**不改选中计数与排名**。
 
 ## 5. 影响面与护栏

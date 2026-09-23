@@ -30,6 +30,14 @@
 
 // ---- 复用旧模块的管道（plumbing，理论中立）----
 const manual = require('./analyze-wave-manual.js');
+// 多市场数据源（add-stock-data-sources）：美股 Twelve Data、A 股东方财富
+const marketData = require('./market-data.js');
+
+const SOURCE_LABELS = {
+  coinbase: 'Coinbase Exchange candles API',
+  twelvedata: 'Twelve Data time_series API',
+  eastmoney: '东方财富 K线 API',
+};
 const {
   fetchCandles,
   transformCandles,
@@ -56,6 +64,71 @@ function safeRatio(numerator, denominator) {
 
 function absLen(a, b) {
   return Math.abs(Number(b.price) - Number(a.price));
+}
+
+const MAX_PRICE_DECIMALS = 12;
+
+/** 返回一个数实际需要的小数位数（兼容 1e-8），并限制异常浮点尾数。 */
+function decimalPlaces(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  const s = String(n).toLowerCase();
+  const [coefficient, exponentText] = s.split('e');
+  const exponent = exponentText == null ? 0 : Number(exponentText);
+  const fractionLength = (coefficient.split('.')[1] || '').length;
+  return Math.max(0, Math.min(MAX_PRICE_DECIMALS, fractionLength - exponent));
+}
+
+/** Coinbase quote_increment 优先；没有元数据时，从本次 OHLC 的实际精度推断。 */
+function inferPricePrecision(candles) {
+  let precision = 0;
+  for (const candle of candles || []) {
+    for (const key of ['open', 'high', 'low', 'close']) {
+      const places = decimalPlaces(candle && candle[key]);
+      if (places != null) precision = Math.max(precision, places);
+    }
+  }
+  return Math.min(MAX_PRICE_DECIMALS, precision);
+}
+
+function resolvePricePrecision(quoteIncrement, candles) {
+  const increment = Number(quoteIncrement);
+  if (Number.isFinite(increment) && increment > 0) return decimalPlaces(increment);
+  return inferPricePrecision(candles);
+}
+
+/** 价格统一出口：按产品精度四舍五入，但去掉无意义的末尾 0。 */
+function formatPrice(value, precision) {
+  if (value == null) return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  const inferred = decimalPlaces(n);
+  const digits = Number.isInteger(precision)
+    ? Math.max(0, Math.min(MAX_PRICE_DECIMALS, precision))
+    : inferred;
+  const text = n.toFixed(digits == null ? 0 : digits).replace(/(?:\.0+|(\.\d*?[1-9])0+)$/, '$1');
+  return text === '-0' ? '0' : text;
+}
+
+/** 产品元数据是增强项：失败时主流程会回退到 K 线精度，不阻断分析。 */
+async function fetchQuoteIncrement(product, fetchImpl = globalThis.fetch) {
+  if (typeof fetchImpl !== 'function') return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetchImpl(`https://api.exchange.coinbase.com/products/${encodeURIComponent(product)}`, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'wave-tree-analyzer/1.0', Accept: 'application/json' },
+    });
+    if (!res || !res.ok) return null;
+    const data = await res.json();
+    const increment = data && data.quote_increment;
+    return Number.isFinite(Number(increment)) && Number(increment) > 0 ? String(increment) : null;
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function legIndexTime(p0, p1) {
@@ -680,9 +753,10 @@ function buildDoubleZigzagManual(direction) {
       const [p0, p1, p2] = ctx.points;
       return normRange(safeRatio(absLen(p1, p2), absLen(p0, p1)), 0.2, 1.0);
     }, { basis: 'price' }),
-    makeJudge('zigzag-double.ratio.y-vs-w-0.9-5', 'ratio', 'y浪价格须>w浪90%且<w浪5倍', (ctx) => {
+    // 书籍勘误：原"y浪须>w浪90%"并非硬规则，只有上界(<5倍w)是——下界改列入 guidelines（见下）。
+    makeJudge('zigzag-double.ratio.y-lt-5w', 'ratio', 'y浪价格须<w浪5倍', (ctx) => {
       const [p0, p1, p2, p3] = ctx.points;
-      return normRange(safeRatio(absLen(p2, p3), absLen(p0, p1)), 0.9, 5);
+      return normRange(safeRatio(absLen(p2, p3), absLen(p0, p1)), 0, 5);
     }, { basis: 'price' }),
     makeJudge('zigzag-double.ratio.y-gt-x', 'ratio', 'y浪价格须大于x浪价格的1倍', (ctx) => {
       const [, p1, p2, p3] = ctx.points;
@@ -709,6 +783,12 @@ function buildDoubleZigzagManual(direction) {
       const r = safeRatio(absLen(p1, p2), absLen(p0, p1));
       return { pass: r !== null && r >= 0.3 && r <= 0.7, overshoot: 0 };
     }, { kind: 'guideline' }),
+    // 书籍勘误：y浪不是必须大于w浪的0.9倍，只是通常如此——原硬规则下界降为指引。
+    makeJudge('zigzag-double.guide.y-gt-0.9w', 'ratio', 'y浪价格通常>w浪90%（非必须）', (ctx) => {
+      const [p0, p1, p2, p3] = ctx.points;
+      const r = safeRatio(absLen(p2, p3), absLen(p0, p1));
+      return { pass: r !== null && r > 0.9, overshoot: 0 };
+    }, { kind: 'guideline' }),
     makeJudge('zigzag-double.guide.y-near-w-or-1.618', 'ratio', 'y浪价格倾向=w浪或1.618倍w浪', (ctx) => {
       const [p0, p1, p2, p3] = ctx.points;
       const r = Math.abs(safeRatio(absLen(p2, p3), absLen(p0, p1)) || 0);
@@ -730,9 +810,10 @@ function buildTripleZigzagManual(direction) {
       const [p0, p1, p2] = ctx.points;
       return normRange(safeRatio(absLen(p1, p2), absLen(p0, p1)), 0.2, 1.0);
     }, { basis: 'price' }),
-    makeJudge('zigzag-triple.ratio.y-vs-w-0.9-5', 'ratio', 'y浪价格须>w浪90%且<w浪5倍', (ctx) => {
+    // 书籍勘误：y浪不是必须大于w浪的0.9倍，只是通常如此——原硬规则下界降为指引，上界(<5w)仍为规则。
+    makeJudge('zigzag-triple.ratio.y-lt-5w', 'ratio', 'y浪价格须<w浪5倍', (ctx) => {
       const [p0, p1, p2, p3] = ctx.points;
-      return normRange(safeRatio(absLen(p2, p3), absLen(p0, p1)), 0.9, 5);
+      return normRange(safeRatio(absLen(p2, p3), absLen(p0, p1)), 0, 5);
     }, { basis: 'price' }),
     makeJudge('zigzag-triple.ratio.y-gt-x', 'ratio', 'y浪价格须大于x浪价格的1倍', (ctx) => {
       const [, p1, p2, p3] = ctx.points;
@@ -784,6 +865,12 @@ function buildTripleZigzagManual(direction) {
       const [, , p2, p3, p4] = ctx.points;
       const r = safeRatio(absLen(p3, p4), absLen(p2, p3));
       return { pass: r !== null && r >= 0.3 && r <= 0.7, overshoot: 0 };
+    }, { kind: 'guideline' }),
+    // 书籍勘误：y浪价格通常>w浪90%，但非必须——由硬规则下界降为指引。
+    makeJudge('zigzag-triple.guide.y-gt-0.9w', 'ratio', 'y浪价格通常>w浪90%（非必须）', (ctx) => {
+      const [p0, p1, p2, p3] = ctx.points;
+      const r = safeRatio(absLen(p2, p3), absLen(p0, p1));
+      return { pass: r !== null && r > 0.9, overshoot: 0 };
     }, { kind: 'guideline' }),
   ];
   return { patternType: 'zigzag', direction, mode: 'triple', label: '三锯齿（Triple Zigzag w-x-y-xx-z）', rules, guidelines };
@@ -1606,6 +1693,12 @@ function buildCountTree(finePivots, candles, options = {}) {
       //  · 合并两池，交 buildRankedCounts 按形态去重（同形取分高者）。
       const naiveKept = filterFinalLegAnchored(naiveB, finePivots);
       const counterB = buildCounterTrendFrameworkB(tree, finePivots, candles);
+      // mark-extending-leg-character-fork：counterB 的候选沿用框架A原树的子节点引用（reframe 只
+      // 浅拷贝），故用同一个 opts（含其 cache）标注，才能命中缓存、拿到与树中一致的对侧读法节点。
+      if (counterB) {
+        if (counterB.primary) annotateExtendingLegForks(counterB.primary, candles, opts);
+        (counterB.alternates || []).forEach((c) => annotateExtendingLegForks(c, candles, opts));
+      }
       tree.frameworkB = mergeFrameworkB(naiveKept, counterB);
     }
   }
@@ -1673,7 +1766,7 @@ const CUR_RANKED_MAX = 6;
  * 当前进行浪竞争结构（enumerate-current-wave-structures）：对当前进行浪段（已确认极值 spanLast → now）
  * 枚举一组"当前浪位模板"，每条给出【具体子计数 + 当前浪位 + 下一浪投影 + 失效点】。既含完成型也含
  * 在建型（"你正处形态P的第k浪、其后浪位投影"）。否定法排名（硬约束破了的先淘汰、软信号=leg1性格
- * 契合度排名）、按倾向去重、设 CUR_RANKED_MAX 上限。投影/失效点均为推断。
+ * 契合度排名）、按 label（外层身份）去重、设 CUR_RANKED_MAX 上限。投影/失效点均为推断。
  *
  * v1 用有界模板目录（非组合搜索）；在建部分只对已走腿查可判定的结构约束（失效点是否已破、回撤比是否
  * 越界），未走的浪只投影、不判违规——天然满足 gate-extending-final-leg-rules 的"在建部分不误判违规"。
@@ -1707,7 +1800,7 @@ function buildCurrentWaveStructures(finePivots, spanLast, candles, options = {})
   const contDir = lowConfirmed ? -1 : 1; // 大势续行方向（续跌=-1 / 续涨=+1）
   const revDir = -contDir;
   const proj = (base, sign, refAmp, mults) => mults.map((m) => ({ mult: m, price: base + sign * refAmp * m }));
-  const R = (v) => Math.round(v);
+  const R = (v) => formatPrice(v, options.pricePrecision);
   const templates = [];
 
   // T1 续行推动·浪③进行中（续大势）：①=进入极值前腿 ②=leg1 ③=leg2起步
@@ -1770,13 +1863,54 @@ function buildCurrentWaveStructures(finePivots, spanLast, candles, options = {})
     });
   }
 
-  // 否定法排名：tier1 升序、soft 降序；按倾向去重、设上限
+  // T4 上涨/下跌5浪推动·⑤进行中（enumerate-current-wave-structures 设计§2）：当细枢轴足够
+  // （spanLast 之后 ≥4 个已确认枢轴 + now 与 p4 不重合），把前4条腿指派为①②③④（顺 revDir 方向
+  // 交替），④之后到 now 的一切（可能内含多个更细的枢轴，如设计例子里落在⑤内部的 82283/76630）
+  // 收拢为一条在建的⑤腿。只对已走完的①②③④跑可判定硬规则；⑤未走不判违规（天然满足闸门语义）。
+  // 不受 ips.swingChar 门槛：T4 与 T1/T2/T3 各自独立生成，swingChar 只用于旧"进行中结构"叙述的
+  // 主选口径，不在此处阻断任何模板（design §5「与 swingChar 独占性的关系」）。
+  if (post.length >= 5) {
+    const p1 = post[0].price;
+    const p2 = post[1].price;
+    const p3 = post[2].price;
+    const p4 = post[3].price;
+    const amp1_4 = Math.abs(p1 - spanLast.price);
+    const net13 = Math.abs(p3 - spanLast.price);
+    const breach2 = revDir > 0 ? p2 <= spanLast.price : p2 >= spanLast.price; // ②入①起点
+    const breach3 = Math.abs(p3 - p2) < amp1_4; // ③比①短（③不最短的可判定简化版）
+    const breach4 = revDir > 0 ? p4 <= p1 : p4 >= p1; // ④入①领地（④触及/越过①终点）
+    templates.push({
+      id: 'reverse-impulse-5',
+      label: lowConfirmed ? '上涨5浪推动·⑤进行中(末浪)' : '下跌5浪推动·⑤进行中(末浪)',
+      tendency: lowConfirmed ? '看多' : '看跌',
+      legs: [
+        { name: '①', from: spanLast.price, to: p1, status: '完成' },
+        { name: '②', from: p1, to: p2, status: '完成' },
+        { name: '③', from: p2, to: p3, status: '完成' },
+        { name: '④', from: p3, to: p4, status: '完成' },
+        { name: '⑤', from: p4, to: now.price, status: '⏳进行中' },
+      ],
+      currentWave: '浪⑤（进行中，末浪）',
+      projection: [
+        { mult: 0.618, price: p4 + revDir * net13 * 0.618 },
+        { mult: 1.0, price: p4 + revDir * amp1_4 * 1.0 },
+      ],
+      invalidation: { price: p4, reason: `跌破④底 ${R(p4)}（严格版另需守住①顶 ${R(p1)}，即④不入①领地）` },
+      tier1: (breach2 ? 1 : 0) + (breach3 ? 1 : 0) + (breach4 ? 1 : 0),
+      soft: leg1Char === 'driving' ? 1 : 0, // ①应为5浪
+      deferred: ['浪⑤内部形态与目标待走完再判'],
+    });
+  }
+
+  // 否定法排名：tier1 升序、soft 降序；按 label 去重（不按 tendency——T3/T4 同为"看多/看跌"
+  // 但外层身份(新起步 vs 末浪)截然不同，按倾向去重会误压掉一条，enumerate-current-wave-structures §3）、
+  // 设上限。
   templates.sort((a, b) => (a.tier1 - b.tier1) || (b.soft - a.soft));
   const seen = new Set();
   const ranked = [];
   for (const tpl of templates) {
-    if (seen.has(tpl.tendency)) continue;
-    seen.add(tpl.tendency);
+    if (seen.has(tpl.label)) continue;
+    seen.add(tpl.label);
     ranked.push(tpl);
     if (ranked.length >= CUR_RANKED_MAX) break;
   }
@@ -1786,18 +1920,19 @@ function buildCurrentWaveStructures(finePivots, spanLast, candles, options = {})
 /**
  * 进行中结构的调试文本（技术细节块内，缩进树）。
  */
-function renderInProgressText(ips) {
+function renderInProgressText(ips, pricePrecision) {
   if (!ips) return '（无在建结构：当前结构大致已走完最后一浪）';
+  const px = (v) => formatPrice(v, pricePrecision);
   const L = [];
   const charCn = ips.swingChar === 'driving' ? '内部五浪(偏推动)'
     : ips.swingChar === 'corrective' ? '内部三波(偏调整)' : '内部结构待明';
-  L.push(`⏳ 进行中结构（未确认）｜上冲/下跌段极值 ${ips.swingExtreme.price}｜${charCn}｜失效点 ${ips.invalidation}`);
-  if (ips.upTree) L.push(renderTreeText(ips.upTree, 0));
+  L.push(`⏳ 进行中结构（未确认）｜上冲/下跌段极值 ${px(ips.swingExtreme.price)}｜${charCn}｜失效点 ${px(ips.invalidation)}`);
+  if (ips.upTree) L.push(renderTreeText(ips.upTree, 0, pricePrecision));
   if (ips.pullback) {
     const pb = ips.pullback;
-    const tg = pb.fibTargets.map((t) => `${t.mult}×→${t.price.toFixed(0)}`).join(', ');
-    L.push(`⏳ 当前回撤子腿（未确认）：${pb.from.price}→${pb.to.price}（末腿${pb.currentLegDir}）｜回撤位(${pb.note}) ${tg}`);
-    if (pb.subtree) L.push(renderTreeText(pb.subtree, 1));
+    const tg = pb.fibTargets.map((t) => `${t.mult}×→${formatPrice(t.price, pricePrecision)}`).join(', ');
+    L.push(`⏳ 当前回撤子腿（未确认）：${px(pb.from.price)}→${px(pb.to.price)}（末腿${pb.currentLegDir}）｜回撤位(${pb.note}) ${tg}`);
+    if (pb.subtree) L.push(renderTreeText(pb.subtree, 1, pricePrecision));
   }
   return L.join('\n');
 }
@@ -2069,9 +2204,9 @@ async function enrichCurrentPullback(tree, ctx, fetchFn = fetchCandles) {
 }
 
 // 叙述成句（现状研判块）：正文只给主目标 + 延伸档，全阶梯留 JSON。无警戒线措辞。
-function renderPullbackNarrative(nr) {
+function renderPullbackNarrative(nr, pricePrecision) {
   if (!nr) return '';
-  const n = (v) => (Number.isFinite(v) ? Math.round(v) : v);
+  const n = (v) => (Number.isFinite(v) ? formatPrice(v, pricePrecision) : v);
   const L = [];
   L.push('## 当前高点回撤研判');
   L.push('');
@@ -2159,9 +2294,9 @@ function nearTermTrigger(termPivot, finePivots) {
 
 // 叙述化渲染（可读性 grilling 定稿：作者口吻，把参考浪/依据/之后走向揉进整句；
 // 每种身份一句有因果的话，而非带括号的价格；主选就近标注，全精度数字）。
-function renderBounceHypotheses(h, nearTerm) {
+function renderBounceHypotheses(h, nearTerm, pricePrecision) {
   if (!h) return '';
-  const n = (v) => Math.round(v);
+  const n = (v) => formatPrice(v, pricePrecision);
   const px = (arr) => arr.filter((t) => t.price > 0).map((t) => n(t.price)).join(' / ');
   const main = (k) => (h.lean === k ? '（主选）' : '');
   const charCn = h.bounceChar === 'driving' ? '内部更像五浪（偏推动）'
@@ -2208,31 +2343,38 @@ function deriveParentDegree(tree) {
   const retrace = dropAmp > 0 ? Math.abs(ips.swingExtreme.price - dropEnd.price) / dropAmp : 0;
   const inval = dropEnd.price;
   const bh = tree.assessment && tree.assessment.bounceHyp;
-  const tgt = (arr) => (arr ? arr.filter((t) => t.price > 0).map((t) => Math.round(t.price)) : []);
+  const tgt = (arr) => (arr ? arr.filter((t) => t.price > 0).map((t) => t.price) : []);
+  // targetsFull：保留每档回撤比（原 targets 只留价格、供既有 JSON 消费者兼容）。
+  const tgtR = (arr) => (arr ? arr.filter((t) => t.price > 0).map((t) => ({ ratio: t.ratio, price: t.price })) : []);
+  // 参考腿：投影目标是这条腿的斐波回撤位。X 连接浪量的是「大跌最后一条子腿」(修正前一子结构)，
+  // B 浪/转势量的是「整段大跌」。把端点+幅度摆进报告，读者可自行验算 目标=终点+比×幅。
+  const wholeLeg = bh ? { cn: '整段大跌', from: bh.startPrice, to: bh.term, amp: bh.whole } : null;
+  const lastLeg = bh ? { cn: '大跌末腿', from: bh.prevPrice, to: bh.term, amp: bh.lastSub } : null;
 
   const cands = [
     {
       key: 'combination', parentCn: '更大的联合调整（w-x-y）', dropLabel: 'W', curLabel: 'X 连接浪',
       hardOk: !dropMotive, elimReason: dropMotive ? 'W 须为调整，而大跌是推动' : null,
-      band: [0, 0.5], targets: bh ? tgt(bh.xx.targets) : [],
+      band: [0, 0.5], targets: bh ? tgt(bh.xx.targets) : [], targetsFull: bh ? tgtR(bh.xx.targets) : [], refLeg: lastLeg,
       basis: 'X 连接浪通常浅、可为任意调整形态，与当前浅反弹吻合',
     },
     {
       key: 'flat', parentCn: '更大的平台型调整（a-b-c）', dropLabel: 'A', curLabel: 'B 浪',
       hardOk: !dropMotive, elimReason: dropMotive ? 'A 须为调整，而大跌是推动' : null,
-      band: [0.5, 1.05], targets: bh ? tgt(bh.b.targets) : [],
+      band: [0.5, 1.05], targets: bh ? tgt(bh.b.targets) : [], targetsFull: bh ? tgtR(bh.b.targets) : [], refLeg: wholeLeg,
       basis: '规则平台 B 浪须回撤 A 的约 90%+；当前回撤浅，按比例偏弱',
     },
     {
       key: 'zigzag', parentCn: '更大的之字型调整（a-b-c）', dropLabel: 'A', curLabel: 'B 浪',
       hardOk: dropMotive, elimReason: !dropMotive ? 'A 须为 5 浪推动，而大跌是调整（三锯齿）' : null,
-      band: [0.5, 0.79], targets: bh ? tgt(bh.b.targets) : [],
+      band: [0.5, 0.79], targets: bh ? tgt(bh.b.targets) : [], targetsFull: bh ? tgtR(bh.b.targets) : [], refLeg: wholeLeg,
       basis: '之字的 A 浪须为推动',
     },
     {
       key: 'impulse', parentCn: '新的推动浪（转势）', dropLabel: '（前置熊市调整）', curLabel: '1/3 浪',
       hardOk: bounceMotive, elimReason: !bounceMotive ? '反弹内部须为 5 浪，而实测 3 波' : null,
-      band: [0.5, 99], targets: bh ? tgt(bh.three.targets) : [],
+      band: [0.5, 99], targets: bh ? tgt(bh.three.targets) : [], targetsFull: bh ? tgtR(bh.three.targets) : [],
+      refLeg: wholeLeg ? { ...wholeLeg, cn: '整段(作阻力参考)' } : null,
       basis: '反弹内部须走成五浪方成立',
     },
   ];
@@ -2261,7 +2403,7 @@ function deriveParentDegree(tree) {
 /**
  * 当前段(X)内部细化：内部最像什么形态、当前处于哪条腿（主选/次选，含分水岭）。用日线枢轴。
  */
-function deriveCurrentInternal(tree, parentCurLabel, tfLabel) {
+function deriveCurrentInternal(tree, parentCurLabel, tfLabel, pricePrecision) {
   const ips = tree && tree.inProgressStruct;
   if (!ips || !ips.swingExtreme) return null;
   const cur = parentCurLabel || '当前段';
@@ -2273,7 +2415,7 @@ function deriveCurrentInternal(tree, parentCurLabel, tfLabel) {
   const hasPb = !!(ips.pullback && ips.pullback.to.index !== ext.index);
   const now = hasPb ? ips.pullback.to : ext;
   const structUp = ips.structUp;
-  const R = (v) => Math.round(v);
+  const R = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
   const aDir = structUp ? '上涨' : '下跌';
   const bDir = structUp ? '下跌' : '上涨';
   const aAmp = Math.abs(ext.price - startPrice);
@@ -2282,12 +2424,12 @@ function deriveCurrentInternal(tree, parentCurLabel, tfLabel) {
   const legs = [];
   legs.push({ name: 'a', dirCn: aDir, from: startPrice, to: ext.price, status: '完成' });
   if (hasPb) {
-    const refs = (ips.pullback.fibTargets || []).map((t) => R(t.price));
+    const refs = (ips.pullback.fibTargets || []).map((t) => t.price);
     legs.push({ name: 'b', dirCn: bDir, from: ext.price, to: now.price, status: '进行中', current: true, refs });
     // c 腿投影：从 b 腿 0.5 回撤位起、按 a 腿幅度 0.618/1.0 倍投影（推断）
     const bMid = (ips.pullback.fibTargets && ips.pullback.fibTargets[1]) ? ips.pullback.fibTargets[1].price : now.price;
     const sgn = structUp ? 1 : -1;
-    legs.push({ name: 'c', dirCn: aDir, from: null, to: null, status: '未走', targets: [0.618, 1.0].map((m) => R(bMid + sgn * aAmp * m)) });
+    legs.push({ name: 'c', dirCn: aDir, from: null, to: null, status: '未走', targets: [0.618, 1.0].map((m) => bMid + sgn * aAmp * m) });
   } else {
     legs[0].status = '进行中';
     legs[0].current = true;
@@ -2311,64 +2453,59 @@ function deriveCurrentInternal(tree, parentCurLabel, tfLabel) {
 }
 
 /**
- * 多级别结论渲染（报告最顶）：三句话跨级别 + 父级候选排名表 + 当前段内部细化。
+ * 轴①子块：整段（大跌+反弹）在更大结构里的角色（父级候选排名）。
+ * consolidate-report-by-theme §3.1：只讲"扮演什么角色"，不重列大跌形态本身；
+ * 目标价/参考腿改指向轴③（避免与 bounceHyp 的目标梯度重复）。
  */
-function renderMultiDegree(tree, tfLabel) {
+function renderParentRole(tree, pricePrecision) {
   const pd = deriveParentDegree(tree);
   if (!pd || !pd.primary) return '';
-  const n = (v) => Math.round(v);
-  const P = pd.primary;
-  const ci = deriveCurrentInternal(tree, P.curLabel, tfLabel);
   const L = [];
-  L.push('# 结论：大跌走完了什么、现在在哪');
+  L.push('## 在更大结构里的角色（父级候选，按吻合排序）');
   L.push('');
-  L.push('> 概率性研判、非确定，不构成买卖建议。以下为「否定法」派生：硬规则淘汰、软信号排名。');
+  L.push(`> 把「已走完的大跌 + 现在的反弹」放进更大的父级浪型——「否定法」派生：硬规则淘汰、软信号排名。反弹已回撤大跌的 **${(pd.retrace * 100).toFixed(0)}%**（浅→偏 X 连接、深→偏 B、超越前高→偏转势）。目标价与失效点见轴③。`);
   L.push('');
-  // 三句话（跨级别串起来）
-  const s = [];
-  s.push(`整段像 **${P.parentCn}**`);
-  s.push(`已走完的 **${n(pd.dropStart)}→${n(pd.dropEnd)} 是 ${P.dropLabel} 浪**（完成）`);
-  s.push(`现在 **${n(pd.dropEnd)} 起是 ${P.curLabel}**（进行中）`);
-  if (ci) s.push(ci.structHint);
-  s.push(`失效点 **${n(pd.invalidation)}**`);
-  L.push(`${s.join('；')}。`);
-  L.push('');
-
-  // 大级别：父级候选排名
-  L.push('## 大级别：整段在组成什么（父级候选，按吻合排序）');
-  L.push('');
-  L.push(`> 反弹已回撤大跌的 **${(pd.retrace * 100).toFixed(0)}%**（浅→偏 X 连接、深→偏 B、超越前高→偏转势）。`);
-  L.push('');
-  L.push('| 排名 | 父级大浪型 | 大跌= | 现在= | 目标价 | 依据 |');
-  L.push('|---|---|---|---|---|---|');
+  L.push('| 排名 | 父级大浪型 | 大跌= | 现在= | 依据 |');
+  L.push('|---|---|---|---|---|');
   pd.survivors.forEach((c, i) => {
     const tag = i === 0 ? '✅ 主选' : `次选${i}`;
-    L.push(`| ${tag} | ${c.parentCn} | ${c.dropLabel} | ${c.curLabel} | ${c.targets.join(' / ') || '—'} | ${c.basis} |`);
+    L.push(`| ${tag} | ${c.parentCn} | ${c.dropLabel} | ${c.curLabel} | ${c.basis} |`);
   });
   pd.eliminated.forEach((c) => {
-    L.push(`| ❌ 淘汰 | ${c.parentCn} | ${c.dropLabel} | ${c.curLabel} | — | ${c.elimReason} |`);
+    L.push(`| ❌ 淘汰 | ${c.parentCn} | ${c.dropLabel} | ${c.curLabel} | ${c.elimReason} |`);
   });
   L.push('');
+  return L.join('\n');
+}
 
-  // 小级别：当前段内部的 a/b/c 逐腿
-  if (ci) {
-    L.push(`## 小级别：当前 ${P.curLabel} 内部的 a/b/c（${tfLabel || '本周期'}）`);
-    L.push('');
-    L.push(`按 ${P.curLabel} 这一层数成 a-b-c，当前处于 **${ci.currentLegName} 腿**：`);
-    ci.legs.forEach((l) => {
-      const mark = l.current ? ' ← **当前在此**' : '';
-      if (l.status === '未走') {
-        const tg = l.targets ? `，若转此腿常见目标 **${l.targets.join(' / ')}**（推断）` : '';
-        L.push(`- **${l.name} 腿** · ${l.dirCn}：未走${tg}${mark}`);
-      } else {
-        const rf = l.refs ? `，回撤支撑参考 ${l.refs.join(' / ')}` : '';
-        L.push(`- **${l.name} 腿** · ${l.dirCn}：**${n(l.from)} → ${n(l.to)}**（${l.status}）${rf}${mark}`);
-      }
-    });
-    L.push(`- ${ci.altLabelNote}`);
-    L.push(`- 分水岭：${ci.confirmWord} **${n(ci.confirm)}** 则 b 腿结束、转 c；${ci.invalWord} **${n(ci.invalidation)}** 则整套作废。`);
-    L.push('');
+/**
+ * 轴②子块：当前段内部细化的一句导读（D2 标签统一）。
+ * consolidate-report-by-theme §4.2/§4.3：不再重列 a/b/c 全部逐腿（已被轴②权威表覆盖），
+ * 只给一句"当前在哪条内部腿"+ 分水岭；父级=联合调整时改用 w/x/y，并标注级别归属。
+ */
+function renderCurrentInternalNote(tree, tfLabel, pricePrecision) {
+  const pd = deriveParentDegree(tree);
+  if (!pd || !pd.primary) return '';
+  const P = pd.primary;
+  const ci = deriveCurrentInternal(tree, P.curLabel, tfLabel, pricePrecision);
+  if (!ci || !ci.currentLegName) return '';
+  const n = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
+  const useWXY = P.key === 'combination';
+  const nameMap = { a: 'w', b: 'x', c: 'y' };
+  const dispName = (nm) => (useWXY ? (nameMap[nm] || nm) : nm);
+  const cur = ci.legs.find((l) => l.current);
+  const L = [];
+  L.push('## 上表内部细化导读');
+  L.push('');
+  const posTxt = (cur && cur.from != null) ? `（${n(cur.from)} → ${n(cur.to)}，${cur.status}）` : '（进行中）';
+  L.push(`若把 **${P.curLabel}** 再细分一层（${tfLabel || '本周期'}），当前处于其 **${dispName(ci.currentLegName)} 腿**${posTxt}。`);
+  if (useWXY) {
+    L.push(`父级主选为**联合调整**，这一层改用 **w/x/y** 记法（而非 a/b/c）：外层"整段反弹"记 **w**（可为任意调整形态，不必是 5 浪）；若 w 内部再拆出锯齿，其内部的 A 浪才须走五浪——两者级别不同，不可混为一谈。`);
+  } else {
+    L.push(`沿用 **a/b/c** 记法（父级主选非联合调整时的正式记法）。`);
   }
+  L.push(`分水岭：${ci.confirmWord} **${n(ci.confirm)}** 则该腿结束、转下一腿；${ci.invalWord} **${n(ci.invalidation)}** 则整套作废（与失效点同源，详见现状研判/轴③）。`);
+  L.push('');
   return L.join('\n');
 }
 
@@ -2379,7 +2516,8 @@ function serializeMultiDegree(tree, tfLabel) {
   const ci = deriveCurrentInternal(tree, pd.primary.curLabel, tfLabel);
   const candJson = (c) => ({
     parent: c.parentCn, dropLabel: c.dropLabel, currentLabel: c.curLabel,
-    rank: c.rank, targets: c.targets, basis: c.basis, elimReason: c.elimReason || undefined,
+    rank: c.rank, targets: c.targets, targetsFull: c.targetsFull || undefined, refLeg: c.refLeg || undefined,
+    basis: c.basis, elimReason: c.elimReason || undefined,
   });
   return {
     invalidation: pd.invalidation, retrace: pd.retrace,
@@ -2609,6 +2747,47 @@ function buildCounterTrendFrameworkB(tree, finePivots, candles) {
   };
 }
 
+// 进行中末腿"两可"性格分叉标注（mark-extending-leg-character-fork）：post-hoc，只加标注，不改
+// 选中的计数与排名。只作用于 finalWaveInProgress 候选，沿"末端成形链"（每层取最后一条子腿——
+// 其终点即候选自身的全局极值终点，见上方 buildCounterTrendFrameworkB 的 term）逐层下探；标出链
+// 上最浅的一条"两可"腿（跳过宏观末腿本身 depth 0——它的对侧读法通常已作为独立顶层备选出现）。
+// 两可 = legCharacter 判定 canDrive && canCorrect（驱动/调整读法均 tier1=0 零违规）。
+// 复用 opts.cache：legCharacter 对同一细枢轴段/深度/允许角色会命中原树已算好的缓存，返回与树中
+// 现有子节点引用相同的对象，藉此零额外递归成本地判定"当前显示的是驱动还是调整读法"（引用比对）。
+function annotateExtendingLegForks(candidate, candles, opts) {
+  if (!candidate || !candidate.finalWaveInProgress) return candidate;
+  let node = candidate;
+  let depth = 0;
+  while (node && Array.isArray(node.children) && node.children.length) {
+    const lastChild = node.children[node.children.length - 1];
+    if (!lastChild || lastChild.isLeaf || !lastChild.primary) break;
+    if (depth >= 1) {
+      const lc = legCharacter(lastChild.segFine, candles, depth + 1, opts);
+      if (lc.canDrive && lc.canCorrect) {
+        const shownIsCorrective = lc.correctiveNode === lastChild;
+        const shownIsDriving = lc.drivingNode === lastChild;
+        const altNode = shownIsCorrective ? lc.drivingNode : (shownIsDriving ? lc.correctiveNode : null);
+        if (altNode && !altNode.isLeaf && altNode.primary) {
+          const seg = lastChild.segFine;
+          candidate.altCharacter = {
+            legFrom: seg[0],
+            legTo: seg[seg.length - 1],
+            shownCharacter: shownIsCorrective ? 'corrective' : 'driving',
+            shownLabel: lastChild.primary.manual.label,
+            character: shownIsCorrective ? 'driving' : 'corrective',
+            label: altNode.primary.manual.label,
+            points: altNode.primary.points,
+          };
+        }
+        break; // 只标最浅一条，更深两可腿不逐层展开（design §2「取哪一层」）
+      }
+    }
+    node = lastChild.primary;
+    depth += 1;
+  }
+  return candidate;
+}
+
 const RANKED_MAX = 8; // 排名表上限：按形态去重后全列，设个上限防爆（rank-competing-wave-counts Q3 复议）
 
 /**
@@ -2648,6 +2827,8 @@ function buildRankedCounts(tree) {
     finalWaveInProgress: !!c.finalWaveInProgress,
     projection: c.projection || null,
     invalidation: c.retraceFrom ? c.retraceFrom.price : null,
+    // mark-extending-leg-character-fork：末端成形链上最浅两可腿的对侧读法（若有），md/json 同源
+    altCharacter: c.altCharacter || null,
     // 展示 tier1/tier2 扣除被闸门暂缓的规则（§2.3/2.4）：ranking 已用完整 tier1 排完序，此处扣除只
     // 影响"❌违规×N / ✅规则全过"标签与越界显示，不影响已定的排名位置（未完成度守住 B 在 A 之后）。
     score: (() => {
@@ -2664,15 +2845,15 @@ function buildRankedCounts(tree) {
   }));
 }
 
-function renderRankedCounts(tree) {
+function renderRankedCounts(tree, pricePrecision) {
   const ranked = buildRankedCounts(tree);
   if (!ranked || !ranked.length) return '';
-  const n = (v) => Math.round(v);
+  const n = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
   const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
   const scoreTag = (s) => (s.tier1 === 0 ? '✅ 规则全过' : `❌ 违规×${s.tier1}`);
   const fmtViol = fmtViolReason; // 共用：赘述规则 + 定性越界程度（不再显示易误解的归一化%）
   const L = [];
-  L.push('# 数法排名（现在的浪型是什么，按吻合排序）');
+  L.push('# 轴① 大跌走完了什么形态（数法排名，按吻合排序）');
   L.push('');
   L.push('> 「否定法」派生：先看谁规则全过，同档再按越界距离/未完成度/简约度排名。主选展开，备选精简。');
   L.push('> 候选池含两种框架：**框架A**——大跌到全局极值即算完成；**框架B**——区间延伸到现在，当前走势可能只是更高级别、尚未走完的浪的内部子腿（"读法2"）。');
@@ -2695,11 +2876,43 @@ function renderRankedCounts(tree) {
     return '⏳ 在建（框架B：区间延伸到now，当前是其内部子腿）';
   };
 
+  // mark-extending-leg-character-fork：末端成形链上最浅两可腿的"性格分叉"提示 + 对侧读法点位
+  // （decompose 已算出、原先被丢弃的那份，不新增计算；不递归下钻对侧读法内部找新分叉）。
+  const fmtTs = (sec) => fmtTime(sec * 1000);
+  // inline-extending-leg-fork-in-table：剥掉标签括注，供表格内联后缀使用（"单锯齿（Zigzag 5-3-5）"→"单锯齿"）。
+  const shortLabel = (label) => (label || '').replace(/（.*?）/, '');
+  const altForkLines = (alt) => {
+    if (!alt) return [];
+    const seq = (alt.points || []).map((pt) => `${n(pt.price)}(${fmtTs(pt.timestamp).slice(0, 10)})`).join(' → ');
+    return [
+      `⏳ 末端腿 ${n(alt.legFrom.price)}→${n(alt.legTo.price)} 两可：现取 **${alt.shownLabel}**，也可读作 **${alt.label}**（同样零违规）；改此性格则该结构翻向对侧族。（更深子腿亦可能两可。）`,
+      `对侧读法点位：${seq}`,
+    ];
+  };
+  // inline-extending-leg-fork-in-table：只产出点位序列这一行，供"备选"表格下方的精简附注使用。
+  const altPointsLine = (alt) => {
+    if (!alt) return '';
+    return (alt.points || []).map((pt) => `${n(pt.price)}(${fmtTs(pt.timestamp).slice(0, 10)})`).join(' → ');
+  };
+  // inline-extending-leg-fork-in-table：备选表格"腿"列拼接——带 altCharacter 的候选，把两可后缀
+  // 内联到当前带 ⏳ 状态的那条腿上（altCharacter 的端点是末端成形链下探出来的子腿端点，跟宏观腿
+  // 自身端点不同，不能按端点匹配；⏳ 状态腿在 finalWaveInProgress 候选里有且只有一条，可直接复用）。
+  const legsStrWithFork = (c) => c.legs.map((l) => {
+    const inProgress = l.status === '⏳ 进行中' || l.status === '⏳ 延伸中';
+    const forkSuffix = (inProgress && c.altCharacter)
+      ? `两可:${shortLabel(c.altCharacter.shownLabel)}/${shortLabel(c.altCharacter.label)}` : '';
+    return `${l.name}:${n(l.from)}→${n(l.to)}${inProgress ? '⏳' : ''}${forkSuffix}`;
+  }).join(' ');
+
   const [primary, ...alts] = ranked;
   L.push(`## ${primary.framing === 'A' ? '✅' : '⏳'} 主选：${primary.label}（${dirCn(primary.direction)}）`);
   L.push('');
   L.push(framingLine(primary));
   L.push('');
+  if (primary.altCharacter) {
+    altForkLines(primary.altCharacter).forEach((l) => L.push(l));
+    L.push('');
+  }
   let tag = scoreTag(primary.score);
   if (primary.score.tier1) tag += `（越界 ${primary.score.tier2.toFixed(3)}）`;
   if (primary.score.incompleteness > 0) tag += `｜未完成度 ${(primary.score.incompleteness * 100).toFixed(0)}%`;
@@ -2721,7 +2934,17 @@ function renderRankedCounts(tree) {
   primary.legs.forEach((l) => L.push(`- ${l.name} 腿：${n(l.from)} → ${n(l.to)}（${l.status}）`));
   L.push('');
   if (primary.framing === 'A' && tree.inProgressStruct) {
-    L.push('**② 当前在哪：** 见下方「进行中结构」——当前在其后的在建腿，尚未确认。');
+    const ips = tree.inProgressStruct;
+    const charCn = ips.swingChar === 'driving' ? '内部五浪(偏推动)'
+      : ips.swingChar === 'corrective' ? '内部三波(偏调整)' : '内部结构待明';
+    L.push(`**② 当前在哪：** ${n(ips.invalidation)} → 摆动极值 **${n(ips.swingExtreme.price)}**（${charCn}）`);
+    if (ips.pullback) {
+      const pb = ips.pullback;
+      const tg = pb.fibTargets.map((t) => `${t.mult}×→${n(t.price)}`).join(', ');
+      L.push(`→ 现回撤中（未确认）：${n(pb.from.price)} → ${n(pb.to.price)}（末腿${pb.currentLegDir === 'up' ? '上' : '下'}）｜回撤位 ${tg}`);
+    } else {
+      L.push('→ 仍在创新高/新低，尚未回撤，末腿进行中（未确认）。');
+    }
     L.push('');
   }
 
@@ -2731,7 +2954,7 @@ function renderRankedCounts(tree) {
     L.push('| 排名 | 框架 | 浪型 | 方向 | 腿 | 评分 | 违规原因（最重一条） |');
     L.push('|---|---|---|---|---|---|---|');
     alts.forEach((c, i) => {
-      const legsStr = c.legs.map((l) => `${l.name}:${n(l.from)}→${n(l.to)}${(l.status === '⏳ 进行中' || l.status === '⏳ 延伸中') ? '⏳' : ''}`).join(' ');
+      const legsStr = legsStrWithFork(c);
       let sc = scoreTag(c.score);
       if (c.score.incompleteness > 0) sc += `(未完${(c.score.incompleteness * 100).toFixed(0)}%)`;
       const fr = c.framing === 'B' ? (c.finalWaveInProgress ? '⏳B末浪' : '⏳B') : 'A';
@@ -2746,9 +2969,16 @@ function renderRankedCounts(tree) {
     if (cb) {
       const proj = (cb.projection || []).map((t) => n(t.price)).join(' / ');
       L.push(`> ⏳B末浪：${cb.label} 的末浪可能未走完——**${n(cb.invalidation)}** 只是拐点，若${cb.direction === 'down' ? '跌破' : '升破'}则延伸新${cb.direction === 'down' ? '低' : '高'}，投影 **${proj}**（推断）。`);
-      L.push(`> （这是"顶层数法"这一轴的看跌可能；下方「结论」节的 XX/B 反弹身份是"反弹在更大结构里是什么"这一轴的同一看跌可能，两者互为印证、非重复。）`);
+      L.push(`> （这是"顶层数法"这一轴的看跌可能；轴③的 XX/B 反弹身份是"反弹在更大结构里是什么"这一轴的同一看跌可能，两者互为印证、非重复。）`);
       L.push('');
     }
+    // inline-extending-leg-fork-in-table：两可提示已内联进表格"腿"列，这里只补一行对侧读法的
+    // 完整点位序列（塞不进表格单元格），逐条列出带 altCharacter 的备选（可能不止一条）。
+    alts.forEach((c, i) => {
+      if (!c.altCharacter) return;
+      L.push(`> 备选${i + 1} 对侧点位：${altPointsLine(c.altCharacter)}`);
+    });
+    if (alts.some((c) => c.altCharacter)) L.push('');
   }
   return L.join('\n');
 }
@@ -2758,12 +2988,12 @@ function serializeRankedCounts(tree) {
 }
 
 // 当前进行浪竞争结构渲染（enumerate-current-wave-structures）。
-function renderCurrentWaveStructures(tree) {
+function renderCurrentWaveStructures(tree, pricePrecision) {
   const cws = tree && tree.currentWaveStructures;
   if (!cws || !Array.isArray(cws.structures) || !cws.structures.length) return '';
-  const n = (v) => Math.round(v);
+  const n = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
   const L = [];
-  L.push('# 当前进行浪：可能的具体结构（按吻合排序）');
+  L.push('# 轴② 当前反弹是什么结构（当前进行浪：可能的具体结构，按吻合排序）');
   L.push('');
   L.push(`> 当前进行浪段 **${n(cws.spanLast)} → ${n(cws.ext)}（摆动极值）→ ${n(cws.now)}（现在）**；上冲/回落段内部性格：**${cws.leg1Char === 'driving' ? '五浪(偏推动)' : cws.leg1Char === 'corrective' ? '三波(偏调整)' : '待明'}**。`);
   L.push('> 每条给出：具体子计数 + 当前浪位 + 下一浪投影 + 失效点。含"在建型"（你正处第 k 浪、其后投影）。投影/失效点均为推断，非确定，不构成买卖建议。');
@@ -2831,86 +3061,67 @@ function situationAssessment(tree, candles, finePivots) {
   };
 }
 
-// 当前浪位一句话（QC=单一最佳判断 + 失效点，后跟一行次选兜底）。
-// 两个锚点都说清（Q1）：上冲/下跌段的摆动极值 + 当前已回到的价。
-function renderCurrentWaveLine(a) {
-  const n = (v) => Math.round(v);
-  const ips = a.inProgressStruct;
-  const ext = a.swingExtreme.price;
-  const now = a.currentPrice ? a.currentPrice.price : ext;
-  const moveCn = ips.structUp ? '上冲' : '下跌';
-  const pbCn = ips.structUp ? '回撤' : '反抽'; // 逆着上冲/下跌的那一下
-  const pbLegCn = ips.structUp ? '回落腿' : '反抽腿';
-  const backCn = ips.structUp ? '已回到' : '已反抽到';
-  const newExtCn = ips.structUp ? '再创新高' : '再创新低';
-  const inval = n(ips.invalidation);
-  let main;
-  let alt;
-  if (ips.swingChar === 'driving') {
-    main = `**${moveCn}段（${inval}→${n(ext)}）内部走成了五浪**，疑似新趋势的推动 1 浪已走完；当前多半在其后的 **2 浪${pbCn}**（${backCn} **${n(now)}**）。`;
-    alt = `次选：这五浪只是更大级别反弹里的一条腿（XX/B），${pbCn}走完后仍回原方向。`;
-  } else if (ips.swingChar === 'corrective') {
-    main = `**${moveCn}段（${inval}→${n(ext)}）内部是三波**，属反弹/调整性质；当前在其后的 **${pbLegCn}**（${backCn} **${n(now)}**），倾向 XX 连接浪或 B 浪身份。`;
-    alt = `次选：若${pbCn}后${newExtCn}、且内部转成五浪，则升级为推动 3 浪（转势）。`;
-  } else {
-    main = `**${moveCn}段（${inval}→${n(ext)}）内部结构还看不清**；当前 ${backCn} **${n(now)}**。`;
-    alt = `次选：待内部走清是五浪还是三波，再定身份。`;
-  }
-  const invalLine = ips.structUp
-    ? `失效点 **${inval}**（跌破则此数法作废）；重回 **${n(ext)}** 之上则${moveCn}结构延续、回撤结束。`
-    : `失效点 **${inval}**（升破则此数法作废）；重回 **${n(ext)}** 之下则${moveCn}结构延续、反抽结束。`;
-  return `> 🎯 **当前浪位**：${main}${invalLine}\n>\n> ${alt}`;
-}
-
-function renderAssessment(a) {
-  if (!a) return '# 现状研判\n\n（数据不足，暂无法研判）';
-  const n = (v) => Math.round(v);
-  const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
-  const roleCn = a.roleChar === 'driving'
-    ? '内部像五浪，更像"新趋势的 1 浪"（偏进攻）'
-    : a.roleChar === 'corrective'
-      ? '内部像三波，更像"修正的 A 浪"（偏反弹）'
-      : '内部结构还看不清';
+// 现状研判：TL;DR 化（consolidate-report-by-theme §2.2）——只留一句结论 + 失效点 + 指路，
+// 具体浪型/反弹结构/目标价与时间窗的明细分别归轴①②③权威呈现，这里不重述。
+function renderAssessment(a, pricePrecision) {
+  if (!a) return '# 现状研判（先看这里，TL;DR）\n\n（数据不足，暂无法研判）';
+  const n = (v) => formatPrice(v, pricePrecision);
   const L = [];
-  L.push('# 现状研判（先看这里）');
-  L.push('');
-  L.push('> 结论在前、历史计数在后作支撑。以下均为概率性研判，仅辅助、非确定，不构成买卖建议。');
-  L.push('');
-
-  // ① —— 一段话说清"这段是什么、现在走到哪"
-  L.push('## ① 当前处于什么浪型');
-  L.push('');
-  let s1 = `从 **${n(a.topStart.price)}** 到 **${n(a.topEnd.price)}** 这一整段，最像一个已经走完的 **${a.topLabel}**（方向${dirCn(a.structDir)}）。`;
-  if (a.currentDir) s1 += `此后从 **${n(a.topEnd.price)}** 起，正在走一段**还没走完的${dirCn(a.currentDir)}**——${roleCn}。`;
-  L.push(s1);
-  if (a.inProgressStruct && a.swingExtreme) {
-    L.push('');
-    L.push(renderCurrentWaveLine(a));
-  }
-  L.push('');
-
-  // ② —— 趋势 + 失效点，讲清"为什么"
-  L.push('## ② 现在是什么趋势');
+  L.push('# 现状研判（先看这里，TL;DR）');
   L.push('');
   const trendWhy = a.isMotive
-    ? '上一段是**推动浪**，意味着新趋势已经确立'
-    : '上一段是**调整浪**，意味着这轮修正已经走完、原来的趋势正在恢复';
-  let s2 = `大级别看**偏${a.bigTrend === 'up' ? '多' : '空'}**——因为${trendWhy}；当前波段是${a.currentDir ? `**${dirCn(a.currentDir)}**` : '横向整理'}。`;
-  s2 += `这套判断有一条**失效点：${n(a.invalidation)}**——一旦${a.structDir === 'down' ? '跌破' : '升破'}它，上面的大局就作废、要翻到另一种情景去。`;
-  L.push(s2);
-  L.push('');
+    ? '上一段是**推动浪**，新趋势已经确立'
+    : '上一段是**调整浪**，这轮修正已经走完、原来的趋势正在恢复';
+  let s = `大级别看**偏${a.bigTrend === 'up' ? '多' : '空'}**（${trendWhy}），失效点 **${n(a.invalidation)}**——一旦${a.structDir === 'down' ? '跌破' : '升破'}它，大局就作废。`;
+  s += ' 具体形态见轴①，当前反弹结构见轴②，目标价与时间窗见轴③。';
+  L.push(s);
+  return L.join('\n');
+}
 
-  // 通道下边界作为参考支撑（原 ③「当前反弹三种身份 + 目标价」已并入顶部「结论」节）
-  if (a.channel && a.channel.baseAt != null) {
-    L.push(`另外，艾略特通道的下边界大约在 **${n(a.channel.baseAt)}**，可作一条参考支撑。`);
+/**
+ * 轴③「接下来往哪、何时」：目标价 / 失效点 / 斐波时间窗集中于此，全报告仅出现一次
+ * （consolidate-report-by-theme §5.1/§5.2）。反弹目标以身份（XX/B/推动3）为准绳，
+ * 复用 tree.assessment.bounceHyp——与父级候选表用的是同一份数据，不重复定义。
+ */
+function renderAxis3(tree, pricePrecision) {
+  const a = tree && tree.assessment;
+  if (!a) return '';
+  const n = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
+  const L = [];
+  L.push('# 轴③ 接下来往哪、何时');
+  L.push('');
+  L.push('> 目标价 / 失效点 / 时间窗集中于此；本报告其它节提到同一数字时，以本节为准，不重列梯度。');
+  L.push('');
+  L.push(`**失效点：${n(a.invalidation)}**——一旦${a.structDir === 'down' ? '跌破' : '升破'}，现状研判与父级候选整体作废。`);
+  L.push('');
+  if (a.bounceHyp) {
+    L.push('## 反弹目标（按身份，三选一，主选就近标注）');
+    L.push('');
+    L.push(renderBounceHypotheses(a.bounceHyp, a.nearTerm, pricePrecision == null ? tree.pricePrecision : pricePrecision));
     L.push('');
   }
-
-  // ③ —— 时间窗
+  if (a.channel && (a.channel.baseAt != null || a.channel.targetSane)) {
+    L.push('## 通道参考');
+    L.push('');
+    if (a.channel.targetSane) {
+      const edges = [a.channel.baseAt, a.channel.railAt].filter((v) => v != null).map((v) => n(v));
+      L.push(`艾略特通道（${a.channel.channelTypeCn || ''}通道）边界投影：约 **${edges.join(' / ')}**（书2.5作用二，仅辅助）。`);
+    } else if (a.channel.baseAt != null) {
+      L.push(`艾略特通道下边界大约在 **${n(a.channel.baseAt)}**，可作一条参考支撑。`);
+    }
+    if (a.channel.exitHint) L.push(`通道完成提示：${a.channel.exitHint}`);
+    L.push('');
+  }
+  const pbNarr = tree.inProgressStruct && tree.inProgressStruct.pullback && tree.inProgressStruct.pullback.narrative;
+  if (pbNarr) {
+    L.push(renderPullbackNarrative(pbNarr, pricePrecision == null ? tree.pricePrecision : pricePrecision));
+    L.push('');
+  }
   if (a.fibTimeWindows && a.fibTimeWindows.length) {
-    L.push('## ③ 什么时候可能转（斐波时间窗，仅辅助）');
+    L.push('## 什么时候可能转（斐波时间窗，仅辅助）');
     L.push('');
     L.push(`多个枢轴的斐波时间在这几天重合，是潜在的转折时间窗：${a.fibTimeWindows.map((w) => `**${fmtTime(w.ts * 1000)}**（${w.count}源）`).join('、')}。`);
+    L.push('');
   }
   return L.join('\n');
 }
@@ -3015,7 +3226,7 @@ function pointsFromPrices(prices, candles) {
 /**
  * 「给我的数法打分」的大白话渲染。
  */
-function renderExplicitVerdict(evalResult) {
+function renderExplicitVerdict(evalResult, pricePrecision) {
   const L = [];
   if (evalResult.results.length === 0) {
     return '这组点数不匹配任何已知形态（点数或高低点类型对不上）。';
@@ -3034,7 +3245,7 @@ function renderExplicitVerdict(evalResult) {
     L.push('');
     L.push('#### 按这个数法，当前反弹的三种身份');
     L.push('');
-    L.push(renderBounceHypotheses(evalResult.bounceHyp, evalResult.nearTerm));
+    L.push(renderBounceHypotheses(evalResult.bounceHyp, evalResult.nearTerm, pricePrecision));
   }
   return L.join('\n');
 }
@@ -3042,17 +3253,17 @@ function renderExplicitVerdict(evalResult) {
 /**
  * 调试用：把计数树主链渲染成缩进文本（M4 的正式报告在后续里程碑）。
  */
-function renderTreeText(node, depth = 0) {
+function renderTreeText(node, depth = 0, pricePrecision) {
   const pad = '  '.repeat(depth);
   if (depth === 0 && node && node.inProgress) {
     const ip = node.inProgress;
-    const tg = ip.fibTargets.map((t) => `${t.mult}×→${t.price.toFixed(0)}`).join(', ');
-    const head = `⏳ 当前进行中浪（未确认）：${ip.from.price}→${ip.to.price}（末腿${ip.currentLegDir}）｜预期(${ip.note}) ${tg}`;
-    return `${head}\n${renderTreeText({ ...node, inProgress: undefined }, depth)}`;
+    const tg = ip.fibTargets.map((t) => `${t.mult}×→${formatPrice(t.price, pricePrecision)}`).join(', ');
+    const head = `⏳ 当前进行中浪（未确认）：${formatPrice(ip.from.price, pricePrecision)}→${formatPrice(ip.to.price, pricePrecision)}（末腿${ip.currentLegDir}）｜预期(${ip.note}) ${tg}`;
+    return `${head}\n${renderTreeText({ ...node, inProgress: undefined }, depth, pricePrecision)}`;
   }
   if (!node || node.isLeaf) {
     const seg = node && node.segFine;
-    const rng = seg && seg.length ? `${seg[0].price}→${seg[seg.length - 1].price}` : '';
+    const rng = seg && seg.length ? `${formatPrice(seg[0].price, pricePrecision)}→${formatPrice(seg[seg.length - 1].price, pricePrecision)}` : '';
     return `${pad}· 末级/不可再分 ${rng}`;
   }
   const p = node.primary;
@@ -3064,12 +3275,12 @@ function renderTreeText(node, depth = 0) {
   if (p.truncated) marks.push('衰竭');
   if (p.volumeNote) marks.push(p.volumeNote);
   const suffix = marks.length ? ` 《${marks.join('；')}》` : '';
-  const lines = [`${pad}${p.manual.label} · ${p.direction} [${tag}, 越界${s.tier2.toFixed(3)}, 指引${p.score.hits.length}/${p.score.guidelineTotal}] ${p.points[0].price}→${p.points[p.points.length - 1].price}${suffix}`];
+  const lines = [`${pad}${p.manual.label} · ${p.direction} [${tag}, 越界${s.tier2.toFixed(3)}, 指引${p.score.hits.length}/${p.score.guidelineTotal}] ${formatPrice(p.points[0].price, pricePrecision)}→${formatPrice(p.points[p.points.length - 1].price, pricePrecision)}${suffix}`];
   if (p.expectation) {
-    const tg = p.expectation.fibTargets.map((t) => `${t.mult}×→${t.price.toFixed(0)}`).join(', ');
+    const tg = p.expectation.fibTargets.map((t) => `${t.mult}×→${formatPrice(t.price, pricePrecision)}`).join(', ');
     lines.push(`${'  '.repeat(depth + 1)}↳ 预期(${p.expectation.note})：末腿${p.expectation.currentLegDir}，完成区间 ${tg}`);
   }
-  for (const child of p.children) lines.push(renderTreeText(child, depth + 1));
+  for (const child of p.children) lines.push(renderTreeText(child, depth + 1, pricePrecision));
   return lines.join('\n');
 }
 
@@ -3098,17 +3309,25 @@ function fmtTimeSec(input, offsetHours = 8) {
 
 // 报告头（分析报告元信息块）
 function renderReportMeta(meta) {
-  const n2 = (v) => (v == null ? '—' : Number(v).toFixed(2));
+  const px = (v) => formatPrice(v, meta && meta.pricePrecision);
   const L = [];
-  L.push('# 分析报告');
-  L.push('');
-  L.push(`- 品种：${meta.product}`);
+  // add-stock-data-sources D6：股票按交易所时区显示区间；日线时间戳即交易日（UTC 零点），只显示日期
+  const mk = meta.market && marketData.MARKETS[meta.market];
+  const stockTz = mk && mk.tz;
+  L.push(`- 品种：${meta.product}${meta.name ? ` ${meta.name}` : ''}`);
   L.push(`- 周期：${meta.timeframe}`);
-  L.push(`- 时间范围（UTC+8）：${fmtTimeSec(meta.startUtc)} ~ ${fmtTimeSec(meta.endUtc)}`);
+  if (stockTz) {
+    L.push(`- 时间范围（${mk.tzLabel}）：${marketData.fmtTimeInTz(meta.startUtc, stockTz)} ~ ${marketData.fmtTimeInTz(meta.endUtc, stockTz)}`);
+  } else {
+    L.push(`- 时间范围（UTC+8）：${fmtTimeSec(meta.startUtc)} ~ ${fmtTimeSec(meta.endUtc)}`);
+  }
   L.push(`- 样本数量：${meta.sampleCount} 根K线`);
-  L.push(`- 区间最高/最低：${n2(meta.rangeHigh)} / ${n2(meta.rangeLow)}`);
+  L.push(`- 区间最高/最低：${px(meta.rangeHigh)} / ${px(meta.rangeLow)}`);
   if (meta.lastClose != null) {
-    L.push(`- 最新收盘：${n2(meta.lastClose)}（${fmtTimeSec(meta.lastCloseTs * 1000)} UTC+8）`);
+    const when = stockTz
+      ? `${new Date(meta.lastCloseTs * 1000).toISOString().slice(0, 10)} 交易日`
+      : `${fmtTimeSec(meta.lastCloseTs * 1000)} UTC+8`;
+    L.push(`- 最新收盘：${px(meta.lastClose)}（${when}）`);
   }
   L.push(`- 生成时间：${fmtTimeSec(meta.generatedAtUtc)}（UTC+8）`);
   L.push(`- 数据来源：${meta.source}`);
@@ -3224,13 +3443,15 @@ function plainLabel(patternId) {
 }
 
 /**
- * 大白话报告：不含任何打分术语，只讲「大局 / 分几段 / 现在在哪 / 可能到哪」。
+ * 大白话版：降级为 TL;DR（consolidate-report-by-theme §6.1/D3）——只留一句大局、一句
+ * 当前处境、指向轴②/轴③，不再整体复述三轴明细（拆成几大段/现在走到哪了/接下来可能到哪/
+ * 转折时间窗均已删除，内容分别归轴①②③权威呈现）。
  */
-function renderNarrative(meta, tree) {
+function renderNarrative(meta, tree, pricePrecision) {
   const L = [];
   const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
-  const fmtTs = (sec) => fmtTime(sec * 1000); // 枢轴 timestamp 是秒，需 ×1000
-  L.push('# BTC 数浪（大白话版）');
+  const px = (v) => formatPrice(v, pricePrecision == null ? (meta && meta.pricePrecision) : pricePrecision);
+  L.push('# BTC 数浪（大白话版，TL;DR）');
   L.push('');
 
   if (!tree || tree.isLeaf || !tree.primary) {
@@ -3241,196 +3462,187 @@ function renderNarrative(meta, tree) {
   const p = tree.primary;
   const a = p.points[0];
   const b = p.points[p.points.length - 1];
-  L.push('## 一句话大局');
-  L.push('');
-  L.push(`从 **${a.price}**（${fmtTs(a.timestamp)}）到 **${b.price}**（${fmtTs(b.timestamp)}），`);
-  L.push(`整段走势最像一个 **${plainLabel(p.patternId)}**，方向 **${dirCn(p.direction)}**。`);
-  if (p.score.tier1 > 0) {
-    L.push('');
-    L.push(`> ⚠️ 这段真实走势并不完全规整——上面是几种数法里**最接近**的一种（有 ${p.score.tier1} 处不满足书里的硬性规则）。当作参考，别当定论。`);
-  }
+  L.push(`大局：从 **${px(a.price)}** 到 **${px(b.price)}**，整段走势最像一个 **${plainLabel(p.patternId)}**，方向 **${dirCn(p.direction)}**（细节与备选见轴①）。`);
   L.push('');
 
-  L.push('## 拆成几大段（从大到小）');
-  L.push('');
-  const labels = waveLabelsFor(p.patternId);
-  p.children.forEach((c, i) => {
-    const lab = labels[i] || String(i + 1);
-    if (c.isLeaf || !c.primary) {
-      const sf = c.segFine || [];
-      const f = sf.length ? sf[0].price : '?';
-      const t = sf.length ? sf[sf.length - 1].price : '?';
-      L.push(`- **${lab} 段**：${f} → ${t}（较小，不再细分）`);
-    } else {
-      const cp = c.primary;
-      const s = cp.points[0];
-      const e = cp.points[cp.points.length - 1];
-      L.push(`- **${lab} 段** · ${dirCn(cp.direction)}：${s.price} → ${e.price}（${fmtTs(s.timestamp)} ~ ${fmtTs(e.timestamp)}），内部像一个 ${plainLabel(cp.patternId)}`);
-    }
-  });
-  L.push('');
-
-  L.push('## 现在走到哪了（在建结构，未确认）');
-  L.push('');
   const ips = tree.inProgressStruct;
   if (ips) {
     const ext = ips.swingExtreme;
     const hasPb = !!(ips.pullback && ips.pullback.to.index !== ext.index);
     const nowPt = hasPb ? ips.pullback.to : ext;
     const moveCn = ips.structUp ? '上冲' : '下跌';
-    // 两个锚点都说清（Q1）：先到摆动极值，之后回落到今天
     const pbVerb = ips.structUp ? '回落' : '反抽';
-    let line = `已确认结构收在 **${b.price}**（${fmtTs(b.timestamp)}）；此后先${moveCn}到摆动极值 **${ext.price}**（${fmtTs(ext.timestamp)}）`;
-    line += hasPb
-      ? `，之后${pbVerb}、截至最新一根K线在 **${nowPt.price}**（${fmtTs(nowPt.timestamp)}）。`
-      : `（仍在创新${ips.structUp ? '高' : '低'}，暂无明显${pbVerb}）。`;
+    let line = `当前处境：**${px(b.price)}** 之后先${moveCn}到 **${px(ext.price)}**`;
+    line += hasPb ? `，之后${pbVerb}到 **${px(nowPt.price)}**（今天）` : `（仍在创新${ips.structUp ? '高' : '低'}）`;
+    line += '，具体结构见轴②，目标价与时间窗见轴③。';
     L.push(line);
-    L.push('');
-    // 上冲/下跌段的内部拆解
-    if (ips.upTree && ips.upTree.primary) {
-      const up = ips.upTree.primary;
-      const charCn = ips.swingChar === 'driving' ? '（内部像**五浪**→偏推动/转势）'
-        : ips.swingChar === 'corrective' ? '（内部像**三波**→偏反弹/调整）' : '';
-      L.push(`**这条${moveCn}段（${b.price}→${ext.price}）内部最像：${plainLabel(up.patternId)}**${charCn}`);
-      const upLabels = waveLabelsFor(up.patternId);
-      up.children.forEach((c, i) => {
-        const lab = upLabels[i] || String(i + 1);
-        if (c.isLeaf || !c.primary) {
-          const sf = c.segFine || [];
-          const f = sf.length ? sf[0].price : '?';
-          const t = sf.length ? sf[sf.length - 1].price : '?';
-          L.push(`- ${lab} 段：${f} → ${t}（较小，不再细分）`);
-        } else {
-          const cp = c.primary;
-          L.push(`- ${lab} 段 · ${dirCn(cp.direction)}：${cp.points[0].price} → ${cp.points[cp.points.length - 1].price}，内部像 ${plainLabel(cp.patternId)}`);
-        }
-      });
-      L.push('');
-    }
-    // 当前回撤子腿（⏳未走完）
-    if (hasPb) {
-      const pb = ips.pullback;
-      L.push(`**⏳ 当前子腿（还没走完）**：从 **${ext.price}** ${dirCn(pb.currentLegDir)}到 **${nowPt.price}**（今天）。`);
-      L.push('');
-      L.push('## 接下来可能到哪（仅供参考，不是保证）');
-      L.push('');
-      L.push(`当前回撤的常见斐波那契支撑/目标位：**${pb.fibTargets.map((t) => t.price.toFixed(0)).join(' / ')}**`);
-    } else {
-      L.push('## 接下来可能到哪（仅供参考，不是保证）');
-      L.push('');
-      // 无回撤（价格正创新高/低、这段还没回头）：给「若这段继续」的延伸目标——从当前摆动
-      // 极值按本段自身幅度的 0.382/0.618/1.0 倍继续投影。不能再用旧的 tree.inProgress.fibTargets
-      // （那是"刚在极值处、投影第一条反向小腿"的口径，价格已顺势跑远后会给出早被走穿的错误目标，
-      // 如 57718 起已涨到 72427，却仍报 59647/60839/62768 这类低于现价的"目标"）。
-      const contAmp = Math.abs(ext.price - ips.invalidation);
-      const contSgn = ips.structUp ? 1 : -1;
-      const cont = [0.382, 0.618, 1.0].map((r) => Math.round(ext.price + contSgn * contAmp * r));
-      L.push(`如果这段${moveCn}继续，从 **${Math.round(ext.price)}** ${ips.structUp ? '之上' : '之下'}的常见延伸目标：**${cont.join(' / ')}**（推断）`);
-    }
-    if (tree.channel) {
-      L.push('');
-      if (tree.channel.targetSane) {
-        const edges = [tree.channel.baseAt, tree.channel.railAt].filter((v) => v != null).map((v) => v.toFixed(0));
-        L.push(`艾略特通道（${tree.channel.channelTypeCn}通道）边界投影：约 **${edges.join(' / ')}**（书2.5作用二，仅辅助）`);
-      }
-      if (tree.channel.exitHint) L.push(`通道完成提示：${tree.channel.exitHint}`);
-    }
   } else if (tree.inProgress) {
-    const ip = tree.inProgress;
-    const d = dirCn(ip.currentLegDir);
-    L.push(`当前正在走一段**还没走完**的${d}：从 **${ip.from.price}** 反向到 **${ip.to.price}**（截至最新一根K线）。`);
-    L.push('');
-    L.push('## 接下来可能到哪（仅供参考，不是保证）');
-    L.push('');
-    L.push(`如果这段${d}继续，几个常见的斐波那契目标价：**${ip.fibTargets.map((t) => t.price.toFixed(0)).join(' / ')}**`);
+    L.push('当前处境：仍有一段还没走完的行情，具体结构见轴②，目标价见轴③。');
   } else {
-    L.push('当前这套结构大致已走完最后一浪，暂无明显在建的新腿。');
-  }
-  if (Array.isArray(tree.fibTimeWindows) && tree.fibTimeWindows.length) {
-    L.push('');
-    L.push('## 可能的转折时间窗（斐波时间共振，仅辅助）');
-    L.push('');
-    L.push(`未来多枢轴斐波时间重合日：${tree.fibTimeWindows.map((w) => `${fmtTs(w.ts)}（${w.count}源）`).join('，')}`);
+    L.push('当前处境：这套结构大致已走完最后一浪，暂无明显在建的新腿。');
   }
   L.push('');
   return L.join('\n');
 }
 
+// brief-report-summary：报告开头的 4 条波浪分析简报（D2 数据来源 / D3 措辞随主选身份 / D4 周期名）。
+// 每个数字都取自既有派生（ranked / inProgressStruct / assessment.bounceHyp），不新增引擎计算。
+const TF_CN = { '1h': '1小时线', '4h': '4小时线', '1d': '日线', '1w': '周线' };
+
+function renderBrief(meta, tree) {
+  const px = (v) => formatPrice(v, meta && meta.pricePrecision != null ? meta.pricePrecision : (tree && tree.pricePrecision));
+  const product = String((meta && meta.product) || '').replace(/-/g, '/');
+  const tf = (meta && meta.timeframe) || '';
+  const L = [];
+  L.push(`# ${product}${meta && meta.name ? ` ${meta.name}` : ''} ${TF_CN[tf] || tf}波浪分析简报`);
+  L.push('');
+  const ranked = tree ? buildRankedCounts(tree) : null;
+  const a = tree && tree.assessment;
+  if (!ranked || !ranked.length || !a) {
+    // 顶层区间=两极值之间；若它太短（如一波急涨急跌），引擎不再细拆，此时点明原因与对策
+    const seg = tree && tree.isLeaf ? tree.segFine : null;
+    if (seg && seg.length >= 2) {
+      L.push(`区间最高/最低之间这一段（${px(seg[0].price)} → ${px(seg[seg.length - 1].price)}）太短，拆不出浪型。可把 --start 提前到更早的大级别高/低点再试；当前进行浪结构见下方技术细节（轴②）。`);
+      return L.join('\n');
+    }
+    L.push('数据不足，暂时数不出浪型，详见下方技术细节。');
+    return L.join('\n');
+  }
+  const down = a.structDir === 'down';
+  const breakCn = down ? '跌破' : '升破';
+  const bounceCn = down ? '反弹' : '回调';
+  const pbCn = down ? '回调' : '反抽';
+
+  // 1. 大局研判：主选形态 + 至多一行备选/框架B末浪延伸
+  const [primary, ...alts] = ranked;
+  const first = primary.legs[0];
+  const last = primary.legs[primary.legs.length - 1];
+  const moveCn = primary.direction === 'down' ? '下跌' : '上涨';
+  // 简报只留中文名 + 记法："双锯齿（Double Zigzag w-x-y）"→"双锯齿（w-x-y）"
+  const briefLabel = primary.label.replace(/（[A-Za-z ]+ ([a-z0-9-]+)）/, '（$1）');
+  let state;
+  if (primary.framing === 'A') state = `已完成${briefLabel}结构，大级别${down ? '触底看反弹/转势' : '见顶看回调/转势'}`;
+  else if (primary.finalWaveInProgress) state = `走的是${briefLabel}，但末浪可能仍在进行`;
+  else state = `走的是${briefLabel}，仍在建`;
+  L.push(`1. 大局研判：${px(first.from)} → ${px(last.to)} 的整体${moveCn}${state}。`);
+  const altParts = [];
+  if (alts[0]) altParts.push(`备选：${alts[0].label.replace(/（.*?）/, '')}`);
+  const cb = alts.find((c) => c.finalWaveInProgress && c.projection && c.projection.length);
+  const ext = cb ? cb.projection.filter((t) => t.price > 0) : [];
+  if (ext.length && primary.framing === 'A') {
+    altParts.push(`若${breakCn} ${px(a.invalidation)}，则按末浪未完看延伸（${ext.map((t) => px(t.price)).join(' / ')}）`);
+  }
+  if (altParts.length) L.push(`   ${altParts.join('；')}。`);
+
+  // 2. 当前浪型：起点 → 摆动极值 + 内部性格 + 主选身份 + 现处回调/延伸
+  const ips = tree.inProgressStruct;
+  const h = a.bounceHyp;
+  const lean = h ? h.lean : null;
+  const leanCn = lean === 'three' ? '推动 3 浪（转势）' : lean === 'xx' ? 'X 连接浪（中继）' : null;
+  if (ips && ips.swingExtreme) {
+    const charCn = ips.swingChar === 'driving' ? '偏推动的 5 浪形态'
+      : ips.swingChar === 'corrective' ? '偏调整的 3 波形态' : '结构待明的形态';
+    const hasPb = !!(ips.pullback && ips.pullback.to.index !== ips.swingExtreme.index);
+    let line = `2. 当前浪型：${px(ips.invalidation)} 启动的${bounceCn}（已至 ${px(ips.swingExtreme.price)}）内部走出${charCn}`;
+    if (leanCn) line += `，主选为 ${leanCn}`;
+    line += hasPb ? `，目前处于${pbCn}/震荡中（现 ${px(ips.pullback.to.price)}）。` : '，仍在延伸中。';
+    L.push(line);
+  } else {
+    L.push(`2. 当前浪型：${px(a.invalidation)} 之后暂无明显在建的新腿。`);
+  }
+
+  // 3. 核心生死线
+  L.push(`3. 核心生死线（失效点）：${px(a.invalidation)}（${breakCn}则大结构作废，继续${down ? '向下破位' : '向上突破'}）。`);
+
+  // 4. 关键目标与交易位置
+  L.push('4. 关键目标与交易位置：');
+  if (ips && ips.swingExtreme) {
+    const ext = ips.swingExtreme.price;
+    const amp = ext - ips.invalidation;
+    const fib = ips.pullback && ips.pullback.fibTargets
+      ? ips.pullback.fibTargets.filter((t) => t.mult === 0.5 || t.mult === 0.618).map((t) => t.price)
+      : [0.5, 0.618].map((m) => ext - amp * m);
+    const zone = fib.sort((x, y) => x - y).map(px).join(' ~ ');
+    const turnCn = lean === 'three' ? '站稳开启 3 浪主升' : '站稳则转为推动 3 浪、趋势翻多';
+    const turnCnDn = lean === 'three' ? '跌破开启 3 浪主跌' : '跌破则转为推动 3 浪、趋势翻空';
+    if (down) {
+      L.push(`   * 下预警/支撑：${zone}（回踩低吸区）`);
+      L.push(`   * 上阻力/突破：${px(ext)}（${turnCn}）`);
+    } else {
+      L.push(`   * 上预警/阻力：${zone}（反抽高抛区）`);
+      L.push(`   * 下支撑/破位：${px(ext)}（${turnCnDn}）`);
+    }
+  }
+  if (h) {
+    const tg = (lean === 'three' ? h.three.targets : h.xx.targets).filter((t) => t.price > 0).slice(0, 3);
+    const note = lean === 'three' ? '主选推动 3 浪，仅作参考阻力'
+      : `主选 X；到位后警惕 ${h.xx.aftermath}`;
+    L.push(`   * ${bounceCn}目标位：${tg.map((t) => px(t.price)).join(' / ')}（${note}）`);
+  }
+  L.push('');
+  L.push('> 以上为概率性推断，非投资建议；明细见下方技术细节。');
+  return L.join('\n');
+}
+
+// brief-report-summary D1：简报 → 免责声明 → 元信息 → <details>（轴①②③ + 用户数法评分 + 规则树）。
+// 现状研判 TL;DR 与大白话版由简报取代，不再输出；三轴仍按 consolidate-report-by-theme 单一权威呈现。
 function renderMarkdownReport(meta, tree, userEval) {
   const lines = [];
-  // 分析报告头（元信息）
+  const pricePrecision = meta && meta.pricePrecision;
+  lines.push(renderBrief(meta, tree));
+  lines.push('');
   lines.push(renderReportMeta(meta));
   lines.push('');
-  lines.push('---');
+  lines.push('<details><summary>技术细节（轴①②③ 全文、数法打分）</summary>');
   lines.push('');
-  // 排名数法（rank-competing-wave-counts）：大跌本身最像哪种数法，主选1+备选3，放最顶
-  const ranked = tree ? renderRankedCounts(tree) : '';
+  const ranked = tree ? renderRankedCounts(tree, pricePrecision) : '';
   if (ranked) {
     lines.push(ranked);
+    const parentRole = tree ? renderParentRole(tree, pricePrecision) : '';
+    if (parentRole) lines.push(parentRole);
     lines.push('---');
     lines.push('');
   }
-  // 当前进行浪竞争结构（enumerate-current-wave-structures）：历史段那张表的"当前轴"对偶
-  const curWave = tree ? renderCurrentWaveStructures(tree) : '';
+  const curWave = tree ? renderCurrentWaveStructures(tree, pricePrecision) : '';
   if (curWave) {
     lines.push(curWave);
+    const internalNote = tree ? renderCurrentInternalNote(tree, meta && meta.timeframe, pricePrecision) : '';
+    if (internalNote) lines.push(internalNote);
     lines.push('---');
     lines.push('');
   }
-  // 多级别结论（父级大结构 + 当前段内部细化）：大跌+反弹在组成什么更大结构，是另一条轴
-  const multi = tree ? renderMultiDegree(tree, meta && meta.timeframe) : '';
-  if (multi) {
-    lines.push(multi);
+  const axis3 = tree ? renderAxis3(tree, pricePrecision) : '';
+  if (axis3) {
+    lines.push(axis3);
     lines.push('---');
     lines.push('');
   }
-  // 现状研判放最前（结论先行，Q9=a）
-  if (tree && tree.assessment) {
-    lines.push(renderAssessment(tree.assessment));
-    lines.push('');
-    lines.push('---');
-    lines.push('');
-  }
-  // 当前高点回撤叙述（narrate-current-pullback）——进现状研判块，与主树隔离
-  const pbNarr = tree && tree.inProgressStruct && tree.inProgressStruct.pullback
-    && tree.inProgressStruct.pullback.narrative;
-  if (pbNarr && pbNarr.text) {
-    lines.push(pbNarr.text);
-    lines.push('');
-    lines.push('---');
-    lines.push('');
-  }
-  // 历史计数（支撑）
-  lines.push(renderNarrative(meta, tree));
-  lines.push('');
   // 用户指定的数法评分（--count）
   if (userEval && Array.isArray(userEval.results) && userEval.results.length) {
     lines.push('## 你指定的数法评分');
     lines.push('');
-    lines.push(renderExplicitVerdict(userEval));
+    lines.push(renderExplicitVerdict(userEval, pricePrecision));
     lines.push('');
   }
-  lines.push('---');
+  // 规则树（含打分）
+  lines.push('## 规则树与打分');
   lines.push('');
-  // 再附技术细节（含打分，可略过）
-  lines.push('<details><summary>技术细节（含规则打分，可略过）</summary>');
-  lines.push('');
-  lines.push(`- 生成时间：${fmtTime(meta.generatedAtUtc)}（UTC+8）｜数据来源：${meta.source}`);
   lines.push('> 评分方法：否定法（Negation Method）。规则（Rules）是硬性闸门：全过规则的候选永远优先于有违规的候选；');
   lines.push('> 指引（Guidelines）只用于给同档候选排名，不能抵消规则的失败。RSI 等书外技术指标不参与判定。');
   lines.push('> 优雅降级：当某段没有任何一种数法能全过规则时（真实行情常见），引擎不返回空，而是退取「违规最少、越界最小」的一种，标注为存疑（penalized），仅供参考。');
   lines.push('>');
   lines.push('> 术语：`违规×N`=不满足 N 条硬规则；`越界`=违反程度；`指引x/y`=命中软性指引数；');
   lines.push('> `衰竭`=末端未达极值；`跨级别+N`=交替/浪个性等加分；`末级/不可再分`=该段太小不再拆。');
+  lines.push('> `两可:A/B`=该腿现取A读法，也可读作B读法（同样零违规）；改此性格则上层结构翻向对侧族，详见表格下方的对侧点位附注。');
   lines.push('');
   lines.push('```');
-  lines.push(renderTreeText(tree));
+  lines.push(renderTreeText(tree, 0, pricePrecision));
   lines.push('```');
   lines.push('');
   lines.push('**进行中结构（未确认）**');
   lines.push('');
   lines.push('```');
-  lines.push(renderInProgressText(tree && tree.inProgressStruct));
+  lines.push(renderInProgressText(tree && tree.inProgressStruct, pricePrecision));
   lines.push('```');
   lines.push('');
   lines.push('</details>');
@@ -3458,7 +3670,7 @@ function legBars(a, b) { return Math.abs((b.index || 0) - (a.index || 0)); }
 
 // wave-3 结构验证清单（探索 C：只做书内结构验证，不引入动量）：判"新推动3浪"前逐条查。
 // 面向"低点之后的上涨"（structUp）；数据不足则标"无法验证"。
-function wave3Checklist(tree) {
+function wave3Checklist(tree, pricePrecision) {
   const ips = tree && tree.inProgressStruct;
   if (!ips || !ips.upTree || !ips.upTree.primary || !ips.structUp) return null;
   const up = ips.upTree.primary;
@@ -3469,7 +3681,7 @@ function wave3Checklist(tree) {
   // 前一轮下跌的关键结构高点：主结构里最后一个高点（如 W-X-Y 的 x 顶）
   const priorHighs = (tree.primary ? tree.primary.points : []).filter((p) => p.type === 'H');
   const priorKeyHigh = priorHighs.length ? priorHighs[priorHighs.length - 1].price : null;
-  const R = Math.round;
+  const R = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
   const chk = (item, pass, note) => ({ item, pass, note });
   return [
     chk('存在可识别的第1浪', w1High != null, w1High != null ? `首上冲腿 ${R(start)}→${R(w1High)}` : '上涨内部拆不出第1子腿'),
@@ -3486,8 +3698,7 @@ function wave3Checklist(tree) {
  * inProgressStruct/数法排名），只做组织与叙述，不臆造数字。
  */
 function renderStructuredReport(meta, tree, candles, fine) {
-  const R = (v) => (v == null ? '—' : Math.round(v));
-  const n2 = (v) => (v == null ? '—' : Number(v).toFixed(2));
+  const R = (v) => formatPrice(v, meta && meta.pricePrecision);
   const fmtTs = (sec) => fmtTime(sec * 1000);
   const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
   const L = [];
@@ -3501,8 +3712,8 @@ function renderStructuredReport(meta, tree, candles, fine) {
   L.push(`- 周期：${meta.timeframe}`);
   L.push(`- 时间范围（UTC+8）：${fmtTimeSec(meta.startUtc)} ~ ${fmtTimeSec(meta.endUtc)}`);
   L.push(`- 样本数量：${meta.sampleCount} 根K线`);
-  L.push(`- 区间最高/最低：${n2(meta.rangeHigh)} / ${n2(meta.rangeLow)}`);
-  if (meta.lastClose != null) L.push(`- 最新收盘：${n2(meta.lastClose)}（${fmtTimeSec(meta.lastCloseTs * 1000)} UTC+8）`);
+  L.push(`- 区间最高/最低：${R(meta.rangeHigh)} / ${R(meta.rangeLow)}`);
+  if (meta.lastClose != null) L.push(`- 最新收盘：${R(meta.lastClose)}（${fmtTimeSec(meta.lastCloseTs * 1000)} UTC+8）`);
   L.push(`- 生成时间：${fmtTimeSec(meta.generatedAtUtc)}（UTC+8）`);
   L.push(`- 数据来源：${meta.source}`);
   L.push('');
@@ -3534,7 +3745,7 @@ function renderStructuredReport(meta, tree, candles, fine) {
     } else {
       pos = `${p.direction === 'down' ? '低点后' : '高点后'}在建段极值`;
     }
-    L.push(`| ${i + 1} | ${fmtTs(pt.timestamp)} | ${n2(pt.price)} | ${pt.type} | ${pos} |`);
+    L.push(`| ${i + 1} | ${fmtTs(pt.timestamp)} | ${R(pt.price)} | ${pt.type} | ${pos} |`);
   });
   L.push('');
 
@@ -3621,7 +3832,7 @@ function renderStructuredReport(meta, tree, candles, fine) {
     alts.slice(0, 3).forEach((c) => {
       const isB = c.key === 'flat' || c.key === 'zigzag';
       const isImp = c.key === 'impulse';
-      const corr = isImp ? '（转势：57718 结束整个调整、之后为新推动）'
+      const corr = isImp ? `（转势：${R(pd.dropEnd)} 结束整个调整、之后为新推动）`
         : (isB ? `针对整段完整结构（${R(bh.startPrice)}→${R(bh.term)}）` : `针对上一子浪（${R(bh.prevPrice)}→${R(bh.term)}）`);
       const tgt = isImp ? bh.three.targets : (isB ? bh.b.targets : bh.xx.targets);
       const tgtStr = (tgt || []).filter((t) => t.price > 0).map((t) => R(t.price)).join(' / ');
@@ -3642,7 +3853,7 @@ function renderStructuredReport(meta, tree, candles, fine) {
       const support = c.basis || '—';
       const against = c.rank === 'eliminated' ? c.elimReason : '尚未确认、需继续验证';
       let confirm = '—';
-      if (c.key === 'combination') confirm = '回撤到位后转跌、跌破 57718 走 Z';
+      if (c.key === 'combination') confirm = `回撤到位后转跌、跌破 ${R(pd.dropEnd)} 走 Z`;
       else if (c.key === 'flat') confirm = '涨到整段 0.5–0.7 回撤带后转 C';
       else if (c.key === 'impulse') confirm = '内部走出完整五浪并突破关键前高（见 wave-3 验证）';
       else if (c.key === 'zigzag') confirm = '（需 A 浪为五浪推动，当前不满足）';
@@ -3651,7 +3862,7 @@ function renderStructuredReport(meta, tree, candles, fine) {
   }
   L.push('');
   // wave-3 验证清单（判"新推动3浪"前的书内结构验证，去动能）
-  const w3 = wave3Checklist(tree);
+  const w3 = wave3Checklist(tree, meta && meta.pricePrecision);
   if (w3) {
     L.push('**"新推动 3 浪"方案的结构验证（书内、不含动量；不得因涨幅大直接判 3 浪）：**');
     w3.forEach((c) => L.push(`- ${c.pass ? '✅' : '❌'} ${c.item}（${c.note}）`));
@@ -3695,38 +3906,65 @@ function renderStructuredReport(meta, tree, candles, fine) {
 
 async function main() {
   const args = manual.parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const argOf = (flag) => { const i = argv.indexOf(flag); return i >= 0 && argv[i + 1] ? argv[i + 1] : null; };
   if (args.help) {
-    console.log('Usage:\n  node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now\n\n以《波浪理论详解》为准绳，递归拆解产出「最大级别 → 当前浪」计数树。');
+    console.log('Usage:\n  node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now\n'
+      + '  node analyze-wave-tree.js --product AAPL --tf 1d --start 2023-01-01 [--apikey KEY]   # 美股：Twelve Data\n'
+      + '  node analyze-wave-tree.js --product 600519 --tf 1d --start 2023-01-01               # A 股：东方财富\n'
+      + '  --source coinbase|twelvedata|eastmoney  手动指定数据源\n\n以《波浪理论详解》为准绳，递归拆解产出「最大级别 → 当前浪」计数树。');
     return;
   }
   const tf = TIMEFRAMES[args.tf];
   if (!tf) throw new Error(`Unsupported timeframe: ${args.tf}. Use: ${Object.keys(TIMEFRAMES).join(', ')}`);
+  // add-stock-data-sources：按代码识别市场；股票仅日线/周线（周线由日线合成）
+  const { market, source } = marketData.detectMarket(args.product, argOf('--source'));
+  const isStock = market !== 'crypto';
+  if (isStock && !['1d', '1w'].includes(args.tf)) throw new Error(`股票仅支持 1d / 1w 周期，收到 ${args.tf}`);
 
   const end = args.end && String(args.end).toLowerCase() !== 'now' ? new Date(args.end) : new Date();
   const start = args.start ? new Date(args.start) : new Date(end.getTime() - 30 * 24 * 3600 * 1000);
 
-  const base = await fetchCandles(args.product, tf.fetchGranularity, start, end);
-  const startTs = Math.floor(start.getTime() / 1000);
+  let base;
+  let quoteIncrement = null;
+  let name = null;
+  if (source === 'coinbase') {
+    [base, quoteIncrement] = await Promise.all([
+      fetchCandles(args.product, tf.fetchGranularity, start, end),
+      fetchQuoteIncrement(args.product),
+    ]);
+  } else {
+    const apiKey = argOf('--apikey') || process.env.TWELVE_DATA_API_KEY;
+    ({ candles: base, name } = await marketData.fetchStockDaily({ product: args.product, market, source, start, end, apiKey }));
+  }
+  // 股票日线 timestamp 为交易日 UTC 零点，区间按日期比较（起止当天都算）
+  const startTs = isStock ? Math.floor(Date.parse(`${start.toISOString().slice(0, 10)}T00:00:00Z`) / 1000) : Math.floor(start.getTime() / 1000);
   const endTs = Math.floor(end.getTime() / 1000);
   const candles = transformCandles(base, tf)
     .filter((c) => c.timestamp >= startTs && c.timestamp <= endTs)
     .map((c, i) => ({ ...c, index: i }));
+  if (!candles.length) throw new Error(`${args.product} 在所选区间内没有 K 线`);
+  const stockDecimals = marketData.priceDecimals(market, args.product);
+  const pricePrecision = stockDecimals != null ? stockDecimals : resolvePricePrecision(quoteIncrement, candles);
 
   let fine = detectPivots(candles, 1, {});
   fine = anchorBoundaryExtremes(candles, fine);
   // beamK:4 → 顶层排名表可给「主选1+备选3」（rank-competing-wave-counts Q3）
-  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4 });
+  const tree = buildCountTree(fine, candles, { maxDepth: 5, beamK: 4, pricePrecision });
+  if (tree) tree.pricePrecision = pricePrecision;
 
   // 当前高点回撤叙述（narrate-current-pullback）：拆不出时下钻子级别补结构；叙述为可选增量，失败不阻断
-  try {
-    await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles });
-  } catch (e) {
-    // 叙述属增量输出，取数/拆解失败时不影响主报告
+  // 股票不做子级别下钻（add-stock-data-sources：仅日线/周线，下钻依赖 Coinbase 分钟级）
+  if (!isStock) {
+    try {
+      await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles });
+    } catch (e) {
+      // 叙述属增量输出，取数/拆解失败时不影响主报告
+    }
   }
 
   // --count "126296,80524,97963,57717"：把用户指定的数法喂进去逐条打分，并入报告
   let userEval = null;
-  const argv = process.argv.slice(2);
   const ci = argv.indexOf('--count');
   if (ci >= 0 && argv[ci + 1]) {
     const prices = argv[ci + 1].split(',').map(Number).filter((x) => Number.isFinite(x));
@@ -3739,7 +3977,10 @@ async function main() {
     product: args.product, timeframe: args.tf,
     startUtc: start.toISOString(), endUtc: end.toISOString(),
     generatedAtUtc: new Date().toISOString(),
-    source: 'Coinbase Exchange candles API', sampleCount: candles.length,
+    source: SOURCE_LABELS[source], sampleCount: candles.length,
+    market, name, displayTz: marketData.MARKETS[market].tz,
+    quoteIncrement,
+    pricePrecision,
     rangeHigh: candles.length ? Math.max(...candles.map((c) => c.high)) : null,
     rangeLow: candles.length ? Math.min(...candles.map((c) => c.low)) : null,
     lastClose: last ? last.close : null,
@@ -3759,9 +4000,6 @@ async function main() {
     parentDegree: serializeMultiDegree(tree, args.tf),
   }, null, 2), 'utf8');
   await fs.writeFile(reportName, renderMarkdownReport(meta, tree, userEval), 'utf8');
-  // 新增：结构化 7 节报告（structured-wave-report，A=a 新增输出、不替换现有报告）
-  const structuredName = args.structured || `${safeProduct}_${args.tf}_${stamp}_structured.md`;
-  await fs.writeFile(structuredName, renderStructuredReport(meta, tree, candles, fine), 'utf8');
 }
 
 if (require.main === module) {
@@ -3785,6 +4023,11 @@ module.exports = {
   // 本地工具
   safeRatio,
   absLen,
+  decimalPlaces,
+  inferPricePrecision,
+  resolvePricePrecision,
+  formatPrice,
+  fetchQuoteIncrement,
   // 判据契约
   normRange,
   normGate,
@@ -3809,6 +4052,7 @@ module.exports = {
   buildTripleZigzagManual,
   // M2 引擎
   PATTERNS,
+  applyInProgressRuleGate,
   MIN_POINTS,
   seqOf,
   macroAlternates,
@@ -3838,6 +4082,7 @@ module.exports = {
   computeIncompleteness,
   legProportionViolated,
   buildCounterTrendFrameworkB,
+  annotateExtendingLegForks,
   buildRankedCounts,
   renderRankedCounts,
   serializeRankedCounts,
@@ -3846,6 +4091,10 @@ module.exports = {
   renderCurrentWaveStructures,
   situationAssessment,
   renderAssessment,
+  // consolidate-report-by-theme：轴①「父级角色」子块 + 轴②内部细化导读 + 轴③汇总
+  renderParentRole,
+  renderCurrentInternalNote,
+  renderAxis3,
   // narrate-current-pullback
   tfStepDown,
   loadCandlesAndPivots,
@@ -3868,6 +4117,7 @@ module.exports = {
   serializeTree,
   plainLabel,
   renderNarrative,
+  renderBrief,
   renderMarkdownReport,
   renderStructuredReport,
   strengthTier,
