@@ -3562,22 +3562,34 @@ function renderBrief(meta, tree) {
     const fib = ips.pullback && ips.pullback.fibTargets
       ? ips.pullback.fibTargets.filter((t) => t.mult === 0.5 || t.mult === 0.618).map((t) => t.price)
       : [0.5, 0.618].map((m) => ext - amp * m);
-    const zone = fib.sort((x, y) => x - y).map(px).join(' ~ ');
+    fib.sort((x, y) => x - y);
+    const zone = fib.map(px).join(' ~ ');
     const turnCn = lean === 'three' ? '站稳开启 3 浪主升' : '站稳则转为推动 3 浪、趋势翻多';
     const turnCnDn = lean === 'three' ? '跌破开启 3 浪主跌' : '跌破则转为推动 3 浪、趋势翻空';
+    // 与最新收盘比对：区间已被穿越则点明失效，免得把早已跌破的支撑仍写成"低吸区"
+    const close = meta && meta.lastClose != null ? Number(meta.lastClose) : null;
     if (down) {
-      L.push(`   * 下预警/支撑：${zone}（回踩低吸区）`);
-      L.push(`   * 上阻力/突破：${px(ext)}（${turnCn}）`);
+      const zoneNote = close != null && close < fib[0] ? `已跌破（现 ${px(close)}），回踩低吸区失效` : '回踩低吸区';
+      const extNote = close != null && close > ext ? `已站上（现 ${px(close)}）` : turnCn;
+      L.push(`   * 下预警/支撑：${zone}（${zoneNote}）`);
+      L.push(`   * 上阻力/突破：${px(ext)}（${extNote}）`);
     } else {
-      L.push(`   * 上预警/阻力：${zone}（反抽高抛区）`);
-      L.push(`   * 下支撑/破位：${px(ext)}（${turnCnDn}）`);
+      const zoneNote = close != null && close > fib[fib.length - 1] ? `已升破（现 ${px(close)}），反抽高抛区失效` : '反抽高抛区';
+      const extNote = close != null && close < ext ? `已跌破（现 ${px(close)}）` : turnCnDn;
+      L.push(`   * 上预警/阻力：${zone}（${zoneNote}）`);
+      L.push(`   * 下支撑/破位：${px(ext)}（${extNote}）`);
     }
   }
   if (h) {
     const tg = (lean === 'three' ? h.three.targets : h.xx.targets).filter((t) => t.price > 0).slice(0, 3);
+    // 本段摆动极值已越过的目标标"已到"（反弹已经摸到过，不再是前方目标）
+    const swing = ips && ips.swingExtreme ? ips.swingExtreme.price : null;
+    const reached = (p) => swing != null && (down ? p <= swing : p >= swing);
+    const allReached = tg.length && tg.every((t) => reached(t.price));
+    const zNote = `Z 浪${down ? '下跌' : '上涨'}`; // bounceHyp.xx.aftermath 固定写"下跌"，上涨结构需镜像
     const note = lean === 'three' ? '主选推动 3 浪，仅作参考阻力'
-      : `主选 X；到位后警惕 ${h.xx.aftermath}`;
-    L.push(`   * ${bounceCn}目标位：${tg.map((t) => px(t.price)).join(' / ')}（${note}）`);
+      : (allReached ? `主选 X；目标均已到，警惕 ${zNote}` : `主选 X；到位后警惕 ${zNote}`);
+    L.push(`   * ${bounceCn}目标位：${tg.map((t) => `${px(t.price)}${reached(t.price) ? '（已到）' : ''}`).join(' / ')}（${note}）`);
   }
   L.push('');
   L.push('> 以上为概率性推断，非投资建议；明细见下方技术细节。');

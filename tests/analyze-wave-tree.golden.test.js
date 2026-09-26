@@ -169,8 +169,27 @@ test('金标准：报告以 4 条简报开头，失效点=assessment.invalidatio
   assert.ok(idx.every((i, k) => k === 0 || i > idx[k - 1]), '简报 4 条应按序出现');
   const inv = t.formatPrice(tree.assessment.invalidation);
   assert.ok(md.includes(`3. 核心生死线（失效点）：${inv}`), `失效点应为 ${inv}`);
-  assert.ok(md.includes('到位后警惕 Z 浪'), '主选 XX 时应提示到位后警惕 Z 浪');
+  assert.ok(md.includes('警惕 Z 浪下跌'), '主选 XX 时应提示警惕 Z 浪下跌');
   assert.ok(md.includes('非投资建议'), '应有免责声明');
+});
+
+test('金标准：简报与最新收盘比对——跌破支撑标"已跌破"，摆动极值已越过的目标标"已到"', () => {
+  const { tree } = buildGoldenTree();
+  const base = { product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(), generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: 314 };
+  const swing = tree.inProgressStruct.swingExtreme.price;
+  const low = tree.assessment.invalidation;
+  // 现价压到支撑区下方（失效点之上一点）
+  const broken = t.renderBrief({ ...base, lastClose: low + (swing - low) * 0.1 }, tree);
+  assert.ok(/下预警\/支撑：.*已跌破（现 .*），回踩低吸区失效/.test(broken), '跌破支撑区应标已跌破');
+  // 现价在支撑区上方：保持"回踩低吸区"
+  const ok = t.renderBrief({ ...base, lastClose: swing * 0.99 }, tree);
+  assert.ok(ok.includes('（回踩低吸区）'), '未跌破时应保持回踩低吸区');
+  // 低于摆动高点的 XX 目标 = 反弹已摸到过 → 标已到
+  const tg = tree.assessment.bounceHyp.xx.targets.filter((x) => x.price > 0).slice(0, 3);
+  const expected = tg.filter((x) => x.price <= swing).length;
+  assert.ok(expected > 0, 'fixture 中应至少有一个目标已被摆动高点越过');
+  assert.equal((ok.match(/（已到）/g) || []).length, expected, '越过的目标应标已到');
+  if (expected === tg.length) assert.ok(ok.includes('目标均已到，警惕 Z 浪下跌'));
 });
 
 test('金标准：三轴明细折叠在 <details> 内，TL;DR/大白话版不再出现', () => {
