@@ -35,3 +35,27 @@ The engine SHALL derive current labels from the adopted structure and SHALL use 
 #### Scenario: Parent combination
 - **WHEN** the parent is a combination but current internal structure is unknown
 - **THEN** the renderer does not relabel unknown or ABC legs as WXY merely from that parent.
+
+### Requirement: Unproven lower evidence does not erase known violations
+
+A role violation found on the candidate's own timeframe SHALL remain a violation unless a lower timeframe returns verified evidence for that role. Pending, missing-data and search-limited lower results SHALL NOT convert the violation to pending.
+
+#### Scenario: Daily C cannot be an impulse
+- **WHEN** every daily reading of a zigzag C overlaps wave 4 into wave 1 and hourly data are unavailable
+- **THEN** the zigzag keeps one grammar violation and is not reported as rules passed
+
+#### Scenario: Lower timeframe proves the role
+- **WHEN** the same C leg receives verified hourly evidence
+- **THEN** the grammar violation is lifted
+
+### Requirement: Origin and orthodox-end limits
+
+A driving leg SHALL NOT contain a price beyond its own origin. A corrective leg MAY exceed its origin only when the excursion is smaller than its prior move in the leg direction (b' < 2a'). Orthodox endpoints beyond the global extreme SHALL be considered only for impulse, zigzag and flat candidates that contain the global extreme as an internal point.
+
+#### Scenario: Hidden high inside fifth wave
+- **WHEN** a down impulse places wave 4 at 76022.6 while 82814.23 occurs inside wave 5
+- **THEN** the candidate is not generated
+
+#### Scenario: Current bounce absorbed into history
+- **WHEN** a combination would end at a pullback low inside the bounce after the global extreme
+- **THEN** it is not offered as a completed historical structure

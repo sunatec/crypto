@@ -39,6 +39,24 @@ async function fetchCoinbaseHourPage(product, granularity, start, end) {
 function createSubwaveVerifier(engine, { hourly, mainTf = '1d', finestTf = '1h', error = null, endTs = Infinity, pricePrecision = 2 } = {}) {
   const hours = [...new Map((hourly || []).map(c => [c.timestamp, c])).values()].sort((a,b) => a.timestamp-b.timestamp);
   const memo = new Map();
+  // 同一窗口、同一周期按不同位置角色各验证一次（P1 细分角色后同一条腿常被 4–6 个角色查询）：
+  // 共享聚合 K 线、枢轴与 decompose 缓存，子腿拆解跨角色复用。LRU 限量，防长区间常驻内存。
+  const prepared = new Map();
+  const PREPARED_MAX = 16;
+  function prepare(window, tf, from, to) {
+    const key = [tf, window[0].timestamp, window.at(-1).timestamp, from.type, from.price, to.type, to.price].join('|');
+    if (prepared.has(key)) { const hit = prepared.get(key); prepared.delete(key); prepared.set(key, hit); stats.preparedHits = (stats.preparedHits || 0) + 1; return hit; }
+    const candles = engine.transformCandles(window,engine.TIMEFRAMES[tf]).map((c,index) => ({...c,index}));
+    let fine = engine.anchorBoundaryExtremes(candles,engine.detectPivots(candles,1,{}));
+    const start = {type:from.type,price:from.price,index:0,timestamp:candles[0].timestamp};
+    const finish = {type:to.type,price:to.price,index:candles.length-1,timestamp:candles.at(-1).timestamp};
+    // Crop by actual event hours before aggregation, then pin the supplied prices.
+    fine = [start,...fine.filter(p => p.index>0 && p.index<finish.index),finish];
+    const entry = { candles, fine, start, finish, cache: new Map() };
+    prepared.set(key, entry);
+    if (prepared.size > PREPARED_MAX) prepared.delete(prepared.keys().next().value);
+    return entry;
+  }
   const stats = { hourlyCandles: hours.length, failedPages:hourly && hourly.fetchErrors || [], windows: 0, cacheHits: 0 };
   const seconds = { '1d':86400, '4h':14400, '1h':3600, '1w':604800 };
   const tolerance = Math.max(1e-8, 10 ** -pricePrecision / 2);
@@ -68,19 +86,18 @@ function createSubwaveVerifier(engine, { hourly, mainTf = '1d', finestTf = '1h',
     const window = hours.filter(c => c.timestamp >= a.timestamp && c.timestamp <= b.timestamp && c.timestamp <= endTs);
     if (!window.length || window[0].timestamp !== a.timestamp || window.at(-1).timestamp !== b.timestamp || window.some((c,i) => i && c.timestamp-window[i-1].timestamp !== 3600)) return save('小时窗口缺失 K 线，不能完成结构验证');
     // A bar containing both endpoints has no observable intrabar event order.
-    const lowerFrames = sourceTf === '1d' || sourceTf === '1w' ? (finestTf === '4h' ? ['4h'] : ['4h','1h']) : sourceTf === '4h' && finestTf === '1h' ? ['1h'] : [];
+    // 只在声明的最细周期上验证：非最细周期不是分辨率边界，子角色没有证据来源，结果必然是 pending；
+    // 其 invalid 也不终止验证。中间周期（如最细为 1h 时的 4h）对结论没有贡献，只耗时（实测占 58%）。
+    const lowerFrames = (sourceTf === '1d' || sourceTf === '1w' || (sourceTf === '4h' && finestTf === '1h')) && finestTf !== sourceTf ? [finestTf] : [];
     if (!lowerFrames.length) return save('已到配置的最细验证周期');
     for (const tf of lowerFrames) {
-      const candles = engine.transformCandles(window,engine.TIMEFRAMES[tf]).map((c,index) => ({...c,index}));
-      let fine = engine.anchorBoundaryExtremes(candles,engine.detectPivots(candles,1,{}));
-      const start = {type:from.type,price:from.price,index:0,timestamp:candles[0].timestamp};
-      const finish = {type:to.type,price:to.price,index:candles.length-1,timestamp:candles.at(-1).timestamp};
+      const { candles, fine, start, finish, cache } = prepare(window, tf, from, to);
       if (start.index === finish.index) { evidence.attempts.push({timeframe:tf,status:'pending',reason:'端点位于同一根 K 线，事件顺序不明'}); continue; }
-      // Crop by actual event hours before aggregation, then pin the supplied prices.
-      fine = [start,...fine.filter(p => p.index>0 && p.index<finish.index),finish];
-      const node = engine.decompose(fine,candles,[role],0,{beamK:3,maxDepth:3,cache:new Map(),evidenceMode:true,timeframe:tf,finestResolution:tf===finestTf?finestTf:null});
+      // expandAllTop:false：验证窗口只按 beam 前沿展开，不像主图顶层那样全量展开（否则全年 1h 验证 OOM）。
+      const node = engine.decompose(fine,candles,[role],0,{beamK:3,maxDepth:3,cache,evidenceMode:true,timeframe:tf,finestResolution:tf===finestTf?finestTf:null,expandAllTop:false});
       const best = node.primary;
-      if(best) Object.defineProperty(evidence,'adoptedNode',{value:node,writable:true,enumerable:false,configurable:true});
+      // 采用树会挂进母级候选、跨候选长期驻留：只留主选与 beam 内备选，避免上千个窗口各自保留整棵候选池。
+      if(best) Object.defineProperty(evidence,'adoptedNode',{value:{...node,alternates:(node.alternates||[]).slice(0,2)},writable:true,enumerable:false,configurable:true});
       const searchLimited = fine.length > 8 || node.searchLimited;
       const status = !best ? 'pending' : best.score.tier1 === 0 ? best.score.verificationStatus : searchLimited ? 'pending' : 'invalid';
       evidence.provenRoles=best ? best.score.provenRoles || 0 : 0;

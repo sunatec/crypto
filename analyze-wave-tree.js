@@ -1037,6 +1037,32 @@ function legEndpointsSpanExtreme(pts, segFine) {
   return true;
 }
 
+// 腿内越过自身起点的约束（书§1.5、§5.4/§6.2；macro-endpoint-span-extreme 的收窄版）：
+//   · 驱动腿：起点之后出现更极端价没有合法读法（2浪不得回撤超过1浪起点，对首个子浪同样适用）。
+//   · 调整腿：只有扩散/顺势平台或顺势三角的 b' 能越过起点，且 b'<2a'，即越过幅度须小于此前
+//     同腿顺向走出的最大幅度 a'。
+// §3.15/§4.7 的正统终点（失败5浪/短C：腿终点之前已出现更极端价）不受影响。不能指望子浪文法
+// 兜底：子腿点数不足成叶子时根本不检查。只有所有子角色方案里都是驱动角色的腿才按驱动腿处理。
+function legsRespectOrigin(pts, segFine, pat) {
+  if (!Array.isArray(pts) || !Array.isArray(segFine) || !pat) return true;
+  const roleSets = [pat.childRoles, ...(pat.childRolesAlt || [])];
+  const isDrivingRole = (role) => (ROLE_PATTERNS[role] || [role]).every((id) => isDrivingPattern(id));
+  for (let i = 0; i < pts.length - 1; i += 1) {
+    const driving = roleSets.every((roles) => roles && isDrivingRole(roles[i]));
+    const p = pts[i];
+    const q = pts[i + 1];
+    const sign = q.price >= p.price ? 1 : -1; // 腿的顺向
+    let progress = 0; // 此前顺向最大幅度 a'
+    for (const f of segFine) {
+      if (f.index <= p.index || f.index >= q.index) continue;
+      const move = sign * (f.price - p.price);
+      if (move > progress) progress = move;
+      if (move < 0 && (driving || -move >= progress)) return false;
+    }
+  }
+  return true;
+}
+
 // 子浪位置角色（enforce-strict-wave-grammar）：除类别 driving/corrective 外，按书细化到具体形态集合。
 //   · 推动浪 1 浪=推动/引导楔形、3 浪=推动、5 浪=推动/终结楔形（书 1–7 章未明文，按 EWP 补足，ewpLegs 标注）
 //   · 单锯齿 a=推动/引导楔形、c=推动/终结楔形（书 4.5）；平台形 c=推动/终结楔形（书 5.3）
@@ -1168,6 +1194,11 @@ const ROLE_CN = {
   [ROLE_TRIANGLE_E]: '锯齿类或一次三角形',
   [ROLE_SIMPLE_CORRECTIVE]: '简单调整浪（单锯齿/平台形/收缩三角形）',
 };
+
+// 允许"末浪失败、正统终点不是价格极值"的形态（§3.8 失败5浪、§4.7 短C、§5 C未达的平台），
+// 且须有对应的失败闸门兜底：推动浪 truncated-five-min-70-four、锯齿 c≥0.9b、平台 c 比例。
+// 楔形没有实现失败5浪的 70% 闸门，不纳入——否则底部之后的反弹/回落会被吞成"失败的5浪"。
+const ORTHODOX_END_PATTERNS = ['impulse-strict', 'zigzag', 'flat', 'flat-regular', 'flat-expanded', 'flat-running'];
 
 function roleAllows(role, patternId) {
   const ids = ROLE_PATTERNS[role];
@@ -1566,12 +1597,19 @@ function evaluateLegRole(childFine, role, candles, depth, opts, legLabel = '', e
   if (opts.verification && evidence.status !== 'verified' && childFine && childFine.length>=2) {
     evidence = opts.verification.evaluate(childFine[0],childFine[childFine.length-1],role,opts.timeframe);
   }
-  const adopted=evidence.adoptedNode || local.node;
+  // 本周期已拆出的角色违规是已知失败：只有较小周期给出 verified 的合法结构才能撤销。
+  // 较小周期"没证伪"（pending、缺数据、搜索预算耗尽）不等于证明合法，不得把违规降成 pending。
+  const lowerProof = evidence.status === 'verified';
+  const violates = local.violates ? !lowerProof : !!opts.evidenceMode && evidence.status === 'invalid';
+  const adopted=(!local.violates || lowerProof) && evidence.adoptedNode || local.node;
   const publicEvidence={...evidence};delete publicEvidence.adoptedNode;
+  if (local.violates && !lowerProof) {
+    publicEvidence.status='invalid';
+    publicEvidence.reason='本周期拆不出该角色的合法结构'+(evidence.reason ? '；较小周期：'+evidence.reason : '');
+  }
   if(adopted && adopted.primary) { publicEvidence.adoptedPatternId=adopted.primary.patternId;publicEvidence.adoptedTimeframe=adopted.primary.timeframe || null; }
-  return {...local, node:adopted, evidence:publicEvidence,
-    violates:opts.evidenceMode ? evidence.status === 'invalid' : local.violates,
-    note:evidence.status === 'invalid' ? (local.note || (legLabel+' 的位置角色在较小周期验证失败')) : local.note};
+  return {...local, node:adopted, evidence:publicEvidence, violates,
+    note:violates ? (local.note || (legLabel+' 的位置角色在较小周期验证失败')) : null};
 }
 
 function evaluateLocalLegRole(childFine, role, candles, depth, opts, legLabel = '', ewp = false) {
@@ -1780,7 +1818,7 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
   // 只对少数幸存者才展开子树」——标准 beam search 做法，也是 beamK 命名本该有的语义。
   // 顶层无父级位置：引导/终结楔形价格规则相同、引导楔形内部结构包含终结楔形的 3-3-3-3-3，
   // 两者会以同一点位重复出现——只保留引导楔形一条，标「位置待定」（enforce-strict-wave-grammar）
-  const positionless = depth === 0 && allowedRoles.includes(DRIVING);
+  const positionless = depth === 0 && (allowedRoles.includes(DRIVING) || !!opts.positionlessTop);
   const lite = [];
   for (const pat of PATTERNS) {
     if (!allowedRoles.some((r) => patternMatchesRole(pat, r))) continue;
@@ -1799,7 +1837,8 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
       for (const pts of segmentations(segFine, pat.points)) {
         if (!pts.every((p, i) => p.type === seq[i])) continue;
         if (!macroAlternates(pts)) continue; // 快筛：淘汰"下降的连接浪"（lower-high 当上冲目标）
-        // §3.15/§4.7：正统终点可不同于极值；完整路径限制由该形态判据及子浪承担。
+        // §3.15/§4.7：正统终点可不同于极值；但腿内越过自身起点受限（驱动腿禁止，调整腿须 b'<2a'）。
+        if (!legsRespectOrigin(pts, segFine, pat)) continue;
 
         const measures = computeMeasures(pts, direction, candles);
         // 书 3.16 特例：三角形的运行总量按「最长子浪高低差」口径纠正
@@ -1830,7 +1869,8 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
   // 顶层（depth 0）额外放宽：排名数法表要「按形态去重后全列」，需要更多顶层候选原料
   // （rank-competing-wave-counts）。放宽只发生在最外层这一个节点，不进深层递归，
   // 故不会引发分支因子爆炸——指数放大来自深层嵌套，顶层单节点多展开一些是安全的。
-  const isTop = depth === 0;
+  // 顶层全量展开只给主图最外层；子周期验证器传 expandAllTop:false，按普通深层前沿收敛（性能/内存）。
+  const isTop = depth === 0 && opts.expandAllTop !== false;
   const preRankKeep = isTop
     ? Math.max((opts.beamK || 3) * 4, 30)
     : Math.max((opts.beamK || 3) * 4, 12);
@@ -2075,9 +2115,14 @@ function buildCountTree(finePivots, candles, options = {}) {
   if(options.trimTop!==false && topSpan && topSpan.length) {
     const start=topSpan[0],lastConfirmed=[...finePivots].reverse().find(p=>!p.provisional && p.type!==start.type);
     if(lastConfirmed && lastConfirmed.index>topSpan.at(-1).index) {
+      // §3.15/§4.7 正统终点只覆盖"末浪失败"：失败5浪（推动/楔形）、短C（单锯齿）、C未达（平台）。
+      // 联合形/三角形等的末点仍须是极值；且全局极值须落在该结构内部（它是被失败末浪"没再越过"的那个点），
+      // 否则就是把当前尚在进行的走势硬塞进"已完成的历史结构"。
+      const extreme=topSpan.at(-1);
       const orthodox=finePivots.filter(p=>p.index>=start.index && p.index<=lastConfirmed.index);
-      const extra=decompose(orthodox,candles,[DRIVING,CORRECTIVE],0,opts);
-      const pool=[tree.primary,...(tree.alternates||[]),extra.primary,...(extra.alternates||[])].filter(Boolean).sort((a,b)=>compareCandidates(a.score,b.score));
+      const extra=decompose(orthodox,candles,ORTHODOX_END_PATTERNS,0,{...opts,positionlessTop:true});
+      const extraPool=[extra.primary,...(extra.alternates||[])].filter(c=>c && c.points.some(p=>p.index===extreme.index));
+      const pool=[tree.primary,...(tree.alternates||[]),...extraPool].filter(Boolean).sort((a,b)=>compareCandidates(a.score,b.score));
       if(pool.length) { tree={...tree,isLeaf:false,primary:pool[0],alternates:pool.slice(1)};
         topSpan=finePivots.filter(p=>p.index>=pool[0].points[0].index && p.index<=pool[0].points.at(-1).index);tree.segFine=topSpan;
       }
@@ -2847,20 +2892,30 @@ function deriveParentDegree(tree) {
     {
       key: 'impulse', parentCn: '新的推动浪（转势）', dropLabel: '（前置熊市调整）', curLabel: '1/3 浪',
       hardOk: bounceMotive, elimReason: !bounceMotive ? '反弹内部须为 5 浪，而实测 3 波' : null,
-      band: [0.5, 99], targets: bh ? tgt(bh.three.targets) : [], targetsFull: bh ? tgtR(bh.three.targets) : [],
+      // 新推动的 1 浪对前一段调整的回撤比没有书面下限，带宽不设门槛；结构证据（五浪）才是判据。
+      band: [0, 99], targets: bh ? tgt(bh.three.targets) : [], targetsFull: bh ? tgtR(bh.three.targets) : [],
       refLeg: wholeLeg ? { ...wholeLeg, cn: '整段(作阻力参考)' } : null,
-      basis: '反弹内部须走成五浪方成立',
+      basis: bounceMotive ? '反弹内部已走成五浪，符合新推动浪的 1 浪（子浪待验证）' : '反弹内部须走成五浪方成立',
     },
   ];
 
+  // X 连接浪 / B 浪本身是调整浪：反弹若已走成干净五浪，它只能是 X/B 的第一段（a 浪），
+  // 读法仍然成立但要多假设"尚未走完"，排在把五浪直接读成 1 浪的推动读法之后。
+  const BOUNCE_FIVE_PENALTY = 0.5;
+  if (bounceMotive) {
+    cands.filter((c) => c.key !== 'impulse' && c.hardOk).forEach((c) => {
+      c.basis += '；但反弹内部已走成五浪，只能是' + c.curLabel + '的第一段，' + c.curLabel + '尚未走完';
+    });
+  }
   const scoreOf = (c) => {
     if (!c.hardOk) return Infinity;
     const [lo, hi] = c.band;
+    const structural = bounceMotive && c.key !== 'impulse' ? BOUNCE_FIVE_PENALTY : 0;
     if (retrace >= lo && retrace <= hi) {
       const center = (lo + Math.min(hi, 1.05)) / 2;
-      return Math.abs(retrace - center); // 命中带内，越靠中心越好
+      return structural + Math.abs(retrace - center); // 命中带内，越靠中心越好
     }
-    return 10 + Math.min(Math.abs(retrace - lo), Math.abs(retrace - hi)); // 带外罚分
+    return structural + 10 + Math.min(Math.abs(retrace - lo), Math.abs(retrace - hi)); // 带外罚分
   };
   cands.forEach(c => {
     if ((c.key === 'impulse' ? bouncePending : dropPending)) {
@@ -4555,6 +4610,8 @@ module.exports = {
   seqOf,
   macroAlternates,
   legEndpointsSpanExtreme,
+  legsRespectOrigin,
+  ORTHODOX_END_PATTERNS,
   candidateViolations,
   coarsenByPairs,
   segmentations,

@@ -395,7 +395,12 @@ test('金标准：在建型读法"浪②进行中"出现，未走的浪③不计
   assert.equal(leg2.status, '⏳进行中', '②应标进行中');
   assert.equal(leg3.status, '未走', '③尚未走，不应被当成已完成腿');
   assert.equal(leg3.to, null, '未走浪③无终点，规则天然不对它判定');
-  assert.equal(t2.tier1, 0, '未走的③不应产生任何硬规则违规');
+  // ③未走：只投影、不判定；①（57717→66924）日线上 4 浪入 1 浪区域、也非楔形，是已走腿的真实违规。
+  const ev3 = t2.evidence.find((e) => e.legLabel === '③');
+  assert.equal(ev3.status, 'pending', '未走的③不应产生任何硬规则违规');
+  const ev1 = t2.evidence.find((e) => e.legLabel === '①');
+  assert.equal(ev1.status, 'invalid', '已走的①拆不出推动/引导楔形，违规照计');
+  assert.equal(t2.tier1, 1, '违规只来自已走的①');
   assert.ok(t2.deferred.some((d) => d.includes('未走')), '未走浪③应标为待判说明，不是被判违规后又清除');
 });
 

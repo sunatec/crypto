@@ -16,3 +16,12 @@
 
 - [x] 3.1 Add integrated book-based P1 regressions and run the complete test suite.
 - [x] 3.2 Record validation, residual source limitations and verify OpenSpec artifacts.
+
+## 4. Post-implementation regressions
+
+- [x] 4.1 Keep same-timeframe role violations unless a lower timeframe verifies the role; missing data or exhausted search cannot erase them.
+- [x] 4.2 Restore a narrowed origin gate: driving legs never exceed their origin; corrective legs only via b' < 2a'.
+- [x] 4.3 Limit orthodox-end extension to impulse/zigzag/flat with the global extreme inside the candidate.
+- [x] 4.4 Bound verifier cost: verify only at the declared finest timeframe, share per-window caches across roles, no full top-level expansion, trimmed adopted trees (full-year BTC 1h: OOM → ~170 s).
+- [x] 4.5 Parent degree uses bounce character: a five-wave bounce ranks the new impulse ahead of X/B.
+- [x] 4.6 Add regressions and rerun the default BTC 1d command with 1h verification.

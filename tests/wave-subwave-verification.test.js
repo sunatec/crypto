@@ -19,10 +19,13 @@ test('daily endpoint buckets locate actual hours, fix prices, share role-window 
   const a=v.evaluate(from,to,'impulse|ending');
   assert.equal(a.located.fromTimestamp,base+2*3600);
   assert.equal(a.located.toTimestamp,base+44*3600);
-  assert.deepEqual(a.attempts.map(x=>x.timeframe),['4h','1h']);
-  assert.equal(a.attempts[1].structure.points[0].price,100);
-  assert.equal(a.attempts[1].structure.points.at(-1).price,30);
-  assert.equal(a.attempts[1].structure.timeframe,'1h');
+  // 最细周期为 1h 时只验 1h：4h 不是分辨率边界，必然 pending、也不能终止验证。
+  assert.deepEqual(a.attempts.map(x=>x.timeframe),['1h']);
+  assert.equal(a.attempts[0].structure.points[0].price,100);
+  assert.equal(a.attempts[0].structure.points.at(-1).price,30);
+  assert.equal(a.attempts[0].structure.timeframe,'1h');
+  const only4h=createSubwaveVerifier(E,{hourly:sampleHours(),finestTf:'4h'}).evaluate(from,to,'impulse|ending');
+  assert.deepEqual(only4h.attempts.map(x=>x.timeframe),['4h'],'--verify-tf 4h 时验 4h');
   assert.equal(v.evaluate({...from,index:99},{...to,index:999},'impulse|ending'),a);
   assert.equal(v.stats.windows,1);assert.equal(v.stats.cacheHits,1);
 });
@@ -36,11 +39,11 @@ test('small daily pivots trigger intraday role verification in actual explicit-c
   const candles=E.transformCandles(sampleHours(),E.TIMEFRAMES['1d']).map((c,index)=>({...c,index}));
   const verifier=createSubwaveVerifier(E,{hourly:sampleHours()});
   const result=E.evaluateLegRole([from,to],'impulse',candles,0,{maxDepth:5,beamK:3,cache:new Map(),timeframe:'1d',evidenceMode:true,verification:verifier},'a');
-  assert.equal(result.evidence.attempts.length,2);
+  assert.equal(result.evidence.attempts.length,1);
   assert.equal(result.node.isLeaf,false);
   assert.equal(result.node.primary.timeframe,'1h');
-  assert.equal(result.node.primary.patternId,result.evidence.attempts[1].structure.patternId);
-  assert.equal(result.evidence.attempts[1].structure.patternId,'impulse-strict');
+  assert.equal(result.node.primary.patternId,result.evidence.attempts[0].structure.patternId);
+  assert.equal(result.evidence.attempts[0].structure.patternId,'impulse-strict');
   assert.equal(result.violates,false);
   assert.equal(result.evidence.status,'pending','unresolved internal subroles must propagate');
 });
@@ -71,17 +74,24 @@ test('BTC old diagonal shrinks wave lengths but diverges in real time',()=>{
   assert.equal(rule.test({points:pts,candles:c}).pass,false);
   assert.equal(manual.rules.find(r=>r.id==='diagonal.ratio.converging').test({points:pts,candles:c}).pass,true);
 });
-test('specified W preserves own passing rules but cannot reject C from daily candles alone',()=>{
+// 日线 c 腿 116410→80524.65 有 8 个枢轴，任何 6 点读法的 4 浪都入 1 浪区域：本周期违规照计，
+// 小周期缺数据（offline）不能把它降成 pending；小周期给出 verified 结构时才撤销。
+test('specified W keeps own passing rules; daily C role violation stands until a lower timeframe proves it',()=>{
   const c=require('./fixtures/btc-usd-1d-golden.json').map((v,index)=>({...v,index}));
   const f=E.anchorBoundaryExtremes(c,E.detectPivots(c,1,{}));
   const pts=E.pointsFromPrices([126296,103516.75,116410.06,80524.65],c);
   const v=createSubwaveVerifier(E,{error:'offline'});
   const zigzag=E.evaluateExplicitCount(pts,f,c,{maxDepth:5,timeframe:'1d',evidenceMode:true,verification:v}).results.find(x=>x.patternId==='zigzag');
   assert.ok(zigzag.ruleResults.every(x=>x.pass));
-  assert.equal(zigzag.grammarViolations,0);
-  assert.equal(zigzag.verificationStatus,'pending');
+  assert.equal(zigzag.grammarViolations,1);
+  assert.equal(zigzag.verificationStatus,'invalid');
   assert.equal(zigzag.evidence[2].legLabel,'c');
-  assert.equal(zigzag.evidence[2].status,'pending');
+  assert.equal(zigzag.evidence[2].status,'invalid');
+  assert.match(zigzag.evidence[2].reason,/本周期拆不出.*较小周期：小时行情获取失败/);
+  const proven={evaluate:(from,to,role,sourceTf)=>({status:'verified',role,sourceTimeframe:sourceTf,attempts:[],reason:'mock lower proof',provenRoles:1,requiredRoles:1})};
+  const lifted=E.evaluateExplicitCount(pts,f,c,{maxDepth:5,timeframe:'1d',evidenceMode:true,verification:proven}).results.find(x=>x.patternId==='zigzag');
+  assert.equal(lifted.grammarViolations,0,'较小周期证明合法后撤销本周期违规');
+  assert.equal(lifted.evidence[2].status,'verified');
 });
 
 test('hourly pagination overlaps exclusive boundaries without holes or duplicate bars',async()=>{
@@ -122,7 +132,7 @@ test('failed hourly page keeps other pages; covered windows still get intraday e
   assert.equal(got.length,36);assert.equal(got.fetchErrors.length,1);
   const laterFailure=sampleHours();laterFailure.fetchErrors=[{fromTimestamp:base+3*day}];
   const evidence=createSubwaveVerifier(E,{hourly:laterFailure,error:'one later page failed'}).evaluate(from,to,'impulse');
-  assert.equal(evidence.attempts.length,2);
+  assert.equal(evidence.attempts.length,1);
 });
 
 test('limited noisy intraday search cannot conclusively reject a position role',()=>{
