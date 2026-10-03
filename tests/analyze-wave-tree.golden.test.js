@@ -130,6 +130,9 @@ test('金标准：暂定调整身份、失效点=57717、父级X与目标参考�
   // XX 上方目标在失效点上方、其下跌段在失效点下方
   assert.ok(h.xx.targets.every((t2) => t2.price > a.invalidation));
   assert.ok(h.xx.down.every((t2) => t2.price < a.invalidation));
+  // Y 从 X 终点起算：X 未完，暂取目前反弹极值；比 W＝整段
+  assert.equal(h.anchor, tree.inProgressStruct.swingExtreme.price);
+  assert.ok(Math.abs(h.xx.down[0].price - (h.anchor - 0.618 * (126296 - 57717.55))) < 1e-6);
   // B 目标含 0.7×整段 ≈ 105722
   const b07 = h.b.targets.find((t2) => t2.ratio === 0.7);
   assert.ok(Math.abs(b07.price - 105722) < 500, `B 0.7目标应≈105722，实际 ${b07.price.toFixed(0)}`);

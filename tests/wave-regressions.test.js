@@ -131,3 +131,13 @@ test('简报形态简称保留具体楔形名',()=>{
   assert.equal(E.briefPatternName('推动浪（引导楔形 Leading Diagonal）'),'引导楔形');
   assert.equal(E.briefPatternName('单锯齿（Zigzag 5-3-5）'),'单锯齿');
 });
+
+test('反弹后的续跌浪目标从反弹终点起算：Z 比上一子浪、C 比整段 A',()=>{
+  const pts=[pv(0,'H',126296),pv(5,'L',60001),pv(8,'H',82814.23),pv(10,'L',57717.55)];
+  const h=E.bounceHypotheses(pts,'corrective',87397);
+  assert.equal(h.anchor,87397);
+  assert.deepEqual(h.xx.down.map(t=>+t.price.toFixed(2)),[71887.25,62300.32,46790.57],'87397 − 25096.68×0.618/1/1.618');
+  assert.deepEqual(h.b.down.map(t=>+t.price.toFixed(2)),[45015.52,18818.55,-23562.93],'87397 − 68578.45×0.618/1/1.618');
+  assert.equal(E.bounceHypotheses(pts,'corrective',null).anchor,57717.55,'无反弹极值时退回结构终点');
+  assert.equal(E.bounceHypotheses(pts,'corrective',50000).anchor,57717.55,'反弹极值没越过结构终点时不采用');
+});
