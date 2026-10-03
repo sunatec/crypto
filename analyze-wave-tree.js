@@ -2391,8 +2391,20 @@ function buildCurrentWaveStructures(finePivots, spanLast, candles, options = {})
     const p4 = post[3].price;
     const amp1_4 = Math.abs(p1 - spanLast.price);
     const net13 = Math.abs(p3 - spanLast.price);
+    // ⑤ 已走到的极值：④ 之后的摆动极值（若 ext 在 ④ 之后），而不是当前价——当前价可能已从极值回撤。
+    const fifthEnd = iExt > finePivots.indexOf(post[3]) ? ext : now;
+    const fifthFormed = Math.max(0, revDir * (fifthEnd.price - p4));
+    const pulledBack = fifthEnd !== now && now.price !== fifthEnd.price;
     const breach2 = revDir > 0 ? p2 <= spanLast.price : p2 >= spanLast.price; // ②入①起点
-    const breach3 = (revDir > 0 ? p3 <= p1 : p3 >= p1) || Math.abs(p3-p2) < Math.min(amp1_4,Math.max(0,revDir*(now.price-p4))); // §1.5：3可第二长，5已形成部分提供下界
+    const breach3 = (revDir > 0 ? p3 <= p1 : p3 >= p1) || Math.abs(p3-p2) < Math.min(amp1_4,fifthFormed); // §1.5：3可第二长，5已形成部分提供下界
+    // ⑤ 常用目标（指引，非规则）：按距 ④ 由近到远；⑤ 已走到的极值越过者记"已到"，不再当前方目标。
+    const fifthTargets = [
+      { label: '⑤=0.618×(①~③)', mult: 0.618, price: p4 + revDir * net13 * 0.618 },
+      { label: '⑤=①', mult: 1.0, price: p4 + revDir * amp1_4 },
+      { label: '⑤=①~③', mult: 1.0, price: p4 + revDir * net13 },
+      { label: '⑤=1.618×①', mult: 1.618, price: p4 + revDir * amp1_4 * 1.618 },
+    ].sort((x, y) => revDir * (x.price - y.price));
+    const reached = (t) => revDir * (t.price - fifthEnd.price) <= 0;
     const breach4 = revDir > 0 ? p4 <= p1 : p4 >= p1; // ④入①领地（④触及/越过①终点）
     const breach5 = revDir > 0 ? now.price < p4 : now.price > p4; // 当前价已越过该情景声明的⑤起点失效线
     templates.push({
@@ -2404,13 +2416,13 @@ function buildCurrentWaveStructures(finePivots, spanLast, candles, options = {})
         { name: '②', from: p1, to: p2, status: '完成' },
         { name: '③', from: p2, to: p3, status: '完成' },
         { name: '④', from: p3, to: p4, status: '完成' },
-        { name: '⑤', from: p4, to: now.price, status: '⏳进行中' },
+        { name: '⑤', from: p4, to: fifthEnd.price, status: '⏳进行中' },
       ],
-      currentWave: '浪⑤（进行中，末浪）',
-      projection: [
-        { mult: 0.618, price: p4 + revDir * net13 * 0.618 },
-        { mult: 1.0, price: p4 + revDir * amp1_4 * 1.0 },
-      ],
+      currentWave: pulledBack
+        ? `浪⑤（已至 ${R(fifthEnd.price)}，现回撤中：⑤内部回撤或⑤已完成）`
+        : '浪⑤（进行中，末浪）',
+      projection: fifthTargets.filter((t) => !reached(t)),
+      projectionReached: fifthTargets.filter(reached),
       invalidation: { price: p4, reason: `跌破④底 ${R(p4)}（严格版另需守住①顶 ${R(p1)}，即④不入①领地）` },
       tier1: (breach2 ? 1 : 0) + (breach3 ? 1 : 0) + (breach4 ? 1 : 0) + (breach5 ? 1 : 0),
       soft: leg1Char === 'driving' ? 1 : 0, // ①应为5浪
@@ -3588,7 +3600,11 @@ function renderCurrentWaveStructures(tree, pricePrecision) {
   L.push('|---|---|---|---|---|---|---|---|');
   cws.structures.forEach((s, i) => {
     const legs = s.legs.map((l) => `${l.name}:${n(l.from)}→${l.to == null ? '?' : n(l.to)}${l.status === '⏳进行中' ? '⏳' : (l.status === '未走' ? '…' : '')}`).join(' ');
-    const projTxt = (s.projection || []).map((p) => n(p.price)).join(' / ');
+    const ahead = (s.projection || []).map((p) => n(p.price)).join(' / ');
+    const hit = (s.projectionReached || []).map((p) => n(p.price)).join(' / ');
+    // 常用倍数全部已到 → 延长浪，不给常规目标；部分已到则在前方目标后注明
+    const projTxt = !ahead && hit ? `常用倍数均已到（${hit}），⑤为延长浪，不给常规目标`
+      : ahead + (hit ? `（已到 ${hit}）` : '');
     const score = s.tier1 === 0 ? '⏳ 可判价格条件通过，子浪待验证' : `❌ 违规×${s.tier1}`;
     L.push(`| ${i + 1} | ${s.label} | ${s.tendency} | ${legs} | ${s.currentWave} | ${projTxt} | ${n(s.invalidation.price)}（${s.invalidation.reason}） | ${score} |`);
   });

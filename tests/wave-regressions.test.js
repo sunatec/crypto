@@ -141,3 +141,16 @@ test('反弹后的续跌浪目标从反弹终点起算：Z 比上一子浪、C �
   assert.equal(E.bounceHypotheses(pts,'corrective',null).anchor,57717.55,'无反弹极值时退回结构终点');
   assert.equal(E.bounceHypotheses(pts,'corrective',50000).anchor,57717.55,'反弹极值没越过结构终点时不采用');
 });
+
+test('T4 ⑤进行中：⑤ 终点取 ④ 之后的极值；已越过的常用倍数记已到，全到则注明延长浪',()=>{
+  const prices=[100,110,105,112,107,140,130],fine=prices.map((price,i)=>({...pv(i*10,i%2===0?'L':'H',price),provisional:i===prices.length-1}));
+  const candles=Array.from({length:61},(_,i)=>{const k=Math.min(Math.floor(i/10),prices.length-2),f=(i-k*10)/10,v=prices[k]+(prices[k+1]-prices[k])*f;return {index:i,timestamp:i*86400,open:v,close:v,high:v,low:v,volume:1};});
+  const cws=E.buildCurrentWaveStructures(fine,fine[0],candles,{pricePrecision:2});
+  const t4=cws.structures.find(s=>s.id==='reverse-impulse-5');
+  assert.equal(t4.legs[4].to,140,'⑤ 已走到 140，不是现价 130');
+  assert.match(t4.currentWave,/已至 140，现回撤中/);
+  assert.equal(t4.projection.length,0,'常用倍数 114.4/117/119/123.2 都已被 140 越过');
+  assert.equal(t4.projectionReached.length,4);
+  const md=E.renderCurrentWaveStructures({currentWaveStructures:{...cws,structures:[t4]},pricePrecision:2},2);
+  assert.match(md,/常用倍数均已到（114\.42 \/ 117 \/ 119 \/ 123\.18），⑤为延长浪/);
+});
