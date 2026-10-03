@@ -50,35 +50,24 @@ test('金标准：存在当前进行中腿（缺陷2不得回归）', () => {
   assert.equal(s.inProgress.from, 57717.55); // 顶层结构止于主趋势低点57717，之后为进行中反弹
 });
 
-test('金标准：真极值下 W-X-Y 双锯齿零违规——书籍勘误后不再被误判降级', () => {
-  // 演进史：rank-competing-wave-counts 一度让本案例找到"零违规单锯齿"126296→84400→97964→
-  // 57718；但 macro-endpoint-span-extreme 揭示那套是几何伪清白——其 a 段(126296→84400)内部
-  // 藏着更低的 80524，84400 并非该段真极值，故被正确淘汰。用真极值数（126296→80524.65→
-  // 97963.62→57717.55）时，y/w≈0.879，此前"y须>90%w"被误当硬规则，曾令本案例退化为
-  // penalized 的最轻违规者；书籍勘误（y浪通常>90%w，非必须）把该下界降为指引后，
-  // 双锯齿读法真正零违规，不再需要优雅降级。优雅降级机制本身另有 selectBest 专门单测覆盖。
-  const { tree } = buildGoldenTree();
-  const s = t.serializeTree(tree);
-  assert.equal(s.fitScore.tier1, 0, '书籍勘误后，真极值 W-X-Y 双锯齿应零违规');
-  assert.equal(s.fitScore.penalized, false);
-  // 端点须是各自跨度的真极值：a 段端点不得再是被更低点(80524)包住的 84400
-  assert.ok(!s.points.some((p) => p.price === 84400), 'a 段端点不应是非极值的 84400');
+test('金标准：无小时证据时保留暂定结构与真极值，不制造零违规楔形', () => {
+  const {tree}=buildGoldenTree();const s=t.serializeTree(tree);
+  assert.equal(s.points[0].price,126296);assert.equal(s.points.at(-1).price,57717.55);
+  // §3.15 permits orthodox endpoints; exact inner pivots can change with book constraints.
+  assert.equal(s.completionStatus,'potentially_complete');
+  assert.ok(s.points.every(p=>p.timestamp && p.index>=0));
+  assert.equal(s.verificationStatus,'pending');
+  assert.ok(s.fitScore.pendingRoles>0);
 });
-
-test('金标准：修平票后主选=W-X-Y 双锯齿，不再是结构不对的单锯齿（structured-wave-report §2.4）', () => {
-  // 文法违规带 tier2 越界权重后，"结构不对的单锯齿(文法违规,原 tier2=0)"不再平票压过
-  // "仅差 0.5% 比例的 W-X-Y(tier2=0.005)"。主选应对齐真实拟合，变为 W-X-Y。
-  const { tree } = buildGoldenTree();
-  assert.equal(tree.primary.patternId, 'zigzag-double', '主选应为双锯齿 W-X-Y');
-  assert.deepEqual(tree.primary.points.map((p) => p.price), [126296, 80524.65, 97963.62, 57717.55]);
-  // 单锯齿(文法违规)的 tier2 现在带权重、被压到 W-X-Y 之后
-  const all = [tree.primary, ...(tree.alternates || [])];
-  const single = all.find((c) => c.patternId === 'zigzag');
-  if (single && single.score.grammarViolations > 0) {
-    assert.ok(single.score.tier2 > tree.primary.score.tier2, '结构不对的单锯齿 tier2 应被权重压到主选之后');
-  }
+test('金标准：旧楔形因边界发散退出主选，W-X-Y 子角色要求仍然严格', () => {
+  const {tree}=buildGoldenTree();
+  assert.notEqual(tree.primary.patternId,'diagonal-leading');
+  const old=[tree.primary,...tree.alternates].find(c=>c.patternId==='diagonal-leading' && c.points[1].price===80524.65 && c.points[3].price===60001 && c.points[4].price===82814.23);
+  assert.ok(old,'旧读法仍可供查看违规原因');
+  assert.ok(old.score.failed.some(r=>r.id==='diagonal.pattern.boundaries-converge'));
+  assert.equal(old.score.verificationStatus,'invalid');
+  assert.equal(tree.primary.score.verificationStatus,'pending');
 });
-
 test('金标准：序列化 schema 完整且可 round-trip', () => {
   const { tree } = buildGoldenTree();
   const s = t.serializeTree(tree);
@@ -90,7 +79,7 @@ test('金标准：序列化 schema 完整且可 round-trip', () => {
   assert.ok(Array.isArray(rt.children));
 });
 
-test('金标准：给我的数法打分——书籍勘误后双锯齿零违规，其余读法仍非零违规', () => {
+test('金标准：给我的数法打分——W-X-Y 保留单锯齿子角色要求，新增书§7.4完整Y通道闸门，OV-001仍是指引', () => {
   const candles = rawCandles.map((c, i) => ({ ...c, index: i }));
   let fine = t.detectPivots(candles, 1, {});
   fine = t.anchorBoundaryExtremes(candles, fine);
@@ -104,10 +93,16 @@ test('金标准：给我的数法打分——书籍勘误后双锯齿零违规�
   const res = t.evaluateExplicitCount(wxy, fine, candles);
   assert.equal(res.direction, 'down');
   assert.ok(res.results.length >= 4, '应至少匹配单锯齿/双锯齿/平台/双重横向4种');
-  // 书籍勘误（y浪通常>90%w，非必须）后，双锯齿读法(y/w≈0.879)不再违反该规则——真正零违规
+  // 书籍勘误后 y/w≈0.879 已不违反价格规则；但 w(126296→80524)、y(97964→57718) 自身都是双锯齿，
+  // 书 7.3 要求须为单锯齿 → 各计一次文法违规（enforce-strict-wave-grammar）
   const double = res.results.find((r) => r.patternId === 'zigzag-double');
   assert.ok(double, '应含双锯齿读法');
-  assert.equal(double.total.tier1, 0, '双锯齿读法(y/w≈0.879)不再因 y下界规则计违规');
+  assert.ok(double.ruleResults.filter(rr=>!rr.desc.includes('0-x')).every(rr=>rr.pass),'OV-001不得成为硬失败');
+  assert.equal(double.ruleResults.find(rr=>rr.desc.includes('0-x')).pass,false,'书§7.4：实际完整Y路径越线');
+  assert.equal(double.total.tier1,double.grammarViolations+1,'新增通道失败与实际文法失败分别计分');
+  assert.ok(double.legNotes.some((n) => n.startsWith('w 须为单锯齿')), double.legNotes.join('; '));
+  assert.deepEqual([double.evidence[0].role,double.evidence[2].role],['zigzag','zigzag'],'W/Y仍须各自单锯齿，未知或改选不改变角色要求');
+  assert.equal(double.grammarViolations,double.legNotes.length);
   // 其余读法（单锯齿/平台/联合形等）与该规则无关，仍应各自非零违规
   const others = res.results.filter((r) => r.patternId !== 'zigzag-double');
   assert.ok(others.every((r) => r.total.tier1 > 0), '其余读法仍应各自非零违规');
@@ -117,16 +112,21 @@ test('金标准：给我的数法打分——书籍勘误后双锯齿零违规�
   assert.equal(xRule.pass, false, '联合形 x 回撤70%规则应不通过');
 });
 
-test('金标准：现状研判——大级别偏多、失效点=57717、身份框架(XX主选)', () => {
+test('金标准：暂定调整身份、失效点=57717、父级X与目标参考一致', () => {
   const { tree } = buildGoldenTree();
   const a = tree.assessment;
   assert.ok(a, '应生成现状研判');
-  assert.equal(a.bigTrend, 'up', '顶层为调整浪(向下)→修正完成→大级别偏多');
+  // 同周期暂按调整读取；旧楔形失败不再作为身份前提。
+  assert.equal(a.positionPending, false, '失效楔形不再冒充位置待定主选');
+  assert.equal(a.bigTrend, 'up', '当前调整读法的方向解释');
   assert.equal(a.invalidation, 57717.55, '失效点=顶层完成结构终点极值');
   assert.equal(a.currentDir, 'up', '当前波段=反弹向上');
   const h = a.bounceHyp;
   assert.ok(h, '应有当前反弹身份研判');
-  assert.equal(h.lean, 'xx', '反弹为三波→XX 主选');
+  assert.equal(h.lean, 'xx');
+  assert.equal(h.parentKey,'combination');
+  assert.equal(h.xx.aftermath,'Y 浪下跌');
+  assert.equal(h.xx.targets[0].price,57717.55+0.2*(126296-57717.55));
   // XX 上方目标在失效点上方、其下跌段在失效点下方
   assert.ok(h.xx.targets.every((t2) => t2.price > a.invalidation));
   assert.ok(h.xx.down.every((t2) => t2.price < a.invalidation));
@@ -169,7 +169,7 @@ test('金标准：报告以 4 条简报开头，失效点=assessment.invalidatio
   assert.ok(idx.every((i, k) => k === 0 || i > idx[k - 1]), '简报 4 条应按序出现');
   const inv = t.formatPrice(tree.assessment.invalidation);
   assert.ok(md.includes(`3. 核心生死线（失效点）：${inv}`), `失效点应为 ${inv}`);
-  assert.ok(md.includes('警惕 Z 浪下跌'), '主选 XX 时应提示警惕 Z 浪下跌');
+  assert.ok(md.includes('警惕 Y 浪下跌'), '主选 XX 时应提示警惕 Y 浪下跌');
   assert.ok(md.includes('非投资建议'), '应有免责声明');
 });
 
@@ -187,9 +187,9 @@ test('金标准：简报与最新收盘比对——跌破支撑标"已跌破"，
   // 低于摆动高点的 XX 目标 = 反弹已摸到过 → 标已到
   const tg = tree.assessment.bounceHyp.xx.targets.filter((x) => x.price > 0).slice(0, 3);
   const expected = tg.filter((x) => x.price <= swing).length;
-  assert.ok(expected > 0, 'fixture 中应至少有一个目标已被摆动高点越过');
+  assert.equal(expected,0,'父级X按W整体计算，fixture尚未到目标');
   assert.equal((ok.match(/（已到）/g) || []).length, expected, '越过的目标应标已到');
-  if (expected === tg.length) assert.ok(ok.includes('目标均已到，警惕 Z 浪下跌'));
+  if (expected === tg.length) assert.ok(ok.includes('目标均已到，警惕 Y 浪下跌'));
 });
 
 test('金标准：三轴明细折叠在 <details> 内，TL;DR/大白话版不再出现', () => {
@@ -233,9 +233,9 @@ test('金标准：关键数字（主选形态/失效点/反弹目标）仍在，
   const { tree } = buildGoldenTree();
   const md = t.renderMarkdownReport({ product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(), generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: 314 }, tree);
   assert.ok(md.includes('57718') || md.includes('57717'), '失效点数字应仍在报告中');
-  assert.ok(md.includes('双锯齿'), '主选形态名称应仍在报告中（轴①）');
+  assert.ok(md.includes(tree.primary.manual.label), '采用候选的形态名称应仍在报告中（轴①）');
   // 反弹目标梯度（XX/B/推动3 三选一）只应在轴③出现一次，不与轴①父级候选表重复列出
-  assert.equal(md.split('若是 XX 连接浪').length - 1, 1, 'XX 连接浪目标梯度应只在轴③出现一次');
+  assert.equal(md.split('若是 X 连接浪').length - 1, 1, 'XX 连接浪目标梯度应只在轴③出现一次');
   assert.ok(!md.includes('反弹目标（回撤比×参考腿）'), '轴①父级候选表不应再重列目标价梯度');
 });
 
@@ -247,11 +247,13 @@ test('金标准：大白话版不再整体复述三轴明细', () => {
   assert.ok(!md.includes('接下来可能到哪'), '大白话版不应再有"接下来可能到哪"明细节');
 });
 
-test('金标准：数据层零改动——serializeTree/serializeRankedCounts/serializeCurrentWaveStructures 不受呈现层重构影响', () => {
+test('金标准：序列化仍保留排名/当前结构，且新增待验证证据', () => {
   const { tree } = buildGoldenTree();
   const s = t.serializeTree(tree);
-  assert.equal(s.patternId, 'zigzag-double');
-  assert.deepEqual(s.points.map((p) => p.price), [126296, 80524.65, 97963.62, 57717.55]);
+  assert.equal(s.patternId, 'zigzag');
+  assert.equal(s.verificationStatus,'pending');
+  assert.deepEqual(s.points.map(p=>p.price),tree.primary.points.map(p=>p.price));
+  assert.equal(s.points[0].price,126296);assert.equal(s.points.at(-1).price,57717.55);
   const rc = t.serializeRankedCounts(tree) || [];
   assert.ok(rc.length >= 4, 'rankedCounts 候选数应不受呈现层改动影响');
   assert.equal(rc[0].framing, 'A');
@@ -272,16 +274,17 @@ test('金标准：框架B主选末腿锚全局极值57717.55、标延伸中，�
   assert.equal(last.status, '⏳ 延伸中', '末腿状态应为延伸中');
 });
 
-test('金标准：书籍勘误后"y须>90%w"已降为指引，延伸中双锯齿末腿不再因此计违规/待判，tier1=0 (§2.2/2.3)', () => {
+test('金标准：书籍勘误后"y须>90%w"已降为指引，任何候选都不再因此计违规/待判；框架B末浪进行中仍保留 (§2.2/2.3)', () => {
   const { tree } = buildGoldenTree();
   const rc = t.serializeRankedCounts(tree) || [];
-  // 双锯齿的 y 就是进行中末腿；y/w≈0.879<0.9，若仍是硬规则会需要闸门暂缓——
-  // 书籍勘误后该下界已降为 guidelines，压根不再进入 rules/failed，无需闸门介入。
-  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.label.includes('双锯齿'));
-  assert.ok(dz, '应有框架B双锯齿末浪进行中候选');
-  assert.equal(dz.score.tier1, 0, '规则全过（tier1=0，y下界已非规则）');
-  assert.ok(!(dz.deferred || []).some((d) => d.desc.includes('y浪价格须>w浪90%')), 'y须>90%w 已非规则，不应再出现在待判里');
-  assert.ok(!(dz.violations || []).some((v) => v.desc.includes('y浪价格须>w浪90%')), 'y须>90%w 已非规则，不应再计违规');
+  // 严格文法后框架B双锯齿因 w 为三锯齿出局，改为全表断言 y 下界不再作为规则出现；
+  // 框架B继续保留；边界发散不能因延伸中而豁免。
+  const b = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress);
+  assert.ok(b, '应保留框架B末浪进行中候选');
+  rc.forEach((r) => {
+    assert.ok(!(r.deferred || []).some((d) => d.desc.includes('y浪价格须>w浪90%')), 'y须>90%w 已非规则，不应再出现在待判里');
+    assert.ok(!(r.violations || []).some((v) => v.desc.includes('y浪价格须>w浪90%')), 'y须>90%w 已非规则，不应再计违规');
+  });
 });
 
 test('金标准：与末腿终点无关的规则(已完成的y)仍照计违规——闸门不误伤 (§2.2)', () => {
@@ -300,18 +303,18 @@ test('金标准：与末腿终点无关的规则(已完成的y)仍照计违规�
   const failedIds = failed.map((f) => f.id);
   assert.ok(failedIds.includes('zigzag-triple.ratio.y-gt-x'), '构造点位应违反 y-gt-x');
   assert.ok(failedIds.includes('zigzag-triple.ratio.z-vs-xx-y-w'), '构造点位应违反 z 规则');
-  const gated = t.applyInProgressRuleGate({ points, direction: 'down', manual, measures: {}, score: { failed } }, []);
+  const gated = t.applyInProgressRuleGate({ points, finalWaveInProgress:true, direction: 'down', manual, measures: {}, score: { failed, tier1:failed.length, tier2:failed.reduce((n,f)=>n+f.overshoot,0) } }, []);
   const deferredIds = (gated.deferred || []).map((d) => d.id);
   assert.ok(!deferredIds.includes('zigzag-triple.ratio.y-gt-x'), '已完成 y 浪的规则不应被闸门暂缓（照计违规）');
   assert.ok(deferredIds.includes('zigzag-triple.ratio.z-vs-xx-y-w'), '进行中 z 浪的规则应被闸门暂缓（待判）');
 });
 
-test('金标准：闸门后tier1=0的框架B候选仍带未完成度惩罚、不顶替框架A主选 (§2.4)', () => {
+test('金标准：闸门后框架B候选仍带未完成度惩罚、不顶替框架A主选 (§2.4)', () => {
   const { tree } = buildGoldenTree();
   const rc = t.serializeRankedCounts(tree) || [];
   assert.equal(rc[0].framing, 'A', '主选仍是框架A（已完成候选）');
-  const b = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.score.tier1 === 0);
-  assert.ok(b, '应有规则全过的框架B末浪进行中候选');
+  const b = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress);
+  assert.ok(b, '应保留框架B末浪进行中候选');
   assert.ok(b.score.incompleteness > 0, '即便规则全过仍带未完成度惩罚');
   assert.ok(rc.indexOf(b) > 0, '排在框架A主选之后，不因规则全过顶替主选');
 });
@@ -320,20 +323,20 @@ test('金标准：闸门后tier1=0的框架B候选仍带未完成度惩罚、不
 // 用户 explore 场景：BTC 备选1（双锯齿 w-x-y），y=97964→57718⏳ 的末端子腿 82814→57718
 // 被显示为单锯齿（调整），但该子腿两可——驱动/5浪读法同样零违规，只是被 y 位(调整角色)压掉。
 
-test('金标准：备选1双锯齿的末端两可腿(82814→57718)带 altCharacter，对侧=driving/推动浪 (§2/§4.1)', () => {
+test('金标准：框架B末端两可腿标注与当前实际选择的子候选一致 (§2/§4.1)', () => {
+  // 收敛规则修复后，末端两可子腿变为78015→57718，仍须保留对侧读法。
   const { tree } = buildGoldenTree();
   const rc = t.serializeRankedCounts(tree) || [];
-  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.label.includes('双锯齿'));
-  assert.ok(dz, '应有框架B双锯齿末浪进行中候选（备选1）');
+  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.altCharacter);
+  assert.ok(dz, '应保留框架B末浪进行中候选');
   const alt = dz.altCharacter;
   assert.ok(alt, '末端两可腿应带 altCharacter');
-  assert.equal(Math.round(alt.legFrom.price), 82814, '两可腿起点=82814');
-  assert.equal(Math.round(alt.legTo.price), 57718, '两可腿终点=57718（与 y 腿终点重合，是 y 的末端子腿）');
-  assert.equal(alt.shownCharacter, 'corrective', '当前显示性格=调整（单锯齿），因该腿占双锯齿 y 位');
-  assert.equal(alt.character, 'driving', '对侧读法=驱动');
-  assert.ok(alt.label.includes('推动浪'), `对侧形态应为推动浪，实际 ${alt.label}`);
-  assert.ok(Array.isArray(alt.points) && alt.points.length >= 6, '对侧读法(5浪)应带完整点位序列');
-  assert.equal(Math.round(alt.points[0].price), 82814);
+  assert.ok(alt.legFrom.index<alt.legTo.index,'两可子段按时间有序');
+  assert.equal(Math.round(alt.legTo.price), 57718, '两可腿终点=57718（与末腿终点重合，是末端子腿）');
+  assert.ok(['driving','corrective'].includes(alt.shownCharacter));
+  assert.equal(alt.character,alt.shownCharacter==='driving'?'corrective':'driving','对侧性格与当前采用子树相反');
+  assert.ok(Array.isArray(alt.points) && alt.points.length >= 4, '对侧读法应带完整点位序列');
+  assert.equal(alt.points[0].price,alt.legFrom.price);
   assert.equal(Math.round(alt.points[alt.points.length - 1].price), 57718);
 });
 
@@ -342,21 +345,21 @@ test('金标准：altCharacter 标注不改变选中的计数与排名（纯标�
   const rc = t.serializeRankedCounts(tree) || [];
   // 与既有金标准断言完全一致：主选仍为框架A、顶层结构不变——加标注前后这些不变量应保持一致
   assert.equal(rc[0].framing, 'A', '标注后主选仍是框架A（未被两可标注影响排名）');
-  assert.equal(tree.primary.patternId, 'zigzag-double', '标注后顶层主选仍为双锯齿 W-X-Y');
-  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.label.includes('双锯齿'));
-  assert.equal(dz.score.tier1, 0, '标注后该候选 tier1 仍为 0（闸门后规则全过，不受影响）');
+  assert.equal(tree.primary.patternId, 'zigzag', '标注不重新引入失效楔形');
+  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.altCharacter);
+  assert.equal(dz.score.tier1,tree.primary.score.tier1,'两可标注不抹去既有结构问题');
 });
 
 test('金标准：Markdown 报告在备选表格行内联两可提示、表格下方附对侧点位 (inline-extending-leg-fork-in-table §4)', () => {
   const { tree } = buildGoldenTree();
   const md = t.renderRankedCounts(tree);
   const rc = t.serializeRankedCounts(tree) || [];
-  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.label.includes('双锯齿'));
+  const dz = rc.find((r) => r.framing === 'B' && r.finalWaveInProgress && r.altCharacter);
   const alt = dz.altCharacter;
   const shortShown = alt.shownLabel.replace(/（.*?）/, '');
   const shortAlt = alt.label.replace(/（.*?）/, '');
   assert.ok(md.includes(`两可:${shortShown}/${shortAlt}`), '备选表格"腿"列应内联"两可:现取/对侧"短标签后缀');
-  assert.ok(md.includes('82814'), '报告应含两可腿起点 82814');
+  assert.ok(md.includes(t.formatPrice(alt.legFrom.price)), '报告应含当前实际采用的两可腿起点');
   assert.ok(md.includes('对侧点位'), '报告应含表格下方的对侧点位附注行');
   assert.ok(!md.includes('对侧读法点位'), '旧的表格外两行式脚注（含"对侧读法点位"）不应再出现在备选表格处');
 });
@@ -403,7 +406,11 @@ test('金标准：细枢轴充足(≥5)时产出 T4"上涨5浪推动·⑤进行�
   assert.ok(t4, 'spanLast之后细枢轴≥5个时应产出T4"⑤进行中"读法');
   assert.equal(t4.legs.length, 5, '子计数应完整含①②③④(完成)+⑤(进行中)');
   assert.deepEqual(t4.legs.map((l) => l.name), ['①', '②', '③', '④', '⑤']);
-  assert.ok(t4.legs.slice(0, 4).every((l) => l.status === '完成'), '①②③④应均已完成');
+  assert.equal(t4.scenarioOnly,true,'⑤模板是条件情景，不冒充已确认结构');
+  assert.ok(t4.legs.slice(0,4).every(l=>l.status!=='完成'),'未证明的①②③④不能宣告完成');
+  assert.equal(t4.evidence.length,5,'每条假设腿都有引擎证据或待判原因');
+  assert.equal(t4.verificationStatus,t4.tier1>0?'invalid':'pending','情景状态与可判价格/角色违规同步');
+  assert.equal(t4.completionStatus,t4.tier1>0?'invalidated':'forming');
   assert.equal(t4.legs[4].status, '⏳进行中', '⑤应标进行中');
   // 失效点=p4（④底），不随每根新K线漂移——直接等于④腿的终点
   assert.equal(Math.round(t4.invalidation.price), Math.round(t4.legs[3].to), '失效点应锚定在p4（④底）');
@@ -424,4 +431,30 @@ test('金标准：Markdown 报告含"当前进行浪：可能的具体结构"新
   assert.ok(s, 'serializeTree 应返回顶层节点');
   // currentWaveStructures 是与 tree 平级的字段（非 serializeTree 的一部分），单独校验其存在
   assert.ok(tree.currentWaveStructures && Array.isArray(tree.currentWaveStructures.structures), 'tree.currentWaveStructures 应平级挂出、结构非空');
+});
+
+// enforce-strict-wave-grammar：真实案例整树不变量——凡子腿形态不在该位置允许集合内，父级必须已计文法违规
+test('金标准：树中不存在未计违规的嵌套联合形 / 错位楔形', () => {
+  const { tree } = buildGoldenTree();
+  const bad = [];
+  const seen = new Set();
+  function walk(cand) {
+    if (!cand || seen.has(cand)) return;
+    seen.add(cand);
+    const pid = cand.patternId;
+    assert.notEqual(pid, 'diagonal', '不得再出现 diagonal');
+    const pat = t.PATTERNS.find((p) => p.id === pid);
+    (cand.children || []).forEach((child, i) => {
+      if (!child || child.isLeaf || !child.primary) return;
+      const cid = child.primary.patternId;
+      const roles = [pat.childRoles, ...(pat.childRolesAlt || [])].map((rs) => rs[i]);
+      const allowed = roles.some((r) => t.roleAllows(r, cid));
+      if (!allowed && !(cand.score && cand.score.grammarViolations > 0)) {
+        bad.push(`${cid} 位于 ${pid} 第${i + 1}腿（须 ${roles.join('/')}）却未计违规`);
+      }
+      [child.primary, ...(child.alternates || [])].forEach(walk);
+    });
+  }
+  [tree.primary, ...(tree.alternates || [])].forEach(walk);
+  assert.deepEqual(bad, []);
 });

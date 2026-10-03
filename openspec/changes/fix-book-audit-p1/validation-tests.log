@@ -1,0 +1,1324 @@
+TAP version 13
+# Subtest: impulse accepts wave 3 shorter than wave 1 when wave 5 is shortest
+ok 1 - impulse accepts wave 3 shorter than wave 1 when wave 5 is shortest
+  ---
+  duration_ms: 2.0234
+  type: 'test'
+  ...
+# Subtest: expanded-flat geometry reaches the ABC subtype validator
+ok 2 - expanded-flat geometry reaches the ABC subtype validator
+  ---
+  duration_ms: 0.806
+  type: 'test'
+  ...
+# Subtest: legacy eight-pivot WXY with a one-leg X is rejected
+ok 3 - legacy eight-pivot WXY with a one-leg X is rejected
+  ---
+  duration_ms: 2.0465
+  type: 'test'
+  ...
+# Subtest: WXY requires three swings in W, X and Y
+ok 4 - WXY requires three swings in W, X and Y
+  ---
+  duration_ms: 0.5471
+  type: 'test'
+  ...
+# Subtest: diagonal endpoint geometry is not enough without internal subwaves
+ok 5 - diagonal endpoint geometry is not enough without internal subwaves
+  ---
+  duration_ms: 1.4002
+  type: 'test'
+  ...
+# Subtest: brief mode refuses to invent WXY when no validated scenario exists
+ok 6 - brief mode refuses to invent WXY when no validated scenario exists
+  ---
+  duration_ms: 0.7562
+  type: 'test'
+  ...
+# Subtest: 未衰竭推动浪：price 与 gross 相等
+ok 7 - 未衰竭推动浪：price 与 gross 相等
+  ---
+  duration_ms: 2.6236
+  type: 'test'
+  ...
+# Subtest: 5浪衰竭：price 小于 gross（gross 取1浪起点到3浪终点）
+ok 8 - 5浪衰竭：price 小于 gross（gross 取1浪起点到3浪终点）
+  ---
+  duration_ms: 0.7372
+  type: 'test'
+  ...
+# Subtest: 单腿且起终点即极值时：price 严格等于 gross
+ok 9 - 单腿且起终点即极值时：price 严格等于 gross
+  ---
+  duration_ms: 0.3631
+  type: 'test'
+  ...
+# Subtest: 平台形 b 浪 70% 回撤规则使用 gross 基准
+ok 10 - 平台形 b 浪 70% 回撤规则使用 gross 基准
+  ---
+  duration_ms: 0.7241
+  type: 'test'
+  ...
+# Subtest: 单锯齿 a>=b>=0.2a 规则使用 price 基准
+ok 11 - 单锯齿 a>=b>=0.2a 规则使用 price 基准
+  ---
+  duration_ms: 0.3855
+  type: 'test'
+  ...
+# Subtest: 破坏一条规则即淘汰，即使所有指引都命中
+ok 12 - 破坏一条规则即淘汰，即使所有指引都命中
+  ---
+  duration_ms: 0.4125
+  type: 'test'
+  ...
+# Subtest: 全部规则通过时，候选幸存并计算指引得分
+ok 13 - 全部规则通过时，候选幸存并计算指引得分
+  ---
+  duration_ms: 0.2838
+  type: 'test'
+  ...
+# Subtest: 规则按 pattern→ratio→time 顺序求值，首个失败即返回
+ok 14 - 规则按 pattern→ratio→time 顺序求值，首个失败即返回
+  ---
+  duration_ms: 1.4003
+  type: 'test'
+  ...
+# Subtest: 标准推动浪：4浪切入1浪则淘汰，但楔形变体可幸存
+ok 15 - 标准推动浪：4浪切入1浪则淘汰，但楔形变体可幸存
+  ---
+  duration_ms: 1.13
+  type: 'test'
+  ...
+# Subtest: 推动浪：3浪最短则淘汰
+ok 16 - 推动浪：3浪最短则淘汰
+  ---
+  duration_ms: 0.5776
+  type: 'test'
+  ...
+# Subtest: 单锯齿：b浪内部插针跌破a浪起点则淘汰（gross 基准，即使 price 比率已通过）
+ok 17 - 单锯齿：b浪内部插针跌破a浪起点则淘汰（gross 基准，即使 price 比率已通过）
+  ---
+  duration_ms: 3.1779
+  type: 'test'
+  ...
+# Subtest: 平台形：b浪回撤不足a浪运行总量70%则淘汰
+ok 18 - 平台形：b浪回撤不足a浪运行总量70%则淘汰
+  ---
+  duration_ms: 0.7432
+  type: 'test'
+  ...
+# Subtest: rankSurvivors 按指引得分降序，再按结束位置降序排列
+ok 19 - rankSurvivors 按指引得分降序，再按结束位置降序排列
+  ---
+  duration_ms: 0.4709
+  type: 'test'
+  ...
+# Subtest: scanCandidates 端到端识别一段标准上涨推动浪为幸存候选
+ok 20 - scanCandidates 端到端识别一段标准上涨推动浪为幸存候选
+  ---
+  duration_ms: 2.6042
+  type: 'test'
+  ...
+# Subtest: 规则平台形：b浪运行总量=a浪70%时幸存；同一候选下扩散平台形因b比率不足被淘汰
+ok 21 - 规则平台形：b浪运行总量=a浪70%时幸存；同一候选下扩散平台形因b比率不足被淘汰
+  ---
+  duration_ms: 0.9661
+  type: 'test'
+  ...
+# Subtest: 扩散平台形：b浪运行总量为a浪1.1倍、c浪超越a浪终点时幸存
+ok 22 - 扩散平台形：b浪运行总量为a浪1.1倍、c浪超越a浪终点时幸存
+  ---
+  duration_ms: 0.7864
+  type: 'test'
+  ...
+# Subtest: 顺势平台形：b浪1.1倍、c浪不超a浪终点但重叠时幸存；标记为2浪位置则淘汰
+ok 23 - 顺势平台形：b浪1.1倍、c浪不超a浪终点但重叠时幸存；标记为2浪位置则淘汰
+  ---
+  duration_ms: 1.2944
+  type: 'test'
+  ...
+# Subtest: 收缩三角形：子浪振幅依次收敛时幸存；不收敛则淘汰
+ok 24 - 收缩三角形：子浪振幅依次收敛时幸存；不收敛则淘汰
+  ---
+  duration_ms: 0.9232
+  type: 'test'
+  ...
+# Subtest: 收缩三角形作为4浪时，切入1浪终点则淘汰
+ok 25 - 收缩三角形作为4浪时，切入1浪终点则淘汰
+  ---
+  duration_ms: 0.5544
+  type: 'test'
+  ...
+# Subtest: 双锯齿：w/y腿自身须呈单锯齿形态，否则淘汰
+ok 26 - 双锯齿：w/y腿自身须呈单锯齿形态，否则淘汰
+  ---
+  duration_ms: 0.7895
+  type: 'test'
+  ...
+# Subtest: legIsZigzagShaped: 4点单锯齿形态判真，非4点或b破a起点判假
+ok 27 - legIsZigzagShaped: 4点单锯齿形态判真，非4点或b破a起点判假
+  ---
+  duration_ms: 0.4244
+  type: 'test'
+  ...
+# Subtest: 双重横向整理：x浪回撤w浪70%时幸存，回撤不足则淘汰
+ok 28 - 双重横向整理：x浪回撤w浪70%时幸存，回撤不足则淘汰
+  ---
+  duration_ms: 0.6607
+  type: 'test'
+  ...
+# Subtest: 楔形手册按 positionHint 输出引导/终结楔形标签
+ok 29 - 楔形手册按 positionHint 输出引导/终结楔形标签
+  ---
+  duration_ms: 0.5181
+  type: 'test'
+  ...
+# Subtest: scanPositionalCandidates 返回结构完整的候选（幸存或淘汰均可解释）
+ok 30 - scanPositionalCandidates 返回结构完整的候选（幸存或淘汰均可解释）
+  ---
+  duration_ms: 0.501
+  type: 'test'
+  ...
+# Subtest: 通道类型按浪型分派：推动浪=平行，楔形/三角=收缩，扩散平台=扩散
+ok 31 - 通道类型按浪型分派：推动浪=平行，楔形/三角=收缩，扩散平台=扩散
+  ---
+  duration_ms: 0.5164
+  type: 'test'
+  ...
+# Subtest: 单锯齿平行通道：连 0 与 b 为基线、过 a 作平行线
+ok 32 - 单锯齿平行通道：连 0 与 b 为基线、过 a 作平行线
+  ---
+  duration_ms: 0.5706
+  type: 'test'
+  ...
+# Subtest: 收缩三角形使用收缩通道：连 a、c 与 b、d
+ok 33 - 收缩三角形使用收缩通道：连 a、c 与 b、d
+  ---
+  duration_ms: 0.2281
+  type: 'test'
+  ...
+# Subtest: 回撤取点：未衰竭推动浪取 0/5，衰竭取 0/3
+ok 34 - 回撤取点：未衰竭推动浪取 0/5，衰竭取 0/3
+  ---
+  duration_ms: 0.4594
+  type: 'test'
+  ...
+# Subtest: 扩展取点：预测5浪取 0/1/4；4浪为三角形时第3点取其 e 点
+ok 35 - 扩展取点：预测5浪取 0/1/4；4浪为三角形时第3点取其 e 点
+  ---
+  duration_ms: 0.4932
+  type: 'test'
+  ...
+# Subtest: 斐波那契时间共振：两枢轴序列日重合标为共振日
+ok 36 - 斐波那契时间共振：两枢轴序列日重合标为共振日
+  ---
+  duration_ms: 0.4509
+  type: 'test'
+  ...
+# Subtest: countChildPivots 统计父跨度内更细级别的子枢轴数
+ok 37 - countChildPivots 统计父跨度内更细级别的子枢轴数
+  ---
+  duration_ms: 0.2624
+  type: 'test'
+  ...
+# Subtest: countChildPivots 含边界
+ok 38 - countChildPivots 含边界
+  ---
+  duration_ms: 0.1481
+  type: 'test'
+  ...
+# Subtest: scanAtDegree：更粗级别（更大lookback/atr倍数）产出更少的枢轴
+ok 39 - scanAtDegree：更粗级别（更大lookback/atr倍数）产出更少的枢轴
+  ---
+  duration_ms: 2.5403
+  type: 'test'
+  ...
+# Subtest: legShape：长且重叠的复杂上行腿判为调整浪（即使 ≥6 枢轴）
+ok 40 - legShape：长且重叠的复杂上行腿判为调整浪（即使 ≥6 枢轴）
+  ---
+  duration_ms: 0.4066
+  type: 'test'
+  ...
+# Subtest: legShape：干净五浪腿判为驱动浪
+ok 41 - legShape：干净五浪腿判为驱动浪
+  ---
+  duration_ms: 0.2947
+  type: 'test'
+  ...
+# Subtest: legShape：等枢轴数下，五浪与复杂调整判定不同（不再靠计数）
+ok 42 - legShape：等枢轴数下，五浪与复杂调整判定不同（不再靠计数）
+  ---
+  duration_ms: 0.4001
+  type: 'test'
+  ...
+# Subtest: 金标准：fixture 为 314 根 1d 蜡烛
+ok 43 - 金标准：fixture 为 314 根 1d 蜡烛
+  ---
+  duration_ms: 2.2699
+  type: 'test'
+  ...
+# Subtest: 金标准：顶层从区间高点 126296 起锚（缺陷1不得回归）
+ok 44 - 金标准：顶层从区间高点 126296 起锚（缺陷1不得回归）
+  ---
+  duration_ms: 3715.1958
+  type: 'test'
+  ...
+# Subtest: 金标准：顶层为已知形态、净向下
+ok 45 - 金标准：顶层为已知形态、净向下
+  ---
+  duration_ms: 2965.4032
+  type: 'test'
+  ...
+# Subtest: 金标准：存在当前进行中腿（缺陷2不得回归）
+ok 46 - 金标准：存在当前进行中腿（缺陷2不得回归）
+  ---
+  duration_ms: 2690.8169
+  type: 'test'
+  ...
+# Subtest: 金标准：无小时证据时保留暂定结构与真极值，不制造零违规楔形
+ok 47 - 金标准：无小时证据时保留暂定结构与真极值，不制造零违规楔形
+  ---
+  duration_ms: 2641.143
+  type: 'test'
+  ...
+# Subtest: 金标准：旧楔形因边界发散退出主选，W-X-Y 子角色要求仍然严格
+ok 48 - 金标准：旧楔形因边界发散退出主选，W-X-Y 子角色要求仍然严格
+  ---
+  duration_ms: 2508.1693
+  type: 'test'
+  ...
+# Subtest: 金标准：序列化 schema 完整且可 round-trip
+ok 49 - 金标准：序列化 schema 完整且可 round-trip
+  ---
+  duration_ms: 2223.8938
+  type: 'test'
+  ...
+# Subtest: 金标准：给我的数法打分——W-X-Y 保留单锯齿子角色要求，新增书§7.4完整Y通道闸门，OV-001仍是指引
+ok 50 - 金标准：给我的数法打分——W-X-Y 保留单锯齿子角色要求，新增书§7.4完整Y通道闸门，OV-001仍是指引
+  ---
+  duration_ms: 7012.7362
+  type: 'test'
+  ...
+# Subtest: 金标准：暂定调整身份、失效点=57717、父级X与目标参考一致
+ok 51 - 金标准：暂定调整身份、失效点=57717、父级X与目标参考一致
+  ---
+  duration_ms: 2337.2286
+  type: 'test'
+  ...
+# Subtest: 金标准：--count 用户 W-X-Y 的身份研判——XX 复现作者 65766–82589
+ok 52 - 金标准：--count 用户 W-X-Y 的身份研判——XX 复现作者 65766–82589
+  ---
+  duration_ms: 6492.0021
+  type: 'test'
+  ...
+# Subtest: 金标准：Markdown 报告非空且含进行中浪与计数树两节
+ok 53 - 金标准：Markdown 报告非空且含进行中浪与计数树两节
+  ---
+  duration_ms: 2369.8736
+  type: 'test'
+  ...
+# Subtest: 金标准：报告以 4 条简报开头，失效点=assessment.invalidation
+ok 54 - 金标准：报告以 4 条简报开头，失效点=assessment.invalidation
+  ---
+  duration_ms: 2247.1117
+  type: 'test'
+  ...
+# Subtest: 金标准：简报与最新收盘比对——跌破支撑标"已跌破"，摆动极值已越过的目标标"已到"
+ok 55 - 金标准：简报与最新收盘比对——跌破支撑标"已跌破"，摆动极值已越过的目标标"已到"
+  ---
+  duration_ms: 2270.1234
+  type: 'test'
+  ...
+# Subtest: 金标准：三轴明细折叠在 <details> 内，TL;DR/大白话版不再出现
+ok 56 - 金标准：三轴明细折叠在 <details> 内，TL;DR/大白话版不再出现
+  ---
+  duration_ms: 2429.1841
+  type: 'test'
+  ...
+# Subtest: 金标准：报告按三条主题轴组织，各轴标题恰好出现一次
+ok 57 - 金标准：报告按三条主题轴组织，各轴标题恰好出现一次
+  ---
+  duration_ms: 2205.1213
+  type: 'test'
+  ...
+# Subtest: 金标准：转折时间窗全报告仅出现一次（归属轴③）
+ok 58 - 金标准：转折时间窗全报告仅出现一次（归属轴③）
+  ---
+  duration_ms: 2288.6066
+  type: 'test'
+  ...
+# Subtest: 金标准：关键数字（主选形态/失效点/反弹目标）仍在，且各自只有一个权威落点
+ok 59 - 金标准：关键数字（主选形态/失效点/反弹目标）仍在，且各自只有一个权威落点
+  ---
+  duration_ms: 2479.0237
+  type: 'test'
+  ...
+# Subtest: 金标准：大白话版不再整体复述三轴明细
+ok 60 - 金标准：大白话版不再整体复述三轴明细
+  ---
+  duration_ms: 2223.973
+  type: 'test'
+  ...
+# Subtest: 金标准：序列化仍保留排名/当前结构，且新增待验证证据
+ok 61 - 金标准：序列化仍保留排名/当前结构，且新增待验证证据
+  ---
+  duration_ms: 2373.1839
+  type: 'test'
+  ...
+# Subtest: 金标准：框架B主选末腿锚全局极值57717.55、标延伸中，非回撤价 (§2.1)
+ok 62 - 金标准：框架B主选末腿锚全局极值57717.55、标延伸中，非回撤价 (§2.1)
+  ---
+  duration_ms: 2253.6488
+  type: 'test'
+  ...
+# Subtest: 金标准：书籍勘误后"y须>90%w"已降为指引，任何候选都不再因此计违规/待判；框架B末浪进行中仍保留 (§2.2/2.3)
+ok 63 - 金标准：书籍勘误后"y须>90%w"已降为指引，任何候选都不再因此计违规/待判；框架B末浪进行中仍保留 (§2.2/2.3)
+  ---
+  duration_ms: 2265.2753
+  type: 'test'
+  ...
+# Subtest: 金标准：与末腿终点无关的规则(已完成的y)仍照计违规——闸门不误伤 (§2.2)
+ok 64 - 金标准：与末腿终点无关的规则(已完成的y)仍照计违规——闸门不误伤 (§2.2)
+  ---
+  duration_ms: 0.756
+  type: 'test'
+  ...
+# Subtest: 金标准：闸门后框架B候选仍带未完成度惩罚、不顶替框架A主选 (§2.4)
+ok 65 - 金标准：闸门后框架B候选仍带未完成度惩罚、不顶替框架A主选 (§2.4)
+  ---
+  duration_ms: 2428.5337
+  type: 'test'
+  ...
+# Subtest: 金标准：框架B末端两可腿标注与当前实际选择的子候选一致 (§2/§4.1)
+ok 66 - 金标准：框架B末端两可腿标注与当前实际选择的子候选一致 (§2/§4.1)
+  ---
+  duration_ms: 2289.0056
+  type: 'test'
+  ...
+# Subtest: 金标准：altCharacter 标注不改变选中的计数与排名（纯标注，回归金标准快照）(§5)
+ok 67 - 金标准：altCharacter 标注不改变选中的计数与排名（纯标注，回归金标准快照）(§5)
+  ---
+  duration_ms: 2320.206
+  type: 'test'
+  ...
+# Subtest: 金标准：Markdown 报告在备选表格行内联两可提示、表格下方附对侧点位 (inline-extending-leg-fork-in-table §4)
+ok 68 - 金标准：Markdown 报告在备选表格行内联两可提示、表格下方附对侧点位 (inline-extending-leg-fork-in-table §4)
+  ---
+  duration_ms: 2279.1853
+  type: 'test'
+  ...
+# Subtest: 金标准：当前进行浪结构表非空，至少含一条看跌(续大势)+一条看多/中继(反弹侧)，各带子计数/当前浪位/投影/失效点
+ok 69 - 金标准：当前进行浪结构表非空，至少含一条看跌(续大势)+一条看多/中继(反弹侧)，各带子计数/当前浪位/投影/失效点
+  ---
+  duration_ms: 2212.7202
+  type: 'test'
+  ...
+# Subtest: 金标准：在建型读法"浪②进行中"出现，未走的浪③不计入违规（tier1=0，标待判）(§2.3 在建部分不误判)
+ok 70 - 金标准：在建型读法"浪②进行中"出现，未走的浪③不计入违规（tier1=0，标待判）(§2.3 在建部分不误判)
+  ---
+  duration_ms: 2319.9313
+  type: 'test'
+  ...
+# Subtest: 金标准：细枢轴充足(≥5)时产出 T4"上涨5浪推动·⑤进行中"，label去重不压掉同倾向的T3 (§1.4/1.5/2.1-2.4/5.3)
+ok 71 - 金标准：细枢轴充足(≥5)时产出 T4"上涨5浪推动·⑤进行中"，label去重不压掉同倾向的T3 (§1.4/1.5/2.1-2.4/5.3)
+  ---
+  duration_ms: 2183.3694
+  type: 'test'
+  ...
+# Subtest: 金标准：Markdown 报告含"当前进行浪：可能的具体结构"新节，_tree.json 平级挂 currentWaveStructures (§3.1-3.3)
+ok 72 - 金标准：Markdown 报告含"当前进行浪：可能的具体结构"新节，_tree.json 平级挂 currentWaveStructures (§3.1-3.3)
+  ---
+  duration_ms: 2276.8199
+  type: 'test'
+  ...
+# Subtest: 金标准：树中不存在未计违规的嵌套联合形 / 错位楔形
+ok 73 - 金标准：树中不存在未计违规的嵌套联合形 / 错位楔形
+  ---
+  duration_ms: 2379.7345
+  type: 'test'
+  ...
+# Subtest: segmentations：点数恰等于目标 n 时原样返回
+ok 74 - segmentations：点数恰等于目标 n 时原样返回
+  ---
+  duration_ms: 4.7179
+  type: 'test'
+  ...
+# Subtest: coarsenByPairs：8→6 删掉最小振幅的内部相邻对，保端点与交替
+ok 75 - coarsenByPairs：8→6 删掉最小振幅的内部相邻对，保端点与交替
+  ---
+  duration_ms: 0.8141
+  type: 'test'
+  ...
+# Subtest: buildCountTree：干净上涨推动浪→impulse-strict 且 tier1=0，五腿皆末级
+ok 76 - buildCountTree：干净上涨推动浪→impulse-strict 且 tier1=0，五腿皆末级
+  ---
+  duration_ms: 10.4302
+  type: 'test'
+  ...
+# Subtest: 终止（Q7）：4点调整段在只允许 driving 时无法成形→叶子
+ok 77 - 终止（Q7）：4点调整段在只允许 driving 时无法成形→叶子
+  ---
+  duration_ms: 0.4218
+  type: 'test'
+  ...
+# Subtest: 文法+嵌套：强制 corrective 解读，a/c 腿递归为 driving 推动浪，文法满足
+ok 78 - 文法+嵌套：强制 corrective 解读，a/c 腿递归为 driving 推动浪，文法满足
+  ---
+  duration_ms: 127.2554
+  type: 'test'
+  ...
+# Subtest: triangleGross（书3.16特例）：取最长子浪的高低差，而非整段高低差
+ok 79 - triangleGross（书3.16特例）：取最长子浪的高低差，而非整段高低差
+  ---
+  duration_ms: 0.4422
+  type: 'test'
+  ...
+# Subtest: crossDegreeHits：推动浪3浪最强→命中浪个性
+ok 80 - crossDegreeHits：推动浪3浪最强→命中浪个性
+  ---
+  duration_ms: 0.4158
+  type: 'test'
+  ...
+# Subtest: crossDegreeHits：3浪最短时不命中浪个性
+ok 81 - crossDegreeHits：3浪最短时不命中浪个性
+  ---
+  duration_ms: 0.311
+  type: 'test'
+  ...
+# Subtest: computeExpectation：给出末腿方向与斐波完成区间，标注推断
+ok 82 - computeExpectation：给出末腿方向与斐波完成区间，标注推断
+  ---
+  duration_ms: 0.7468
+  type: 'test'
+  ...
+# Subtest: 进行中浪：末点带 provisional → 主链末腿标进行中并附预期
+ok 83 - 进行中浪：末点带 provisional → 主链末腿标进行中并附预期
+  ---
+  duration_ms: 17.3836
+  type: 'test'
+  ...
+# Subtest: 顶层进行中腿：provisional 末点与起点同型被方向裁剪时，单独挂出在建腿
+ok 84 - 顶层进行中腿：provisional 末点与起点同型被方向裁剪时，单独挂出在建腿
+  ---
+  duration_ms: 6.4621
+  type: 'test'
+  ...
+# Subtest: F11：末点无 provisional 只代表潜在完成，无预期
+ok 85 - F11：末点无 provisional 只代表潜在完成，无预期
+  ---
+  duration_ms: 3.8381
+  type: 'test'
+  ...
+# Subtest: normRange：区间内 pass 且 overshoot=0
+ok 86 - normRange：区间内 pass 且 overshoot=0
+  ---
+  duration_ms: 0.4481
+  type: 'test'
+  ...
+# Subtest: normRange：低于下界，overshoot=(lo-r)/宽度
+ok 87 - normRange：低于下界，overshoot=(lo-r)/宽度
+  ---
+  duration_ms: 0.1882
+  type: 'test'
+  ...
+# Subtest: normRange：高于上界，overshoot=(r-hi)/宽度
+ok 88 - normRange：高于上界，overshoot=(r-hi)/宽度
+  ---
+  duration_ms: 0.171
+  type: 'test'
+  ...
+# Subtest: normRange：单侧(hi=Infinity)按阈值归一化
+ok 89 - normRange：单侧(hi=Infinity)按阈值归一化
+  ---
+  duration_ms: 0.1471
+  type: 'test'
+  ...
+# Subtest: normRange：null/NaN 视为最差 overshoot=1
+ok 90 - normRange：null/NaN 视为最差 overshoot=1
+  ---
+  duration_ms: 0.2031
+  type: 'test'
+  ...
+# Subtest: normGate：pass→overshoot=0；fail→|margin|/ref
+ok 91 - normGate：pass→overshoot=0；fail→|margin|/ref
+  ---
+  duration_ms: 0.2122
+  type: 'test'
+  ...
+# Subtest: 干净推动浪：全过规则，tier1=0、tier2=0
+ok 92 - 干净推动浪：全过规则，tier1=0、tier2=0
+  ---
+  duration_ms: 0.6436
+  type: 'test'
+  ...
+# Subtest: 4浪切入1浪：违反 wave4 规则，tier1≥1 且 penalized
+ok 93 - 4浪切入1浪：违反 wave4 规则，tier1≥1 且 penalized
+  ---
+  duration_ms: 0.3519
+  type: 'test'
+  ...
+# Subtest: compareCandidates：违规更少者优先，与指引无关
+ok 94 - compareCandidates：违规更少者优先，与指引无关
+  ---
+  duration_ms: 0.6944
+  type: 'test'
+  ...
+# Subtest: compareCandidates：tier1/2 相同时按指引未命中率，再按跨级别命中降序
+ok 95 - compareCandidates：tier1/2 相同时按指引未命中率，再按跨级别命中降序
+  ---
+  duration_ms: 0.3805
+  type: 'test'
+  ...
+# Subtest: selectBest：无人全过规则时，主选为最轻违规者且 penalized（优雅降级）
+ok 96 - selectBest：无人全过规则时，主选为最轻违规者且 penalized（优雅降级）
+  ---
+  duration_ms: 0.3281
+  type: 'test'
+  ...
+# Subtest: selectBest：存在全过者时不选降级候选
+ok 97 - selectBest：存在全过者时不选降级候选
+  ---
+  duration_ms: 0.185
+  type: 'test'
+  ...
+# Subtest: significantShortlist：拓扑存活序——两个大摆动挤掉夹在中间的小噪音
+ok 98 - significantShortlist：拓扑存活序——两个大摆动挤掉夹在中间的小噪音
+  ---
+  duration_ms: 1.4138
+  type: 'test'
+  ...
+# Subtest: indexCombinations：保持相对顺序、恰选 k 个的所有组合
+ok 99 - indexCombinations：保持相对顺序、恰选 k 个的所有组合
+  ---
+  duration_ms: 0.3117
+  type: 'test'
+  ...
+# Subtest: computeIncompleteness：末点非provisional恒为0；provisional按末腿完成度估计
+ok 100 - computeIncompleteness：末点非provisional恒为0；provisional按末腿完成度估计
+  ---
+  duration_ms: 0.2476
+  type: 'test'
+  ...
+# Subtest: legProportionViolated：腿间比例闸门——畸长腿判真，均衡腿判假
+ok 101 - legProportionViolated：腿间比例闸门——畸长腿判真，均衡腿判假
+  ---
+  duration_ms: 0.2551
+  type: 'test'
+  ...
+# Subtest: directionalSpanToNow：起点同框架A，终点延伸到最后一个细枢轴而非另一极值
+ok 102 - directionalSpanToNow：起点同框架A，终点延伸到最后一个细枢轴而非另一极值
+  ---
+  duration_ms: 0.2313
+  type: 'test'
+  ...
+# Subtest: 框架B端到端：now类型为L但高于全局低点(回撤中)→按逆势末浪处理，不被type误判 (gate-extending-final-leg-rules §2.1)
+ok 103 - 框架B端到端：now类型为L但高于全局低点(回撤中)→按逆势末浪处理，不被type误判 (gate-extending-final-leg-rules §2.1)
+  ---
+  duration_ms: 9.5871
+  type: 'test'
+  ...
+# Subtest: 框架B端到端：末腿终点=区间极值的朴素候选被保留、与逆势末浪候选并存 (gate-extending-final-leg-rules §2.1)
+ok 104 - 框架B端到端：末腿终点=区间极值的朴素候选被保留、与逆势末浪候选并存 (gate-extending-final-leg-rules §2.1)
+  ---
+  duration_ms: 6.0833
+  type: 'test'
+  ...
+# Subtest: 框架B逆势末浪（model-unfinished-final-wave）：now在反弹高点时不空缺，改标末浪进行中
+ok 105 - 框架B逆势末浪（model-unfinished-final-wave）：now在反弹高点时不空缺，改标末浪进行中
+  ---
+  duration_ms: 2.0318
+  type: 'test'
+  ...
+# Subtest: annotateExtendingLegForks：非两可腿(仅canCorrect，点数不足以成驱动)不加标注
+ok 106 - annotateExtendingLegForks：非两可腿(仅canCorrect，点数不足以成驱动)不加标注
+  ---
+  duration_ms: 3.1685
+  type: 'test'
+  ...
+# Subtest: annotateExtendingLegForks：只标depth≥1的两可腿，顶层腿本身(depth0)两可也不标 (design §2)
+ok 107 - annotateExtendingLegForks：只标depth≥1的两可腿，顶层腿本身(depth0)两可也不标 (design §2)
+  ---
+  duration_ms: 191.525
+  type: 'test'
+  ...
+# Subtest: annotateExtendingLegForks：非finalWaveInProgress候选不处理（原样返回）
+ok 108 - annotateExtendingLegForks：非finalWaveInProgress候选不处理（原样返回）
+  ---
+  duration_ms: 0.2913
+  type: 'test'
+  ...
+# Subtest: 价格格式回归：低价币的宏观腿不得被报告取整
+ok 109 - 价格格式回归：低价币的宏观腿不得被报告取整
+  ---
+  duration_ms: 3.5293
+  type: 'test'
+  ...
+# Subtest: 价格精度：优先 quote_increment，缺失时从 OHLC 推断，并去掉末尾零
+ok 110 - 价格精度：优先 quote_increment，缺失时从 OHLC 推断，并去掉末尾零
+  ---
+  duration_ms: 1.308
+  type: 'test'
+  ...
+# Subtest: inline-extending-leg-fork-in-table：多腿候选(三锯齿5段)只有⏳末腿带"两可"后缀，其余腿不受影响
+ok 111 - inline-extending-leg-fork-in-table：多腿候选(三锯齿5段)只有⏳末腿带"两可"后缀，其余腿不受影响
+  ---
+  duration_ms: 2.5359
+  type: 'test'
+  ...
+# Subtest: inline-extending-leg-fork-in-table：主选(\#\# 主选块)带altCharacter时维持完整解释句+独立点位行，不套用表格内联格式
+ok 112 - inline-extending-leg-fork-in-table：主选(\#\# 主选块)带altCharacter时维持完整解释句+独立点位行，不套用表格内联格式
+  ---
+  duration_ms: 0.7958
+  type: 'test'
+  ...
+# Subtest: inline-extending-leg-fork-in-table：回归——不带altCharacter的候选行无后缀、表格下方无附注
+ok 113 - inline-extending-leg-fork-in-table：回归——不带altCharacter的候选行无后缀、表格下方无附注
+  ---
+  duration_ms: 0.5393
+  type: 'test'
+  ...
+# Subtest: 双锯齿手册：y浪下界(>0.9w)已改列为指引，rules 中只保留上界(<5w)
+ok 114 - 双锯齿手册：y浪下界(>0.9w)已改列为指引，rules 中只保留上界(<5w)
+  ---
+  duration_ms: 0.4062
+  type: 'test'
+  ...
+# Subtest: 双锯齿：y/w=0.85(<0.9但>0)不再计入规则违规，只是指引未命中
+ok 115 - 双锯齿：y/w=0.85(<0.9但>0)不再计入规则违规，只是指引未命中
+  ---
+  duration_ms: 0.4666
+  type: 'test'
+  ...
+# Subtest: 双锯齿：y/w=6(>5)仍应违反上界硬规则
+ok 116 - 双锯齿：y/w=6(>5)仍应违反上界硬规则
+  ---
+  duration_ms: 0.1789
+  type: 'test'
+  ...
+# Subtest: candidateViolations：规则违规+文法违规合并，按越界降序，供报告展示原因
+ok 117 - candidateViolations：规则违规+文法违规合并，按越界降序，供报告展示原因
+  ---
+  duration_ms: 0.4136
+  type: 'test'
+  ...
+# Subtest: legEndpointsSpanExtreme：端点须为跨度真极值，内部藏更极端点则淘汰
+ok 118 - legEndpointsSpanExtreme：端点须为跨度真极值，内部藏更极端点则淘汰
+  ---
+  duration_ms: 1.5723
+  type: 'test'
+  ...
+# Subtest: grammarViolatesRole：歧义腿胜任任一角色不违规；只能胜任一方的按角色判
+ok 119 - grammarViolatesRole：歧义腿胜任任一角色不违规；只能胜任一方的按角色判
+  ---
+  duration_ms: 0.3996
+  type: 'test'
+  ...
+# Subtest: macroAlternates：淘汰"下降的连接浪"——lower-high 被选作上冲目标的退化骨架
+ok 120 - macroAlternates：淘汰"下降的连接浪"——lower-high 被选作上冲目标的退化骨架
+  ---
+  duration_ms: 0.2673
+  type: 'test'
+  ...
+# Subtest: 端到端：报告排名表里不再出现"下降的连接浪"（几何退化骨架被源头拦截）
+ok 121 - 端到端：报告排名表里不再出现"下降的连接浪"（几何退化骨架被源头拦截）
+  ---
+  duration_ms: 12.0708
+  type: 'test'
+  ...
+# Subtest: 框架B逆势末浪：now越过全局极值但同型（顺势新低）时不触发逆势路径
+ok 122 - 框架B逆势末浪：now越过全局极值但同型（顺势新低）时不触发逆势路径
+  ---
+  duration_ms: 1.379
+  type: 'test'
+  ...
+# Subtest: strengthTier：按违规数/越界/未完成度分 高/中/低（不给概率）
+ok 123 - strengthTier：按违规数/越界/未完成度分 高/中/低（不给概率）
+  ---
+  duration_ms: 0.3902
+  type: 'test'
+  ...
+# Subtest: 结构化报告：7 节齐备 + 反弹必点修正对象 + wave-3 清单 + 不给概率百分比
+ok 124 - 结构化报告：7 节齐备 + 反弹必点修正对象 + wave-3 清单 + 不给概率百分比
+  ---
+  duration_ms: 11.9216
+  type: 'test'
+  ...
+# Subtest: 文法表：双/三锯齿 w/y/z 须单锯齿，x/xx 任意调整浪（书 7.3）
+ok 125 - 文法表：双/三锯齿 w/y/z 须单锯齿，x/xx 任意调整浪（书 7.3）
+  ---
+  duration_ms: 0.2825
+  type: 'test'
+  ...
+# Subtest: 文法表：联合 W/X 非三角形，最后 Y/Z 可为三角形（书§4.5/§6.17）
+ok 126 - 文法表：联合 W/X 非三角形，最后 Y/Z 可为三角形（书§4.5/§6.17）
+  ---
+  duration_ms: 0.2221
+  type: 'test'
+  ...
+# Subtest: legRoleViolation：双锯齿 w 腿只能读成双锯齿 → 违规
+ok 127 - legRoleViolation：双锯齿 w 腿只能读成双锯齿 → 违规
+  ---
+  duration_ms: 0.1261
+  type: 'test'
+  ...
+# Subtest: legRoleViolation：w 腿歧义（单锯齿读法也干净）→ 不违规
+ok 128 - legRoleViolation：w 腿歧义（单锯齿读法也干净）→ 不违规
+  ---
+  duration_ms: 0.1262
+  type: 'test'
+  ...
+# Subtest: legRoleViolation：联合形 y 腿只能读成联合形 → 违规；x 腿为双锯齿 → 不违规
+ok 129 - legRoleViolation：联合形 y 腿只能读成联合形 → 违规；x 腿为双锯齿 → 不违规
+  ---
+  duration_ms: 0.1502
+  type: 'test'
+  ...
+# Subtest: legRoleViolation（严格口径）：各读法都不干净时也违规，不再退回比最佳读法
+ok 130 - legRoleViolation（严格口径）：各读法都不干净时也违规，不再退回比最佳读法
+  ---
+  duration_ms: 0.2248
+  type: 'test'
+  ...
+# Subtest: roleViolationNote：最佳读法本属允许形态但自身违规时，不写成「实测为同一形态」
+ok 131 - roleViolationNote：最佳读法本属允许形态但自身违规时，不写成「实测为同一形态」
+  ---
+  duration_ms: 0.1864
+  type: 'test'
+  ...
+# Subtest: shortPatternName：楔形保留楔形名，不缩成「推动浪」
+ok 132 - shortPatternName：楔形保留楔形名，不缩成「推动浪」
+  ---
+  duration_ms: 0.2136
+  type: 'test'
+  ...
+# Subtest: classRoleViolationNote：最佳性格与所需一致但自身违规时，不写「更像同一性格」
+ok 133 - classRoleViolationNote：最佳性格与所需一致但自身违规时，不写「更像同一性格」
+  ---
+  duration_ms: 0.217
+  type: 'test'
+  ...
+# Subtest: 顶层（无父级位置）楔形只保留一条，标「位置待定」
+ok 134 - 顶层（无父级位置）楔形只保留一条，标「位置待定」
+  ---
+  duration_ms: 3.4067
+  type: 'test'
+  ...
+# Subtest: evaluateLegRole：子腿点数不足所需角色 → 叶子、不违规（数据不足不证伪）
+ok 135 - evaluateLegRole：子腿点数不足所需角色 → 叶子、不违规（数据不足不证伪）
+  ---
+  duration_ms: 0.2218
+  type: 'test'
+  ...
+# Subtest: roleViolationNote：写明所需形态与实测形态；EWP 补足规则带标注
+ok 136 - roleViolationNote：写明所需形态与实测形态；EWP 补足规则带标注
+  ---
+  duration_ms: 0.2409
+  type: 'test'
+  ...
+# Subtest: 楔形拆为引导/终结两种形态，不再有 diagonal
+ok 137 - 楔形拆为引导/终结两种形态，不再有 diagonal
+  ---
+  duration_ms: 0.1878
+  type: 'test'
+  ...
+# Subtest: 文法表：推动浪 1=推动/引导、3=推动、5=推动/终结；锯齿 a/c、平台 c 的位置约束
+ok 138 - 文法表：推动浪 1=推动/引导、3=推动、5=推动/终结；锯齿 a/c、平台 c 的位置约束
+  ---
+  duration_ms: 0.3083
+  type: 'test'
+  ...
+# Subtest: 文法表：终结楔形内部 3-3-3-3-3；引导楔形 5-3-5-3-5 或 3-3-3-3-3
+ok 139 - 文法表：终结楔形内部 3-3-3-3-3；引导楔形 5-3-5-3-5 或 3-3-3-3-3
+  ---
+  duration_ms: 0.5004
+  type: 'test'
+  ...
+# Subtest: zigzagDiagonalPairViolates：a 仅能引导楔形且 c 仅能终结楔形 → 违规（书 4.5）
+ok 140 - zigzagDiagonalPairViolates：a 仅能引导楔形且 c 仅能终结楔形 → 违规（书 4.5）
+  ---
+  duration_ms: 1.2219
+  type: 'test'
+  ...
+# Subtest: 锯齿 a 浪位置的楔形标为引导楔形
+ok 141 - 锯齿 a 浪位置的楔形标为引导楔形
+  ---
+  duration_ms: 129.3608
+  type: 'test'
+  ...
+# Subtest: 市场识别：按代码格式分派，--source 可覆盖
+ok 142 - 市场识别：按代码格式分派，--source 可覆盖
+  ---
+  duration_ms: 6.2429
+  type: 'test'
+  ...
+# Subtest: 东方财富 secid 与价格小数位
+ok 143 - 东方财富 secid 与价格小数位
+  ---
+  duration_ms: 0.9625
+  type: 'test'
+  ...
+# Subtest: 剔除未收盘 K 线：美股按美东 16:00、A 股按北京时间 15:00
+ok 144 - 剔除未收盘 K 线：美股按美东 16:00、A 股按北京时间 15:00
+  ---
+  duration_ms: 42.4904
+  type: 'test'
+  ...
+# Subtest: Twelve Data：参数含 adjust=splits，解析为交易日 UTC 零点，错误透传
+ok 145 - Twelve Data：参数含 adjust=splits，解析为交易日 UTC 零点，错误透传
+  ---
+  duration_ms: 2.7835
+  type: 'test'
+  ...
+# Subtest: Twelve Data：满 5000 根时向前翻页
+ok 146 - Twelve Data：满 5000 根时向前翻页
+  ---
+  duration_ms: 50.7402
+  type: 'test'
+  ...
+# Subtest: 美股缺 key：报错并提示设置方式，不发请求
+ok 147 - 美股缺 key：报错并提示设置方式，不发请求
+  ---
+  duration_ms: 1.1953
+  type: 'test'
+  ...
+# Subtest: 东方财富：fqt=1 前复权、字段顺序 date,open,close,high,low、带名称
+ok 148 - 东方财富：fqt=1 前复权、字段顺序 date,open,close,high,low、带名称
+  ---
+  duration_ms: 1.1111
+  type: 'test'
+  ...
+# Subtest: 东方财富美股：按 105/106/107 依次尝试
+ok 149 - 东方财富美股：按 105/106/107 依次尝试
+  ---
+  duration_ms: 0.6867
+  type: 'test'
+  ...
+# Subtest: 股票报告：标题带名称，时间按交易所时区，来源为对应数据源
+ok 150 - 股票报告：标题带名称，时间按交易所时区，来源为对应数据源
+  ---
+  duration_ms: 4.8045
+  type: 'test'
+  ...
+# Subtest: tfStepDown：粗→细逐级降，末级返回 null
+ok 151 - tfStepDown：粗→细逐级降，末级返回 null
+  ---
+  duration_ms: 4.3061
+  type: 'test'
+  ...
+# Subtest: classifyPullbackLevel：深度 ≤ 历史中位数 → 小级别
+ok 152 - classifyPullbackLevel：深度 ≤ 历史中位数 → 小级别
+  ---
+  duration_ms: 0.9284
+  type: 'test'
+  ...
+# Subtest: historicalPullbackDepths：只取 H→L 相邻对的回撤比率
+ok 153 - historicalPullbackDepths：只取 H→L 相邻对的回撤比率
+  ---
+  duration_ms: 0.6235
+  type: 'test'
+  ...
+# Subtest: splitPullbackAtLow：剥出摆动极值/真低点/反弹极值与两截
+ok 154 - splitPullbackAtLow：剥出摆动极值/真低点/反弹极值与两截
+  ---
+  duration_ms: 0.632
+  type: 'test'
+  ...
+# Subtest: readCombination：联合形 W/X/Y 逐腿 + XX 对 Y 回撤%
+ok 155 - readCombination：联合形 W/X/Y 逐腿 + XX 对 Y 回撤%
+  ---
+  duration_ms: 2.5313
+  type: 'test'
+  ...
+# Subtest: zwaveProjection：主目标 = Z=W=Y 等长带，含 0.236 破位档（锁 74758 案例）
+ok 156 - zwaveProjection：主目标 = Z=W=Y 等长带，含 0.236 破位档（锁 74758 案例）
+  ---
+  duration_ms: 0.9798
+  type: 'test'
+  ...
+# Subtest: renderPullbackNarrative：无子结构时形态待明、无警戒线措辞
+ok 157 - renderPullbackNarrative：无子结构时形态待明、无警戒线措辞
+  ---
+  duration_ms: 1.8092
+  type: 'test'
+  ...
+# Subtest: drillPullback：自适应步降到子级别并拿到 ≥4 枢轴（注入 fetchFn）
+ok 158 - drillPullback：自适应步降到子级别并拿到 ≥4 枢轴（注入 fetchFn）
+  ---
+  duration_ms: 1.9028
+  type: 'test'
+  ...
+# Subtest: enrichCurrentPullback：structUp=false（下跌途中反弹）不产叙述
+ok 159 - enrichCurrentPullback：structUp=false（下跌途中反弹）不产叙述
+  ---
+  duration_ms: 0.8008
+  type: 'test'
+  ...
+# Subtest: enrichCurrentPullback：高点回撤经下钻产出 subDegree/structureLine（注入 fetchFn）
+ok 160 - enrichCurrentPullback：高点回撤经下钻产出 subDegree/structureLine（注入 fetchFn）
+  ---
+  duration_ms: 5.3129
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 C=5B
+ok 161 - 书籍开闭边界 C=5B
+  ---
+  duration_ms: 4.2353
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 C=.9B U02 handbook default
+ok 162 - 书籍开闭边界 C=.9B U02 handbook default
+  ---
+  duration_ms: 0.4176
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 X=W
+ok 163 - 书籍开闭边界 X=W
+  ---
+  duration_ms: 0.6561
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 Y=X
+ok 164 - 书籍开闭边界 Y=X
+  ---
+  duration_ms: 0.4401
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 Y=5W
+ok 165 - 书籍开闭边界 Y=5W
+  ---
+  duration_ms: 1.7292
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 XX=Y
+ok 166 - 书籍开闭边界 XX=Y
+  ---
+  duration_ms: 1.0863
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 Z=XX inclusive
+ok 167 - 书籍开闭边界 Z=XX inclusive
+  ---
+  duration_ms: 0.617
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 expanded B=A
+ok 168 - 书籍开闭边界 expanded B=A
+  ---
+  duration_ms: 1.1139
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 running B=A
+ok 169 - 书籍开闭边界 running B=A
+  ---
+  duration_ms: 0.6486
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 triangle B=2A
+ok 170 - 书籍开闭边界 triangle B=2A
+  ---
+  duration_ms: 1.1483
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 triangle C=B
+ok 171 - 书籍开闭边界 triangle C=B
+  ---
+  duration_ms: 0.4975
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 triangle D=C inclusive
+ok 172 - 书籍开闭边界 triangle D=C inclusive
+  ---
+  duration_ms: 0.3257
+  type: 'test'
+  ...
+# Subtest: 书籍开闭边界 triangle E=D
+ok 173 - 书籍开闭边界 triangle E=D
+  ---
+  duration_ms: 0.3616
+  type: 'test'
+  ...
+# Subtest: OV-001: Y=.879W only loses guideline, all own price/path rules can pass
+ok 174 - OV-001: Y=.879W only loses guideline, all own price/path rules can pass
+  ---
+  duration_ms: 1.8596
+  type: 'test'
+  ...
+# Subtest: §1.5 wave 3 second longest remains permitted
+ok 175 - §1.5 wave 3 second longest remains permitted
+  ---
+  duration_ms: 2.5813
+  type: 'test'
+  ...
+# Subtest: §3.16 absolute length valid but percent wave 3 shortest fails
+ok 176 - §3.16 absolute length valid but percent wave 3 shortest fails
+  ---
+  duration_ms: 0.5105
+  type: 'test'
+  ...
+# Subtest: §3.8 truncated fifth 70% equality allowed; insufficient fifth fails
+ok 177 - §3.8 truncated fifth 70% equality allowed; insufficient fifth fails
+  ---
+  duration_ms: 0.4003
+  type: 'test'
+  ...
+# Subtest: §1.5/§6.20 OHLC interior violations cannot be hidden by legal endpoints
+ok 178 - §1.5/§6.20 OHLC interior violations cannot be hidden by legal endpoints
+  ---
+  duration_ms: 0.4285
+  type: 'test'
+  ...
+# Subtest: §6.4/§5.1/§4.5 role restrictions preserve permitted special cases
+ok 179 - §6.4/§5.1/§4.5 role restrictions preserve permitted special cases
+  ---
+  duration_ms: 0.3784
+  type: 'test'
+  ...
+# Subtest: §6.6 actual AC/BD geometry: contracting passes, parallel/horizontal AC or early apex fail
+ok 180 - §6.6 actual AC/BD geometry: contracting passes, parallel/horizontal AC or early apex fail
+  ---
+  duration_ms: 1.867
+  type: 'test'
+  ...
+# Subtest: §6.14 C/D excursion uses C gross; E uses D gross; A unrestricted
+ok 181 - §6.14 C/D excursion uses C gross; E uses D gross; A unrestricted
+  ---
+  duration_ms: 2.6369
+  type: 'test'
+  ...
+# Subtest: §4.1/§5.3 adopted A/C truncation and flat C5 constraints
+ok 182 - §4.1/§5.3 adopted A/C truncation and flat C5 constraints
+  ---
+  duration_ms: 1.3444
+  type: 'test'
+  ...
+# Subtest: §7.1 W/Y C failure and §6.2 triangle 105% constraints
+ok 183 - §7.1 W/Y C failure and §6.2 triangle 105% constraints
+  ---
+  duration_ms: 0.559
+  type: 'test'
+  ...
+# Subtest: §6.8 EE cannot recursively be triangle and cache respects context
+ok 184 - §6.8 EE cannot recursively be triangle and cache respects context
+  ---
+  duration_ms: 5.0793
+  type: 'test'
+  ...
+# Subtest: §7.1 triple Z versus X simultaneous price/time bound
+ok 185 - §7.1 triple Z versus X simultaneous price/time bound
+  ---
+  duration_ms: 0.4381
+  type: 'test'
+  ...
+# Subtest: §7.4 full Y path crossing 0-X invalidates despite passing endpoints
+ok 186 - §7.4 full Y path crossing 0-X invalidates despite passing endpoints
+  ---
+  duration_ms: 0.3309
+  type: 'test'
+  ...
+# Subtest: §4.6 expanding ending candidate retained but missing chapter cannot verify it
+ok 187 - §4.6 expanding ending candidate retained but missing chapter cannot verify it
+  ---
+  duration_ms: 3.9779
+  type: 'test'
+  ...
+# Subtest: §7.2 wave degree and recursion depth are different for Y/Z
+ok 188 - §7.2 wave degree and recursion depth are different for Y/Z
+  ---
+  duration_ms: 3.8185
+  type: 'test'
+  ...
+# Subtest: F12 own clean rules and unknown children prove zero direct roles
+ok 189 - F12 own clean rules and unknown children prove zero direct roles
+  ---
+  duration_ms: 1.3247
+  type: 'test'
+  ...
+# Subtest: F10 real hourly route terminates with identified direct substructures and explicit scope
+ok 190 - F10 real hourly route terminates with identified direct substructures and explicit scope
+  ---
+  duration_ms: 123.0646
+  type: 'test'
+  ...
+# Subtest: F10 gaps or exhaustion remain pending even with explicit resolution policy
+ok 191 - F10 gaps or exhaustion remain pending even with explicit resolution policy
+  ---
+  duration_ms: 1.0564
+  type: 'test'
+  ...
+# Subtest: F11 four states, no completion from Fibonacci or temporary endpoints
+ok 192 - F11 four states, no completion from Fibonacci or temporary endpoints
+  ---
+  duration_ms: 0.334
+  type: 'test'
+  ...
+# Subtest: F11 deferred score changes actual ranking; upper bounds and historic Y stay failed
+ok 193 - F11 deferred score changes actual ranking; upper bounds and historic Y stay failed
+  ---
+  duration_ms: 2.8317
+  type: 'test'
+  ...
+# Subtest: F13 parent combination cannot rename current actual impulse labels as WXY
+ok 194 - F13 parent combination cannot rename current actual impulse labels as WXY
+  ---
+  duration_ms: 3.5401
+  type: 'test'
+  ...
+# Subtest: §4.7 short C retained by default full pipeline (potential, not proved)
+ok 195 - §4.7 short C retained by default full pipeline (potential, not proved)
+  ---
+  duration_ms: 5.2498
+  type: 'test'
+  ...
+# Subtest: F05 actual role evaluation adopts a compatible C instead of rejecting a greedy diagonal pair
+ok 196 - F05 actual role evaluation adopts a compatible C instead of rejecting a greedy diagonal pair
+  ---
+  duration_ms: 1.9965
+  type: 'test'
+  ...
+# Subtest: F05 actual flat role evaluation chooses non-truncated C from compatible alternatives
+ok 197 - F05 actual flat role evaluation chooses non-truncated C from compatible alternatives
+  ---
+  duration_ms: 1.0072
+  type: 'test'
+  ...
+# Subtest: F10 unclosed endpoint hour is not accepted as verified evidence
+ok 198 - F10 unclosed endpoint hour is not accepted as verified evidence
+  ---
+  duration_ms: 0.4247
+  type: 'test'
+  ...
+# Subtest: F12 bounded hourly scope survives adoption into a daily parent with unresolved siblings
+ok 199 - F12 bounded hourly scope survives adoption into a daily parent with unresolved siblings
+  ---
+  duration_ms: 127.7205
+  type: 'test'
+  ...
+# Subtest: F08 shared pivot candle wick order stays pending; later candle breach remains hard failure
+ok 200 - F08 shared pivot candle wick order stays pending; later candle breach remains hard failure
+  ---
+  duration_ms: 0.8532
+  type: 'test'
+  ...
+# Subtest: F08 adopted lower-frame path resolves ambiguous daily wave-4 start candle independently of subrole proof
+ok 201 - F08 adopted lower-frame path resolves ambiguous daily wave-4 start candle independently of subrole proof
+  ---
+  duration_ms: 1.4928
+  type: 'test'
+  ...
+# Subtest: F08 percentage comparison cannot pass from an ambiguously inflated wave-3 start candle
+ok 202 - F08 percentage comparison cannot pass from an ambiguously inflated wave-3 start candle
+  ---
+  duration_ms: 0.3948
+  type: 'test'
+  ...
+# Subtest: §6.20 wave 4 must avoid the full wave-1 territory, including an orthodox ending below its highest subwave
+ok 203 - §6.20 wave 4 must avoid the full wave-1 territory, including an orthodox ending below its highest subwave
+  ---
+  duration_ms: 0.3172
+  type: 'test'
+  ...
+# Subtest: daily endpoint buckets locate actual hours, fix prices, share role-window cache
+ok 204 - daily endpoint buckets locate actual hours, fix prices, share role-window cache
+  ---
+  duration_ms: 24.9219
+  type: 'test'
+  ...
+# Subtest: missing bars, ambiguous endpoints and fetch failure remain pending
+ok 205 - missing bars, ambiguous endpoints and fetch failure remain pending
+  ---
+  duration_ms: 1.4081
+  type: 'test'
+  ...
+# Subtest: small daily pivots trigger intraday role verification in actual explicit-count path
+ok 206 - small daily pivots trigger intraday role verification in actual explicit-count path
+  ---
+  duration_ms: 1.8009
+  type: 'test'
+  ...
+# Subtest: depth/search limits and legacy zero violations never imply verified structure
+ok 207 - depth/search limits and legacy zero violations never imply verified structure
+  ---
+  duration_ms: 1.4677
+  type: 'test'
+  ...
+# Subtest: async builder shares one hourly fetch and reports failures as pending
+ok 208 - async builder shares one hourly fetch and reports failures as pending
+  ---
+  duration_ms: 42.2639
+  type: 'test'
+  ...
+# Subtest: BTC old diagonal shrinks wave lengths but diverges in real time
+ok 209 - BTC old diagonal shrinks wave lengths but diverges in real time
+  ---
+  duration_ms: 5.0409
+  type: 'test'
+  ...
+# Subtest: specified W preserves own passing rules but cannot reject C from daily candles alone
+ok 210 - specified W preserves own passing rules but cannot reject C from daily candles alone
+  ---
+  duration_ms: 19.271
+  type: 'test'
+  ...
+# Subtest: hourly pagination overlaps exclusive boundaries without holes or duplicate bars
+ok 211 - hourly pagination overlaps exclusive boundaries without holes or duplicate bars
+  ---
+  duration_ms: 1.4906
+  type: 'test'
+  ...
+# Subtest: known parent price failures survive pending intraday evidence
+ok 212 - known parent price failures survive pending intraday evidence
+  ---
+  duration_ms: 9756.7961
+  type: 'test'
+  ...
+# Subtest: equal hard constraints prefer more complete evidence and retain incompleteness
+ok 213 - equal hard constraints prefer more complete evidence and retain incompleteness
+  ---
+  duration_ms: 0.5322
+  type: 'test'
+  ...
+# Subtest: evidence mode propagates verified, pending and invalid role outcomes consistently
+ok 214 - evidence mode propagates verified, pending and invalid role outcomes consistently
+  ---
+  duration_ms: 1.6967
+  type: 'test'
+  ...
+# Subtest: failed hourly page keeps other pages; covered windows still get intraday evidence
+ok 215 - failed hourly page keeps other pages; covered windows still get intraday evidence
+  ---
+  duration_ms: 4.0272
+  type: 'test'
+  ...
+# Subtest: limited noisy intraday search cannot conclusively reject a position role
+ok 216 - limited noisy intraday search cannot conclusively reject a position role
+  ---
+  duration_ms: 172.4114
+  type: 'test'
+  ...
+# Subtest: B parent identity uses B targets and following C in every report section
+ok 217 - B parent identity uses B targets and following C in every report section
+  ---
+  duration_ms: 2428.5115
+  type: 'test'
+  ...
+# Subtest: historical W followed by new lows does not invent a current bounce identity
+ok 218 - historical W followed by new lows does not invent a current bounce identity
+  ---
+  duration_ms: 4.7314
+  type: 'test'
+  ...
+# Subtest: pending Markdown never labels unverified templates as all rules passed
+ok 219 - pending Markdown never labels unverified templates as all rules passed
+  ---
+  duration_ms: 2229.2694
+  type: 'test'
+  ...
+1..219
+# tests 219
+# suites 0
+# pass 219
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 79189.7072

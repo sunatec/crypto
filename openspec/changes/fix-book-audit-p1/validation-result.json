@@ -1,0 +1,23 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "tests/analyze-kline-wave.test.js",
+    "tests/analyze-wave-manual.test.js",
+    "tests/analyze-wave-tree.golden.test.js",
+    "tests/analyze-wave-tree.test.js",
+    "tests/market-data.test.js",
+    "tests/narrate-current-pullback.test.js",
+    "tests/wave-book-p1.test.js",
+    "tests/wave-subwave-verification.test.js"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 79.349,
+  "tests": 219,
+  "pass": 219,
+  "fail": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "todo": 0
+}

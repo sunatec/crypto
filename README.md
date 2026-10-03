@@ -28,6 +28,7 @@ node analyze-kline-wave.js [options]
 
 - `--product` 交易对，默认 `BTC-USD`
 - `--tf`, `--timeframe` 周期，支持：`5m | 1h | 4h | 1d | 1w | 1m | 1y`
+- `--verify-tf 1h|4h|off`：加密货币默认验证至 1h。日线候选子腿按位置角色检查 4h，再检查 1h；4h 由同一份小时行情合成。`off` 关闭额外取数，仍保留待验证标记。
 - `--start` 开始时间，ISO 字符串；默认是 `end - 30d`
 - `--end` 结束时间，ISO 字符串或 `now`；默认 `now`
 - `--out` 输出 JSON 文件名；不填则自动命名
@@ -106,7 +107,12 @@ node analyze-kline-wave.js ... --full-report
 
 - **否定法排序（Negation Method）**：硬规则淘汰不合法数法、准则给存活者排序；若无零违规候选，退取「最轻违规者」并标注 `penalized`。
 - **框架 A / 框架 B**：A＝大跌到全局极值即算完成；B＝末浪进行中（如 `126296→now` 的 y 浪未走完），并对最后一个转折点之后的反弹做身份研判（XX 连接浪 / 更大级别 B 浪 / 新推动浪第 1、3 浪）。
-- **文法 + 几何双闸**：校验各腿角色能否履行（五浪 vs 三波），并要求连接浪方向交替、腿端点为该跨度真极值。
+- **文法 + 几何双闸**：校验各腿角色能否履行，并要求连接浪方向交替、腿端点为该跨度真极值。子浪角色按书细化到具体形态、严格判定（该位置允许的形态里拆不出规则全过的读法即计违规）：
+  - 双/三锯齿的 w、y、z 须为**单锯齿**（书 7.3）；联合形的 w、y、z 须为**简单调整浪**（单锯齿 / 平台形 / 收缩三角形，书 1.7）；x、xx 可为任意调整浪。
+  - 单锯齿 a 浪＝推动浪或**引导楔形**，c 浪＝推动浪或**终结楔形**，a 为引导楔形时 c 不能是终结楔形（书 4.5）；平台形 c 浪＝推动浪或终结楔形（书 5.3）。
+  - 推动浪 1 浪＝推动浪或引导楔形，3 浪＝推动浪，5 浪＝推动浪或终结楔形（书 1–7 章未明文，按 Frost & Prechter 补足，违规说明带「（EWP）」）。
+  - 终结楔形内部 3-3-3-3-3；引导楔形内部 5-3-5-3-5 或 3-3-3-3-3。顶层无父级位置时两种楔形合并为一条「推动浪（楔形 Diagonal，位置待定）」。
+- **JSON 注意**：`patternId` 中原 `diagonal` 已拆为 `diagonal-leading` / `diagonal-ending`；顶层位置待定的楔形为 `diagonal-leading` 并带 `positionPending: true`。
 - **七节结构化报告**：范围 / 关键转折点 / 已完成浪型（逐腿起止+内部结构+价格·时间比例+排除理由）/ 当前主方案 / 备选方案 / 方案排序 / 最终话术。反弹方案强制点明修正对象（XX→上一子浪、B→整段），wave-3 用书内结构验证（不看动量、不因涨幅大直接判 3 浪）。
 - 强弱用 **高/中/低** 分档，不给概率百分比；所有数字均由本次 K 线自动计算。
 
@@ -141,6 +147,8 @@ node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+
 ```bash
 node analyze-wave-tree.js --product AAPL --tf 1d --start 2022-01-01 --apikey YOUR_KEY
 node analyze-wave-tree.js --product 600519 --tf 1d --start 2021-01-01
+node analyze-wave-tree.js --product MU --tf 1d --start 2026-06-23 --apikey  013a950defb3431681f03ebbc1abe2fa
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now
 ```
 
 给引擎评判自己的数法（例如作者的 W-X-Y 双锯齿读法）：
@@ -276,3 +284,23 @@ node analyze-xauusd-twelvedata.js xau 4h --report xau_4h.md --out xau_4h.json --
 - `<symbol>_<interval>_<start>_<end>.html`
 
 其中 `symbol` 会自动去掉 `/`，例如 `XAU/USD` 会变成 `XAUUSD`。
+
+### 子浪验证证据
+
+日线的 K 线周期不等于波浪级别。主计数和 `--count` 指定数法共用角色验证器；母级高低价固定，先在端点整根 K 线内定位实际小时极值，再按固定窗口验证。不同角色复用小时行情及验证缓存，下级结构保存自己的周期和索引。
+
+JSON 的 `verificationStatus` 和各腿 `evidence` 区分 `verified`（声明范围内的结构验证）、`pending`（证据不足）和 `invalid`（明确规则失败）。缺失行情、端点无法唯一定位、递归或搜索上限不会证明角色。`--verify-tf 1h`（加密货币默认）或 `4h` 声明最细验证分辨率：必要的直接子角色必须有实际识别出的结构；这些最细结构以下的细分按书 §3.23 的酌情忽略原则使用工程豁免，写入 `verificationScope` 和 `resolutionBoundary`，仍保持未证叶子。通过本层价格规则或到达递归上限均不触发这个出口。`--verify-tf off` 关闭下探，不启用分辨率豁免。Markdown 显示检查周期、未决原因和暂定主选。默认证据模式先比较硬约束，再比较未证实角色占比；同步 API 保留原有拟合评分口径，并新增证据状态，调用者可传 `evidenceMode: true` 启用证据评分。
+
+收缩楔形检查浪幅缩短及 1–3/2–4 边界收敛；书 §4.6 允许的扩散终结楔形另列候选，因已提供书籍缺少详细专章，保持待验证，不套用收缩阈值。主选只是候选排名；子浪待验证时不代表完整数法已确认。父级若为 W–X–Y，X 的目标参考整个 W，后续为 Y；父级若为 A–B–C，B 使用整段 A，后续为 C。
+
+可用以下命令复核指定 W：
+
+```powershell
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now --count "126296,103516.75,116410.06,80524.65"
+```
+
+P1 书籍校正后，严格不等号、OHLC 完整路径、三角形角色/几何、衰竭与父子约束参与验证。Y＞90%W 按用户勘误 OV-001 保持软指引。`provenRoles/requiredRoles` 只统计直接角色；跨周期验证采用的小时树直接进入输出，保留独立索引。组合 Y/Z 的 `degree` 按本书逐级降低，`recursionDepth` 单独记录遍历深度。
+
+`completionStatus` 独立区分 `forming`、`potentially_complete`、`confirmed_complete`、`invalidated`。非 provisional 的末点只能给出潜在完成；确认完成还需单独的观察证据。本书未提供通用机器确认公式，因此本次不会自动把斐波目标、暂时高低点或通道提示升级为确认。当前情景模板标 `scenarioOnly`；局部 ABC/12345/WXY 标签由所选局部结构决定，不随父级名称改写。
+
+共享转折K线的另一端极值先后不明时，相关路径/比例条件记录为 `pendingRules`，实际采用的较小周期路径可继续复核；明确出现在后续K线的违规仍判失败。P1修复范围、逐项书籍引用、证据策略与离线验证记录见 [P1验收报告](reports/wave-book-audit/p1-validation.md)。

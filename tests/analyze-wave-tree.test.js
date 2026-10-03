@@ -32,6 +32,14 @@ const {
   strengthTier,
   renderStructuredReport,
   legCharacter,
+  PATTERNS,
+  roleAllows,
+  legRoleViolation,
+  roleViolationNote,
+  classRoleViolationNote,
+  shortPatternName,
+  evaluateLegRole,
+  zigzagDiagonalPairViolates,
   annotateExtendingLegForks,
   detectPivots,
   anchorBoundaryExtremes,
@@ -247,11 +255,11 @@ test('顶层进行中腿：provisional 末点与起点同型被方向裁剪时�
   assert.equal(tree.inProgress.note, '推断，非确定');
 });
 
-test('已完成结构：末点无 provisional → 标完成、无预期', () => {
+test('F11：末点无 provisional 只代表潜在完成，无预期', () => {
   const fine = finePivots([[100, 'L'], [150, 'H'], [120, 'L'], [200, 'H'], [170, 'L'], [250, 'H']]);
   const candles = makeCandlesFromAnchors(fine);
   const tree = buildCountTree(fine, candles, { maxDepth: 6, trimTop: false });
-  assert.equal(tree.primary.status, '完成');
+  assert.equal(tree.primary.status, '潜在完成（待确认）');
   assert.equal(tree.primary.expectation, undefined);
 });
 
@@ -419,8 +427,8 @@ test('框架B端到端：now类型为L但高于全局低点(回撤中)→按逆�
   assert.equal(tree.primary.points[tree.primary.points.length - 1].price, 57, '框架A仍止于全局低点，未受影响');
   assert.ok(tree.frameworkB && tree.frameworkB.primary, '逆势回撤中框架B不得空缺');
   assert.equal(tree.frameworkB.counterTrend, true, 'now高于全局低点→走逆势末浪路径（与now类型L无关）');
-  const bp = tree.frameworkB.primary;
-  assert.equal(bp.finalWaveInProgress, true, '框架B主选应标末浪进行中');
+  const bp = [tree.frameworkB.primary,...tree.frameworkB.alternates].find(c=>c.finalWaveInProgress);
+  assert.ok(bp, '候选池仍保留逆势末浪；允许的正统终点读法独立竞争');
   assert.equal(bp.points[0].price, 126, '框架B与框架A同起点');
   assert.equal(bp.points[bp.points.length - 1].price, 57, '框架B末点=全局极值57（不是回撤价62）');
   assert.ok(bp.projection.every((t) => t.price < 57), '下跌末浪延伸投影须在全局低点57下方');
@@ -458,8 +466,8 @@ test('框架B逆势末浪（model-unfinished-final-wave）：now在反弹高点�
 
   assert.ok(tree.frameworkB && tree.frameworkB.primary, '逆势反弹高点处框架B不得空缺');
   assert.equal(tree.frameworkB.counterTrend, true, '应走逆势末浪路径');
-  const bp = tree.frameworkB.primary;
-  assert.equal(bp.finalWaveInProgress, true, '框架B主选应标末浪进行中');
+  const bp = [tree.frameworkB.primary,...tree.frameworkB.alternates].find(c=>c.finalWaveInProgress);
+  assert.ok(bp, '候选池仍保留逆势末浪；允许的正统终点读法独立竞争');
   // 末点仍是全局极值57（不强行终结在now=79），且投影为跌破57的新低
   assert.equal(bp.points[bp.points.length - 1].price, 57, '框架B末点=全局极值（不是now）');
   assert.ok(Array.isArray(bp.projection) && bp.projection.length === 3, '应给末浪延伸投影');
@@ -505,8 +513,11 @@ test('annotateExtendingLegForks：只标depth≥1的两可腿，顶层腿本身(
   assert.equal(lc.canCorrect, true, '前提校验：该腿调整读法零违规（两可）');
   const ambiguousNode = lc.correctiveNode; // 当前显示性格=调整（单锯齿），对侧=驱动
 
-  // (a) 放在 depth0：顶层候选自身的末腿就是这条两可腿 → 不应标注
-  const atDepth0 = { finalWaveInProgress: true, children: [{ isLeaf: true }, ambiguousNode] };
+  // (a) 放在 depth0：顶层候选自身的末腿就是这条两可腿 → 不应标注。
+  // 其内部子腿换成叶子：该节点内层的 c 腿（67264→57718）本身也两可，按"标 depth≥1 最浅一条"
+  // 会被合法标出（enforce-strict-wave-grammar 改为按 klass 判定显示性格后生效），与本条要测的判据无关。
+  const flatNode = { ...ambiguousNode, primary: { ...ambiguousNode.primary, children: ambiguousNode.primary.children.map(() => ({ isLeaf: true })) } };
+  const atDepth0 = { finalWaveInProgress: true, children: [{ isLeaf: true }, flatNode] };
   annotateExtendingLegForks(atDepth0, candles, opts);
   assert.equal(atDepth0.altCharacter, undefined, '两可腿处于depth0（顶层腿本身）不应标注');
 
@@ -549,8 +560,8 @@ test('价格格式回归：低价币的宏观腿不得被报告取整', () => {
     points: [{ price: 7.563 }, { price: 1.184 }, { price: 2.589 }, { price: 0.707 }],
   });
   const md = renderRankedCounts({ primary, alternates: [] }, 4);
-  assert.match(md, /w 腿：7\.563 → 1\.184（完成）/);
-  assert.match(md, /y 腿：2\.589 → 0\.707（完成）/);
+  assert.match(md, /w 腿：7\.563 → 1\.184（潜在完成（待确认））/);
+  assert.match(md, /y 腿：2\.589 → 0\.707（潜在完成（待确认））/);
 });
 
 test('价格精度：优先 quote_increment，缺失时从 OHLC 推断，并去掉末尾零', async () => {
@@ -795,7 +806,7 @@ test('结构化报告：7 节齐备 + 反弹必点修正对象 + wave-3 清单 +
     rangeHigh: 126, rangeLow: 57, lastClose: 79, lastCloseTs: Math.floor(Date.now() / 1000),
   };
   const md = renderStructuredReport(meta, tree, candles, fine);
-  ['## 1. 分析范围', '## 2. 关键转折点', '## 3. 已完成浪型', '## 4. 当前主方案',
+  ['## 1. 分析范围', '## 2. 关键转折点', '## 3. 暂定浪型', '## 4. 当前主方案',
     '## 5. 备选方案', '## 6. 方案排序', '## 7. 最终分析话术'].forEach((h) => {
     assert.ok(md.includes(h), `应含 ${h}`);
   });
@@ -804,4 +815,170 @@ test('结构化报告：7 节齐备 + 反弹必点修正对象 + wave-3 清单 +
   assert.ok(!md.includes('%概率') && !/概率\s*[:：]\s*\d/.test(md), '不得给概率百分比');
   assert.ok(!md.includes('undefined') && !md.includes('NaN'), '不得有 undefined/NaN');
   assert.ok(!md.includes('57718'), '结构化报告不得残留 BTC 专用硬编码价位');
+});
+
+// ------------------------------------------------------------
+// enforce-strict-wave-grammar：子浪角色细化到具体形态 + 楔形按位置区分
+// ------------------------------------------------------------
+
+const patById = (id) => PATTERNS.find((p) => p.id === id);
+
+test('文法表：双/三锯齿 w/y/z 须单锯齿，x/xx 任意调整浪（书 7.3）', () => {
+  assert.deepEqual(patById('zigzag-double').childRoles, ['zigzag', 'corrective', 'zigzag']);
+  assert.deepEqual(patById('zigzag-triple').childRoles, ['zigzag', 'corrective', 'zigzag', 'corrective', 'zigzag']);
+  assert.equal(roleAllows('zigzag', 'zigzag'), true);
+  assert.equal(roleAllows('zigzag', 'zigzag-double'), false, '双锯齿不能当 w/y');
+  assert.equal(roleAllows('zigzag', 'flat'), false, '平台形不能当 w/y');
+  assert.equal(roleAllows('corrective', 'zigzag-double'), true, 'x 可为任意调整浪');
+  assert.equal(roleAllows('corrective', 'sideways-double'), true);
+});
+
+test('文法表：联合 W/X 非三角形，最后 Y/Z 可为三角形（书§4.5/§6.17）', () => {
+  assert.deepEqual(patById('sideways-double').childRoles, ['simple-corrective-no-triangle', 'corrective-no-triangle', 'simple-corrective']);
+  assert.deepEqual(patById('sideways-triple').childRoles,
+    ['simple-corrective-no-triangle', 'corrective-no-triangle', 'simple-corrective-no-triangle', 'corrective-no-triangle', 'simple-corrective']);
+  ['zigzag', 'flat', 'flat-regular', 'flat-expanded', 'flat-running', 'triangle'].forEach((id) => {
+    assert.equal(roleAllows('simple-corrective', id), true, `${id} 是简单调整浪`);
+  });
+  ['zigzag-double', 'zigzag-triple', 'sideways-double', 'sideways-triple'].forEach((id) => {
+    assert.equal(roleAllows('simple-corrective', id), false, `${id} 不是简单调整浪`);
+  });
+});
+
+test('legRoleViolation：双锯齿 w 腿只能读成双锯齿 → 违规', () => {
+  assert.equal(legRoleViolation('zigzag', { roleClean: false, anyClean: true, bestPatternId: 'zigzag-double' }), true);
+});
+
+test('legRoleViolation：w 腿歧义（单锯齿读法也干净）→ 不违规', () => {
+  assert.equal(legRoleViolation('zigzag', { roleClean: true, anyClean: true, bestPatternId: 'zigzag-double' }), false);
+});
+
+test('legRoleViolation：联合形 y 腿只能读成联合形 → 违规；x 腿为双锯齿 → 不违规', () => {
+  assert.equal(legRoleViolation('simple-corrective', { roleClean: false, anyClean: true, bestPatternId: 'sideways-double' }), true);
+  assert.equal(legRoleViolation('corrective', { roleClean: true, anyClean: true, bestPatternId: 'zigzag-double' }), false);
+});
+
+test('legRoleViolation（严格口径）：各读法都不干净时也违规，不再退回比最佳读法', () => {
+  assert.equal(legRoleViolation('zigzag', { roleClean: false, anyClean: false, bestPatternId: 'zigzag' }), true);
+  assert.equal(legRoleViolation('zigzag', { roleClean: false, anyClean: false, bestPatternId: 'zigzag-double' }), true);
+  assert.equal(legRoleViolation('driving', { roleClean: false, anyClean: false, bestPatternId: 'impulse-strict' }), true);
+  assert.equal(legRoleViolation('corrective', { roleClean: false, anyClean: false, bestPatternId: 'flat' }), true);
+});
+
+test('roleViolationNote：最佳读法本属允许形态但自身违规时，不写成「实测为同一形态」', () => {
+  const n = roleViolationNote('3', 'impulse', '推动浪（标准 Impulse）', true, true);
+  assert.ok(n.includes('拆不出规则全过的读法'), n);
+  assert.ok(n.includes('最接近：推动浪'), n);
+  assert.ok(!n.includes('实测为推动浪'), n);
+});
+
+test('shortPatternName：楔形保留楔形名，不缩成「推动浪」', () => {
+  assert.equal(shortPatternName('推动浪（引导楔形 Leading Diagonal）'), '引导楔形');
+  assert.equal(shortPatternName('推动浪（终结楔形 Ending Diagonal）'), '终结楔形');
+  assert.equal(shortPatternName('推动浪（楔形 Diagonal，位置待定）'), '楔形');
+  assert.equal(shortPatternName('推动浪（标准 Impulse）'), '推动浪');
+  assert.equal(shortPatternName('双锯齿（Double Zigzag w-x-y）'), '双锯齿');
+  const n = roleViolationNote('3', 'impulse', '推动浪（引导楔形 Leading Diagonal）', true);
+  assert.ok(n.includes('实测为引导楔形'), n);
+});
+
+test('classRoleViolationNote：最佳性格与所需一致但自身违规时，不写「更像同一性格」', () => {
+  const same = classRoleViolationNote('1', 'corrective', 'corrective', '单锯齿（Zigzag 5-3-5）');
+  assert.equal(same, '1 须为调整浪(三波)，拆不出规则全过的调整浪(三波)（最接近：单锯齿，自身违规）');
+  assert.ok(!same.includes('更像'), same);
+  // 性格确实不同时保留旧文案（报告/金标准依赖）
+  assert.equal(classRoleViolationNote('a', 'driving', 'corrective', null),
+    'a 须为驱动浪(五浪)，走不成干净的驱动浪(五浪)（更像调整浪(三波)）');
+});
+
+test('顶层（无父级位置）楔形只保留一条，标「位置待定」', () => {
+  // 下跌收敛楔形：4 浪切入 1 浪，各浪依次缩短
+  const fine = finePivots([[200, 'H'], [160, 'L'], [185, 'H'], [150, 'L'], [168, 'H'], [140, 'L']]);
+  const candles = makeCandlesFromAnchors(fine);
+  const node = decompose(fine, candles, ['driving', 'corrective'], 0, { beamK: 10, maxDepth: 4, cache: new Map() });
+  const all = [node.primary, ...(node.alternates || [])];
+  assert.ok(!all.some((c) => c.patternId === 'diagonal-ending'), '顶层不应出现终结楔形重复条');
+  const lead = all.find((c) => c.patternId === 'diagonal-leading');
+  assert.ok(lead, '应有一条楔形读法');
+  assert.equal(lead.positionPending, true);
+  assert.ok(lead.manual.label.includes('位置待定'));
+});
+
+test('evaluateLegRole：子腿点数不足所需角色 → 叶子、不违规（数据不足不证伪）', () => {
+  const fine = finePivots([[100, 'L'], [150, 'H'], [120, 'L']]);
+  const candles = makeCandlesFromAnchors(fine);
+  const r = evaluateLegRole(fine, 'zigzag', candles, 0, { beamK: 3, maxDepth: 5, cache: new Map() });
+  assert.equal(r.node.isLeaf, true);
+  assert.equal(r.violates, false);
+});
+
+test('roleViolationNote：写明所需形态与实测形态；EWP 补足规则带标注', () => {
+  const n1 = roleViolationNote('w', 'zigzag', '双锯齿（Double Zigzag w-x-y）', false);
+  assert.ok(n1.includes('w 须为单锯齿'), n1);
+  assert.ok(n1.includes('实测为双锯齿'), n1);
+  const n2 = roleViolationNote('3', 'impulse', '推动浪（引导楔形 Leading Diagonal）', true);
+  assert.ok(n2.includes('3 须为推动浪'), n2);
+  assert.ok(n2.includes('（EWP）'), n2);
+});
+
+test('楔形拆为引导/终结两种形态，不再有 diagonal', () => {
+  assert.equal(patById('diagonal'), undefined);
+  const lead = patById('diagonal-leading');
+  const end = patById('diagonal-ending');
+  assert.ok(lead && end);
+  assert.ok(lead.build('up').label.includes('引导楔形'));
+  assert.ok(end.build('up').label.includes('终结楔形'));
+  assert.equal(lead.build('up').mode, 'leading_diagonal');
+});
+
+test('文法表：推动浪 1=推动/引导、3=推动、5=推动/终结；锯齿 a/c、平台 c 的位置约束', () => {
+  assert.deepEqual(patById('impulse-strict').childRoles,
+    ['impulse|leading', 'corrective-no-triangle', 'impulse', 'corrective', 'impulse|ending']);
+  assert.deepEqual(patById('zigzag').childRoles, ['impulse|leading', 'corrective', 'impulse|ending']);
+  ['flat', 'flat-regular', 'flat-expanded', 'flat-running'].forEach((id) => {
+    assert.deepEqual(patById(id).childRoles, ['corrective-no-triangle', 'corrective-no-triangle', 'impulse|ending'], id);
+  });
+  assert.equal(roleAllows('impulse|leading', 'diagonal-leading'), true);
+  assert.equal(roleAllows('impulse|leading', 'diagonal-ending'), false, '终结楔形不能当 a 浪 / 1 浪');
+  assert.equal(roleAllows('impulse|ending', 'diagonal-ending'), true, '推动浪 5 浪可为终结楔形');
+  assert.equal(roleAllows('impulse|ending', 'diagonal-leading'), false);
+  assert.equal(roleAllows('impulse', 'diagonal-leading'), false, '3 浪不能是楔形');
+  assert.equal(roleAllows('impulse', 'diagonal-ending'), false);
+  // 3 浪只能读成楔形 → 违规
+  assert.equal(legRoleViolation('impulse', { roleClean: false, anyClean: true, bestPatternId: 'diagonal-leading' }), true);
+});
+
+test('文法表：终结楔形内部 3-3-3-3-3；引导楔形 5-3-5-3-5 或 3-3-3-3-3', () => {
+  assert.deepEqual(patById('diagonal-ending').childRoles, ['corrective','corrective-no-triangle','corrective','corrective','corrective']);
+  const lead = patById('diagonal-leading');
+  assert.deepEqual(lead.childRoles, ['driving', 'corrective-no-triangle', 'driving', 'corrective', 'driving']);
+  assert.deepEqual(lead.childRolesAlt, [['corrective','corrective-no-triangle','corrective','corrective','corrective']]);
+  // 终结楔形的子腿只能读成五浪 → 违规
+  assert.equal(legRoleViolation('corrective', { roleClean: false, anyClean: true, bestPatternId: 'impulse-strict' }), true);
+});
+
+test('zigzagDiagonalPairViolates：a 仅能引导楔形且 c 仅能终结楔形 → 违规（书 4.5）', () => {
+  assert.equal(zigzagDiagonalPairViolates({ impulse: false, leading: true }, { impulse: false, ending: true }), true);
+  assert.equal(zigzagDiagonalPairViolates({ impulse: true, leading: true }, { impulse: false, ending: true }), false);
+  assert.equal(zigzagDiagonalPairViolates({ impulse: false, leading: true }, { impulse: true, ending: true }), false);
+  assert.equal(zigzagDiagonalPairViolates({ impulse: true, leading: false }, { impulse: false, ending: true }), false);
+});
+
+test('锯齿 a 浪位置的楔形标为引导楔形', () => {
+  // 上涨单锯齿：a = 收敛楔形（4 浪切入 1 浪），b 回撤，c = 干净推动浪
+  const fine = finePivots([
+    [100, 'L'], [140, 'H'], [115, 'L'], [150, 'H'], [132, 'L'], [160, 'H'], // a：楔形
+    [135, 'L'],                                                             // b
+    [150, 'H'], [142, 'L'], [175, 'H'], [165, 'L'], [185, 'H'],            // c：推动
+  ]);
+  const candles = makeCandlesFromAnchors(fine);
+  const node = decompose(fine, candles, ['corrective'], 0, { beamK: 20, maxDepth: 6, cache: new Map() });
+  const all = [node.primary, ...(node.alternates || [])];
+  const target = all.find((c) => c.patternId === 'zigzag' && c.points.map((p) => p.price).join() === '100,160,135,185');
+  assert.ok(target, '候选池里应有 a(100→160)-b(→135)-c(→185) 单锯齿读法');
+  const a = target.children[0];
+  assert.equal(a.isLeaf, false);
+  assert.equal(a.primary.patternId, 'diagonal-leading');
+  assert.ok(a.primary.manual.label.includes('引导楔形'));
+  assert.equal(target.score.grammarViolations, 0);
 });
