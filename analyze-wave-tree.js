@@ -2660,23 +2660,33 @@ function readCombination(comboCand, trueLow, bounceExtreme) {
 function zwaveProjection(wAmp, yAmp, trueLowPrice, bounceHighPrice) {
   if (!Number.isFinite(yAmp) || yAmp <= 0) return null;
   const wRef = Number.isFinite(wAmp) && wAmp > 0 ? wAmp : yAmp;
-  // 主目标 = Z=W=Y 等长带（W≈Y 时收敛为窄带）+ Y低−0.236×Y 破位档
-  const eqA = bounceHighPrice - wRef;
-  const eqB = bounceHighPrice - yAmp;
+  // 路径①是"跌破 Y 低（trigger）之后"：这条路径里的目标都须在 trigger 之下，且逐档加深——
+  // 主目标（Z=W/Z=Y 等长，自 XX 高点量）→ 延伸 → 极端。比上一档还浅的弱目标不列入后档，
+  // 高于 trigger 的等长位单独记 aboveTrigger（Z 可不创新低就此完成，不属破位路径）。
+  const below = (x) => x < trueLowPrice;
+  const equal = [
+    { label: 'Z=W 等长', price: bounceHighPrice - wRef },
+    { label: 'Z=Y 等长', price: bounceHighPrice - yAmp },
+  ];
+  const mainLevels = equal.filter((e) => below(e.price));
+  const breakFib0236 = trueLowPrice - 0.236 * yAmp;
   const main = {
     label: 'Z=W=Y 等长带',
-    low: Math.min(eqA, eqB),
-    high: Math.max(eqA, eqB),
-    breakFib0236: trueLowPrice - 0.236 * yAmp,
+    low: mainLevels.length ? Math.min(...mainLevels.map((e) => e.price)) : breakFib0236,
+    high: mainLevels.length ? Math.max(...mainLevels.map((e) => e.price)) : breakFib0236,
+    breakFib0236,
+    aboveTrigger: equal.filter((e) => !below(e.price)),
   };
-  const extension = [
+  const deeperThan = (floor, list) => list.filter((e) => e.price < floor).sort((x, y) => y.price - x.price);
+  const extension = deeperThan(Math.min(main.low, breakFib0236), [
     { label: 'XX高−1.272×Y', price: bounceHighPrice - 1.272 * yAmp },
     { label: 'Y低−0.618×Y', price: trueLowPrice - 0.618 * yAmp },
-  ];
-  const extreme = [
+  ]);
+  const extFloor = extension.length ? extension[extension.length - 1].price : Math.min(main.low, breakFib0236);
+  const extreme = deeperThan(extFloor, [
     { label: 'Y低−1.0×Y', price: trueLowPrice - yAmp },
     { label: 'XX高−1.618×Y', price: bounceHighPrice - 1.618 * yAmp },
-  ];
+  ]);
   return {
     trigger: trueLowPrice, // 跌破真低点确认 Z 启动
     breakPath: { main, extension, extreme, aftermath: 'Z 浪走完后转向上涨' },
@@ -2770,8 +2780,16 @@ function renderPullbackNarrative(nr, pricePrecision) {
   const zt = nr.zwaveTargets;
   if (zt && zt.breakPath) {
     const m = zt.breakPath.main;
+    const band = m.low === m.high ? n(m.low) : `${n(m.low)}–${n(m.high)}`;
     const ext = zt.breakPath.extension.map((e) => n(e.price)).join(' / ');
-    L.push(`**Z 浪两条路：** ①跌破 **${n(zt.trigger)}** 后，主目标 **${n(m.low)}–${n(m.high)}** 一带（Z=W=Y 等长，含破位档 ${n(m.breakFib0236)}），延伸看 ${ext}；②走收缩三角横向收敛。两路 **Z 浪走完后转向上涨**。`);
+    const xtr = zt.breakPath.extreme.map((e) => n(e.price)).join(' / ');
+    const aboveList = m.aboveTrigger || [];
+    const above = aboveList.map((e) => `${e.label}位 ${n(e.price)}`).join('、');
+    // 等长位全在 trigger 之上时，破位路径的主目标只剩 0.236 破位档，不能再标"Z=W=Y 等长"
+    const mainCn = aboveList.length >= 2
+      ? `主目标为破位档 **${n(m.breakFib0236)}**`
+      : `主目标 **${band}** 一带（${aboveList.length ? ['Z=W', 'Z=Y'].find((l) => !aboveList.some((e) => e.label.startsWith(l))) : 'Z=W=Y'} 等长，含破位档 ${n(m.breakFib0236)}）`;
+    L.push(`**Z 浪两条路：** ①跌破 **${n(zt.trigger)}** 后，${mainCn}${ext ? `，延伸看 ${ext}` : ''}${xtr ? `，极端 ${xtr}` : ''}${above ? `（${above} 在 ${n(zt.trigger)} 之上：Z 也可能不破位就在此完成）` : ''}；②走收缩三角横向收敛。两路 **Z 浪走完后转向上涨**。`);
     L.push('');
   }
   L.push('> 以上为概率性研判、非确定，不构成买卖建议；数字由本次 K 线计算。');

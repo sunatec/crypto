@@ -170,3 +170,23 @@ test('enrichCurrentPullback：高点回撤经下钻产出 subDegree/structureLin
   // 挂到 pullback 上，供序列化/渲染读取
   assert.equal(tree.inProgressStruct.pullback.narrative, res);
 });
+
+test('zwaveProjection：破位路径各档在 trigger 之下且逐档加深；trigger 之上的等长位单列（BTC 82510 案例）', () => {
+  const z = zwaveProjection(87397 - 82708.96, 85250 - 82510.37, 82510.37, 85613.72);
+  const { main, extension, extreme } = z.breakPath;
+  assert.ok(main.high < z.trigger, '主目标须在 Y 低之下');
+  assert.deepEqual(main.aboveTrigger.map((e) => e.label), ['Z=Y 等长'], '82874 在 82510 之上，单列不入破位路径');
+  const ladder = [main.low, ...extension.map((e) => e.price), ...extreme.map((e) => e.price)];
+  ladder.forEach((v, i) => { if (i) assert.ok(v < ladder[i - 1], `第 ${i} 档 ${v} 须深于上一档 ${ladder[i - 1]}`); });
+  assert.ok(!extension.some((e) => e.price > main.low), '延伸不得比主目标浅（旧版 82128.91 浅于 80925.68）');
+});
+
+test('Z 浪叙述：等长位都在 trigger 之上时主目标只写破位档，不再标 Z=W=Y 等长', () => {
+  const t = (hi) => renderPullbackNarrative({ level: { kind: 'minor', depthPct: 5, medianPct: 5 }, structureLine: 82510.37,
+    zwaveTargets: zwaveProjection(87397 - 82708.96, 85250 - 82510.37, 82510.37, hi), combinationReading: null, subDegree: null }, 2)
+    .split('\n').find((l) => l.includes('Z 浪两条路'));
+  const both = t(87249.43);
+  assert.match(both, /主目标为破位档 \*\*81863\.82\*\*/);
+  assert.doesNotMatch(both, /Z=W=Y 等长/);
+  assert.match(t(85613.72), /主目标 \*\*80925\.68\*\* 一带（Z=W 等长/);
+});
