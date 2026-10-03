@@ -35,9 +35,70 @@ async function fetchCoinbaseHourPage(product, granularity, start, end) {
   return rows.map(row=>Array.isArray(row)?row:row.value).map(r=>({timestamp:Number(r[0]),low:Number(r[1]),high:Number(r[2]),open:Number(r[3]),close:Number(r[4]),volume:Number(r[5])}));
 }
 
+// 交易所断档（如 Coinbase 2025-10-25、2026-05-08 各缺 5 小时，5 分钟线同样缺失）会让跨过它的整条腿
+// 无法验证。只补"藏不住新极值"的短缺口：≤MAX_GAP_HOURS，且缺口所在母级 K 线的最高/最低价都已出现在
+// 现有小时线里——缺口内价格因此被夹在已观测区间内。补线按前收→后开线性插值、高低相同，标 filled；
+// 端点定位只认真实 K 线，落在补线上的枢轴剔除。无母级 K 线、缺口过长或母级极值可能落在缺口里则不补。
+const MAX_GAP_HOURS = 6;
+function fillShortGaps(hours, parentCandles, parentWidth, tolerance) {
+  const gaps = [];
+  if (!hours.length) return { series: hours, gaps };
+  const parents = new Map((parentCandles || []).map(c => [c.timestamp, c]));
+  const bucketOf = ts => ts - ((ts % parentWidth) + parentWidth) % parentWidth;
+  const observed = new Map(); // 母级桶 → 已观测小时线的最高/最低
+  if (parentWidth) for (const c of hours) {
+    const k = bucketOf(c.timestamp);
+    const o = observed.get(k) || { hi: -Infinity, lo: Infinity };
+    o.hi = Math.max(o.hi, c.high); o.lo = Math.min(o.lo, c.low); observed.set(k, o);
+  }
+  const bounded = (fromTs, toTs) => {
+    if (!parents.size || !parentWidth) return false;
+    for (let k = bucketOf(fromTs); k <= toTs; k += parentWidth) {
+      const parent = parents.get(k), o = observed.get(k);
+      if (!parent || !o || Math.abs(o.hi - parent.high) > tolerance || Math.abs(o.lo - parent.low) > tolerance) return false;
+    }
+    return true;
+  };
+  const series = [hours[0]];
+  for (let i = 1; i < hours.length; i += 1) {
+    const prev = hours[i - 1], next = hours[i];
+    const missing = Math.round((next.timestamp - prev.timestamp) / 3600) - 1;
+    if (missing > 0) {
+      const gap = { fromTimestamp: prev.timestamp + 3600, toTimestamp: next.timestamp - 3600, hours: missing, filled: false };
+      if (missing <= MAX_GAP_HOURS && bounded(gap.fromTimestamp, gap.toTimestamp)) {
+        for (let k = 1; k <= missing; k += 1) {
+          const v = prev.close + (next.open - prev.close) * k / (missing + 1);
+          series.push({ timestamp: prev.timestamp + k * 3600, open: v, close: v, high: v, low: v, volume: 0, filled: true });
+        }
+        gap.filled = true;
+      }
+      gaps.push(gap);
+    }
+    series.push(next);
+  }
+  return { series, gaps };
+}
+
+function describeGaps(list) {
+  return list.map(g => new Date(g.fromTimestamp*1000).toISOString().slice(0,13).replace('T',' ')+'Z 起 '+g.hours+' 小时').join('、');
+}
+
+// 补线上的枢轴不是观测到的转折：剔除后按同型取更极端者恢复高低交替。
+function dropFilledPivots(pivots, candles) {
+  const out = [];
+  for (const p of pivots) {
+    if (candles[p.index] && candles[p.index].filled) continue;
+    const last = out[out.length - 1];
+    if (last && last.type === p.type) {
+      if (p.type === 'H' ? p.price >= last.price : p.price <= last.price) out[out.length - 1] = p;
+    } else out.push(p);
+  }
+  return out;
+}
+
 // Intraday evidence uses its own candle indices. Parent points are never rewritten.
-function createSubwaveVerifier(engine, { hourly, mainTf = '1d', finestTf = '1h', error = null, endTs = Infinity, pricePrecision = 2 } = {}) {
-  const hours = [...new Map((hourly || []).map(c => [c.timestamp, c])).values()].sort((a,b) => a.timestamp-b.timestamp);
+function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = '1d', finestTf = '1h', error = null, endTs = Infinity, pricePrecision = 2 } = {}) {
+  const rawHours = [...new Map((hourly || []).map(c => [c.timestamp, c])).values()].sort((a,b) => a.timestamp-b.timestamp);
   const memo = new Map();
   // 同一窗口、同一周期按不同位置角色各验证一次（P1 细分角色后同一条腿常被 4–6 个角色查询）：
   // 共享聚合 K 线、枢轴与 decompose 缓存，子腿拆解跨角色复用。LRU 限量，防长区间常驻内存。
@@ -47,7 +108,11 @@ function createSubwaveVerifier(engine, { hourly, mainTf = '1d', finestTf = '1h',
     const key = [tf, window[0].timestamp, window.at(-1).timestamp, from.type, from.price, to.type, to.price].join('|');
     if (prepared.has(key)) { const hit = prepared.get(key); prepared.delete(key); prepared.set(key, hit); stats.preparedHits = (stats.preparedHits || 0) + 1; return hit; }
     const candles = engine.transformCandles(window,engine.TIMEFRAMES[tf]).map((c,index) => ({...c,index}));
-    let fine = engine.anchorBoundaryExtremes(candles,engine.detectPivots(candles,1,{}));
+    // 聚合桶内全是补线时整根标 filled（如 4h 桶落在 ≤6 小时的缺口里）
+    const step = engine.TIMEFRAMES[tf].fetchGranularity || 3600;
+    const filledTs = new Set(window.filter(c => c.filled).map(c => c.timestamp));
+    if (filledTs.size) candles.forEach(c => { let all = true; for (let t = c.timestamp; t < c.timestamp + step; t += 3600) if (!filledTs.has(t)) { all = false; break; } if (all) c.filled = true; });
+    let fine = engine.anchorBoundaryExtremes(candles,dropFilledPivots(engine.detectPivots(candles,1,{}),candles));
     const start = {type:from.type,price:from.price,index:0,timestamp:candles[0].timestamp};
     const finish = {type:to.type,price:to.price,index:candles.length-1,timestamp:candles.at(-1).timestamp};
     // Crop by actual event hours before aggregation, then pin the supplied prices.
@@ -57,18 +122,29 @@ function createSubwaveVerifier(engine, { hourly, mainTf = '1d', finestTf = '1h',
     if (prepared.size > PREPARED_MAX) prepared.delete(prepared.keys().next().value);
     return entry;
   }
-  const stats = { hourlyCandles: hours.length, failedPages:hourly && hourly.fetchErrors || [], windows: 0, cacheHits: 0 };
+  const stats = { hourlyCandles: rawHours.length, failedPages:hourly && hourly.fetchErrors || [], windows: 0, cacheHits: 0 };
   const seconds = { '1d':86400, '4h':14400, '1h':3600, '1w':604800 };
   const tolerance = Math.max(1e-8, 10 ** -pricePrecision / 2);
+  const { series: hours, gaps } = fillShortGaps(rawHours, parentCandles, seconds[mainTf], tolerance);
+  stats.hourlyGaps = gaps;
+  const position = new Map(hours.map((c, i) => [c.timestamp, i]));
+  const span = (fromTs, toTs) => { // 按时间取连续小时线（序列已排序去重）
+    let i = position.get(fromTs);
+    if (i === undefined) { i = hours.findIndex(c => c.timestamp >= fromTs); if (i < 0) return []; }
+    const out = [];
+    for (; i < hours.length && hours[i].timestamp <= toTs; i += 1) out.push(hours[i]);
+    return out;
+  };
   function locate(point, sourceTf) {
     const width = seconds[sourceTf];
     if (!width || point.provisional) return null;
-    const bucket=hours.filter(c=>c.timestamp>=point.timestamp && c.timestamp<point.timestamp+width);
+    const bucket=span(point.timestamp, point.timestamp+width-1);
     if (bucket.length!==width/3600 || bucket.some((c,i)=>c.timestamp!==point.timestamp+i*3600 || c.timestamp+3600>endTs || !Number.isFinite(c.high) || !Number.isFinite(c.low) || c.high<c.low)) return null;
     const field = point.type === 'H' ? 'high' : 'low';
-    const extreme=point.type==='H'?Math.max(...bucket.map(c=>c.high)):Math.min(...bucket.map(c=>c.low));
+    const real = bucket.filter(c=>!c.filled); // 端点只认真实成交的小时线
+    const extreme=point.type==='H'?Math.max(...real.map(c=>c.high)):Math.min(...real.map(c=>c.low));
     if (Math.abs(extreme-point.price)>tolerance) return null;
-    const matches = bucket.filter(c=>Math.abs(c[field]-point.price)<=tolerance);
+    const matches = real.filter(c=>Math.abs(c[field]-point.price)<=tolerance);
     // Repeated equal extremes do not identify one unique event.
     return matches.length === 1 ? matches[0] : null;
   }
@@ -81,10 +157,21 @@ function createSubwaveVerifier(engine, { hourly, mainTf = '1d', finestTf = '1h',
     if (error && !hours.length) return save(`小时行情获取失败：${error}`);
     if (!hours.length) return save('缺少小时行情');
     const a = locate(from,sourceTf), b = locate(to,sourceTf);
-    if (!a || !b || b.timestamp <= a.timestamp) return save('母级端点未能在完整桶内唯一定位（或端点尚未确认）');
+    if (!a || !b || b.timestamp <= a.timestamp) {
+      const width = seconds[sourceTf] || 0;
+      const inBucket = pt => gaps.filter(g => !g.filled && g.toTimestamp >= pt.timestamp && g.fromTimestamp < pt.timestamp + width);
+      const open = [...inBucket(from), ...inBucket(to)];
+      if (open.length) return save('母级端点所在 K 线有小时数据断档（'+describeGaps(open)+'；缺口过长或母级极值可能落在缺口内，不插补），无法定位端点');
+      return save('母级端点未能在完整桶内唯一定位（或端点尚未确认）');
+    }
     evidence.located = { fromTimestamp:a.timestamp, toTimestamp:b.timestamp };
-    const window = hours.filter(c => c.timestamp >= a.timestamp && c.timestamp <= b.timestamp && c.timestamp <= endTs);
-    if (!window.length || window[0].timestamp !== a.timestamp || window.at(-1).timestamp !== b.timestamp || window.some((c,i) => i && c.timestamp-window[i-1].timestamp !== 3600)) return save('小时窗口缺失 K 线，不能完成结构验证');
+    const window = span(a.timestamp, Math.min(b.timestamp, endTs));
+    const crossing = gaps.filter(g => g.fromTimestamp > a.timestamp && g.toTimestamp < b.timestamp);
+    if (crossing.length) evidence.dataGaps = crossing.map(g => ({ ...g }));
+    if (!window.length || window[0].timestamp !== a.timestamp || window.at(-1).timestamp !== b.timestamp || window.some((c,i) => i && c.timestamp-window[i-1].timestamp !== 3600)) {
+      const detail = describeGaps(crossing.filter(g => !g.filled));
+      return save('小时窗口缺失 K 线'+(detail ? '（'+detail+'；缺口过长或母级极值可能落在缺口内，不插补）' : '')+'，不能完成结构验证');
+    }
     // A bar containing both endpoints has no observable intrabar event order.
     // 只在声明的最细周期上验证：非最细周期不是分辨率边界，子角色没有证据来源，结果必然是 pending；
     // 其 invalid 也不终止验证。中间周期（如最细为 1h 时的 4h）对结论没有贡献，只耗时（实测占 58%）。
@@ -105,7 +192,7 @@ function createSubwaveVerifier(engine, { hourly, mainTf = '1d', finestTf = '1h',
       evidence.verificationScope=best && best.verificationScope || null;
       const attempt = {timeframe:tf,status:status || 'pending',pivotCount:fine.length,searchLimited:!!searchLimited,provenRoles:evidence.provenRoles,requiredRoles:evidence.requiredRoles,patternId:best && best.patternId,violations:best ? engine.candidateViolations(best) : [],pendingRoles:best ? best.score.pendingRoles : 1,structure:engine.serializeTree(node)};
       evidence.attempts.push(attempt);
-      if (status === 'verified') { evidence.status='verified'; return save('所需角色及直接子结构已在声明的最细分辨率范围验证；边界以下子角色未证明'); }
+      if (status === 'verified') { evidence.status='verified'; const filledHours=(evidence.dataGaps||[]).filter(g=>g.filled).reduce((n,g)=>n+g.hours,0); return save('所需角色及直接子结构已在声明的最细分辨率范围验证；边界以下子角色未证明'+(filledHours?'；窗口内 '+filledHours+' 小时交易所断档按母级极值约束插补':'')); }
       if (tf === finestTf && status === 'invalid') { evidence.status='invalid'; return save('最细周期的完整候选搜索不满足位置角色'); }
     }
     return save('已检查较小周期，子角色或搜索覆盖仍待验证');
@@ -126,10 +213,10 @@ async function buildVerifiedCountTree(engine, fine, candles, options = {}) {
     catch (e) { error = options.fetchHourly ? e.message : 'Coinbase 小时行情请求失败'; }
     if (hourly && hourly.fetchErrors && hourly.fetchErrors.length) error=hourly.fetchErrors.length+' 个小时行情分页获取失败；保留已获取数据，缺口窗口待验证';
   }
-  const verifier = createSubwaveVerifier(engine,{...options,hourly,mainTf,error});
+  const verifier = createSubwaveVerifier(engine,{...options,hourly,parentCandles:candles,mainTf,error});
   const verificationOptions = {...options,timeframe:mainTf,evidenceMode:true,finestResolution:mainTf===(options.finestTf||'1h')?mainTf:null,verification:options.finestTf === 'off' ? null : verifier};
   const tree = engine.buildCountTree(fine,candles,verificationOptions);
   tree.verification = {mainTimeframe:mainTf,finestTimeframe:options.finestTf || '1h',...verifier.stats,error};
   return {tree,verifier,verificationOptions,hourly};
 }
-module.exports = {createSubwaveVerifier,buildVerifiedCountTree,fetchSharedHourly};
+module.exports = {createSubwaveVerifier,buildVerifiedCountTree,fetchSharedHourly,fillShortGaps,dropFilledPivots,MAX_GAP_HOURS};

@@ -166,3 +166,37 @@ test('pending Markdown never labels unverified templates as all rules passed',()
   const text=E.renderMarkdownReport({product:'BTC-USD',timeframe:'1d',source:'fixture'},tree);
   assert.ok(!text.includes('✅ 规则全过'));assert.ok(!text.includes('✅ 主选'));assert.ok(text.includes('⏳ 暂定主选'));
 });
+
+// 交易所断档：≤6 小时、且母级 K 线极值都已在现有小时线里出现时插补；否则保持待验证。
+function dayCandles(hours){
+  const days=new Map();
+  for(const c of hours){const d=c.timestamp-(c.timestamp%day);const o=days.get(d)||{timestamp:d,high:-Infinity,low:Infinity,open:c.open,close:c.close,volume:0};o.high=Math.max(o.high,c.high);o.low=Math.min(o.low,c.low);o.close=c.close;days.set(d,o);}
+  return [...days.values()];
+}
+test('short exchange outage bounded by observed parent extremes is interpolated and verified around',()=>{
+  const full=sampleHours();const parents=dayCandles(full);
+  const holed=full.filter((_,i)=>i<14||i>18); // 5 小时断档，不含当日极值
+  const v=createSubwaveVerifier(E,{hourly:holed,parentCandles:parents});
+  const r=v.evaluate(from,to,'impulse|ending');
+  assert.equal(v.stats.hourlyGaps.length,1);assert.equal(v.stats.hourlyGaps[0].filled,true);
+  assert.equal(r.dataGaps.length,1);assert.equal(r.dataGaps[0].hours,5);
+  assert.equal(r.attempts.length,1,'跨断档的窗口仍进入 1h 验证');
+  const strict=createSubwaveVerifier(E,{hourly:holed}).evaluate(from,to,'impulse|ending');
+  assert.match(strict.reason,/断档.*不插补/,'没有母级 K 线约束时不插补');
+});
+test('outage that may hide a parent extreme or exceeds six hours stays pending',()=>{
+  const full=sampleHours();
+  const holed=full.filter((_,i)=>i<14||i>18);
+  const lowerParent=dayCandles(full).map((d,i)=>i===0?{...d,low:d.low-5}:d); // 母级最低价没有出现在现有小时线里
+  const hidden=createSubwaveVerifier(E,{hourly:holed,parentCandles:lowerParent}).evaluate(from,to,'impulse|ending');
+  assert.match(hidden.reason,/不插补/);assert.equal(hidden.status,'pending');
+  const long=full.filter((_,i)=>i<12||i>18); // 7 小时
+  const r=createSubwaveVerifier(E,{hourly:long,parentCandles:dayCandles(full)}).evaluate(from,to,'impulse|ending');
+  assert.match(r.reason,/7 小时/);assert.equal(r.status,'pending');
+});
+test('pivots on interpolated bars are dropped and alternation is restored',()=>{
+  const {dropFilledPivots}=require('../wave-subwave-verification');
+  const candles=[{},{},{filled:true},{},{}];
+  const out=dropFilledPivots([{index:0,type:'H',price:10},{index:2,type:'L',price:5},{index:3,type:'H',price:12},{index:4,type:'L',price:6}],candles);
+  assert.deepEqual(out.map(p=>p.type+p.price),['H12','L6'],'补线上的 L 剔除后，相邻两个 H 取更高者');
+});
