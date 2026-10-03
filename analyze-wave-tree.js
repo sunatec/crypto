@@ -1037,18 +1037,31 @@ function legEndpointsSpanExtreme(pts, segFine) {
   return true;
 }
 
-// 腿内越过自身起点的约束（书§1.5、§5.4/§6.2；macro-endpoint-span-extreme 的收窄版）：
-//   · 驱动腿：起点之后出现更极端价没有合法读法（2浪不得回撤超过1浪起点，对首个子浪同样适用）。
-//   · 调整腿：只有扩散/顺势平台或顺势三角的 b' 能越过起点，且 b'<2a'，即越过幅度须小于此前
+// 腿内越过自身起点的约束（书§1.5、§4.1、§5.4/§6.2、§7.1；macro-endpoint-span-extreme 的收窄版）：
+//   · 驱动腿、锯齿类调整腿：起点之后出现更极端价没有合法读法（2浪不过1浪起点、锯齿 b<a、x<w）。
+//   · 可为平台/三角/联合形的调整腿：只有其 b' 能越过起点，且 b'<2a'，即越过幅度须小于此前
 //     同腿顺向走出的最大幅度 a'。
 // §3.15/§4.7 的正统终点（失败5浪/短C：腿终点之前已出现更极端价）不受影响。不能指望子浪文法
-// 兜底：子腿点数不足成叶子时根本不检查。只有所有子角色方案里都是驱动角色的腿才按驱动腿处理。
+// 兜底：子腿点数不足成叶子时根本不检查。任一子角色方案允许越界即按宽松口径。
+// 允许内部 b 越过本腿起点的形态：扩散/顺势平台（§5.4）、顺势三角（§6.2）、以平台/三角为子浪的联合形。
+// 单锯齿 b<a、双/三锯齿 x<w，驱动腿 2 浪不过 1 浪起点——这些都不允许。
+const ORIGIN_EXCURSION_PATTERNS = ['flat', 'flat-regular', 'flat-expanded', 'flat-running', 'triangle', 'sideways-double', 'sideways-triple'];
+// 某腿在所有子角色方案下都不允许越过起点 → strict。
+function legOriginStrict(pat, i) {
+  const roleSets = [pat.childRoles, ...(pat.childRolesAlt || [])];
+  return roleSets.every((roles) => roles && !(ROLE_PATTERNS[roles[i]] || [roles[i]]).some((id) => ORIGIN_EXCURSION_PATTERNS.includes(id)));
+}
+// 价格 price 出现在腿 start→end 之内（或之后、末腿仍在延伸）是否违反起点约束。progress 为此前顺向最大幅度 a'。
+function originBreached(start, end, price, progress, strict) {
+  const sign = end.price >= start.price ? 1 : -1;
+  const move = sign * (price - start.price);
+  return move < 0 && (strict || -move >= progress);
+}
+
 function legsRespectOrigin(pts, segFine, pat) {
   if (!Array.isArray(pts) || !Array.isArray(segFine) || !pat) return true;
-  const roleSets = [pat.childRoles, ...(pat.childRolesAlt || [])];
-  const isDrivingRole = (role) => (ROLE_PATTERNS[role] || [role]).every((id) => isDrivingPattern(id));
   for (let i = 0; i < pts.length - 1; i += 1) {
-    const driving = roleSets.every((roles) => roles && isDrivingRole(roles[i]));
+    const strict = legOriginStrict(pat, i);
     const p = pts[i];
     const q = pts[i + 1];
     const sign = q.price >= p.price ? 1 : -1; // 腿的顺向
@@ -1057,7 +1070,7 @@ function legsRespectOrigin(pts, segFine, pat) {
       if (f.index <= p.index || f.index >= q.index) continue;
       const move = sign * (f.price - p.price);
       if (move > progress) progress = move;
-      if (move < 0 && (driving || -move >= progress)) return false;
+      if (originBreached(p, q, f.price, progress, strict)) return false;
     }
   }
   return true;
@@ -1548,6 +1561,12 @@ function legRoleViolation(role, info) {
 function shortPatternName(label) {
   const m = label.match(/（(引导楔形|终结楔形|楔形)/);
   return m ? m[1] : label.replace(/（.*$/, '');
+}
+
+// 简报/说明用的形态简称：楔形类保留具体楔形名，否则"驱动浪（楔形…）"与"驱动浪（扩散终结楔形…）"都缩成"驱动浪"。
+function briefPatternName(label) {
+  const m = String(label || '').match(/（([^（）；，]*?楔形)/);
+  return m ? m[1] : String(label || '').replace(/（.*$/, '');
 }
 
 // bestLabel：该腿的最佳读法；bestAllowed：最佳读法本属于允许形态、只是自身带违规
@@ -2197,6 +2216,7 @@ function buildCountTree(finePivots, candles, options = {}) {
         (counterB.alternates || []).forEach((c) => annotateExtendingLegForks(c, candles, opts));
       }
       tree.frameworkB = mergeFrameworkB(naiveKept, counterB);
+      tree.counterTrendExcluded = counterB ? counterB.excluded || [] : [];
     }
   }
   return tree;
@@ -3211,28 +3231,50 @@ function buildCounterTrendFrameworkB(tree, finePivots, candles) {
   if (down ? now.price <= term.price : now.price >= term.price) return null;
 
   const sgn = down ? -1 : 1;
-  const lastLegAmp = Math.abs(term.price - p.points[p.points.length - 2].price);
-  // 末浪延伸的投影极值：从全局极值按末腿幅度的 0.382/0.618/1.0 倍继续（推断、非确定）
-  const projection = [0.382, 0.618, 1.0].map((m) => ({ mult: m, price: term.price + sgn * lastLegAmp * m }));
-  // 未完成度：当前逆势回撤越深 → "末浪还在延伸"越不可能（越可能已见底/见顶）→ 惩罚越大。
-  const retraceRatio = lastLegAmp > 0 ? Math.min(1, Math.abs(now.price - term.price) / lastLegAmp) : 1;
+
+  // 末浪若仍在延伸，全局极值之后的逆势走势就是末浪内部的回撤：它同样受起点约束——末浪是驱动腿或
+  // 锯齿类时不得越过末浪起点；可为平台/三角时须 b'<2a'（a' 取起点→全局极值）。越过即否定此读法。
+  const after = finePivots.filter((q) => q.index > term.index);
+  const counterExtreme = after.reduce((m, q) => (down ? Math.max(m, q.price) : Math.min(m, q.price)), now.price);
+  const excluded = [];
+  const extensionBroken = (c) => {
+    const pat = PATTERNS.find((x) => x.id === c.patternId);
+    if (!pat || c.points.length < 2) return false;
+    const start = c.points[c.points.length - 2];
+    const end = c.points[c.points.length - 1];
+    const strict = legOriginStrict(pat, c.points.length - 2);
+    if (!originBreached(start, end, counterExtreme, Math.abs(end.price - start.price), strict)) return false;
+    excluded.push({ patternId: c.patternId, label: c.manual.label, finalLegFrom: start.price, finalLegTo: end.price, counterExtreme,
+      reason: `极值后逆势走到 ${counterExtreme}，已越过末浪起点 ${start.price}${strict ? '' : '且 b′≥2a′'}，末浪不可能仍在延伸` });
+    return true;
+  };
 
   const reframe = (c) => {
+    // 末浪延伸的投影极值：从全局极值按本候选末腿幅度的 0.382/0.618/1.0 倍继续（推断、非确定）
+    const finalStart = c.points[c.points.length - 2];
+    const lastLegAmp = Math.abs(term.price - finalStart.price);
+    const projection = [0.382, 0.618, 1.0].map((m) => ({ mult: m, price: term.price + sgn * lastLegAmp * m }));
+    // 未完成度：当前逆势回撤越深 → "末浪还在延伸"越不可能（越可能已见底/见顶）→ 惩罚越大。
+    const retraceRatio = lastLegAmp > 0 ? Math.min(1, Math.abs(now.price - term.price) / lastLegAmp) : 1;
     // 先按可判定性闸门把"延伸能翻转判决"的规则从违规移入 deferred，再叠未完成度惩罚。
     const gated = applyInProgressRuleGate({...c,finalWaveInProgress:true}, candles);
     return {
       ...c,
       finalWaveInProgress: true,
+      finalLegFrom: finalStart,
       projection,
       retraceFrom: term,
       retraceNow: now,
       score: { ...gated, incompleteness: retraceRatio },
     };
   };
+  const kept = [p, ...(tree.alternates || []).slice(0, 3)] // 只带前几族，避免把整张A表复制一遍
+    .filter((c) => !extensionBroken(c)).map(reframe);
   return {
     counterTrend: true,
-    primary: reframe(p),
-    alternates: (tree.alternates || []).slice(0, 3).map(reframe), // 只带前几族，避免把整张A表复制一遍
+    primary: kept[0] || null,
+    alternates: kept.slice(1),
+    excluded,
   };
 }
 
@@ -3469,6 +3511,13 @@ function renderRankedCounts(tree, pricePrecision) {
       L.push(`| 备选${i + 1} | ${fr} | ${c.label} | ${dirCn(c.direction)} | ${legsStr} | ${sc} | ${why} |`);
     });
     L.push('');
+    // 逆势"末浪未完"读法被极值后的走势否定时，说明为什么表里没有它
+    const ex = tree.counterTrendExcluded || [];
+    if (ex.length) {
+      const first = ex[0];
+      L.push(`> 末浪延伸读法已排除：极值后逆势走到 **${n(first.counterExtreme)}**，越过末浪起点 **${[...new Set(ex.map((e) => n(e.finalLegFrom)))].join(' / ')}**——末浪若仍在延伸，其内部回撤不能越过起点（${[...new Set(ex.map((e) => briefPatternName(e.label)))].join('、')}）。`);
+      L.push('');
+    }
     // 若有"末浪进行中"的框架B 备选，补一行投影说明（否则表里只有"延伸中"三字、没数）
     const cb = alts.find((c) => c.finalWaveInProgress);
     if (cb) {
@@ -4046,11 +4095,12 @@ function renderBrief(meta, tree) {
   else state = `走的是${briefLabel}，仍在建`;
   L.push(`1. 大局研判：${px(first.from)} → ${px(last.to)} 的整体${moveCn}${state}。`);
   const altParts = [];
-  if (alts[0]) altParts.push(`备选：${alts[0].label.replace(/（.*?）/, '')}`);
+  if (alts[0]) altParts.push(`备选：${briefPatternName(alts[0].label)}`);
   const cb = alts.find((c) => c.finalWaveInProgress && c.projection && c.projection.length);
   const ext = cb ? cb.projection.filter((t) => t.price > 0) : [];
   if (ext.length && primary.framing === 'A') {
-    altParts.push(`若${breakCn} ${px(a.invalidation)}，则按末浪未完看延伸（${ext.map((t) => px(t.price)).join(' / ')}）`);
+    const lastLeg = cb.legs[cb.legs.length - 1];
+    altParts.push(`若${breakCn} ${px(a.invalidation)}，则按${briefPatternName(cb.label)}末浪（${lastLeg.name} 浪，${px(lastLeg.from)} 起）未完看延伸（${ext.map((t) => px(t.price)).join(' / ')}）`);
   }
   if (altParts.length) L.push(`   ${altParts.join('；')}。`);
 
@@ -4534,6 +4584,7 @@ async function main() {
     tree: serializeTree(tree),
     inProgressTree: serializeInProgress(tree.inProgressStruct),
     rankedCounts: serializeRankedCounts(tree),
+    counterTrendExcluded: tree.counterTrendExcluded || [],
     currentWaveStructures: serializeCurrentWaveStructures(tree),
     parentDegree: serializeMultiDegree(tree, args.tf),
   }, null, 2), 'utf8');
@@ -4611,6 +4662,8 @@ module.exports = {
   macroAlternates,
   legEndpointsSpanExtreme,
   legsRespectOrigin,
+  legOriginStrict,
+  briefPatternName,
   ORTHODOX_END_PATTERNS,
   candidateViolations,
   coarsenByPairs,

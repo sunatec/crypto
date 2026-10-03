@@ -80,3 +80,54 @@ test('父级角色：反弹已走成五浪时，新推动读法不被淘汰且�
   assert.equal(three.primary.key,'combination');
   assert.ok(three.eliminated.some(c=>c.key==='impulse'),'三波反弹不能是新推动');
 });
+
+// 逆势框架B"末浪未完"：极值后的逆势走势是末浪内部回撤，同样受末浪起点约束。
+function counterTree(patternId,prices,after) {
+  const pts=prices.map((price,i)=>pv(i*10,i%2===0?'H':'L',price));
+  const cand={patternId,klass:'corrective',direction:'down',points:pts,manual:{label:patternId},children:[],score:{tier1:0,tier2:0,failed:[],verificationStatus:'pending'}};
+  const tail=after.map((price,i)=>({...pv(pts.at(-1).index+5*(i+1),i%2===0?'H':'L',price),provisional:i===after.length-1}));
+  return {tree:{primary:cand,alternates:[]},fine:[...pts,...tail]};
+}
+
+test('末浪为驱动腿（单锯齿 c）：反弹越过 c 起点即排除末浪延伸读法',()=>{
+  const {tree,fine}=counterTree('zigzag',[100,60,80,50],[85,70]);
+  const b=E.buildCounterTrendFrameworkB(tree,fine,[]);
+  assert.equal(b.primary,null);
+  assert.equal(b.excluded.length,1);assert.equal(b.excluded[0].counterExtreme,85);assert.equal(b.excluded[0].finalLegFrom,80);
+  const ok=E.buildCounterTrendFrameworkB(counterTree('zigzag',[100,60,80,50],[75,70]).tree,counterTree('zigzag',[100,60,80,50],[75,70]).fine,[]);
+  assert.ok(ok.primary && ok.primary.finalWaveInProgress,'反弹未过起点 80 时保留');
+});
+
+test('末浪可为平台/三角（联合形 y）：越过起点须 b′<2a′',()=>{
+  const near=counterTree('sideways-double',[100,60,75,50],[78,70]); // 越过 3 < a′=25
+  assert.ok(E.buildCounterTrendFrameworkB(near.tree,near.fine,[]).primary);
+  const far=counterTree('sideways-double',[100,60,75,50],[101,90]); // 越过 26 ≥ 25
+  assert.equal(E.buildCounterTrendFrameworkB(far.tree,far.fine,[]).primary,null);
+  const dz=counterTree('zigzag-double',[100,60,75,50],[78,70]); // 双锯齿 y 为单锯齿：b<a，不得越过
+  assert.equal(E.buildCounterTrendFrameworkB(dz.tree,dz.fine,[]).primary,null);
+});
+
+test('锯齿类调整腿与驱动腿一样不得越过起点',()=>{
+  const pts=[pv(0,'H',100),pv(10,'L',60),pv(20,'H',80),pv(30,'L',40)];
+  const seg=[pts[0],pv(3,'L',90),pv(6,'H',102),...pts.slice(1)];
+  assert.equal(E.legOriginStrict(pat('zigzag-double'),0),true);
+  assert.equal(E.legsRespectOrigin(pts,seg,pat('zigzag-double')),false,'w 为单锯齿，越过起点 100 淘汰');
+  assert.equal(E.legsRespectOrigin(pts,seg,pat('sideways-double')),true,'联合形 w 可为平台：越过 2 < a′=10 允许');
+});
+
+test('末浪延伸投影按各候选自己的末腿：主选被排除后不得沿用主选末腿幅度',()=>{
+  const {tree,fine}=counterTree('zigzag',[100,60,80,50],[85,70]); // 主选 c 从 80 起，被 85 否定
+  const alt={...tree.primary,points:[pv(0,'H',100),pv(5,'L',70),pv(8,'H',95),pv(30,'L',50)]}; // c 从 95 起，幅 45
+  const b=E.buildCounterTrendFrameworkB({primary:tree.primary,alternates:[alt]},fine,[]);
+  assert.equal(b.excluded.length,1);
+  assert.equal(b.primary.points[2].price,95);
+  assert.deepEqual(b.primary.projection.map(t=>+t.price.toFixed(2)),[32.81,22.19,5],'50 − 45×0.382/0.618/1.0');
+  assert.equal(b.primary.finalLegFrom.price,95);
+});
+
+test('简报形态简称保留具体楔形名',()=>{
+  assert.equal(E.briefPatternName('驱动浪（楔形 Diagonal，位置待定）'),'楔形');
+  assert.equal(E.briefPatternName('驱动浪（扩散终结楔形；专章待补）'),'扩散终结楔形');
+  assert.equal(E.briefPatternName('推动浪（引导楔形 Leading Diagonal）'),'引导楔形');
+  assert.equal(E.briefPatternName('单锯齿（Zigzag 5-3-5）'),'单锯齿');
+});
