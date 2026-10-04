@@ -204,6 +204,7 @@ async function buildVerifiedCountTree(engine, fine, candles, options = {}) {
     catch (e) { error = options.fetchHourly ? e.message : 'Coinbase 小时行情请求失败'; }
     if (hourly && hourly.fetchErrors && hourly.fetchErrors.length) error=hourly.fetchErrors.length+' 个小时行情分页获取失败；保留已获取数据，缺口窗口待验证';
   }
+  if (hourly && options.transformHourly) hourly = options.transformHourly(hourly);
   const verifier = createSubwaveVerifier(engine,{...options,hourly,parentCandles:candles,mainTf,error});
   const verificationOptions = {...options,timeframe:mainTf,evidenceMode:true,finestResolution:mainTf===(options.finestTf||'1h')?mainTf:null,verification:options.finestTf === 'off' ? null : verifier};
   const tree = engine.buildCountTree(fine,candles,verificationOptions);

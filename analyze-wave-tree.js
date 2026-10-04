@@ -34,6 +34,7 @@ const book = require('./wave-book-validation.js');
 // 多市场数据源（add-stock-data-sources）：美股 Twelve Data、A 股东方财富
 const marketData = require('./market-data.js');
 const { getCandles } = require('./candle-cache.js');
+const spikeDetection = require('./spike-detection.js');
 
 const SOURCE_LABELS = {
   coinbase: 'Coinbase Exchange candles API',
@@ -2683,7 +2684,7 @@ function maxInternalRetrace(swingPivots, up) {
 }
 
 // 全部历史背景只生成证据，不参与评分、数法或父级候选排序。
-function buildHigherDegreeBackground({ daily, structure, listingTs }) {
+function buildHigherDegreeBackground({ daily, structure, listingTs, spikes: classifiedSpikes }) {
   if (!Array.isArray(daily) || !daily.length) return { available: false, reason: '全部日线为空' };
   if (daily.fetchErrors && daily.fetchErrors.length) return { available: false, reason: daily.fetchErrors.map(e => e.reason).join('；') };
   const points = structure && structure.points;
@@ -2692,22 +2693,9 @@ function buildHigherDegreeBackground({ daily, structure, listingTs }) {
   const before = daily.slice().sort((a, b) => a.timestamp - b.timestamp);
   const listing = before.find(c => c.timestamp === listingTs);
   if (!listing) return { available: false, reason: '上市首日发现失败或首根日线缺失' };
-  const spikes = [];
-  const cleaned = before.map((c, i) => {
-    const prev = before[i - 1], next = before[i + 1];
-    const lowRef = Math.min(c.open, c.close, prev ? prev.low : Infinity, next ? next.low : Infinity);
-    const highRef = Math.max(c.open, c.close, prev ? prev.high : -Infinity, next ? next.high : -Infinity);
-    const out = { ...c };
-    if (c.low < lowRef * 0.5) {
-      out.low = lowRef;
-      spikes.push({ timestamp: c.timestamp, type: 'L', originalPrice: c.low, adjustedPrice: lowRef });
-    }
-    if (c.high > highRef * 2) {
-      out.high = highRef;
-      spikes.push({ timestamp: c.timestamp, type: 'H', originalPrice: c.high, adjustedPrice: highRef });
-    }
-    return out;
-  });
+  const candidates = classifiedSpikes || spikeDetection.classifyMainSpikes(spikeDetection.detectSpikeCandidates(before, { timeframe: '1d' }), { candles: before });
+  const { candles: cleaned, clips } = spikeDetection.clipThinSpikes(before, candidates);
+  const spikes = spikeDetection.markSpikeTreatment(candidates, clips);
   const high = cleaned.reduce((a, b) => b.high > a.high ? b : a);
   const low = cleaned.reduce((a, b) => b.low < a.low ? b : a);
   const up = E.price < S.price; // 前段方向与窗口结构相反。
@@ -2790,13 +2778,16 @@ function buildHigherDegreeBackground({ daily, structure, listingTs }) {
   };
 }
 
-async function loadHigherDegreeBackground({ product, source, isStock, mode = 'on', end, refresh, structure }, fetchFn = getCandles) {
+async function loadHigherDegreeBackground({ product, source, isStock, mode = 'on', end, refresh, structure, fetchFiner }, fetchFn = getCandles) {
   if (isStock) return { available: false, reason: '股票本次未生成大级别背景' };
   if (mode === 'off') return { available: false, reason: '--background off：本次未生成大级别背景' };
   if (source !== 'coinbase') return { available: false, reason: '该数据源不支持大级别背景' };
   try {
     const daily = await fetchFn(product, 86400, 'all', end, { refresh });
-    return buildHigherDegreeBackground({ daily, structure, listingTs: daily.listingTs });
+    if (daily.fetchErrors && daily.fetchErrors.length) return { available: false, reason: daily.fetchErrors.map(e => e.reason).join('；') };
+    const spikes = await spikeDetection.classifySpikes(spikeDetection.detectSpikeCandidates(daily, { timeframe: '1d' }),
+      { candles: daily, product, timeframe: '1d', refresh, fetchFiner });
+    return buildHigherDegreeBackground({ daily, structure, listingTs: daily.listingTs, spikes });
   } catch (e) {
     return { available: false, reason: `全部历史取数失败：${e.message}` };
   }
@@ -2840,8 +2831,8 @@ function renderHigherDegreeBackground(background, precision) {
   if (background.omittedLevels) L.push('', `级数上限 8，省略 ${background.omittedLevels} 级${ladder.some(l => l.zero) ? '；价格 0 级保留' : ''}。`);
   L.push('', '读法：内部回撤取自 S 所在周之前的周线枢轴，以 S 本身为终点；百分比回撤比使用对数比率。§3.3 只给出“可假设”的证据，不改变排名，也不代表完成大级别数浪。');
   if (background.spikes.length) {
-    L.push('', '疑似扎针（§3.15，仅背景截取；阈值：低于参考价 50% / 高于参考价 2 倍）：');
-    for (const p of background.spikes) L.push(`- ${date(p.timestamp)} ${p.type === 'L' ? '低点' : '高点'}：${px(p.originalPrice)} → ${px(p.adjustedPrice)}。`);
+    L.push('', '扎针（§3.15，仅背景截取疑似乌龙针；结构 ≥2×ATR(14) 或价格 50% / 2 倍，量能 ≥5 倍为有量扎针；阈值为工程设定）：');
+    for (const p of background.spikes) L.push(`- ${spikeDetection.formatSpike(p, px)}`);
   }
   L.push('');
   return L.join('\n');
@@ -3693,7 +3684,24 @@ function buildRankedCounts(tree) {
   }));
 }
 
-function renderRankedCounts(tree, pricePrecision) {
+function spikeEndpointDependencies(tree, spikes) {
+  const p = tree && tree.primary;
+  if (!p || !p.points) return [];
+  const labels = waveLabelsFor(p.patternId);
+  const dependencies = [];
+  p.points.slice(0, -1).forEach((from, i) => {
+    for (const [endpoint, point] of [['起点', from], ['终点', p.points[i + 1]]]) {
+      for (const s of spikes) {
+        if (point.timestamp >= s.timestamp && point.timestamp < s.endTimestamp && point.price === s.originalPrice) {
+          dependencies.push({ leg: labels[i] || String(i + 1), endpoint, spikeTimestamp: s.timestamp, type: s.type, price: point.price, classification: s.classification });
+        }
+      }
+    }
+  });
+  return dependencies;
+}
+
+function renderRankedCounts(tree, pricePrecision, spikes = []) {
   const ranked = buildRankedCounts(tree);
   if (!ranked || !ranked.length) return '';
   const n = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
@@ -3761,6 +3769,10 @@ function renderRankedCounts(tree, pricePrecision) {
   L.push('');
   L.push(framingLine(primary));
   L.push('');
+  for (const d of spikeEndpointDependencies(tree, spikes)) {
+    L.push(`扎针端点依赖：主选 ${d.leg} 浪${d.endpoint} ${n(d.price)}（${new Date(d.spikeTimestamp * 1000).toISOString().slice(0, 10)}）；此数法依赖该扎针。${d.classification === 'thin' ? '可用 --ignore-thin-spikes 对照。' : d.classification === 'volume' ? '有量扎针按 §3.15 保留，常作为 X 连接段。' : '量能分类待定，保留原价。'}`);
+    L.push('');
+  }
   if (primary.altCharacter) {
     altForkLines(primary.altCharacter).forEach((l) => L.push(l));
     L.push('');
@@ -4214,6 +4226,10 @@ function renderReportMeta(meta) {
   }
   L.push(`- 生成时间：${fmtTimeSec(meta.generatedAtUtc)}（UTC+8）`);
   L.push(`- 数据来源：${meta.source}`);
+  if (meta.spikes && meta.spikes.length) {
+    L.push('- 扎针：结构 ≥2×ATR(14) 或价格 50% / 2 倍；量能 ≥5 倍为有量扎针（工程设定，书无量化标准）。');
+    for (const s of meta.spikes) L.push(`- 扎针：${spikeDetection.formatSpike(s, px)}`);
+  }
   return L.join('\n');
 }
 
@@ -4514,7 +4530,7 @@ function renderMarkdownReport(meta, tree, userEval, context = {}) {
   lines.push('');
   lines.push('<details><summary>技术细节（轴①②③ 全文、数法打分）</summary>');
   lines.push('');
-  const ranked = tree ? renderRankedCounts(tree, pricePrecision) : '';
+  const ranked = tree ? renderRankedCounts(tree, pricePrecision, meta.spikes || []) : '';
   if (ranked) {
     lines.push(ranked);
     const parentRole = tree ? renderParentRole(tree, pricePrecision, context.background) : '';
@@ -4844,6 +4860,7 @@ async function main() {
       + '  --verify-tf 1h|4h|off  子浪验证下探周期（加密货币默认1h）\n'
       + '  --refresh  重新拉取本次 Coinbase 区间并更新缓存\n'
       + '  --background on|off  全部历史周线/月线背景（加密货币默认 on，股票关闭）\n'
+      + '  --ignore-thin-spikes  截取疑似乌龙针并同步处理小时线；有量扎针保留\n'
       + '  --source coinbase|twelvedata|eastmoney  手动指定数据源\n\n以《波浪理论详解》为准绳，递归拆解产出「最大级别 → 当前浪」计数树。');
     return;
   }
@@ -4852,6 +4869,7 @@ async function main() {
   // add-stock-data-sources：按代码识别市场；股票仅日线/周线（周线由日线合成）
   const { market, source } = marketData.detectMarket(args.product, argOf('--source'));
   const isStock = market !== 'crypto';
+  const ignoreThinSpikes = argv.includes('--ignore-thin-spikes');
   const backgroundMode = argOf('--background') || 'on';
   if (argv.includes('--background') && !['on', 'off'].includes(argOf('--background'))) throw new Error('--background 须为 on / off');
   const finestTf = argOf('--verify-tf') || (isStock ? 'off' : '1h');
@@ -4877,24 +4895,33 @@ async function main() {
   // 股票日线 timestamp 为交易日 UTC 零点，区间按日期比较（起止当天都算）
   const startTs = isStock ? Math.floor(Date.parse(`${start.toISOString().slice(0, 10)}T00:00:00Z`) / 1000) : Math.floor(start.getTime() / 1000);
   const endTs = Math.floor(end.getTime() / 1000);
-  const candles = transformCandles(base, tf)
+  let candles = transformCandles(base, tf)
     .filter((c) => c.timestamp >= startTs && c.timestamp <= endTs)
     .map((c, i) => ({ ...c, index: i }));
   if (!candles.length) throw new Error(`${args.product} 在所选区间内没有 K 线`);
   const stockDecimals = marketData.priceDecimals(market, args.product);
   const pricePrecision = stockDecimals != null ? stockDecimals : resolvePricePrecision(quoteIncrement, candles);
+  let spikes = await spikeDetection.classifySpikes(spikeDetection.detectSpikeCandidates(candles, { timeframe: args.tf }),
+    { candles, product: args.product, timeframe: args.tf, isStock, refresh });
+  if (ignoreThinSpikes) {
+    const clipped = spikeDetection.clipThinSpikes(candles, spikes);
+    candles = clipped.candles;
+    spikes = spikeDetection.markSpikeTreatment(spikes, clipped.clips);
+  }
+  const transformHourly = ignoreThinSpikes ? hours => spikeDetection.clipThinSpikes(hours, spikes).candles : undefined;
 
   let fine = detectPivots(candles, 1, {});
   fine = anchorBoundaryExtremes(candles, fine);
   // beamK:4 → 顶层排名表可给「主选1+备选3」（rank-competing-wave-counts Q3）
-  const { tree, verifier, verificationOptions } = await require('./wave-subwave-verification').buildVerifiedCountTree(module.exports,fine,candles,{maxDepth:5,beamK:4,pricePrecision,product:args.product,mainTf:args.tf,finestTf,endTs,refresh,hourly:tf.fetchGranularity === 3600 ? base : undefined});
+  const { tree, verifier, verificationOptions } = await require('./wave-subwave-verification').buildVerifiedCountTree(module.exports,fine,candles,{maxDepth:5,beamK:4,pricePrecision,product:args.product,mainTf:args.tf,finestTf,endTs,refresh,transformHourly,hourly:tf.fetchGranularity === 3600 ? base : undefined});
   if (tree) tree.pricePrecision = pricePrecision;
 
   // 当前高点回撤叙述（narrate-current-pullback）：拆不出时下钻子级别补结构；叙述为可选增量，失败不阻断
   // 股票不做子级别下钻（add-stock-data-sources：仅日线/周线，下钻依赖 Coinbase 分钟级）
   if (!isStock && finestTf !== 'off') {
     try {
-      await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles, refresh });
+      const fetchClipped = ignoreThinSpikes ? async (...fetchArgs) => spikeDetection.clipThinSpikes(await getCandles(...fetchArgs, { refresh }), spikes).candles : undefined;
+      await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles, refresh }, fetchClipped);
     } catch (e) {
       // 叙述属增量输出，取数/拆解失败时不影响主报告
     }
@@ -4923,6 +4950,7 @@ async function main() {
     rangeLow: candles.length ? Math.min(...candles.map((c) => c.low)) : null,
     lastClose: last ? last.close : null,
     lastCloseTs: last ? last.timestamp : null,
+    ...(spikes.length ? { spikes } : {}),
   };
   const background = await loadHigherDegreeBackground({ product: args.product, source, isStock, mode: backgroundMode, end, refresh, structure: tree.primary });
   const scope = buildWaveScope(meta, tree, background);
@@ -4935,6 +4963,7 @@ async function main() {
     meta,
     scope,
     background,
+    spikes,
     userCount:userEval,
     tree: serializeTree(tree),
     inProgressTree: serializeInProgress(tree.inProgressStruct),
@@ -5053,6 +5082,7 @@ module.exports = {
   annotateExtendingLegForks,
   buildRankedCounts,
   renderRankedCounts,
+  spikeEndpointDependencies,
   serializeRankedCounts,
   buildCurrentWaveStructures,
   serializeCurrentWaveStructures,

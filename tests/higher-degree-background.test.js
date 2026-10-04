@@ -118,7 +118,7 @@ test('级数上限为 8，保留价格 0 并记录省略数', () => {
   assert.match(E.renderHigherDegreeBackground(b), new RegExp(`省略 ${b.omittedLevels} 级`));
 });
 
-test('0.06 型低点与 2 倍高针截取披露；输入不变，正常闪崩及阈值边界不截取', () => {
+test('0.06 型低点截取披露；输入不变，价格阈值边界可由结构条件命中', () => {
   const f = fixture(Array(12).fill(1175), 1300, 1200);
   Object.assign(f.daily[20], { open: 1173.13, close: 1178.85, low: 0.06, high: 1180 });
   Object.assign(f.daily[35], { high: 10000 });
@@ -128,7 +128,9 @@ test('0.06 型低点与 2 倍高针截取披露；输入不变，正常闪崩及
   const snapshot = structuredClone(f);
   const b = calculate(f);
   assert.deepEqual(f, snapshot);
-  assert.deepEqual(b.spikes.map(p => [p.type, p.originalPrice, p.adjustedPrice]), [['L', 0.06, 1173.13], ['H', 10000, 1175]]);
+  assert.deepEqual(b.spikes.map(p => [p.type, p.originalPrice, p.adjustedPrice]), [['L', 0.06, 1173.13], ['H', 10000, 1175], ['L', 587.5, 1175], ['H', 2350, 1175]]);
+  assert.ok(b.spikes.slice(2).every(s => s.conditions.join(',') === 'structure'));
+  assert.ok(b.spikes.every(s => s.classification === 'thin' && s.clipped && s.confidence === 'low'));
   assert.notEqual(b.extremes.low.price, 0.06);
   assert.ok(!starts(b).includes(0.06));
   assert.match(E.renderHigherDegreeBackground(b), /0.06 → 1173.13/);
