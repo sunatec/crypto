@@ -138,7 +138,18 @@ node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+
 - `--out` 输出 JSON 文件名；不填则自动命名
 - `--report` 输出 Markdown 文件名；不填则自动命名
 - `--count "p1,p2,p3,p4"` 喂入你自己的数法（一组转折价格），引擎逐条按规则打分并并入报告
+- `--refresh` 重新请求本次分析所需的 Coinbase 区间（主周期、小时线验证及回撤下钻），替换这些区间的缓存；其他区间及上市首日记录保留
 - `--help`, `-h` 显示帮助
+
+### Coinbase 行情缓存
+
+`analyze-wave-tree.js` 自动把已收盘 K 线存到脚本所在项目的 `.cache/candles/coinbase/<PRODUCT>/<granularity>.json`，与运行命令的当前目录无关。主周期、跨周期验证和回撤下钻共用缓存；股票数据源及旧 `analyze-wave-manual.js` CLI 保持原行为。
+
+缓存记录成功取数的覆盖段，只补拉未覆盖区间；段内缺失的 K 线视为交易所真实断档。失败分页不新增覆盖段，成功分页仍落盘。当前未收盘 K 线可用于分析但不存入缓存，下次仍会请求。文件损坏或版本不符时会提示并重新取数。
+
+怀疑交易所修订历史行情时，运行 `node analyze-wave-tree.js ... --refresh`。删除项目 `.cache/` 后，下次运行会从空缓存重新取数并创建缓存；此目录已被 Git 忽略。
+
+缓存模块也提供日线上市首日发现能力：`getCandles(product, 86400, null, end)`（或 `start='all'`）向前按 300 天窗口取数到整窗为空，记录 `listingTs`；后续请求早于上市的区间会截断。对有界日线请求也可传 `{discoverListing: true}`，发现的数据会保存，但只返回请求区间。此能力假设上市后没有连续 300 天无成交的空档，否则可能把空档后的首根误判为上市首日；小时线不做此发现。CLI 的默认开始时间仍为 `end - 30d`。
 
 ### 常用示例
 

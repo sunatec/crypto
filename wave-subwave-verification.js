@@ -1,9 +1,12 @@
 'use strict';
 
+const { getCandles } = require('./candle-cache');
 
 // Overlap page boundaries because the API's end can be exclusive.
-async function fetchSharedHourly(fetchPage, product, start, end, pageHours = 298) {
+async function fetchSharedHourly(fetchPage, product, start, end, pageHours = 298, options = {}) {
   if (!(pageHours > 0 && pageHours < 299)) throw new Error('Hourly page must be below the API limit');
+  if (!fetchPage) return getCandles(product, 3600, start, end, { ...options, pageBars: pageHours });
+  // Explicitly injected fetchers retain the original offline, non-persistent path.
   const pages=[];
   for (let cursor=start.getTime();cursor<end.getTime();) {
     const stop=Math.min(cursor+pageHours*3600000,end.getTime());pages.push([cursor,stop]);cursor=stop;
@@ -21,18 +24,6 @@ async function fetchSharedHourly(fetchPage, product, start, end, pageHours = 298
   const result=[...merged.values()].sort((a,b)=>a.timestamp-b.timestamp);
   result.fetchErrors=fetchErrors;
   return result;
-}
-
-async function fetchCoinbaseHourPage(product, granularity, start, end) {
-  const {execFile}=require('node:child_process');
-  const url=new URL('https://api.exchange.coinbase.com/products/'+encodeURIComponent(product)+'/candles');
-  url.searchParams.set('granularity',String(granularity));url.searchParams.set('start',start.toISOString());url.searchParams.set('end',end.toISOString());
-  // This is the existing Windows fallback transport, without waiting for three native-network timeouts per page.
-  const command="$ProgressPreference='SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; (Invoke-RestMethod -Uri '"+url.toString().replace(/'/g,"''")+"' -UseBasicParsing -TimeoutSec 30) | ConvertTo-Json -Depth 8 -Compress";
-  const stdout=await new Promise((resolve,reject)=>execFile('powershell',['-NoProfile','-Command',command],{encoding:'utf8',windowsHide:true,timeout:35000,maxBuffer:4*1024*1024},(error,out)=>error?reject(error):resolve(out)));
-  const rows=JSON.parse(stdout);
-  if (!Array.isArray(rows)) throw new Error('Invalid hourly candle response');
-  return rows.map(row=>Array.isArray(row)?row:row.value).map(r=>({timestamp:Number(r[0]),low:Number(r[1]),high:Number(r[2]),open:Number(r[3]),close:Number(r[4]),volume:Number(r[5])}));
 }
 
 // 交易所断档（如 Coinbase 2025-10-25、2026-05-08 各缺 5 小时，5 分钟线同样缺失）会让跨过它的整条腿
@@ -209,7 +200,7 @@ async function buildVerifiedCountTree(engine, fine, candles, options = {}) {
     // Include the entire endpoint bucket; a daily timestamp is the bucket start.
     const start = new Date(candles[0].timestamp*1000);
     const end = new Date(Math.min(candles.at(-1).timestamp+seconds,options.endTs || Infinity)*1000);
-    try { hourly = options.fetchHourly ? await options.fetchHourly(options.product,3600,start,end) : await fetchSharedHourly(process.platform === 'win32' ? fetchCoinbaseHourPage : engine.fetchCandles,options.product,start,end); }
+    try { hourly = options.fetchHourly ? await options.fetchHourly(options.product,3600,start,end) : await fetchSharedHourly(null,options.product,start,end,298,{refresh:options.refresh}); }
     catch (e) { error = options.fetchHourly ? e.message : 'Coinbase 小时行情请求失败'; }
     if (hourly && hourly.fetchErrors && hourly.fetchErrors.length) error=hourly.fetchErrors.length+' 个小时行情分页获取失败；保留已获取数据，缺口窗口待验证';
   }

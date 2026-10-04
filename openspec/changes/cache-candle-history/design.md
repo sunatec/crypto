@@ -36,9 +36,13 @@ Coinbase Exchange `/candles` 只支持 60/300/900/3600/21600/86400 秒粒度，�
 
 覆盖段存 `[firstBarStart, lastBarStart]`（秒）。一页请求 `[s, e]` 成功后，覆盖 `[ceilToBar(s), lastClosedBarStart ≤ e − granularity]`；Coinbase 的 `end` 可能不含端点，因此不把 `e` 所在那根算作已覆盖，下次重叠请求一根即可。相邻或重叠的覆盖段合并。
 
-### 3. 未收盘 K 线判定：`start + granularity > now`
+### 3. 未定稿 K 线判定：`start + granularity + settle > now`
 
-这样的 K 线返回给调用方但不写入，覆盖段截止到最后一根已收盘 K 线。`now` 可注入，测试可控。
+这样的 K 线返回给调用方但不写入，覆盖段截止到最后一根已定稿 K 线。`settle` 默认 300 秒：交易所刚收盘的 K 线可能还没发布或尚未定稿，若立即把该时段记为已覆盖，缺失的那根会被当成永久断档、只能靠 `--refresh` 恢复（审查时以注入传输复现）。`now`、`settleSeconds` 可注入，测试可控。
+
+### 3a. 分页请求重试
+
+旧 `fetchCandles` 对每页重试 3 次；缓存层统一在页级重试（默认共 3 次、间隔 500ms×次数），重试耗尽才记入 `fetchErrors`。重试放在缓存层而非传输层，使所有传输（Node / PowerShell / 测试桩）行为一致并可测。
 
 ### 4. 存储格式：每个 产品×粒度 一个 JSON 文件
 

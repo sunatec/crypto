@@ -33,6 +33,7 @@ const manual = require('./analyze-wave-manual.js');
 const book = require('./wave-book-validation.js');
 // 多市场数据源（add-stock-data-sources）：美股 Twelve Data、A 股东方财富
 const marketData = require('./market-data.js');
+const { getCandles } = require('./candle-cache.js');
 
 const SOURCE_LABELS = {
   coinbase: 'Coinbase Exchange candles API',
@@ -2598,7 +2599,7 @@ function tfStepDown(tfKey) {
 }
 
 // 镜像 main() 管道，取某级别某窗口的 {tfKey, candles, fine}；fetchFn 可注入便于离线测试
-async function loadCandlesAndPivots(product, tfKey, start, end, fetchFn = fetchCandles) {
+async function loadCandlesAndPivots(product, tfKey, start, end, fetchFn = getCandles) {
   const tf = TIMEFRAMES[tfKey];
   if (!tf) return null;
   const base = await fetchFn(product, tf.fetchGranularity, start, end);
@@ -2614,14 +2615,15 @@ async function loadCandlesAndPivots(product, tfKey, start, end, fetchFn = fetchC
 }
 
 // 自适应步降下钻：从 mainTf 的下一级起，逐级下探直到回撤窗枢轴 ≥ MIN_POINTS.corrective(4)
-async function drillPullback(product, mainTfKey, window, fetchFn = fetchCandles) {
+async function drillPullback(product, mainTfKey, window, fetchFn, options = {}) {
+  const fetcher = fetchFn || ((...args) => getCandles(...args, options));
   const start = new Date(window.fromTs * 1000);
   const end = new Date(window.toTs * 1000);
   let tfKey = tfStepDown(mainTfKey);
   let best = null;
   while (tfKey) {
     // eslint-disable-next-line no-await-in-loop
-    const loaded = await loadCandlesAndPivots(product, tfKey, start, end, fetchFn);
+    const loaded = await loadCandlesAndPivots(product, tfKey, start, end, fetcher);
     if (loaded && loaded.fine.length >= MIN_POINTS[CORRECTIVE]) return loaded;
     if (loaded && loaded.fine.length) best = loaded; // 记住最细一次兜底
     tfKey = tfStepDown(tfKey);
@@ -2778,7 +2780,7 @@ function zwaveProjection(wAmp, yAmp, trueLowPrice, bounceHighPrice) {
 
 // 编排：对进行中的高点回撤做子级别下钻 + 竞争形态 + 定级 + 联合形 + Z 投影，结果挂到 pullback.narrative
 // 纯计算部分（split/rank/level/combo/zwave）离线可测；仅 drillPullback 触网（拆不出时才触发）。
-async function enrichCurrentPullback(tree, ctx, fetchFn = fetchCandles) {
+async function enrichCurrentPullback(tree, ctx, fetchFn) {
   const ips = tree && tree.inProgressStruct;
   const pb = ips && ips.pullback;
   if (!ips || !pb || ips.structUp !== true) return null; // 仅"高点回撤"（confirmed low → 上冲 → 回撤下行）
@@ -2794,7 +2796,7 @@ async function enrichCurrentPullback(tree, ctx, fetchFn = fetchCandles) {
   let drilled = false;
   if (!sub) {
     const window = { fromTs: swingExtreme.timestamp, toTs: trueLowMain.timestamp };
-    const d = await drillPullback(product, mainTf, window, fetchFn);
+    const d = await drillPullback(product, mainTf, window, fetchFn, { refresh: ctx.refresh });
     if (d && d.fine.length >= 2) { sub = d; drilled = true; }
   }
 
@@ -4651,12 +4653,14 @@ function renderStructuredReport(meta, tree, candles, fine) {
 async function main() {
   const args = manual.parseArgs(process.argv.slice(2));
   const argv = process.argv.slice(2);
+  const refresh = argv.includes('--refresh');
   const argOf = (flag) => { const i = argv.indexOf(flag); return i >= 0 && argv[i + 1] ? argv[i + 1] : null; };
   if (args.help) {
     console.log('Usage:\n  node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now\n'
       + '  node analyze-wave-tree.js --product AAPL --tf 1d --start 2023-01-01 [--apikey KEY]   # 美股：Twelve Data\n'
       + '  node analyze-wave-tree.js --product 600519 --tf 1d --start 2023-01-01               # A 股：东方财富\n'
       + '  --verify-tf 1h|4h|off  子浪验证下探周期（加密货币默认1h）\n'
+      + '  --refresh  重新拉取本次 Coinbase 区间并更新缓存\n'
       + '  --source coinbase|twelvedata|eastmoney  手动指定数据源\n\n以《波浪理论详解》为准绳，递归拆解产出「最大级别 → 当前浪」计数树。');
     return;
   }
@@ -4677,9 +4681,10 @@ async function main() {
   let name = null;
   if (source === 'coinbase') {
     [base, quoteIncrement] = await Promise.all([
-      fetchCandles(args.product, tf.fetchGranularity, start, end),
+      getCandles(args.product, tf.fetchGranularity, start, end, { refresh }),
       fetchQuoteIncrement(args.product),
     ]);
+    if (base.fetchErrors.length) throw new Error(`Coinbase K 线 ${base.fetchErrors.length} 个分页请求失败：${base.fetchErrors[0].reason}`);
   } else {
     const apiKey = argOf('--apikey') || process.env.TWELVE_DATA_API_KEY;
     ({ candles: base, name } = await marketData.fetchStockDaily({ product: args.product, market, source, start, end, apiKey }));
@@ -4697,14 +4702,14 @@ async function main() {
   let fine = detectPivots(candles, 1, {});
   fine = anchorBoundaryExtremes(candles, fine);
   // beamK:4 → 顶层排名表可给「主选1+备选3」（rank-competing-wave-counts Q3）
-  const { tree, verifier, verificationOptions } = await require('./wave-subwave-verification').buildVerifiedCountTree(module.exports,fine,candles,{maxDepth:5,beamK:4,pricePrecision,product:args.product,mainTf:args.tf,finestTf,endTs,hourly:tf.fetchGranularity === 3600 ? base : undefined});
+  const { tree, verifier, verificationOptions } = await require('./wave-subwave-verification').buildVerifiedCountTree(module.exports,fine,candles,{maxDepth:5,beamK:4,pricePrecision,product:args.product,mainTf:args.tf,finestTf,endTs,refresh,hourly:tf.fetchGranularity === 3600 ? base : undefined});
   if (tree) tree.pricePrecision = pricePrecision;
 
   // 当前高点回撤叙述（narrate-current-pullback）：拆不出时下钻子级别补结构；叙述为可选增量，失败不阻断
   // 股票不做子级别下钻（add-stock-data-sources：仅日线/周线，下钻依赖 Coinbase 分钟级）
   if (!isStock && finestTf !== 'off') {
     try {
-      await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles });
+      await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles, refresh });
     } catch (e) {
       // 叙述属增量输出，取数/拆解失败时不影响主报告
     }

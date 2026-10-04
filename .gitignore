@@ -1,4 +1,5 @@
 node_modules
+.cache/
 
 # 生成的波浪分析报告（每次运行的产物，非源码）
 BTC-USD_*.md
