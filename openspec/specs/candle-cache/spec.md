@@ -1,0 +1,82 @@
+# candle-cache Specification
+
+## Purpose
+TBD - created by archiving change cache-candle-history. Update Purpose after archive.
+## Requirements
+### Requirement: Coinbase K 线持久化到项目 .cache
+系统 SHALL 把从 Coinbase 拉取的已收盘 K 线按「产品 × 粒度」持久化到项目根目录 `.cache/` 下，`.cache/` MUST 被 git 忽略。股票数据源（Twelve Data、东方财富）MUST NOT 读写该缓存。
+
+#### Scenario: 再次分析同一区间
+- **WHEN** 已对 BTC-USD 日线 2025-10-05 至昨天运行过一次，再次以相同区间运行
+- **THEN** 系统 SHALL 从缓存返回这些已收盘 K 线，不再对该区间发起分页请求
+
+#### Scenario: 股票不经过缓存
+- **WHEN** 分析 MU 或 A 股代码
+- **THEN** 系统 SHALL 照旧直接请求数据源，`.cache/` 中不产生该代码的文件
+
+### Requirement: 记录已拉取的覆盖段并只补拉缺口
+缓存 MUST 同时记录已成功拉取过的时间段（覆盖段）。请求某区间时，系统 SHALL 只向接口请求未被覆盖段包含的部分，合并后按时间升序、按时间戳去重返回。覆盖段内缺失的 K 线 SHALL 视为交易所真实断档，MUST NOT 因此重复请求。
+
+#### Scenario: 区间向后延伸
+- **WHEN** 缓存覆盖 BTC-USD 日线至 10 月 1 日，本次请求至 10 月 4 日
+- **THEN** 系统 SHALL 只请求 10 月 1 日之后的部分，返回的序列与一次性全量拉取一致
+
+#### Scenario: 覆盖段内的交易所断档
+- **WHEN** 小时线覆盖段包含 Coinbase 缺失 5 小时的时段
+- **THEN** 再次请求该时段 SHALL 不发起网络请求，返回的序列仍缺这 5 小时，交由既有断档处理逻辑判断
+
+#### Scenario: 零散的验证窗口
+- **WHEN** 跨周期验证先后请求了两个不相邻的小时线窗口
+- **THEN** 缓存 SHALL 记录两段独立覆盖段，第三次请求横跨两者时只补拉中间空缺
+
+### Requirement: 未收盘及未沉淀的 K 线不写入缓存
+一根 K 线的开始时间加粒度、再加沉淀缓冲（默认 5 分钟）晚于取数时刻时，它 SHALL 被视为尚未定稿：可以返回给本次分析，但 MUST NOT 写入缓存，覆盖段也 MUST NOT 延伸到该 K 线。缓冲用于覆盖交易所刚收盘后尚未发布或尚未定稿的 K 线，避免把它们记成永久断档。
+
+#### Scenario: 当日日线
+- **WHEN** 在 UTC 当日中途运行日线分析
+- **THEN** 当日 K 线 SHALL 出现在本次分析中，下次运行时 SHALL 重新请求该 K 线
+
+#### Scenario: 整点刚过、上一根尚未发布
+- **WHEN** 在 10:00:05 请求小时线，交易所尚未返回 09:00 那根
+- **THEN** 09:00 SHALL NOT 被计入覆盖段；之后再请求该时段时 SHALL 重新拉取并得到这根 K 线
+
+### Requirement: 取数失败不污染缓存
+单个分页请求出错时，系统 SHALL 以递增间隔重试（默认共 3 次）；重试仍失败才视为该页失败。某个分页请求失败时，系统 MUST NOT 把该页时间段记为已覆盖；已成功的分页 SHALL 照常写入。缓存文件 MUST 以先写临时文件再改名的方式整体替换，中途中断不得留下半写文件。
+
+#### Scenario: 瞬时网络错误
+- **WHEN** 某页前两次请求连接被重置、第三次成功
+- **THEN** 该页 SHALL 正常写入，本次结果不报告取数失败
+
+#### Scenario: 小时线某页失败
+- **WHEN** 跨周期验证拉取三页小时线、其中一页失败
+- **THEN** 成功的两页 SHALL 写入缓存，失败页的时段 SHALL 在下次运行时重新请求，并照旧按取数失败报告为待验证
+
+### Requirement: 发现并记录上市首日
+系统 SHALL 能在日线粒度上从已知最早 K 线向前翻页，直到接口对整页返回空，并把最早一根 K 线记为上市首日、在缓存中标记已到达上市首日。标记后再次请求更早区间 MUST NOT 发起网络请求。
+
+#### Scenario: 首次请求全部历史
+- **WHEN** 请求 BTC-USD 日线全部历史且缓存为空
+- **THEN** 系统 SHALL 向前翻页直到空页，返回自上市首日起的全部日线，并记录上市首日
+
+#### Scenario: 已知上市首日
+- **WHEN** 缓存已标记上市首日，再次请求全部历史
+- **THEN** 系统 SHALL 只补拉最近未覆盖的部分
+
+### Requirement: 强制刷新
+CLI SHALL 提供 `--refresh`：本次运行忽略已有缓存，重新请求所需区间，并用新结果覆盖写回这些区间。
+
+#### Scenario: 怀疑缓存数据有误
+- **WHEN** 以 `--refresh` 运行
+- **THEN** 系统 SHALL 对所需区间全部重新请求，缓存中这些区间的 K 线 SHALL 被新数据替换
+
+### Requirement: 所有 Coinbase 取数路径共用缓存且可注入绕过
+主周期取数、跨周期小时线验证（含 Windows PowerShell 传输）与回撤下钻 SHALL 经由同一缓存层。调用方注入的取数函数（测试桩）MUST NOT 经过缓存，测试行为保持不变。
+
+#### Scenario: 主图与验证共享小时线
+- **WHEN** 以 1h 为主周期运行，跨周期验证又请求了同一时段的小时线
+- **THEN** 第二次请求 SHALL 命中缓存
+
+#### Scenario: 测试注入取数桩
+- **WHEN** 测试向验证器注入 `fetchHourly` 桩
+- **THEN** 桩 SHALL 被直接调用，不读写 `.cache/`
+
