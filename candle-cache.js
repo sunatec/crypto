@@ -218,6 +218,7 @@ async function getCandles(product, granularity, start, end, options = {}) {
   const result = [...merged.values()].filter(row => row[0] >= startTs && row[0] <= endTs)
     .sort((a, b) => a[0] - b[0]).map(toCandle);
   result.fetchErrors = fetchErrors;
+  result.listingTs = cache.listingTs;
   return result;
 }
 

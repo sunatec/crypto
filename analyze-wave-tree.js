@@ -2682,6 +2682,171 @@ function maxInternalRetrace(swingPivots, up) {
   return best;
 }
 
+// 全部历史背景只生成证据，不参与评分、数法或父级候选排序。
+function buildHigherDegreeBackground({ daily, structure, listingTs }) {
+  if (!Array.isArray(daily) || !daily.length) return { available: false, reason: '全部日线为空' };
+  if (daily.fetchErrors && daily.fetchErrors.length) return { available: false, reason: daily.fetchErrors.map(e => e.reason).join('；') };
+  const points = structure && structure.points;
+  if (!points || points.length < 2) return { available: false, reason: '窗口结构起终点不足' };
+  const S = points[0], E = points[points.length - 1];
+  const before = daily.slice().sort((a, b) => a.timestamp - b.timestamp);
+  const listing = before.find(c => c.timestamp === listingTs);
+  if (!listing) return { available: false, reason: '上市首日发现失败或首根日线缺失' };
+  const spikes = [];
+  const cleaned = before.map((c, i) => {
+    const prev = before[i - 1], next = before[i + 1];
+    const lowRef = Math.min(c.open, c.close, prev ? prev.low : Infinity, next ? next.low : Infinity);
+    const highRef = Math.max(c.open, c.close, prev ? prev.high : -Infinity, next ? next.high : -Infinity);
+    const out = { ...c };
+    if (c.low < lowRef * 0.5) {
+      out.low = lowRef;
+      spikes.push({ timestamp: c.timestamp, type: 'L', originalPrice: c.low, adjustedPrice: lowRef });
+    }
+    if (c.high > highRef * 2) {
+      out.high = highRef;
+      spikes.push({ timestamp: c.timestamp, type: 'H', originalPrice: c.high, adjustedPrice: highRef });
+    }
+    return out;
+  });
+  const high = cleaned.reduce((a, b) => b.high > a.high ? b : a);
+  const low = cleaned.reduce((a, b) => b.low < a.low ? b : a);
+  const up = E.price < S.price; // 前段方向与窗口结构相反。
+  const extreme = up ? high.high : low.low;
+  const weekly = transformCandles(cleaned, TIMEFRAMES['1w']);
+  const monthly = transformCandles(cleaned, TIMEFRAMES['1m']);
+  // 聚合 K 线的时间为桶起点；背景枢轴保留桶索引，日期还原到日线极值。
+  const datedPivots = (bars) => anchorBoundaryExtremes(bars, detectPivots(bars, 1)).map(p => {
+    const stop = bars[p.index + 1] ? bars[p.index + 1].timestamp : Infinity;
+    const day = cleaned.find(c => c.timestamp >= bars[p.index].timestamp && c.timestamp < stop
+      && (p.type === 'H' ? c.high : c.low) === p.price);
+    return { ...p, timestamp: day ? day.timestamp : p.timestamp };
+  });
+  const sWeek = transformCandles([{ timestamp: S.timestamp, open: S.price, close: S.price, high: S.price, low: S.price, volume: 0 }], TIMEFRAMES['1w'])[0].timestamp;
+  const priorWeeks = weekly.filter(c => c.timestamp < sWeek);
+  const pivots = datedPivots(priorWeeks);
+  const end = { ...S, index: priorWeeks.length, type: up ? 'H' : 'L' };
+  const measure = (start, zero = false) => {
+    const segment = [start, ...pivots.filter(p => p.index > start.index), end];
+    const internalAbsolute = maxInternalRetrace(segment, up);
+    let peak = start.price, internalPercentage = null;
+    for (const p of segment.slice(1, -1)) {
+      if (up ? p.price > peak : p.price < peak) peak = p.price;
+      const depth = up ? priceDiff(peak, p.price) : priceDiff(p.price, peak);
+      const ratio = safeRatio(depth, peak);
+      if (ratio > 0 && (!internalPercentage || ratio > internalPercentage.ratio)) {
+        internalPercentage = { ratio, from: peak, to: p.price };
+      }
+    }
+    const windowAbsolute = Math.abs(priceDiff(S.price, E.price));
+    const windowPercentage = safeRatio(windowAbsolute, S.price);
+    const absoluteExceeds = windowAbsolute > (internalAbsolute ? internalAbsolute.depth : 0);
+    const percentageExceeds = windowPercentage == null ? null : windowPercentage > (internalPercentage ? internalPercentage.ratio : 0);
+    const consistent = absoluteExceeds === percentageExceeds;
+    const prior = up ? '上涨' : '下跌';
+    const correction = up ? '下跌' : '上涨';
+    return {
+      zero, start: { timestamp: start.timestamp, price: start.price }, end: { timestamp: S.timestamp, price: S.price },
+      amplitude: { absolute: Math.abs(priceDiff(S.price, start.price)), percentage: zero ? null : safeRatio(Math.abs(priceDiff(S.price, start.price)), start.price) },
+      retrace: {
+        absolute: safeRatio(windowAbsolute, Math.abs(priceDiff(S.price, start.price))),
+        percentage: zero || Math.min(S.price, E.price, start.price) <= 0 ? null : safeRatio(Math.log(S.price / E.price), Math.log(S.price / start.price)),
+      },
+      windowMove: { absolute: windowAbsolute, percentage: windowPercentage },
+      maxInternalRetrace: { absolute: internalAbsolute, percentage: internalPercentage },
+      section33: {
+        absoluteExceeds, percentageExceeds, consistent,
+        conclusion: !consistent ? '口径不一致，书未规定口径'
+          : absoluteExceeds ? `按 §3.3 可假设这段${prior}已结束，窗口${correction}属于比其内部子浪高一级的调整`
+            : `未超过前段内部最大回撤，窗口${correction}仍可能是内部子浪调整`,
+      },
+    };
+  };
+  const groups = [];
+  let deepest = up ? Infinity : -Infinity;
+  for (const p of pivots.slice().reverse()) {
+    if (p.type !== (up ? 'L' : 'H') || !(up ? p.price < deepest : p.price > deepest)) continue;
+    deepest = p.price;
+    if (!(up ? p.price < E.price : p.price > E.price)) continue;
+    const level = measure(p);
+    const last = groups[groups.length - 1];
+    const internal = level.maxInternalRetrace;
+    const previous = last && last.maxInternalRetrace;
+    const greater = !last || (internal.absolute ? internal.absolute.depth : 0) > (previous.absolute ? previous.absolute.depth : 0)
+      || (internal.percentage ? internal.percentage.ratio : 0) > (previous.percentage ? previous.percentage.ratio : 0);
+    if (greater) groups.push(level);
+    else groups[groups.length - 1] = level; // 同级合并，向前保留最深起点。
+  }
+  const zero = up ? measure({ timestamp: listingTs - 86400, price: 0, index: -1 }, true) : null;
+  const limit = zero ? 7 : 8;
+  const ladder = [...groups.slice(0, limit), ...(zero ? [zero] : [])].map((l, i) => ({ level: i + 1, ...l }));
+  return {
+    available: true,
+    listing: { timestamp: listingTs, price: listing.open },
+    extremes: { high: { price: high.high, timestamp: high.timestamp }, low: { price: low.low, timestamp: low.timestamp } },
+    startPosition: { timestamp: S.timestamp, price: S.price, extremeType: up ? 'high' : 'low', isHistoricalExtreme: S.price === extreme, distancePercentage: safeRatio(Math.abs(S.price - extreme), extreme) },
+    monthlySwings: datedPivots(monthly).map(({ timestamp, price, type }) => ({ timestamp, price, type })),
+    ladder, omittedLevels: Math.max(0, groups.length - limit), spikes,
+    basis: '周线枢轴；背景仅作证据，未经 §3.10/§3.12 自上而下数浪验证，父级身份为推断',
+  };
+}
+
+async function loadHigherDegreeBackground({ product, source, isStock, mode = 'on', end, refresh, structure }, fetchFn = getCandles) {
+  if (isStock) return { available: false, reason: '股票本次未生成大级别背景' };
+  if (mode === 'off') return { available: false, reason: '--background off：本次未生成大级别背景' };
+  if (source !== 'coinbase') return { available: false, reason: '该数据源不支持大级别背景' };
+  try {
+    const daily = await fetchFn(product, 86400, 'all', end, { refresh });
+    return buildHigherDegreeBackground({ daily, structure, listingTs: daily.listingTs });
+  } catch (e) {
+    return { available: false, reason: `全部历史取数失败：${e.message}` };
+  }
+}
+
+function buildWaveScope(meta, tree, background) {
+  const points = tree && (tree.primary ? tree.primary.points : tree.segFine);
+  const start = points && points[0];
+  return {
+    startUtc: meta.startUtc, timeframe: meta.timeframe, startPrice: start ? start.price : null,
+    structureStartUtc: start ? new Date(start.timestamp * 1000).toISOString() : null,
+    startIsWindowExtreme: !!start && (start.price === meta.rangeHigh || start.price === meta.rangeLow),
+    topDown: false,
+    note: '未按 §3.10/§3.12 自上而下数浪，父级身份为推断；'
+      + (background && background.available ? '大级别背景仅作证据' : `本次未生成大级别背景（${background ? background.reason : '未提供背景'}）`),
+  };
+}
+
+function backgroundSummary(background, precision) {
+  if (!background || !background.available) return `大级别背景不可用：${background ? background.reason : '未提供背景'}。父级身份仍为推断。`;
+  const pos = background.startPosition;
+  return `大级别背景：S ${pos.isHistoricalExtreme ? '为' : '距'}历史${pos.extremeType === 'high' ? '最高' : '最低'}价${pos.isHistoricalExtreme ? '' : ` ${(pos.distancePercentage * 100).toFixed(2)}%`}（${formatPrice(background.extremes[pos.extremeType].price, precision)}），展示 ${background.ladder.length} 级前段证据；父级身份仍为推断。`;
+}
+
+function renderHigherDegreeBackground(background, precision) {
+  const L = ['## 大级别背景（周线/月线）', ''];
+  if (!background || !background.available) return [...L, backgroundSummary(background, precision), ''].join('\n');
+  const px = v => formatPrice(v, precision);
+  const date = ts => new Date(ts * 1000).toISOString().slice(0, 10);
+  const pct = v => v == null ? '—' : `${(v * 100).toFixed(2)}%`;
+  const { listing, extremes, monthlySwings, ladder } = background;
+  L.push(`- 上市首日（本交易所）：${date(listing.timestamp)}，首日开盘 ${px(listing.price)}。`);
+  L.push(`- 历史最高：${px(extremes.high.price)} @ ${date(extremes.high.timestamp)}；历史最低：${px(extremes.low.price)} @ ${date(extremes.low.timestamp)}。${backgroundSummary(background, precision)}`);
+  L.push(`- 月线主要摆动（最近 10 个，JSON 全量）：${monthlySwings.slice(-10).map(p => `${p.type} ${px(p.price)} @ ${date(p.timestamp)}`).join(' → ') || '暂无可识别枢轴'}。`);
+  L.push('', '| 级别 | 前段起点 | 前段幅度（价差 / 百分比） | 回撤比（价差 / 对数百分比） | 内部最大回撤（价差 / 百分比） | §3.3（价差 / 百分比） |', '|---|---|---|---|---|---|');
+  for (const l of ladder) {
+    const internal = l.maxInternalRetrace, c = l.section33;
+    const exceeds = v => v == null ? '—' : v ? '超过' : '未超过';
+    L.push(`| ${l.level}${l.zero ? '（§3.12 价格 0）' : ''} | ${px(l.start.price)} @ ${date(l.start.timestamp)}${l.zero ? '（上市前）' : ''} | ${px(l.amplitude.absolute)} / ${pct(l.amplitude.percentage)} | ${pct(l.retrace.absolute)} / ${pct(l.retrace.percentage)} | ${px(internal.absolute ? internal.absolute.depth : 0)} / ${pct(internal.percentage ? internal.percentage.ratio : 0)} | ${exceeds(c.absoluteExceeds)} / ${exceeds(c.percentageExceeds)}；${c.conclusion} |`);
+  }
+  if (background.omittedLevels) L.push('', `级数上限 8，省略 ${background.omittedLevels} 级${ladder.some(l => l.zero) ? '；价格 0 级保留' : ''}。`);
+  L.push('', '读法：内部回撤取自 S 所在周之前的周线枢轴，以 S 本身为终点；百分比回撤比使用对数比率。§3.3 只给出“可假设”的证据，不改变排名，也不代表完成大级别数浪。');
+  if (background.spikes.length) {
+    L.push('', '疑似扎针（§3.15，仅背景截取；阈值：低于参考价 50% / 高于参考价 2 倍）：');
+    for (const p of background.spikes) L.push(`- ${date(p.timestamp)} ${p.type === 'L' ? '低点' : '高点'}：${px(p.originalPrice)} → ${px(p.adjustedPrice)}。`);
+  }
+  L.push('');
+  return L.join('\n');
+}
+
 // swingPivots：前段走势的枢轴（起点 → 段极值）；pullbackEnd：回撤到达的价位。
 function classifyPullbackDegree(swingPivots, up, pullbackEnd) {
   const ext = Array.isArray(swingPivots) && swingPivots.length ? swingPivots[swingPivots.length - 1].price : NaN;
@@ -3112,7 +3277,7 @@ function deriveCurrentInternal(tree, parentCurLabel, tfLabel, pricePrecision) {
  * consolidate-report-by-theme §3.1：只讲"扮演什么角色"，不重列大跌形态本身；
  * 目标价/参考腿改指向轴③（避免与 bounceHyp 的目标梯度重复）。
  */
-function renderParentRole(tree, pricePrecision) {
+function renderParentRole(tree, pricePrecision, background) {
   const pd = deriveParentDegree(tree);
   if (!pd || !pd.primary) return '';
   const L = [];
@@ -3123,12 +3288,13 @@ function renderParentRole(tree, pricePrecision) {
   L.push('| 排名 | 父级大浪型 | 大跌= | 现在= | 依据 |');
   L.push('|---|---|---|---|---|');
   pd.survivors.forEach((c, i) => {
-    const tag = i === 0 ? (c.verificationStatus === 'pending' ? '⏳ 暂定主选' : '✅ 主选') : `次选${i}`;
+    const tag = i === 0 ? '⏳ 暂定主选（未经大级别数浪验证）' : `次选${i}`;
     L.push(`| ${tag} | ${c.parentCn} | ${c.dropLabel} | ${c.curLabel} | ${c.basis} |`);
   });
   pd.eliminated.forEach((c) => {
     L.push(`| ❌ 淘汰 | ${c.parentCn} | ${c.dropLabel} | ${c.curLabel} | ${c.elimReason} |`);
   });
+  L.push('', backgroundSummary(background, pricePrecision));
   L.push('');
   return L.join('\n');
 }
@@ -4212,7 +4378,7 @@ function renderNarrative(meta, tree, pricePrecision) {
 
 // brief-report-summary：报告开头的 4 条波浪分析简报（D2 数据来源 / D3 措辞随主选身份 / D4 周期名）。
 // 每个数字都取自既有派生（ranked / inProgressStruct / assessment.bounceHyp），不新增引擎计算。
-const TF_CN = { '1h': '1小时线', '4h': '4小时线', '1d': '日线', '1w': '周线' };
+const TF_CN = { '5m': '5分钟线', '1h': '1小时线', '4h': '4小时线', '1d': '日线', '1w': '周线', '1m': '月线', '1y': '年线' };
 
 function renderBrief(meta, tree) {
   const px = (v) => formatPrice(v, meta && meta.pricePrecision != null ? meta.pricePrecision : (tree && tree.pricePrecision));
@@ -4250,7 +4416,7 @@ function renderBrief(meta, tree) {
   else if (primary.framing === 'A') state = `暂按${briefLabel}结构（${primary.verificationStatus === 'verified' ? '子浪已验证' : '子浪待验证'}），大级别${down ? '触底看反弹/转势' : '见顶看回调/转势'}`;
   else if (primary.finalWaveInProgress) state = `走的是${briefLabel}，但末浪可能仍在进行`;
   else state = `走的是${briefLabel}，仍在建`;
-  L.push(`1. 大局研判：${px(first.from)} → ${px(last.to)} 的整体${moveCn}${state}。`);
+  L.push(`1. 大局研判：${px(first.from)} → ${px(last.to)} 的整体${moveCn}${state}。大级别背景见轴①。`);
   const altParts = [];
   if (alts[0]) altParts.push(`备选：${briefPatternName(alts[0].label)}`);
   const cb = alts.find((c) => c.finalWaveInProgress && c.projection && c.projection.length);
@@ -4323,25 +4489,41 @@ function renderBrief(meta, tree) {
   return L.join('\n');
 }
 
+// 数浪范围里的时间与报告元信息同一时区：加密货币 UTC+8，股票按交易所时区（日线 K 线时间戳即交易日，直接取日期）。
+// 日线及以上只显示日期，日内周期显示到分钟。kind='bar' 表示 K 线开始时间，'window' 表示用户给的区间起点。
+function scopeTime(iso, meta, kind) {
+  if (!iso) return null;
+  const mk = meta && meta.market && marketData.MARKETS[meta.market];
+  if (mk && mk.tz) return kind === 'bar' ? String(iso).slice(0, 10) : marketData.fmtTimeInTz(iso, mk.tz).slice(0, 10);
+  const text = fmtTime(iso);
+  return ['1d', '1w', '1m', '1y'].includes(meta && meta.timeframe) ? text.slice(0, 10) : text;
+}
+
 // brief-report-summary D1：简报 → 免责声明 → 元信息 → <details>（轴①②③ + 用户数法评分 + 规则树）。
 // 现状研判 TL;DR 与大白话版由简报取代，不再输出；三轴仍按 consolidate-report-by-theme 单一权威呈现。
-function renderMarkdownReport(meta, tree, userEval) {
+function renderMarkdownReport(meta, tree, userEval, context = {}) {
   const lines = [];
   const pricePrecision = meta && meta.pricePrecision;
   lines.push(renderBrief(meta, tree));
   lines.push('');
   lines.push(renderReportMeta(meta));
   lines.push('');
+  const scope = context.scope || buildWaveScope(meta, tree, context.background);
+  const scopeStart = scopeTime(scope.startUtc, meta, 'window'), scopeS = scopeTime(scope.structureStartUtc, meta, 'bar');
+  lines.push(`> 数浪范围：从 ${scopeStart || '未知日期'} 起按${TF_CN[scope.timeframe] || scope.timeframe}数浪，起点${scope.startIsWindowExtreme ? '为窗口内极值' : '价格为'} ${formatPrice(scope.startPrice, pricePrecision)}${scopeS ? `（S @ ${scopeS}）` : ''}；${scope.note}。`);
+  lines.push('');
   lines.push('<details><summary>技术细节（轴①②③ 全文、数法打分）</summary>');
   lines.push('');
   const ranked = tree ? renderRankedCounts(tree, pricePrecision) : '';
   if (ranked) {
     lines.push(ranked);
-    const parentRole = tree ? renderParentRole(tree, pricePrecision) : '';
+    const parentRole = tree ? renderParentRole(tree, pricePrecision, context.background) : '';
     if (parentRole) lines.push(parentRole);
+    lines.push(renderHigherDegreeBackground(context.background, pricePrecision));
     lines.push('---');
     lines.push('');
   }
+  if (!ranked) lines.push(renderHigherDegreeBackground(context.background, pricePrecision));
   const curWave = tree ? renderCurrentWaveStructures(tree, pricePrecision) : '';
   if (curWave) {
     lines.push(curWave);
@@ -4661,6 +4843,7 @@ async function main() {
       + '  node analyze-wave-tree.js --product 600519 --tf 1d --start 2023-01-01               # A 股：东方财富\n'
       + '  --verify-tf 1h|4h|off  子浪验证下探周期（加密货币默认1h）\n'
       + '  --refresh  重新拉取本次 Coinbase 区间并更新缓存\n'
+      + '  --background on|off  全部历史周线/月线背景（加密货币默认 on，股票关闭）\n'
       + '  --source coinbase|twelvedata|eastmoney  手动指定数据源\n\n以《波浪理论详解》为准绳，递归拆解产出「最大级别 → 当前浪」计数树。');
     return;
   }
@@ -4669,6 +4852,8 @@ async function main() {
   // add-stock-data-sources：按代码识别市场；股票仅日线/周线（周线由日线合成）
   const { market, source } = marketData.detectMarket(args.product, argOf('--source'));
   const isStock = market !== 'crypto';
+  const backgroundMode = argOf('--background') || 'on';
+  if (argv.includes('--background') && !['on', 'off'].includes(argOf('--background'))) throw new Error('--background 须为 on / off');
   const finestTf = argOf('--verify-tf') || (isStock ? 'off' : '1h');
   if (!['off','4h','1h'].includes(finestTf)) throw new Error('--verify-tf 须为 off / 4h / 1h');
   if (isStock && !['1d', '1w'].includes(args.tf)) throw new Error(`股票仅支持 1d / 1w 周期，收到 ${args.tf}`);
@@ -4739,6 +4924,8 @@ async function main() {
     lastClose: last ? last.close : null,
     lastCloseTs: last ? last.timestamp : null,
   };
+  const background = await loadHigherDegreeBackground({ product: args.product, source, isStock, mode: backgroundMode, end, refresh, structure: tree.primary });
+  const scope = buildWaveScope(meta, tree, background);
 
   const safeProduct = args.product.replace(/[^A-Za-z0-9-]/g, '_');
   const stamp = `${stampCompact(start)}_${stampCompact(end)}`;
@@ -4746,6 +4933,8 @@ async function main() {
   const reportName = args.report || `${safeProduct}_${args.tf}_${stamp}_tree.md`;
   await fs.writeFile(outName, JSON.stringify({
     meta,
+    scope,
+    background,
     userCount:userEval,
     tree: serializeTree(tree),
     inProgressTree: serializeInProgress(tree.inProgressStruct),
@@ -4755,7 +4944,7 @@ async function main() {
     currentWaveStructures: serializeCurrentWaveStructures(tree),
     parentDegree: serializeMultiDegree(tree, args.tf),
   }, null, 2), 'utf8');
-  await fs.writeFile(reportName, renderMarkdownReport(meta, tree, userEval), 'utf8');
+  await fs.writeFile(reportName, renderMarkdownReport(meta, tree, userEval, { scope, background }), 'utf8');
 }
 
 if (require.main === module) {
@@ -4872,6 +5061,7 @@ module.exports = {
   renderAssessment,
   // consolidate-report-by-theme：轴①「父级角色」子块 + 轴②内部细化导读 + 轴③汇总
   renderParentRole,
+  serializeMultiDegree,
   renderCurrentInternalNote,
   renderAxis3,
   // narrate-current-pullback
@@ -4880,6 +5070,11 @@ module.exports = {
   drillPullback,
   splitPullbackAtLow,
   maxInternalRetrace,
+  buildHigherDegreeBackground,
+  loadHigherDegreeBackground,
+  buildWaveScope,
+  scopeTime,
+  renderHigherDegreeBackground,
   classifyPullbackDegree,
   analyzePullbackCompleted,
   readCombination,
