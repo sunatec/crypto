@@ -159,3 +159,32 @@ test('§1.7：推动浪2/4浪陡直与横向交替才算交替', () => {
   assert.equal(alternationHit(impulseOf('flat', 'triangle')), false);
   assert.equal(alternationHit({ ...impulseOf('zigzag', 'flat'), patternId: 'diagonal-leading' }), false, '楔形不计交替');
 });
+
+// ── §3.18.3 回撤取点：衰竭5浪取 0 与 3 ──
+
+const { bounceHypotheses, renderBounceHypotheses } = require('../analyze-wave-tree.js');
+// 下跌推动浪：0=100 → 1=80 → 2=90 → 3=60 → 4=70 → 5=65（5浪未破3浪低点＝衰竭）
+const TRUNC = [100, 80, 90, 60, 70, 65].map((price, i) => ({ price, index: i * 3 }));
+const near = (a, b) => Math.abs(a - b) < 1e-9;
+
+test('§3.18.3：衰竭5浪的整段回撤按 0–3 取点', () => {
+  const h = bounceHypotheses(TRUNC, 'corrective', null, { truncated: true });
+  assert.equal(h.retraceBasis, '0-3');
+  assert.equal(h.retraceTo, 60);
+  assert.equal(h.retraceAmp, 40);
+  assert.ok(near(h.b.targets[0].price, 80), 'B 0.5 = 60 + 0.5×40');
+  assert.ok(near(h.three.targets[0].price, 60 + 0.382 * 40));
+  assert.equal(h.b.downRef, 35, 'C 对 A 的倍数仍按起点到终点（价格）');
+  assert.equal(h.term, 65, '失效点仍是结构终点');
+});
+
+test('§3.18.3：未衰竭仍按 0–终点 取点', () => {
+  const h = bounceHypotheses(TRUNC, 'corrective');
+  assert.equal(h.retraceBasis, '0-end');
+  assert.ok(near(h.b.targets[0].price, 65 + 0.5 * 35));
+});
+
+test('§3.18.3：叙述写明衰竭5浪的取点', () => {
+  const md = renderBounceHypotheses(bounceHypotheses(TRUNC, 'corrective', null, { truncated: true }), null, 2);
+  assert.match(md, /整段（100→60，5浪衰竭按 0–3 取点（书§3\.18\.3），幅 40）/);
+});

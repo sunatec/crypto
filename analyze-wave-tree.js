@@ -2250,7 +2250,8 @@ function buildCountTree(finePivots, candles, options = {}) {
     h.parentKey=parent.primary.key;
     if (parent.primary.key === 'combination') {
       const dir=h.structDown?1:-1;
-      h.xx={...h.xx,targets:[0.2,0.382,0.618].map(ratio=>({ratio,price:h.term+dir*ratio*h.whole})),
+      const leg=retraceLeg(h,v=>v);
+      h.xx={...h.xx,targets:[0.2,0.382,0.618].map(ratio=>({ratio,price:leg.to+dir*ratio*leg.amp})),
         down:[0.618,1,1.618].map(ratio=>({ratio,price:h.anchor-dir*ratio*h.whole})),downRef:h.whole,downRefCn:'W 浪＝整段',aftermath:'Y 浪'+(h.structDown?'下跌':'上涨')};
     }
   }
@@ -2899,7 +2900,8 @@ function renderPullbackNarrative(nr, pricePrecision) {
 //   · X（父级联合形）之后的 Y 比 W＝整段；XX 之后的 Z 比上一子浪；B 之后的 C 比 A＝整段。
 // 反弹尚未走完时，终点暂取目前的反弹极值 swingExtremePrice（anchorProvisional）；反弹再延伸则目标随之平移。
 // 未给反弹极值（或它没越过结构终点）时退回结构终点，仍标暂定。
-function bounceHypotheses(structPoints, bounceChar, swingExtremePrice = null) {
+// truncated：结构是衰竭5浪的驱动浪时，整段回撤按书§3.18.3 取 0 与 3（该浪最低到最高），不取 0 与 5。
+function bounceHypotheses(structPoints, bounceChar, swingExtremePrice = null, { truncated = false } = {}) {
   if (!Array.isArray(structPoints) || structPoints.length < 2) return null;
   const start = structPoints[0];
   const term = structPoints[structPoints.length - 1];
@@ -2908,17 +2910,29 @@ function bounceHypotheses(structPoints, bounceChar, swingExtremePrice = null) {
   const s = structDown ? 1 : -1; // 反弹方向（逆结构）为正
   const lastSub = Math.abs(term.price - prev.price);
   const whole = Math.abs(start.price - term.price);
+  const retraceEnd = truncated && structPoints.length === 6 ? structPoints[3] : term;
+  const retraceAmp = Math.abs(start.price - retraceEnd.price);
   const anchor = Number.isFinite(swingExtremePrice) && s * (swingExtremePrice - term.price) > 0 ? swingExtremePrice : term.price;
   const up = (ratios, ref) => ratios.map((r) => ({ ratio: r, price: term.price + s * r * ref })); // 反弹上方目标
+  const retrace = (ratios) => ratios.map((r) => ({ ratio: r, price: retraceEnd.price + s * r * retraceAmp })); // 整段斐波回撤位
   const dn = (ratios, ref) => ratios.map((r) => ({ ratio: r, price: anchor - s * r * ref })); // 反弹走完后的续跌目标
   return {
     term: term.price, startPrice: start.price, prevPrice: prev.price, lastSub, whole, structDown, bounceChar,
+    retraceTo: retraceEnd.price, retraceAmp, retraceBasis: retraceEnd === term ? '0-end' : '0-3',
     anchor, anchorProvisional: true,
-    three: { targets: up([0.382, 0.5, 0.618], whole), note: '反弹内部若五浪→趋势转、上方无回撤上限（以整段回撤位作参考阻力）' },
+    three: { targets: retrace([0.382, 0.5, 0.618]), note: '反弹内部若五浪→趋势转、上方无回撤上限（以整段回撤位作参考阻力）' },
     xx: { targets: up([0.2, 0.382, 0.618], lastSub), down: dn([0.618, 1.0, 1.618], lastSub), downRef: lastSub, downRefCn: '上一子浪', aftermath: 'Z 浪下跌' },
-    b: { targets: up([0.5, 0.618, 0.7], whole), down: dn([0.618, 1.0, 1.618], whole), downRef: whole, downRefCn: 'A 浪＝整段', aftermath: 'C 浪下跌', timing: '走完 C 通常耗时较长，时间上多半不够' },
+    b: { targets: retrace([0.5, 0.618, 0.7]), down: dn([0.618, 1.0, 1.618], whole), downRef: whole, downRefCn: 'A 浪＝整段', aftermath: 'C 浪下跌', timing: '走完 C 通常耗时较长，时间上多半不够' },
     lean: bounceChar === 'driving' ? 'three' : 'xx',
   };
+}
+
+// 整段回撤的取点（书§3.18.3）：起点 → 回撤终点，衰竭5浪时注明取 0–3。
+function retraceLeg(h, n) {
+  const to = h.retraceTo != null ? h.retraceTo : h.term;
+  const amp = h.retraceAmp != null ? h.retraceAmp : h.whole;
+  const note = h.retraceBasis === '0-3' ? '，5浪衰竭按 0–3 取点（书§3.18.3）' : '';
+  return { from: h.startPrice, to, amp, note, text: `${n(h.startPrice)}→${n(to)}` };
 }
 
 // 近端触发线（Q7）：取反弹第一条腿（结构终点→反弹首个反向枢轴）的 0.382/0.5/0.618 回撤
@@ -2948,8 +2962,9 @@ function renderBounceHypotheses(h, nearTerm, pricePrecision) {
     : h.bounceChar === 'corrective' ? '内部更像三波（偏调整）'
       : '内部结构还看不清';
   const leanCn = h.lean === 'three' ? '推动 3 浪' : h.lean === 'b' ? 'B 浪' : 'X 连接浪';
-  const refLeg = h.parentKey === 'combination' ? `${n(h.startPrice)}→${n(h.term)}` : `${n(h.prevPrice)}→${n(h.term)}`;
-  const wholeLeg = `${n(h.startPrice)}→${n(h.term)}`;
+  const rl = retraceLeg(h, n);
+  const refLeg = h.parentKey === 'combination' ? rl.text + rl.note : `${n(h.prevPrice)}→${n(h.term)}`;
+  const wholeLeg = rl.text + rl.note;
   // 续跌浪从反弹终点起算；反弹未完，终点暂取目前反弹极值
   const extremeCn = h.structDown ? '反弹高点' : '回调低点';
   const shiftCn = h.structDown ? '上移' : '下移';
@@ -2961,8 +2976,8 @@ function renderBounceHypotheses(h, nearTerm, pricePrecision) {
   const L = [];
   L.push(`眼下从 **${n(h.term)}** 起的这波反弹，身份还没定。按反弹${charCn}，**${leanCn}是主选**；三种可能各自的参考浪、目标、之后走向都不一样：`);
   L.push('');
-  L.push(`- **若是 X 连接浪**${main('xx')}：它是对${h.parentKey === 'combination' ? 'W 浪整体' : '上一子浪'}（${refLeg}，幅 ${n(h.parentKey === 'combination' ? h.whole : h.lastSub)}）的反弹，通常吃掉该段的 0.2–0.618，也就是 **${px(h.xx.targets)}**；X 可以是任意一种调整形态（横向收缩，或再冲一段、涨过前高都行），但走完之后是 **${h.xx.aftermath}**——${nextWave('xx', h.xx.aftermath.slice(0, 3))}。`);
-  L.push(`- **若是 B 反弹**${main('b')}：针对的是整段（${wholeLeg}，幅 ${n(h.whole)}），需要涨到 0.5/0.618/0.7 一线、即 **${px(h.b.targets)}**，之后是 **${h.b.aftermath}**——${nextWave('b', 'C 浪')}；只是${h.b.timing}。`);
+  L.push(`- **若是 X 连接浪**${main('xx')}：它是对${h.parentKey === 'combination' ? 'W 浪整体' : '上一子浪'}（${refLeg}，幅 ${n(h.parentKey === 'combination' ? rl.amp : h.lastSub)}）的反弹，通常吃掉该段的 0.2–0.618，也就是 **${px(h.xx.targets)}**；X 可以是任意一种调整形态（横向收缩，或再冲一段、涨过前高都行），但走完之后是 **${h.xx.aftermath}**——${nextWave('xx', h.xx.aftermath.slice(0, 3))}。`);
+  L.push(`- **若是 B 反弹**${main('b')}：针对的是整段（${wholeLeg}，幅 ${n(rl.amp)}），需要涨到 0.5/0.618/0.7 一线、即 **${px(h.b.targets)}**，之后是 **${h.b.aftermath}**——${nextWave('b', 'C 浪')}；只是${h.b.timing}。`);
   L.push(`- **若直接是推动 3 浪（转势）**${main('three')}：那上方 ${px(h.three.targets)} 一线只作参考阻力，前提是反弹内部得走成五浪；果真如此，趋势就此翻多、上方不再设回撤上限。`);
   if (nearTerm) {
     const lv = nearTerm.levels;
@@ -2995,15 +3010,17 @@ function deriveParentDegree(tree) {
   const dropStart = p.points[0];
   const dropEnd = p.points[p.points.length - 1];
   const dropAmp = Math.abs(dropStart.price - dropEnd.price);
-  const retrace = dropAmp > 0 ? Math.abs(ips.swingExtreme.price - dropEnd.price) / dropAmp : 0;
-  const inval = dropEnd.price;
   const bh = tree.assessment && tree.assessment.bounceHyp;
+  // 书§3.18.3：反弹对整段的回撤比按回撤取点量（衰竭5浪取 0–3）
+  const rl = bh ? retraceLeg(bh, (v) => v) : { to: dropEnd.price, amp: dropAmp };
+  const retrace = rl.amp > 0 ? Math.abs(ips.swingExtreme.price - rl.to) / rl.amp : 0;
+  const inval = dropEnd.price;
   const tgt = (arr) => (arr ? arr.filter((t) => t.price > 0).map((t) => t.price) : []);
   // targetsFull：保留每档回撤比（原 targets 只留价格、供既有 JSON 消费者兼容）。
   const tgtR = (arr) => (arr ? arr.filter((t) => t.price > 0).map((t) => ({ ratio: t.ratio, price: t.price })) : []);
   // 参考腿：投影目标是这条腿的斐波回撤位。X 连接浪量的是「大跌最后一条子腿」(修正前一子结构)，
   // B 浪/转势量的是「整段大跌」。把端点+幅度摆进报告，读者可自行验算 目标=终点+比×幅。
-  const wholeLeg = bh ? { cn: '整段大跌', from: bh.startPrice, to: bh.term, amp: bh.whole } : null;
+  const wholeLeg = bh ? { cn: '整段大跌' + rl.note, from: bh.startPrice, to: rl.to, amp: rl.amp } : null;
   const lastLeg = bh ? { cn: '大跌末腿', from: bh.prevPrice, to: bh.term, amp: bh.lastSub } : null;
 
   const cands = [
@@ -3741,7 +3758,7 @@ function situationAssessment(tree, candles, finePivots) {
     positionPending: !!p.positionPending,
     bigTrend, currentDir, roleChar, invalidation, primary: bigTrend,
     // Q8=a：身份框架（XX/B/推动3）取代旧的看涨/看跌双情景
-    bounceHyp: bounceHypotheses(p.points, roleChar, ips && ips.swingExtreme ? ips.swingExtreme.price : null),
+    bounceHyp: bounceHypotheses(p.points, roleChar, ips && ips.swingExtreme ? ips.swingExtreme.price : null, { truncated: book.isTruncated(p) }),
     nearTerm: nearTermTrigger(topEnd, finePivots),
     channel: tree.channel, fibTimeWindows: tree.fibTimeWindows,
     // 进行中结构：两个锚点（摆动极值 + 当前价）与当前浪位一句话所需数据
@@ -3893,7 +3910,8 @@ function evaluateExplicitCount(macroPoints, finePivots, candles, options = {}) {
       bounceChar = legCharacter(bounceFine, candles, 0, { beamK: 3, maxDepth: 4 }).character;
     }
     const swing = bounceFine.reduce((m, x) => (term.type === 'L' ? (x.price > m ? x.price : m) : (x.price < m ? x.price : m)), term.price);
-    bounceHyp = bounceHypotheses(macroPoints, bounceChar, swing);
+    const best = results.find((r) => r.total.tier1 === 0) || null;
+    bounceHyp = bounceHypotheses(macroPoints, bounceChar, swing, { truncated: !!best && book.isTruncated({ patternId: best.patternId, points: macroPoints, direction }) });
     nearTerm = nearTermTrigger(term, finePivots);
   }
   return { direction, results, bounceHyp, nearTerm };
@@ -4526,9 +4544,10 @@ function renderStructuredReport(meta, tree, candles, fine) {
     const P = pd.primary;
     const term = R(pd.dropEnd);
     const isXX = P.key === 'combination';
+    const rl = retraceLeg(bh, R);
     const corrObj = isXX
-      ? `W 浪整体（${R(bh.startPrice)}→${R(bh.term)}，幅 ${R(bh.whole)}）`
-      : `整段完整结构（${R(bh.startPrice)}→${R(bh.term)}，幅 ${R(bh.whole)}）`;
+      ? `W 浪整体（${rl.text}，幅 ${R(rl.amp)}${rl.note}）`
+      : `整段完整结构（${rl.text}，幅 ${R(rl.amp)}${rl.note}）`;
     const tgt = isXX ? bh.xx.targets : (P.key === 'impulse' ? bh.three.targets : bh.b.targets);
     const tgtStr = (tgt || []).filter((t) => t.price > 0).map((t) => R(t.price)).join(' / ');
     // 两种级别叫法（用户要求）：升一级看＝X 连接浪；同级别看＝已完成 w-x-y 的 xx 连接段，
