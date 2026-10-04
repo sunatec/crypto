@@ -358,6 +358,14 @@ function truncatedFifthGate(ctx,points,isUp,rangeSegment) {
   return {pass:false,overshoot:0,undetermined:true,reason:'4浪运行总量受起点K线极值先后影响，衰竭5浪70%条件须用较小周期定位'};
 }
 
+// 书§3.21：4浪时间超过3浪时间2倍即推翻驱动浪假设。d3/d4 为两腿跨度，unit 为K线宽度（同单位）。
+// 拐点只定位到所在K线，每条腿的真实时长有 ±1 根误差：名义超2倍但误差内可能不超时，须较小周期定位。
+function waveFourTimeGate(d3, d4, unit) {
+  if (!(d4 > 2 * d3)) return { pass: true, overshoot: 0 };
+  if (d4 - unit > 2 * (d3 + unit)) return normRange(d4 / Math.max(d3, unit), 0, 2);
+  return { pass: false, overshoot: 0, undetermined: true, reason: '4浪/3浪时长比接近2倍，受拐点所在K线位置影响，须用较小周期定位' };
+}
+
 function buildImpulseStrictManual(direction) {
   const isUp = direction === 'up';
 
@@ -393,16 +401,15 @@ function buildImpulseStrictManual(direction) {
     makeJudge('impulse.pattern.truncated-five-min-70-four', 'pattern', '衰竭5浪至少达到4浪的70%（书§3.8）', ctx => {
       return truncatedFifthGate(ctx,ctx.points,isUp);
     }, {basis:'gross'}),
-    makeJudge('impulse.ratio.wave2-retrace-range', 'ratio', '2浪回撤须在1浪的23.6%~88.6%之间', (ctx) => {
+    // 书§3.18.2：回撤不足20%「肯定不是2浪」——唯一的比率硬下限；上限只有§1.5的100%（见上方 pattern 规则）。
+    makeJudge('impulse.ratio.wave2-retrace-min-20', 'ratio', '2浪回撤须≥1浪的20%（书§3.18.2）', (ctx) => {
       const [p0, p1, p2] = ctx.points;
-      const r = safeRatio(absLen(p1, p2), absLen(p0, p1));
-      return normRange(r, 0.236, 0.886);
+      return normRange(safeRatio(absLen(p1, p2), absLen(p0, p1)), 0.2, Infinity);
     }, { basis: 'price' }),
-    makeJudge('impulse.ratio.wave3-extend-range', 'ratio', '3浪相对1浪的扩展上限4.236倍（来源待补；无3≥1下限）', (ctx) => {
-      const [p0, p1, p2, p3] = ctx.points;
-      const r = safeRatio(absLen(p2, p3), absLen(p0, p1));
-      return normRange(r, 0, 4.236);
-    }, { basis: 'price' }),
+    makeJudge('impulse.time.wave4-le-2x-wave3', 'time', '4浪时间≤3浪时间2倍（书§3.21）', (ctx) => {
+      const [, , p2, p3, p4] = ctx.points;
+      return waveFourTimeGate(Math.abs(p3.index - p2.index), Math.abs(p4.index - p3.index), 1);
+    }),
   ];
 
   const guidelines = [
@@ -477,6 +484,14 @@ function buildDiagonalManual(direction, position) {
       const pass=w2>0 && w4<w2 && signed2*signed4>0;
       return {pass,overshoot:pass?0:Math.max(1e-6,(w4-w2)/Math.max(w2,1))};
     }, {basis:'price'}),
+    makeJudge('diagonal.ratio.wave2-retrace-min-20', 'ratio', '2浪回撤须≥1浪的20%（书§3.18.2）', (ctx) => {
+      const [p0, p1, p2] = ctx.points;
+      return normRange(safeRatio(absLen(p1, p2), absLen(p0, p1)), 0.2, Infinity);
+    }, { basis: 'price' }),
+    makeJudge('diagonal.time.wave4-le-2x-wave3', 'time', '4浪时间≤3浪时间2倍（书§3.21，驱动浪通用）', (ctx) => {
+      const [, , p2, p3, p4] = ctx.points;
+      return waveFourTimeGate(Math.abs(p3.index - p2.index), Math.abs(p4.index - p3.index), 1);
+    }),
     makeJudge('diagonal.ratio.converging', 'ratio', '楔形须收敛：3浪短于1浪、5浪短于3浪', (ctx) => {
       const [p0, p1, p2, p3, p4, p5] = ctx.points;
       const w1 = absLen(p0, p1); const w3 = absLen(p2, p3); const w5 = absLen(p4, p5);
@@ -1785,6 +1800,16 @@ function resolveParentPathRules(score,pts,children,direction,candles) {
       else if(!result.pass) failed.push({...rule,overshoot:result.overshoot});
       continue;
     }
+    if(rule.id.endsWith('.time.wave4-le-2x-wave3')) {
+      const three=children[2] && children[2].primary,four=children[3] && children[3].primary;
+      const span=c=>c && c.validationCandles && c.validationCandles.length>1 && Number.isFinite(c.points[0].timestamp) && Number.isFinite(c.points.at(-1).timestamp)
+        ? {d:Math.abs(c.points.at(-1).timestamp-c.points[0].timestamp),unit:Math.abs(c.validationCandles[1].timestamp-c.validationCandles[0].timestamp)} : null;
+      const s3=span(three),s4=span(four);
+      const result=s3 && s4 ? waveFourTimeGate(s3.d,s4.d,Math.max(s3.unit,s4.unit)) : {undetermined:true};
+      if(result.undetermined) pendingRules.push(rule);
+      else if(!result.pass) failed.push({...rule,overshoot:result.overshoot});
+      continue;
+    }
     const i=rule.id.includes('wave4-not-cross') || rule.id==='impulse.pattern.truncated-five-min-70-four'?3:rule.id.includes('wave2-not-retrace')?1:null;
     const child=i==null?null:children[i] && children[i].primary;
     if(!child || !child.validationCandles) { pendingRules.push(rule);continue; }
@@ -2407,6 +2432,8 @@ function buildCurrentWaveStructures(finePivots, spanLast, candles, options = {})
     const reached = (t) => revDir * (t.price - fifthEnd.price) <= 0;
     const breach4 = revDir > 0 ? p4 <= p1 : p4 >= p1; // ④入①领地（④触及/越过①终点）
     const breach5 = revDir > 0 ? now.price < p4 : now.price > p4; // 当前价已越过该情景声明的⑤起点失效线
+    const time4 = waveFourTimeGate(Math.abs(post[2].index - post[1].index), Math.abs(post[3].index - post[2].index), 1);
+    const breach4time = !time4.pass && !time4.undetermined; // §3.21 ④时间>③时间2倍
     templates.push({
       id: 'reverse-impulse-5',
       label: lowConfirmed ? '上涨5浪推动·⑤进行中(末浪)' : '下跌5浪推动·⑤进行中(末浪)',
@@ -2424,7 +2451,7 @@ function buildCurrentWaveStructures(finePivots, spanLast, candles, options = {})
       projection: fifthTargets.filter((t) => !reached(t)),
       projectionReached: fifthTargets.filter(reached),
       invalidation: { price: p4, reason: `跌破④底 ${R(p4)}（严格版另需守住①顶 ${R(p1)}，即④不入①领地）` },
-      tier1: (breach2 ? 1 : 0) + (breach3 ? 1 : 0) + (breach4 ? 1 : 0) + (breach5 ? 1 : 0),
+      tier1: (breach2 ? 1 : 0) + (breach3 ? 1 : 0) + (breach4 ? 1 : 0) + (breach4time ? 1 : 0) + (breach5 ? 1 : 0),
       soft: leg1Char === 'driving' ? 1 : 0, // ①应为5浪
       deferred: ['浪⑤内部形态与目标待走完再判'],
     });
@@ -3102,6 +3129,16 @@ function serializeMultiDegree(tree, tfLabel) {
 // ③沿用 tree.inProgressStruct——框架A的所有候选共享同一个终点（全局低点），
 // 所以「现在在哪」对每条候选都一样，不需要重算。
 
+// 书§3.6：前三类规则（浪型/比率/时间）任一不满足即推翻假设。排名第一的候选若仍违规，说明没有一种数法
+// 成立——报告不能再称其为「主选」，只能作为「违规最轻的读法」并提示重新划分。
+// 兼容原始候选（score.verificationStatus）与 buildRankedCounts 条目（verificationStatus）。
+function countInvalid(c) {
+  if (!c) return false;
+  const s = c.score || {};
+  return (c.verificationStatus || s.verificationStatus) === 'invalid' || s.tier1 > 0;
+}
+const NO_LEGAL_COUNT_CN = '无合法数法：全部候选均违反硬规则，按书§3.6须推翻假设、重新划分';
+
 // 汇总一个候选的全部违规原因（规则违规 + 文法违规），供报告展示（违规原因写进文档）。
 // 规则违规来自 score.failed（带 desc + overshoot 越界程度）；文法违规来自 score.grammarNotes。
 function candidateViolations(candidate) {
@@ -3431,7 +3468,7 @@ function renderRankedCounts(tree, pricePrecision) {
   if (!ranked || !ranked.length) return '';
   const n = (v) => formatPrice(v, pricePrecision == null ? tree.pricePrecision : pricePrecision);
   const dirCn = (d) => (d === 'up' ? '上涨' : '下跌');
-  const scoreTag = (s) => (s.verificationStatus === 'pending' ? '⏳ 子浪待验证' : s.tier1 > 0 ? `❌ 违规×${s.tier1}` : '✅ 结构已验证');
+  const scoreTag = (s) => (s.tier1 > 0 ? `❌ 违规×${s.tier1}` : s.verificationStatus === 'invalid' ? '❌ 子浪违规' : s.verificationStatus === 'pending' ? '⏳ 子浪待验证' : '✅ 结构已验证');
   const fmtViol = fmtViolReason; // 共用：赘述规则 + 定性越界程度（不再显示易误解的归一化%）
   const L = [];
   L.push('# 轴① 大跌走完了什么形态（数法排名，按吻合排序）');
@@ -3486,7 +3523,11 @@ function renderRankedCounts(tree, pricePrecision) {
   }).join(' ');
 
   const [primary, ...alts] = ranked;
-  L.push(`## ${primary.verificationStatus === 'verified' ? '✅' : '⏳'} 主选：${primary.label}（${dirCn(primary.direction)}）`);
+  if (countInvalid(primary)) {
+    L.push(`## ❌ ${NO_LEGAL_COUNT_CN}`);
+    L.push('');
+    L.push(`违规最轻的读法：${primary.label}（${dirCn(primary.direction)}）——仅供对照，不是成立的数法。`);
+  } else L.push(`## ${primary.verificationStatus === 'verified' ? '✅' : '⏳'} 主选：${primary.label}（${dirCn(primary.direction)}）`);
   L.push('');
   L.push(framingLine(primary));
   L.push('');
@@ -4080,7 +4121,8 @@ function renderNarrative(meta, tree, pricePrecision) {
   const p = tree.primary;
   const a = p.points[0];
   const b = p.points[p.points.length - 1];
-  L.push(`大局：从 **${px(a.price)}** 到 **${px(b.price)}**，整段走势最像一个 **${plainLabel(p.patternId)}**，方向 **${dirCn(p.direction)}**（细节与备选见轴①）。`);
+  if (countInvalid(p)) L.push(`大局：从 **${px(a.price)}** 到 **${px(b.price)}**，${NO_LEGAL_COUNT_CN}；违规最轻的读法是 **${plainLabel(p.patternId)}**，方向 **${dirCn(p.direction)}**，仅供对照（细节见轴①）。`);
+  else L.push(`大局：从 **${px(a.price)}** 到 **${px(b.price)}**，整段走势最像一个 **${plainLabel(p.patternId)}**，方向 **${dirCn(p.direction)}**（细节与备选见轴①）。`);
   L.push('');
 
   const ips = tree.inProgressStruct;
@@ -4139,7 +4181,8 @@ function renderBrief(meta, tree) {
   // 简报只留中文名 + 记法："双锯齿（Double Zigzag w-x-y）"→"双锯齿（w-x-y）"
   const briefLabel = primary.label.replace(/（[A-Za-z ]+ ([a-z0-9-]+)）/, '（$1）');
   let state;
-  if (primary.framing === 'A') state = `暂按${briefLabel}结构（${primary.verificationStatus === 'verified' ? '子浪已验证' : primary.verificationStatus === 'invalid' ? '存在规则违规' : '子浪待验证'}），大级别${down ? '触底看反弹/转势' : '见顶看回调/转势'}`;
+  if (countInvalid(primary)) state = `没有一种数法通过全部硬规则（按书§3.6须推翻假设、重新划分），违规最轻的读法是${briefLabel}`;
+  else if (primary.framing === 'A') state = `暂按${briefLabel}结构（${primary.verificationStatus === 'verified' ? '子浪已验证' : '子浪待验证'}），大级别${down ? '触底看反弹/转势' : '见顶看回调/转势'}`;
   else if (primary.finalWaveInProgress) state = `走的是${briefLabel}，但末浪可能仍在进行`;
   else state = `走的是${briefLabel}，仍在建`;
   L.push(`1. 大局研判：${px(first.from)} → ${px(last.to)} 的整体${moveCn}${state}。`);
@@ -4382,10 +4425,15 @@ function renderStructuredReport(meta, tree, candles, fine) {
   L.push('');
 
   // ── 3. 已完成浪型 ──
-  L.push(p.score.verificationStatus === 'verified' ? '## 3. 已验证浪型' : '## 3. 暂定浪型');
+  const pInvalid = countInvalid(p);
+  L.push(pInvalid ? '## 3. 浪型（无合法数法）' : p.score.verificationStatus === 'verified' ? '## 3. 已验证浪型' : '## 3. 暂定浪型');
   L.push('');
+  if (pInvalid) {
+    L.push(`> ❌ ${NO_LEGAL_COUNT_CN}。以下按违规最轻的读法展开，仅供对照。违规：${candidateViolations(p).map(fmtViolReason).join('；') || '子浪验证未通过'}`);
+    L.push('');
+  }
   const dropAmp = Math.abs(p.points[0].price - p.points[p.points.length - 1].price);
-  L.push(`从 **${R(p.points[0].price)}** ${dirCn(p.direction)}至 **${R(p.points[p.points.length - 1].price)}** 这一整段，主方案划分为 **${plainLabel(p.patternId)}**。`);
+  L.push(`从 **${R(p.points[0].price)}** ${dirCn(p.direction)}至 **${R(p.points[p.points.length - 1].price)}** 这一整段，${pInvalid ? '违规最轻的读法' : '主方案'}划分为 **${plainLabel(p.patternId)}**。`);
   L.push('');
   const legAmps = [];
   const legBarsArr = [];
@@ -4633,6 +4681,7 @@ async function main() {
     tree: serializeTree(tree),
     inProgressTree: serializeInProgress(tree.inProgressStruct),
     rankedCounts: serializeRankedCounts(tree),
+    noLegalCount: !!(tree && tree.primary && countInvalid(tree.primary)),
     counterTrendExcluded: tree.counterTrendExcluded || [],
     currentWaveStructures: serializeCurrentWaveStructures(tree),
     parentDegree: serializeMultiDegree(tree, args.tf),
@@ -4683,6 +4732,8 @@ module.exports = {
   selectBest,
   // 手册
   buildImpulseStrictManual,
+  waveFourTimeGate,
+  countInvalid,
   buildDiagonalManual,
   buildZigzagManual,
   buildFlatManual,
