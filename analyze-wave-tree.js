@@ -232,8 +232,12 @@ function scoreCandidate(ctx, m) {
 
   const guidelines = m.guidelines || [];
   const hits = [];
+  const guideHits = { pattern: 0, ratio: 0, time: 0 };
   for (const g of guidelines) {
-    if (safeTest(g, ctx).pass) hits.push({ id: g.id, desc: g.desc });
+    if (safeTest(g, ctx).pass) {
+      hits.push({ id: g.id, desc: g.desc, layer: g.layer });
+      guideHits[g.layer] += 1;
+    }
   }
   const total = guidelines.length;
 
@@ -247,6 +251,7 @@ function scoreCandidate(ctx, m) {
     // tier3 用「命中数的负值」（越多越优），而非未命中率——否则「没有任何指引」的形态
     // 会拿到满分未命中率 0，白白压过命中了部分指引的形态。
     tier3: -hits.length,
+    guideHits, // 书§3.6：浪型指引 > 比率指引 > 时间指引，排名按层比较（compareCandidates）
     tier4: 0, // 跨级别指引，M3 接入
     failed,
     hits,
@@ -256,7 +261,7 @@ function scoreCandidate(ctx, m) {
 }
 
 /**
- * 分层字典序比较：tier1↑, tier2↑, incompleteness↑, complexity↑, tier3↑, tier4↓。
+ * 分层字典序比较：tier1↑, tier2↑, incompleteness↑, complexity↑, 指引(浪型/比率/时间逐层)↓, tier4↓。
  * complexity（简约原则）插在硬规则拟合之后、软指引之前：书里明确「多重调整（双/三）
  * 是最后手段」，故同等规则拟合下，越简单的形态越优——防止规则稀少的联合形/多锯齿
  * 靠"没什么可违反"白捡第一。
@@ -278,9 +283,28 @@ function compareCandidates(a, b) {
   const ca = a.complexity || 0;
   const cb = b.complexity || 0;
   if (ca !== cb) return ca - cb;
-  if (a.tier3 !== b.tier3) return a.tier3 - b.tier3;
+  const g = compareGuideHits(a, b);
+  if (g !== 0) return g;
   if (a.tier4 !== b.tier4) return b.tier4 - a.tier4;
   return 0;
+}
+
+// 书§3.6：指引按 浪型→比率→时间 的重要性逐层比较命中数（越多越优），前层分出高下即定，
+// 不让多条时间指引压过一条浪型指引。缺分层数据的旧式分数退回总命中数（tier3）。
+const GUIDE_LAYERS = ['pattern', 'ratio', 'time'];
+function compareGuideHits(a, b) {
+  if (a.guideHits && b.guideHits) {
+    for (const layer of GUIDE_LAYERS) {
+      const d = (b.guideHits[layer] || 0) - (a.guideHits[layer] || 0);
+      if (d !== 0) return d;
+    }
+    return 0;
+  }
+  return (a.tier3 || 0) - (b.tier3 || 0);
+}
+function sumGuideHits(a, b) {
+  if (!a || !b) return a || b || undefined;
+  return Object.fromEntries(GUIDE_LAYERS.map((layer) => [layer, (a[layer] || 0) + (b[layer] || 0)]));
 }
 
 // 简约度：单形态=1，双重=2，三重=3（书：多重调整是最后手段）。
@@ -413,14 +437,7 @@ function buildImpulseStrictManual(direction) {
   ];
 
   const guidelines = [
-    makeJudge('impulse.guide.alternation-2-4', 'pattern', '2浪与4浪呈现交替（回撤比率不同）', (ctx) => {
-      const [p0, p1, p2, p3, p4] = ctx.points;
-      const w1 = absLen(p0, p1);
-      const w3 = absLen(p2, p3);
-      const retrace2 = Math.abs(safeRatio(absLen(p1, p2), w1) || 0);
-      const retrace4 = Math.abs(safeRatio(absLen(p3, p4), w3) || 0);
-      return { pass: Math.abs(retrace2 - retrace4) > 0.15, overshoot: 0 };
-    }, { kind: 'guideline' }),
+    // 2/4浪交替（书§1.7 陡直/横向）依赖子浪形态，建子树后由 alternationHit 计入浪型指引。
     makeJudge('impulse.guide.wave3-common-extension', 'ratio', '3浪扩展接近常见斐波那契倍数（1.618/2.618）', (ctx) => {
       const [p0, p1, p2, p3] = ctx.points;
       const r = safeRatio(absLen(p2, p3), absLen(p0, p1));
@@ -1479,14 +1496,31 @@ function crossDegreeHits(candidate) {
     const w3 = absLen(pts[2], pts[3]);
     const w5 = absLen(pts[4], pts[5]);
     if (w3 >= w1 && w3 >= w5) hits += 1; // 3浪最强
-
-    const fam = (n) => (n && !n.isLeaf && n.primary ? n.primary.patternId : null);
-    const f2 = fam(candidate.children[1]);
-    const f4 = fam(candidate.children[3]);
-    if (f2 && f4 && f2 !== f4) hits += 1; // 2/4浪交替（子形态族不同）
   }
 
   return hits;
+}
+
+// 书§1.7：调整浪分「陡直」（单/双/三锯齿）与「横向」（平台、收缩三角形、联合形）；以单锯齿起始的
+// 双重横向整理「有时」算陡直——两可，不计。null = 子浪未识别或两可。
+function correctiveSlope(node) {
+  const c = node && !node.isLeaf && node.primary;
+  if (!c) return null;
+  const id = c.patternId;
+  if (id === 'zigzag' || id === 'zigzag-double' || id === 'zigzag-triple') return 'steep';
+  if (id.startsWith('sideways-')) {
+    const w = c.children && c.children[0] && c.children[0].primary;
+    return w && w.patternId === 'zigzag' ? null : 'sideways';
+  }
+  if (id.startsWith('flat') || id === 'triangle') return 'sideways';
+  return null;
+}
+
+// 书§1.7：推动浪2浪与4浪「陡直/横向」交替（不是简单/复杂、也不是时间长短的交替）；楔形几乎不交替，不计。
+function alternationHit(candidate) {
+  if (candidate.patternId !== 'impulse-strict' || !candidate.children) return false;
+  const s2 = correctiveSlope(candidate.children[1]), s4 = correctiveSlope(candidate.children[3]);
+  return !!(s2 && s4 && s2 !== s4);
 }
 
 function avgVol(candles, i0, i1) {
@@ -1707,7 +1741,7 @@ function legCleanAs(childFine, patternId, candles, depth, opts) {
  */
 function childPairScore(a,c) {
   const sa=a.score,sc=c.score;
-  return {severe:(sa.severe||0)+(sc.severe||0),tier1:sa.tier1+sc.tier1,tier2:sa.tier2+sc.tier2,tier3:sa.tier3+sc.tier3,tier4:sa.tier4+sc.tier4,
+  return {severe:(sa.severe||0)+(sc.severe||0),tier1:sa.tier1+sc.tier1,tier2:sa.tier2+sc.tier2,tier3:sa.tier3+sc.tier3,guideHits:sumGuideHits(sa.guideHits,sc.guideHits),tier4:sa.tier4+sc.tier4,
     evidenceMode:sa.evidenceMode||sc.evidenceMode,pendingRatio:((sa.pendingRatio||0)+(sc.pendingRatio||0))/2,
     incompleteness:(sa.incompleteness||0)+(sc.incompleteness||0),complexity:(sa.complexity||0)+(sc.complexity||0)};
 }
@@ -1967,7 +2001,11 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
     // 在越界维度白占便宜、平票压过"仅差一丝比例"的候选。
     const totalTier2 = score.tier2 + grammarViolations * GRAMMAR_OVERSHOOT;
     const incompleteness = computeIncompleteness(pts); // 框架A候选恒为0（末点非provisional）
-    candidate.score = { ...score, tier1: totalTier1, tier2: totalTier2, grammarViolations, grammarNotes, tier4, incompleteness, complexity: patternComplexity(pat.id), penalized: totalTier1 > 0,
+    const alternates24 = alternationHit(candidate);
+    const guideHits = alternates24 ? { ...score.guideHits, pattern: score.guideHits.pattern + 1 } : score.guideHits;
+    const hits = alternates24 ? [...score.hits, { id: 'impulse.guide.alternation-2-4', desc: '2浪与4浪陡直/横向交替（书§1.7）', layer: 'pattern' }] : score.hits;
+    candidate.score = { ...score, hits, guideHits, tier3: -hits.length, guidelineTotal: score.guidelineTotal + (pat.id === 'impulse-strict' ? 1 : 0),
+      tier1: totalTier1, tier2: totalTier2, grammarViolations, grammarNotes, tier4, incompleteness, complexity: patternComplexity(pat.id), penalized: totalTier1 > 0,
       evidenceMode:!!opts.evidenceMode, pendingRoles:ev.pendingRoles,
       provenRoles:ev.provenRoles, requiredRoles:ev.requiredRoles,
       pendingRatio:1-ev.provenRoles/ev.requiredRoles,
@@ -4773,6 +4811,8 @@ module.exports = {
   legCharacter,
   grammarViolatesRole,
   crossDegreeHits,
+  alternationHit,
+  correctiveSlope,
   volumeNote,
   decompose,
   computeLegExpectation,

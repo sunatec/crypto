@@ -108,3 +108,54 @@ test('§3.6：大白话版同样不把违规读法说成"最像"', () => {
   assert.match(md, /无合法数法/);
   assert.doesNotMatch(md, /最像/);
 });
+
+// ── §3.6 指引分层：浪型指引 > 比率指引 > 时间指引 ──
+
+const { compareCandidates, alternationHit, correctiveSlope } = require('../analyze-wave-tree.js');
+const base = { severe: 0, tier1: 0, tier2: 0, incompleteness: 0, complexity: 1, tier4: 0 };
+const withHits = (pattern, ratio, time) => ({ ...base, guideHits: { pattern, ratio, time }, tier3: -(pattern + ratio + time) });
+
+test('§3.6：一条浪型指引压过多条时间指引', () => {
+  const pattern = withHits(1, 0, 0), time = withHits(0, 0, 3);
+  assert.deepEqual([time, pattern].sort(compareCandidates), [pattern, time]);
+});
+
+test('§3.6：浪型指引持平时比率指引优先于时间指引', () => {
+  const ratio = withHits(0, 1, 0), time = withHits(0, 0, 2);
+  assert.deepEqual([time, ratio].sort(compareCandidates), [ratio, time]);
+});
+
+test('§3.6：各层持平才轮到跨级别指引', () => {
+  const a = { ...withHits(0, 1, 1), tier4: 0 }, b = { ...withHits(0, 1, 1), tier4: 1 };
+  assert.deepEqual([a, b].sort(compareCandidates), [b, a]);
+});
+
+test('缺分层数据的旧式分数退回总命中数比较', () => {
+  const a = { ...base, tier3: -1 }, b = { ...base, tier3: -2 };
+  assert.deepEqual([a, b].sort(compareCandidates), [b, a]);
+});
+
+test('scoreCandidate 按层记录指引命中', () => {
+  const s = impulse([100, 200, 150, 300, 270, 330]); // 3浪=1.5×1浪，命中1.618附近的比率指引
+  assert.equal(s.guideHits.ratio, 1);
+  assert.equal(s.guideHits.pattern, 0, '交替不再按回撤比率差在手册里判');
+});
+
+const node = (patternId, children) => ({ isLeaf: false, primary: { patternId, children } });
+
+test('§1.7 陡直/横向分类', () => {
+  assert.equal(correctiveSlope(node('zigzag-double')), 'steep');
+  assert.equal(correctiveSlope(node('flat-expanded')), 'sideways');
+  assert.equal(correctiveSlope(node('triangle')), 'sideways');
+  assert.equal(correctiveSlope(node('sideways-double', [node('flat')])), 'sideways');
+  assert.equal(correctiveSlope(node('sideways-double', [node('zigzag')])), null, '以单锯齿起始的双重横向整理两可');
+  assert.equal(correctiveSlope({ isLeaf: true }), null);
+});
+
+test('§1.7：推动浪2/4浪陡直与横向交替才算交替', () => {
+  const impulseOf = (two, four) => ({ patternId: 'impulse-strict', children: [null, node(two), null, node(four), null] });
+  assert.equal(alternationHit(impulseOf('zigzag', 'triangle')), true);
+  assert.equal(alternationHit(impulseOf('zigzag', 'zigzag-double')), false, '简单/复杂不是交替');
+  assert.equal(alternationHit(impulseOf('flat', 'triangle')), false);
+  assert.equal(alternationHit({ ...impulseOf('zigzag', 'flat'), patternId: 'diagonal-leading' }), false, '楔形不计交替');
+});
