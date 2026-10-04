@@ -10,8 +10,8 @@ const assert = require('node:assert/strict');
 const {
   tfStepDown,
   splitPullbackAtLow,
-  historicalPullbackDepths,
-  classifyPullbackLevel,
+  maxInternalRetrace,
+  classifyPullbackDegree,
   zwaveProjection,
   readCombination,
   drillPullback,
@@ -32,21 +32,46 @@ test('tfStepDown：粗→细逐级降，末级返回 null', () => {
   assert.equal(tfStepDown('unknown'), null);
 });
 
-test('classifyPullbackLevel：深度 ≤ 历史中位数 → 小级别', () => {
-  const samples = [0.02, 0.05, 0.08, 0.11, 0.20]; // median 0.08
-  assert.equal(classifyPullbackLevel(0.05, samples).level, '小级别');
-  assert.equal(classifyPullbackLevel(0.08, samples).level, '小级别'); // 等于中位数仍算小
-  assert.equal(classifyPullbackLevel(0.10, samples).level, '中级别');
-  assert.equal(classifyPullbackLevel(0.30, samples).level, '大级别');
-  assert.equal(classifyPullbackLevel(0.05, []).level, '级别待定');
+// 前段上涨：100 → 130(1) → 118(2，回撤12) → 160(3) → 150(4，回撤10) → 175(5)
+const RALLY = [pv(100, 'L', 0), pv(130, 'H', 1), pv(118, 'L', 2), pv(160, 'H', 3), pv(150, 'L', 4), pv(175, 'H', 5)];
+
+test('maxInternalRetrace：取段内已创极值到之后反向极值的最大一次回撤', () => {
+  assert.deepEqual(maxInternalRetrace(RALLY, true), { depth: 12, from: 130, to: 118 });
+  // 次级反弹未创新高时，回撤仍从此前最高点量起
+  const nested = [pv(100, 'L', 0), pv(130, 'H', 1), pv(120, 'L', 2), pv(125, 'H', 3), pv(112, 'L', 4), pv(170, 'H', 5)];
+  assert.deepEqual(maxInternalRetrace(nested, true), { depth: 18, from: 130, to: 112 });
+  assert.equal(maxInternalRetrace(RALLY.slice(0, 2), true), null);
 });
 
-test('historicalPullbackDepths：只取 H→L 相邻对的回撤比率', () => {
-  const fine = [pv(100, 'H', 0), pv(90, 'L', 1), pv(95, 'H', 2), pv(76, 'L', 3)];
-  const d = historicalPullbackDepths(fine);
-  assert.equal(d.length, 2);
-  assert.ok(Math.abs(d[0] - 0.10) < 1e-9); // (100-90)/100
-  assert.ok(Math.abs(d[1] - 0.20) < 1e-9); // (95-76)/95
+test('§3.3：回撤超过前段上涨内部任何一次回撤 → 高一级', () => {
+  const r = classifyPullbackDegree(RALLY, true, 162); // 175→162，幅13 > 12
+  assert.equal(r.level, '高一级');
+  assert.equal(r.exceeds, true);
+  assert.equal(r.depth, 13);
+});
+
+test('§3.3：未超过前段内部最大回撤 → 仍可能是子浪调整（等于不算超过）', () => {
+  assert.equal(classifyPullbackDegree(RALLY, true, 163).level, '子浪级'); // 幅12 = 最大内部回撤
+  assert.equal(classifyPullbackDegree(RALLY, true, 170).exceeds, false);
+});
+
+test('§3.3：前段无内部回撤或数据不足时级别待定', () => {
+  assert.equal(classifyPullbackDegree([pv(100, 'L', 0), pv(150, 'H', 1)], true, 120).level, '级别待定');
+  assert.equal(classifyPullbackDegree(null, true, 120).level, '级别待定');
+});
+
+test('§3.3：下跌段之后的反弹同样适用', () => {
+  const drop = [pv(200, 'H', 0), pv(170, 'L', 1), pv(185, 'H', 2), pv(140, 'L', 3)];
+  assert.equal(classifyPullbackDegree(drop, false, 160).level, '高一级'); // 反弹20 > 15
+  assert.equal(classifyPullbackDegree(drop, false, 150).level, '子浪级');
+});
+
+test('§3.3 叙述：写明比较对象与结论', () => {
+  const text = renderPullbackNarrative({ level: classifyPullbackDegree(RALLY, true, 162), structureLine: 162, subDegree: null, combinationReading: null, zwaveTargets: null }, 2);
+  assert.match(text, /已超过前段上涨内部任何一次回撤（最大一次 130→118，幅 12）/);
+  assert.match(text, /书§3\.3/);
+  const sub = renderPullbackNarrative({ level: classifyPullbackDegree(RALLY, true, 170), structureLine: 170, subDegree: null, combinationReading: null, zwaveTargets: null }, 2);
+  assert.match(sub, /内部的子浪调整/);
 });
 
 test('splitPullbackAtLow：剥出摆动极值/真低点/反弹极值与两截', () => {
@@ -96,11 +121,11 @@ test('zwaveProjection：主目标 = Z=W=Y 等长带，含 0.236 破位档（锁 
 
 test('renderPullbackNarrative：无子结构时形态待明、无警戒线措辞', () => {
   const txt = renderPullbackNarrative({
-    level: { level: '小级别', depthRatio: 0.05, median: 0.065 },
+    level: { level: '级别待定', exceeds: null, depth: NaN },
     structureLine: 75538,
     subDegree: null, combinationReading: null, zwaveTargets: null,
   });
-  assert.match(txt, /小级别回撤/);
+  assert.match(txt, /级别待定/);
   assert.match(txt, /形态待明/);
   assert.match(txt, /守住结构线 \*\*75538\*\*/);
   assert.doesNotMatch(txt, /警惕|警戒/); // 警戒线已砍

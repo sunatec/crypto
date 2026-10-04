@@ -2334,7 +2334,7 @@ function buildInProgressStructure(finePivots, spanLast, candles, options = {}) {
     };
   }
 
-  return { structUp, swingExtreme: ext, swingChar, upTree, pullback, invalidation: spanLast.price };
+  return { structUp, swingExtreme: ext, swingChar, upTree, pullback, invalidation: spanLast.price, rallyStart: spanLast };
 }
 
 const CUR_RANKED_MAX = 6;
@@ -2658,32 +2658,36 @@ function splitPullbackAtLow(fine, structUp) {
 }
 
 // 同段趋势历史高→低回撤深度样本（比率），用于给"级别"定分位
-function historicalPullbackDepths(finePivots) {
-  const depths = [];
-  if (!Array.isArray(finePivots)) return depths;
-  for (let i = 0; i < finePivots.length - 1; i += 1) {
-    const a = finePivots[i];
-    const b = finePivots[i + 1];
-    if (a.type === 'H' && b.type === 'L' && a.price > 0) depths.push((a.price - b.price) / a.price);
+// 书§3.3：前段走势（如5浪上涨）之后的回撤，若超过该段内部任何一次回撤，可假设该段已结束、
+// 回撤属于比其内部子浪高一级的调整；未超过则仍可能只是该段内部的子浪调整。
+// 内部回撤按枢轴的「段内已创出的极值 → 之后的反向极值」量（如2浪：1浪顶→2浪底），取最大一次。
+// 两价之差按两端小数位取整，免浮点噪声（87397 - 82682.86 → 4714.14）。
+function priceDiff(a, b) {
+  const d = Math.max(decimalPlaces(a) || 0, decimalPlaces(b) || 0);
+  return Number((a - b).toFixed(Math.min(d, MAX_PRICE_DECIMALS)));
+}
+
+function maxInternalRetrace(swingPivots, up) {
+  if (!Array.isArray(swingPivots) || swingPivots.length < 3) return null;
+  const s = up ? 1 : -1;
+  let peak = swingPivots[0].price, best = null;
+  for (const pt of swingPivots.slice(1, -1)) {
+    if (s * (pt.price - peak) > 0) peak = pt.price;
+    const depth = s * priceDiff(peak, pt.price);
+    if (depth > 0 && (!best || depth > best.depth)) best = { depth, from: peak, to: pt.price };
   }
-  return depths;
+  return best;
 }
 
-function median(arr) {
-  if (!arr || !arr.length) return null;
-  const s = [...arr].sort((x, y) => x - y);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-// 级别定级：回撤深度 ≤ 历史中位数 → 小级别；否则与"上半部分中位数"比出中/大级别
-function classifyPullbackLevel(depthRatio, samples) {
-  const med = median(samples);
-  if (med == null || !Number.isFinite(depthRatio)) return { level: '级别待定', depthRatio, median: med };
-  if (depthRatio <= med) return { level: '小级别', depthRatio, median: med };
-  const upperMed = median(samples.filter((d) => d > med));
-  const level = (upperMed != null && depthRatio > upperMed) ? '大级别' : '中级别';
-  return { level, depthRatio, median: med };
+// swingPivots：前段走势的枢轴（起点 → 段极值）；pullbackEnd：回撤到达的价位。
+function classifyPullbackDegree(swingPivots, up, pullbackEnd) {
+  const ext = Array.isArray(swingPivots) && swingPivots.length ? swingPivots[swingPivots.length - 1].price : NaN;
+  const depth = Number.isFinite(ext) && Number.isFinite(pullbackEnd) ? (up ? priceDiff(ext, pullbackEnd) : priceDiff(pullbackEnd, ext)) : NaN;
+  const base = { depth, depthRatio: ext > 0 ? depth / ext : NaN, maxInternal: null, basis: '书§3.3' };
+  const inner = maxInternalRetrace(swingPivots, up);
+  if (!inner || !(depth > 0)) return { ...base, level: '级别待定', exceeds: null };
+  const exceeds = depth > inner.depth;
+  return { ...base, maxInternal: inner, exceeds, level: exceeds ? '高一级' : '子浪级' };
 }
 
 // 拆回撤"已走完"段：竞争形态（滤除 severe/文法违规、按形态族去重）+ 联合形候选（供浪位读法）
@@ -2817,10 +2821,12 @@ async function enrichCurrentPullback(tree, ctx, fetchFn = fetchCandles) {
     }
   }
 
-  // 级别：回撤深度按"高点 → 真低点（结构线）"度量，对同段历史回撤样本定分位
-  const depthRatio = swingExtreme.price > 0
-    ? (swingExtreme.price - narrative.structureLine) / swingExtreme.price : NaN;
-  narrative.level = classifyPullbackLevel(depthRatio, historicalPullbackDepths(finePivots));
+  // 级别（书§3.3）：回撤深度按"高点 → 真低点（结构线）"度量，与前段上涨内部最大一次回撤比较
+  const rallyStart = ips.rallyStart && finePivots.indexOf(ips.rallyStart) >= 0
+    ? finePivots.indexOf(ips.rallyStart)
+    : finePivots.findIndex((p, i) => i < iExt && p.type === 'L' && p.price === ips.invalidation);
+  const rally = rallyStart >= 0 && iExt > rallyStart ? finePivots.slice(rallyStart, iExt + 1) : null;
+  narrative.level = classifyPullbackDegree(rally, true, narrative.structureLine);
 
   narrative.text = renderPullbackNarrative(narrative);
   pb.narrative = narrative;
@@ -2839,10 +2845,11 @@ function renderPullbackNarrative(nr, pricePrecision) {
     ? sd.rankedPatterns.slice(0, 3).map((p) => p.label).join(' 或 ')
     : '形态待明（进行中枢轴不足）';
   const tfNote = sd && sd.drilled ? `（下钻 ${sd.tf} 子级别）` : '';
-  let s1 = `自高点回撤，属**${nr.level.level}回撤**`;
-  if (Number.isFinite(nr.level.depthRatio)) s1 += `（深度 ${(nr.level.depthRatio * 100).toFixed(1)}%`;
-  if (nr.level.median != null) s1 += `，同段历史回撤中位数 ${(nr.level.median * 100).toFixed(1)}%`;
-  if (Number.isFinite(nr.level.depthRatio)) s1 += '）';
+  const lv = nr.level || {};
+  let s1 = Number.isFinite(lv.depth) ? `自高点回撤 **${n(lv.depth)}**（${(lv.depthRatio * 100).toFixed(1)}%）` : '自高点回撤';
+  if (lv.exceeds === true) s1 += `，已超过前段上涨内部任何一次回撤（最大一次 ${n(lv.maxInternal.from)}→${n(lv.maxInternal.to)}，幅 ${n(lv.maxInternal.depth)}）：按书§3.3 可假设该段上涨已经结束，此回撤属于**比其内部子浪高一级**的调整`;
+  else if (lv.exceeds === false) s1 += `，未超过前段上涨内部最大一次回撤（${n(lv.maxInternal.from)}→${n(lv.maxInternal.to)}，幅 ${n(lv.maxInternal.depth)}）：仍可能只是该段上涨**内部的子浪调整**，上涨未必结束`;
+  else s1 += '，级别待定（前段上涨内部没有可比的回撤）';
   s1 += `。回撤内部${tfNote}较符合 **${forms}**。`;
   L.push(s1);
   L.push('');
@@ -4848,8 +4855,8 @@ module.exports = {
   loadCandlesAndPivots,
   drillPullback,
   splitPullbackAtLow,
-  historicalPullbackDepths,
-  classifyPullbackLevel,
+  maxInternalRetrace,
+  classifyPullbackDegree,
   analyzePullbackCompleted,
   readCombination,
   zwaveProjection,
