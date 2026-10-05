@@ -176,6 +176,15 @@ test('金标准：报告以 4 条简报开头，失效点=assessment.invalidatio
   assert.ok(md.includes('非投资建议'), '应有免责声明');
 });
 
+test('金标准：元信息与数浪范围紧随标题、位于简报 4 条之前', () => {
+  const { tree } = buildGoldenTree();
+  const md = t.renderMarkdownReport({ product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(), generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: 314 }, tree);
+  const idx = ['# BTC/USD 日线波浪分析简报', '- 品种：BTC-USD', '- 数据来源：fixture', '> 数浪范围：', '1. 大局研判', '非投资建议', '<details>'].map((s) => md.indexOf(s));
+  assert.ok(idx.every((i) => i >= 0), '标题/元信息/数浪范围/简报/免责声明/明细均应出现');
+  assert.ok(idx.every((i, k) => k === 0 || i > idx[k - 1]), '顺序应为 标题 → 元信息 → 数浪范围 → 简报 → 免责声明 → 明细');
+  assert.equal(md.split('波浪分析简报').length - 1, 1, '简报标题应只出现一次');
+});
+
 test('金标准：简报与最新收盘比对——跌破支撑标"已跌破"，摆动极值已越过的目标标"已到"', () => {
   const { tree } = buildGoldenTree();
   const base = { product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(), generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: 314 };

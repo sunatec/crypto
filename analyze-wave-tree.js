@@ -4396,13 +4396,20 @@ function renderNarrative(meta, tree, pricePrecision) {
 // 每个数字都取自既有派生（ranked / inProgressStruct / assessment.bounceHyp），不新增引擎计算。
 const TF_CN = { '5m': '5分钟线', '1h': '1小时线', '4h': '4小时线', '1d': '日线', '1w': '周线', '1m': '月线', '1y': '年线' };
 
-function renderBrief(meta, tree) {
-  const px = (v) => formatPrice(v, meta && meta.pricePrecision != null ? meta.pricePrecision : (tree && tree.pricePrecision));
+function renderBriefTitle(meta) {
   const product = String((meta && meta.product) || '').replace(/-/g, '/');
   const tf = (meta && meta.timeframe) || '';
+  return `# ${product}${meta && meta.name ? ` ${meta.name}` : ''} ${TF_CN[tf] || tf}波浪分析简报`;
+}
+
+// withTitle=false 时只输出简报正文，供主报告把元信息插在标题与正文之间。
+function renderBrief(meta, tree, { withTitle = true } = {}) {
+  const px = (v) => formatPrice(v, meta && meta.pricePrecision != null ? meta.pricePrecision : (tree && tree.pricePrecision));
   const L = [];
-  L.push(`# ${product}${meta && meta.name ? ` ${meta.name}` : ''} ${TF_CN[tf] || tf}波浪分析简报`);
-  L.push('');
+  if (withTitle) {
+    L.push(renderBriefTitle(meta));
+    L.push('');
+  }
   const ranked = tree ? buildRankedCounts(tree) : null;
   const a = tree && tree.assessment;
   if (!ranked || !ranked.length || !a) {
@@ -4515,18 +4522,20 @@ function scopeTime(iso, meta, kind) {
   return ['1d', '1w', '1m', '1y'].includes(meta && meta.timeframe) ? text.slice(0, 10) : text;
 }
 
-// brief-report-summary D1：简报 → 免责声明 → 元信息 → <details>（轴①②③ + 用户数法评分 + 规则树）。
+// 报告顺序：简报标题 → 元信息（含扎针）→ 数浪范围 → 简报 4 条 + 免责声明 → <details>（轴①②③ + 用户数法评分 + 规则树）。
 // 现状研判 TL;DR 与大白话版由简报取代，不再输出；三轴仍按 consolidate-report-by-theme 单一权威呈现。
 function renderMarkdownReport(meta, tree, userEval, context = {}) {
   const lines = [];
   const pricePrecision = meta && meta.pricePrecision;
-  lines.push(renderBrief(meta, tree));
+  lines.push(renderBriefTitle(meta));
   lines.push('');
   lines.push(renderReportMeta(meta));
   lines.push('');
   const scope = context.scope || buildWaveScope(meta, tree, context.background);
   const scopeStart = scopeTime(scope.startUtc, meta, 'window'), scopeS = scopeTime(scope.structureStartUtc, meta, 'bar');
   lines.push(`> 数浪范围：从 ${scopeStart || '未知日期'} 起按${TF_CN[scope.timeframe] || scope.timeframe}数浪，起点${scope.startIsWindowExtreme ? '为窗口内极值' : '价格为'} ${formatPrice(scope.startPrice, pricePrecision)}${scopeS ? `（S @ ${scopeS}）` : ''}；${scope.note}。`);
+  lines.push('');
+  lines.push(renderBrief(meta, tree, { withTitle: false }));
   lines.push('');
   lines.push('<details><summary>技术细节（轴①②③ 全文、数法打分）</summary>');
   lines.push('');
