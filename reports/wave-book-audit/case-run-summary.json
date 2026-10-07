@@ -1,0 +1,132 @@
+{
+  "cases": 24,
+  "comparisons": [
+    {
+      "id": "BTC_WXY_y_below_90pct",
+      "comparison": "一致（仅此检查层）",
+      "actual": 0
+    },
+    {
+      "id": "double_x_equals_W",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "double_y_equals_x",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "zigzag_c_equals_5b",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "expanded_b_equals_a",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "triangle_parallel_equal_legs",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "short_c_book_figure_95",
+      "comparison": "一致（仅此检查层）",
+      "actual": 0
+    },
+    {
+      "id": "book_figure_54_b_breaks_start",
+      "comparison": "一致（仅此检查层）",
+      "actual": 2
+    },
+    {
+      "id": "book_figure_57_failure_under_70pct",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "wave4_interior_overlaps_wave1",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "wave2_20pct_book_example",
+      "comparison": "不一致",
+      "actual": 1
+    },
+    {
+      "id": "impulse_wave3_second_longest",
+      "comparison": "不一致",
+      "actual": 1
+    },
+    {
+      "id": "wave3_percent_not_shortest_missing",
+      "comparison": "不一致",
+      "actual": 0
+    },
+    {
+      "id": "flat_a_triangle",
+      "comparison": "不一致",
+      "actual": true
+    },
+    {
+      "id": "flat_b_triangle",
+      "comparison": "不一致",
+      "actual": true
+    },
+    {
+      "id": "impulse_2_triangle",
+      "comparison": "不一致",
+      "actual": true
+    },
+    {
+      "id": "triangle_b_flat",
+      "comparison": "不一致",
+      "actual": true
+    },
+    {
+      "id": "triangle_c_triangle",
+      "comparison": "不一致",
+      "actual": true
+    },
+    {
+      "id": "triangle_e_flat",
+      "comparison": "不一致",
+      "actual": true
+    },
+    {
+      "id": "combination_w_triangle",
+      "comparison": "不一致",
+      "actual": true
+    },
+    {
+      "id": "double_zigzag_degrees",
+      "comparison": "不一致"
+    },
+    {
+      "id": "short_c_lost_by_default_top_crop",
+      "comparison": "不一致（候选覆盖，非声称完整短C已验证）"
+    },
+    {
+      "id": "parent_context_relabels_child_structure",
+      "comparison": "部分一致：使用条件句，但wy改名取决父级，非内部结构"
+    },
+    {
+      "id": "verification_has_no_terminal_verified_proof",
+      "comparison": "不一致（工程状态：有限验证无正常出口）"
+    }
+  ],
+  "fixture": {
+    "candles": 314,
+    "pivots": 96,
+    "counts": {
+      "verified": 0,
+      "pending": 649,
+      "invalid": 176,
+      "leaf": 1287
+    },
+    "root": "zigzag"
+  }
+}

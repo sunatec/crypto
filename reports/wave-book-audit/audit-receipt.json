@@ -1,0 +1,35 @@
+{
+  "generatedAtUtc": "2026-10-02T15:13:06.201071+00:00",
+  "bookRuleOverrides": [
+    "OV-001: Y/W > 0.9保留为guideline，用户确认书籍勘误"
+  ],
+  "bookSha256": "4c7cd332cf0081392164177a6ead7dbcdc216c8b41b760a023e52325ec8e9b5b",
+  "sourceFiles": {
+    "analyze-wave-tree.js": "3c8309fd5af78aec97fb29515c3dd88863b6093b77e3f332ac48e9b87b68b624",
+    "wave-subwave-verification.js": "7057895d49cc68b42249be72221ed75308be4a3d871556762bf5e7f097fd6a45",
+    "analyze-wave-manual.js": "beda8c11debf0dd48105ccbca11bedabc535adb9edcbba07a3beac9d842823e2",
+    "market-data.js": "5e11a37ebb6db2a39d736c469708340fc15b0de79c26ca84dd2111923c9dfb54",
+    "tests/fixtures/btc-usd-1d-golden.json": "78fb9ed7aa3f1cd64bae7878ac870ad24509446bd0b014295473bc1be3ea4183"
+  },
+  "ruleMap": {
+    "uniqueRules": 56,
+    "uniqueGuidelines": 19
+  },
+  "commands": [
+    {
+      "command": "node reports/wave-book-audit/run-book-cases.js",
+      "result": "24分层审计项；差异见case-results.json，非全部通过"
+    },
+    {
+      "command": "node --test tests/*.test.js",
+      "result": "176 pass / 0 fail"
+    }
+  ],
+  "limits": [
+    "EPUB只有前言和1–7章",
+    "无固定页码",
+    "无图例原始OHLC",
+    "未运行最新end now行情",
+    "旧独立CLI的全部规则未逐条映射"
+  ]
+}

@@ -1,0 +1,901 @@
+[
+  {
+    "pattern": "impulse-strict",
+    "roles": [
+      "impulse|leading",
+      "corrective",
+      "impulse",
+      "corrective",
+      "impulse|ending"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "impulse.pattern.wave2-not-retrace-100",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "2浪不能折返1浪的100%"
+      },
+      {
+        "id": "impulse.pattern.wave3-exceeds-wave1-end",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "3浪须超过1浪的终点"
+      },
+      {
+        "id": "impulse.pattern.wave4-not-cross-wave1",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "推动浪的4浪不能切入1浪"
+      },
+      {
+        "id": "impulse.pattern.wave3-not-shortest",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "3浪一定不是1/3/5浪中最短的"
+      },
+      {
+        "id": "impulse.ratio.wave2-retrace-range",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "2浪回撤须在1浪的23.6%~88.6%之间"
+      },
+      {
+        "id": "impulse.ratio.wave3-extend-range",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "3浪相对1浪的扩展须在1~4.236倍之间"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "impulse.guide.alternation-2-4",
+        "layer": "pattern",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "2浪与4浪呈现交替（回撤比率不同）"
+      },
+      {
+        "id": "impulse.guide.wave3-common-extension",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": "price",
+        "desc": "3浪扩展接近常见斐波那契倍数（1.618/2.618）"
+      },
+      {
+        "id": "impulse.guide.wave4-time-balance",
+        "layer": "time",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "4浪与2浪耗时比在0.2~5倍之间（时间平衡）"
+      }
+    ]
+  },
+  {
+    "pattern": "diagonal-leading",
+    "roles": [
+      "driving",
+      "corrective",
+      "driving",
+      "corrective",
+      "driving"
+    ],
+    "alternateRoles": [
+      [
+        "corrective",
+        "corrective",
+        "corrective",
+        "corrective",
+        "corrective"
+      ]
+    ],
+    "rules": [
+      {
+        "id": "diagonal.pattern.wave2-not-retrace-100",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "2浪不能折返1浪的100%"
+      },
+      {
+        "id": "diagonal.pattern.wave3-exceeds-wave1-end",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "3浪须超过1浪的终点"
+      },
+      {
+        "id": "diagonal.pattern.wave4-allowed-cross-wave1",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "楔形允许4浪切入1浪，但须落在2、1浪终点之间"
+      },
+      {
+        "id": "diagonal.pattern.wave4-not-retrace-100-of-3",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "4浪不能折返3浪的100%"
+      },
+      {
+        "id": "diagonal.pattern.wave3-not-shortest",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "3浪一定不是最短的"
+      },
+      {
+        "id": "diagonal.pattern.boundaries-converge",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "楔形的1–3与2–4边界须向未来收敛"
+      },
+      {
+        "id": "diagonal.ratio.converging",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "diagonal.guide.wave5-time-shorter",
+        "layer": "time",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "5浪耗时通常短于3浪"
+      }
+    ]
+  },
+  {
+    "pattern": "diagonal-ending",
+    "roles": [
+      "corrective",
+      "corrective",
+      "corrective",
+      "corrective",
+      "corrective"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "diagonal.pattern.wave2-not-retrace-100",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "2浪不能折返1浪的100%"
+      },
+      {
+        "id": "diagonal.pattern.wave3-exceeds-wave1-end",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "3浪须超过1浪的终点"
+      },
+      {
+        "id": "diagonal.pattern.wave4-allowed-cross-wave1",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "楔形允许4浪切入1浪，但须落在2、1浪终点之间"
+      },
+      {
+        "id": "diagonal.pattern.wave4-not-retrace-100-of-3",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "4浪不能折返3浪的100%"
+      },
+      {
+        "id": "diagonal.pattern.wave3-not-shortest",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "3浪一定不是最短的"
+      },
+      {
+        "id": "diagonal.pattern.boundaries-converge",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "楔形的1–3与2–4边界须向未来收敛"
+      },
+      {
+        "id": "diagonal.ratio.converging",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "楔形须收敛：3浪短于1浪、5浪短于3浪"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "diagonal.guide.wave5-time-shorter",
+        "layer": "time",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "5浪耗时通常短于3浪"
+      }
+    ]
+  },
+  {
+    "pattern": "zigzag",
+    "roles": [
+      "impulse|leading",
+      "corrective",
+      "impulse|ending"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "zigzag.ratio.b-price-between-0.2a-and-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "b浪价格须在a浪的20%~100%之间"
+      },
+      {
+        "id": "zigzag.ratio.b-not-break-a-start",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪任何部分不能超过a浪起点"
+      },
+      {
+        "id": "zigzag.ratio.c-between-0.9b-and-5b",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "c浪须≥b浪90%且<b浪5倍且<a浪5倍"
+      },
+      {
+        "id": "zigzag.time.b-lt-10a",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "b浪时间≤a浪10倍"
+      },
+      {
+        "id": "zigzag.time.c-lt-10a-and-10b",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "c浪时间≤a、b浪10倍"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "zigzag.guide.b-common-ratio",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "b浪接近常见比率(0.382/0.5/0.618)"
+      },
+      {
+        "id": "zigzag.guide.c-common-ratio",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "c浪接近常见比率(1/0.618/1.618)"
+      },
+      {
+        "id": "zigzag.guide.b-not-approach-a-start",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "b浪通常不接近a浪起点（回撤≤a的90%）"
+      },
+      {
+        "id": "zigzag.guide.c-not-far-beyond-1.618a",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "c浪未远超a浪的1.618倍（否则更像推动浪）"
+      },
+      {
+        "id": "zigzag.guide.b-time-window",
+        "layer": "time",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "b浪时间通常介于a浪的61.8%~161%"
+      }
+    ]
+  },
+  {
+    "pattern": "flat",
+    "roles": [
+      "corrective",
+      "corrective",
+      "impulse|ending"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "flat.ratio.b-gross-at-least-70pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须≥a浪70%"
+      },
+      {
+        "id": "flat.ratio.b-gross-below-200pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须<a浪2倍"
+      },
+      {
+        "id": "flat.ratio.c-overlaps-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪必须与a浪有价格重叠"
+      },
+      {
+        "id": "flat.ratio.c-gross-limit",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪运行总量≤max(a,b)的2倍 且 ≤a价格的3倍"
+      },
+      {
+        "id": "flat.time.b-lt-10a",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "b浪时间≤a浪10倍"
+      },
+      {
+        "id": "flat.time.c-lt-10a-and-10b",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "c浪时间≤a、b浪10倍"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "flat.guide.c-common-ratio",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "c浪接近常见比率(c=a 或 c=1.618a)"
+      }
+    ]
+  },
+  {
+    "pattern": "flat-regular",
+    "roles": [
+      "corrective",
+      "corrective",
+      "impulse|ending"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "flat.ratio.b-gross-at-least-70pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须≥a浪70%"
+      },
+      {
+        "id": "flat.ratio.b-gross-below-200pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须<a浪2倍"
+      },
+      {
+        "id": "flat.ratio.c-overlaps-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪必须与a浪有价格重叠"
+      },
+      {
+        "id": "flat.ratio.c-gross-limit",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪运行总量≤max(a,b)的2倍 且 ≤a价格的3倍"
+      },
+      {
+        "id": "flat.time.b-lt-10a",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "b浪时间≤a浪10倍"
+      },
+      {
+        "id": "flat.time.c-lt-10a-and-10b",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "c浪时间≤a、b浪10倍"
+      },
+      {
+        "id": "flat-regular.ratio.b-le-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "规则平台形：b浪运行总量≤a浪"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "flat.guide.c-common-ratio",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "c浪接近常见比率(c=a 或 c=1.618a)"
+      }
+    ]
+  },
+  {
+    "pattern": "flat-expanded",
+    "roles": [
+      "corrective",
+      "corrective",
+      "impulse|ending"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "flat.ratio.b-gross-at-least-70pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须≥a浪70%"
+      },
+      {
+        "id": "flat.ratio.b-gross-below-200pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须<a浪2倍"
+      },
+      {
+        "id": "flat.ratio.c-overlaps-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪必须与a浪有价格重叠"
+      },
+      {
+        "id": "flat.ratio.c-gross-limit",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪运行总量≤max(a,b)的2倍 且 ≤a价格的3倍"
+      },
+      {
+        "id": "flat.time.b-lt-10a",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "b浪时间≤a浪10倍"
+      },
+      {
+        "id": "flat.time.c-lt-10a-and-10b",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "c浪时间≤a、b浪10倍"
+      },
+      {
+        "id": "flat-expanded.ratio.b-gt-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "扩散平台形：b浪运行总量>a浪"
+      },
+      {
+        "id": "flat-expanded.pattern.c-exceeds-a-end",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "扩散平台形：c浪须超过a浪终点"
+      }
+    ],
+    "guidelines": []
+  },
+  {
+    "pattern": "flat-running",
+    "roles": [
+      "corrective",
+      "corrective",
+      "impulse|ending"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "flat.ratio.b-gross-at-least-70pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须≥a浪70%"
+      },
+      {
+        "id": "flat.ratio.b-gross-below-200pct-of-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "b浪运行总量须<a浪2倍"
+      },
+      {
+        "id": "flat.ratio.c-overlaps-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪必须与a浪有价格重叠"
+      },
+      {
+        "id": "flat.ratio.c-gross-limit",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "c浪运行总量≤max(a,b)的2倍 且 ≤a价格的3倍"
+      },
+      {
+        "id": "flat.time.b-lt-10a",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "b浪时间≤a浪10倍"
+      },
+      {
+        "id": "flat.time.c-lt-10a-and-10b",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "c浪时间≤a、b浪10倍"
+      },
+      {
+        "id": "flat-running.ratio.b-gt-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "顺势平台形：b浪运行总量>a浪"
+      },
+      {
+        "id": "flat-running.pattern.c-not-exceed-a-end",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "顺势平台形：c浪不超过a浪终点"
+      }
+    ],
+    "guidelines": []
+  },
+  {
+    "pattern": "zigzag-double",
+    "roles": [
+      "zigzag",
+      "corrective",
+      "zigzag"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "zigzag-double.ratio.x-retrace-20-100",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "x浪价格须回撤w浪价格的20%~100%"
+      },
+      {
+        "id": "zigzag-double.ratio.y-lt-5w",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "y浪价格须<w浪5倍"
+      },
+      {
+        "id": "zigzag-double.ratio.y-gt-x",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "y浪价格须大于x浪价格的1倍"
+      },
+      {
+        "id": "zigzag-double.time.x-lt-5w",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "x浪时间≤w浪5倍"
+      },
+      {
+        "id": "zigzag-double.time.y-lt-5w",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "y浪时间≤w浪5倍"
+      },
+      {
+        "id": "zigzag-double.time.y-not-both-5x",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "y浪不能既价格>x浪5倍又时间>x浪5倍"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "zigzag-double.guide.x-retrace-30-70",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "x浪通常回撤w浪的30%~70%"
+      },
+      {
+        "id": "zigzag-double.guide.y-gt-0.9w",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "y浪价格通常>w浪90%（非必须）"
+      },
+      {
+        "id": "zigzag-double.guide.y-near-w-or-1.618",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "y浪价格倾向=w浪或1.618倍w浪"
+      },
+      {
+        "id": "zigzag-double.guide.x-time-window",
+        "layer": "time",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "x浪时间通常介于w浪的61.8%~161.8%"
+      }
+    ]
+  },
+  {
+    "pattern": "zigzag-triple",
+    "roles": [
+      "zigzag",
+      "corrective",
+      "zigzag",
+      "corrective",
+      "zigzag"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "zigzag-triple.ratio.x-retrace-20-100",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "x浪价格须回撤w浪价格的20%~100%"
+      },
+      {
+        "id": "zigzag-triple.ratio.y-lt-5w",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "y浪价格须<w浪5倍"
+      },
+      {
+        "id": "zigzag-triple.ratio.y-gt-x",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "y浪价格须大于x浪价格的1倍"
+      },
+      {
+        "id": "zigzag-triple.ratio.xx-retrace-20-100",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "xx浪价格须回撤y浪价格的20%~100%"
+      },
+      {
+        "id": "zigzag-triple.ratio.z-vs-xx-y-w",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "z浪须≥xx浪1倍、<y浪5倍、<w浪5倍"
+      },
+      {
+        "id": "zigzag-triple.time.x-lt-5w",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "x浪时间≤w浪5倍"
+      },
+      {
+        "id": "zigzag-triple.time.y-lt-5w",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "y浪时间≤w浪5倍"
+      },
+      {
+        "id": "zigzag-triple.time.z-lt-5w-5y",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "z浪时间≤w浪5倍且≤y浪5倍"
+      },
+      {
+        "id": "zigzag-triple.time.y-not-both-5x",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "y浪不能既价格>x浪5倍又时间>x浪5倍"
+      },
+      {
+        "id": "zigzag-triple.time.z-not-both-5xx",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "z浪不能既价格>xx浪5倍又时间>xx浪5倍"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "zigzag-triple.guide.x-retrace-30-70",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "x浪通常回撤w浪的30%~70%"
+      },
+      {
+        "id": "zigzag-triple.guide.xx-retrace-30-70",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "xx浪通常回撤y浪的30%~70%"
+      },
+      {
+        "id": "zigzag-triple.guide.y-gt-0.9w",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "y浪价格通常>w浪90%（非必须）"
+      }
+    ]
+  },
+  {
+    "pattern": "sideways-double",
+    "roles": [
+      "simple-corrective",
+      "corrective",
+      "simple-corrective"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "sideways-double.ratio.x-retrace-70pct-of-w",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "x浪须回撤w浪运行总量的70%以上"
+      }
+    ],
+    "guidelines": []
+  },
+  {
+    "pattern": "sideways-triple",
+    "roles": [
+      "simple-corrective",
+      "corrective",
+      "simple-corrective",
+      "corrective",
+      "simple-corrective"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "sideways-triple.ratio.x-retrace-70pct-of-w",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "x浪须回撤w浪运行总量的70%以上"
+      },
+      {
+        "id": "sideways-triple.ratio.xx-retrace-70pct-of-y",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "gross",
+        "desc": "xx浪须回撤y浪运行总量的70%以上"
+      }
+    ],
+    "guidelines": []
+  },
+  {
+    "pattern": "triangle",
+    "roles": [
+      "corrective",
+      "corrective",
+      "corrective",
+      "corrective",
+      "corrective"
+    ],
+    "alternateRoles": [],
+    "rules": [
+      {
+        "id": "triangle.pattern.longest-is-a-or-b",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "最长子浪只能是a或b（c/d/e 不能最长）"
+      },
+      {
+        "id": "triangle.pattern.e-within-a-range",
+        "layer": "pattern",
+        "kind": "rule",
+        "basis": null,
+        "desc": "e浪终点必须回到a浪价格区域内"
+      },
+      {
+        "id": "triangle.ratio.b-vs-a",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "b浪价格须≥a浪50%且<a浪2倍"
+      },
+      {
+        "id": "triangle.ratio.c-vs-b",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "c浪价格须<b浪且≥b浪50%"
+      },
+      {
+        "id": "triangle.ratio.d-vs-c",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "d浪价格须≤c浪且≥c浪50%"
+      },
+      {
+        "id": "triangle.ratio.e-vs-d",
+        "layer": "ratio",
+        "kind": "rule",
+        "basis": "price",
+        "desc": "e浪价格须<d浪且≥d浪25%"
+      },
+      {
+        "id": "triangle.time.d-le-4c",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "d浪时间≤c浪4倍"
+      },
+      {
+        "id": "triangle.time.e-le-4c",
+        "layer": "time",
+        "kind": "rule",
+        "basis": null,
+        "desc": "e浪时间≤c浪4倍"
+      }
+    ],
+    "guidelines": [
+      {
+        "id": "triangle.guide.618-pair",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "通常有一对同向浪比例约61.8%（c/a 或 d/b）"
+      },
+      {
+        "id": "triangle.guide.e-retrace-70-of-d",
+        "layer": "ratio",
+        "kind": "guideline",
+        "basis": null,
+        "desc": "e浪通常回撤d浪的70%"
+      }
+    ]
+  }
+]

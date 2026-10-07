@@ -1,0 +1,82 @@
+{
+  "change": "fix-book-audit-p1",
+  "validationDateLocal": "2026-10-03",
+  "sourcePriority": [
+    "local book plus OV-001",
+    "implementation",
+    "supplementary theory"
+  ],
+  "scope": [
+    "F02",
+    "F03",
+    "F04",
+    "F05",
+    "F06",
+    "F07",
+    "F08",
+    "F09",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F15"
+  ],
+  "tests": {
+    "command": [
+      "node",
+      "--test",
+      "--test-reporter=tap",
+      "tests/analyze-kline-wave.test.js",
+      "tests/analyze-wave-manual.test.js",
+      "tests/analyze-wave-tree.golden.test.js",
+      "tests/analyze-wave-tree.test.js",
+      "tests/market-data.test.js",
+      "tests/narrate-current-pullback.test.js",
+      "tests/wave-book-p1.test.js",
+      "tests/wave-subwave-verification.test.js"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 79.349,
+    "tests": 219,
+    "pass": 219,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "newP1Tests": 43,
+  "syntaxChecks": [
+    "analyze-wave-tree.js",
+    "wave-book-validation.js",
+    "wave-subwave-verification.js"
+  ],
+  "openSpecStrictValidation": "passed",
+  "gitDiffCheck": "passed",
+  "liveMarketRun": false,
+  "overridesPreserved": [
+    "OV-001"
+  ],
+  "beforeP1Sha256": {
+    "analyze-wave-tree.js": "3c8309fd5af78aec97fb29515c3dd88863b6093b77e3f332ac48e9b87b68b624",
+    "wave-subwave-verification.js": "7057895d49cc68b42249be72221ed75308be4a3d871556762bf5e7f097fd6a45"
+  },
+  "sha256": {
+    "books/波浪理论详解.epub": "4c7cd332cf0081392164177a6ead7dbcdc216c8b41b760a023e52325ec8e9b5b",
+    "analyze-wave-tree.js": "810bf2a4a2dc781bf49c2ceb5a6551c7c63c2eef15340e357e0527c435867742",
+    "wave-book-validation.js": "a23bdf5e11a6927fb499b8d266ad2acdae0603db349e9a5f4f6aab8ae95f19a1",
+    "wave-subwave-verification.js": "9c83d0b2af138d45dcf26cffc6b3e4e181ad507e41e06994040c87ddf252181a",
+    "tests/wave-book-p1.test.js": "2230f76322aed1d07ef349c943d0eb2380d4d6c5de98a85fac64fcf380fdcb4c",
+    "tests/analyze-wave-tree.test.js": "37f727c331d63a91a9c327c879be1293ed0ab55dd459e94031436eaeb751a833",
+    "tests/analyze-wave-tree.golden.test.js": "a2ef83dd53af78a0b586785219d4f06d927bdc0cf6adb2ebca8a2472fff8ff24",
+    "tests/wave-subwave-verification.test.js": "98035b2f71173204c962e57a42eda8cbb5a49b7e3c50dc4fcb4822165ce3e456",
+    "reports/wave-book-audit/book-rule-overrides.json": "3da8a44298bbde9443bb7f535ca7b53e537b1bd7789ee496b07bddcd07a3aab4",
+    "reports/wave-book-audit/p1-validation.md": "43d4e02f7b8c757ba401efbc5d86447370213411c4b2ddfb0e16d32bf74ba7fe",
+    "openspec/changes/fix-book-audit-p1/implementation.patch": "4228c059eae9634eec49daaa3d6ae111787b10db5691065ab6ff8f3aa069aa72",
+    "openspec/changes/fix-book-audit-p1/validation-tests.log": "0866fe7c8c7bcedae272343ca8294bf59b8b476e706ad89bf381be25450a6882",
+    "README.md": "2b40c758b8d7d7cd7f12bef1215c7da1e674050718661a2a2b5a7185aee715e3",
+    "tests/fixtures/btc-usd-1d-golden.json": "78fb9ed7aa3f1cd64bae7878ac870ad24509446bd0b014295473bc1be3ea4183",
+    "openspec/changes/fix-book-audit-p1/tasks.md": "befc07fb0dede230e9eb6c7976aae72380c82581b9b31d9e273d9aeafc9eb5d2",
+    "openspec/changes/fix-book-audit-p1/design.md": "dcb66757e707bea90663f74f8876205f11255a5c6b7296fce712ee2a4f6298ae",
+    "openspec/changes/fix-book-audit-p1/specs/book-p1-wave-validation/spec.md": "b9b5a0eb1d59535dcb8b3d55f7fe8fb7b0d2393e51f13e3ff7e9377c391b6124"
+  }
+}

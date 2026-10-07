@@ -1,0 +1,367 @@
+[
+  {
+    "product": "BTC-USD",
+    "endpoint": "2026-10-03T00:00:00.000Z",
+    "liveProbeRows": 3,
+    "backgroundCalls": 1,
+    "totalMs": 3485.6379000000006,
+    "topMs": 3350.4972,
+    "dataOrigin": {
+      "timestamp": 1437350400,
+      "price": 277.98,
+      "note": "数据起点为本交易所首根 K 线，并非品种诞生；之前的历史缺失，价格 0 至首根之间视为没有细节的一段",
+      "virtualStart": {
+        "price": 0,
+        "timestamp": 1436745600
+      }
+    },
+    "families": [
+      {
+        "key": "complete-driving",
+        "legal": 4,
+        "pending": 4,
+        "excluded": 59,
+        "excludedReasons": {
+          "楔形允许4浪切入1浪，但须落在2、1浪终点之间": 40,
+          "3 须为推动浪，实测为单锯齿（EWP）": 4,
+          "1 须为推动浪或引导楔形，实测为驱动浪（EWP）": 2,
+          "推动浪的4浪不能切入1浪": 5,
+          "3浪一定不是最短的": 8
+        },
+        "p1Range": {
+          "min": {
+            "price": 64899,
+            "timestamp": 1618358400
+          },
+          "max": {
+            "price": 69000,
+            "timestamp": 1636502400
+          }
+        },
+        "p2Range": {
+          "min": {
+            "price": 15460,
+            "timestamp": 1668988800
+          },
+          "max": {
+            "price": 49050.01,
+            "timestamp": 1722816000
+          }
+        },
+        "windowRole": {
+          "positions": [
+            "高一级调整 → 高一级调整"
+          ],
+          "correction": {
+            "wave": "整个 0 → 历史最高的驱动浪",
+            "from": {
+              "price": 0,
+              "timestamp": 1436745600
+            },
+            "to": {
+              "price": 126296,
+              "timestamp": 1759708800
+            }
+          },
+          "firstSegment": true,
+          "description": "窗口下跌是顶层高一级调整的第一段"
+        }
+      },
+      {
+        "key": "fourth-wave",
+        "legal": 5,
+        "pending": 5,
+        "excluded": 82,
+        "excludedReasons": {
+          "P1 不是价格 0 至 P2 之前的最高价": 75,
+          "1 浪子浪角色违规：1 浪 须为驱动浪(五浪)，走不成干净的驱动浪(五浪)（更像调整浪(三波)）": 1,
+          "1 浪子浪角色违规：1 浪 须为驱动浪(五浪)，拆不出规则全过的驱动浪(五浪)（最接近：推动浪，自身违规）": 1,
+          "4 浪进入 1 浪区域（§1.5、§3.17）": 3,
+          "2 浪回撤不足 1 浪的 20%（§3.18.2）": 2
+        },
+        "p1Range": {
+          "min": {
+            "price": 298,
+            "timestamp": 1438041600
+          },
+          "max": {
+            "price": 19891.99,
+            "timestamp": 1513468800
+          }
+        },
+        "p2Range": {
+          "min": {
+            "price": 198.02,
+            "timestamp": 1440460800
+          },
+          "max": {
+            "price": 3128.89,
+            "timestamp": 1544832000
+          }
+        },
+        "windowRole": {
+          "positions": [
+            "4 浪 → 4 浪"
+          ],
+          "correction": {
+            "wave": "3 浪",
+            "fromRange": {
+              "min": {
+                "price": 198.02,
+                "timestamp": 1440460800
+              },
+              "max": {
+                "price": 3128.89,
+                "timestamp": 1544832000
+              }
+            },
+            "to": {
+              "price": 126296,
+              "timestamp": 1759708800
+            }
+          },
+          "firstSegment": true,
+          "description": "窗口下跌是顶层4 浪的第一段"
+        }
+      }
+    ],
+    "spikes": [
+      {
+        "index": 323,
+        "timestamp": 1465257600,
+        "endTimestamp": 1465344000,
+        "type": "L",
+        "originalPrice": 475,
+        "referencePrice": 572.96,
+        "conditions": [
+          "structure"
+        ],
+        "atr": 25.723364959851786,
+        "protrusion": 97.96000000000004,
+        "wick": 104.71000000000004,
+        "volume": 1894.22306795,
+        "medianVolume": 308.84349075499995,
+        "volumeRatio": 6.133278261165146,
+        "volumeSamples": 48,
+        "classification": "volume",
+        "usedTimeframe": "1h",
+        "volumeTimestamp": 1465308000,
+        "confidence": "normal",
+        "note": "",
+        "fallbackReason": null,
+        "clipped": false,
+        "adjustedPrice": 475
+      }
+    ]
+  },
+  {
+    "product": "ETH-USD",
+    "endpoint": "2026-10-03T00:00:00.000Z",
+    "liveProbeRows": 3,
+    "backgroundCalls": 1,
+    "totalMs": 2372.5720999999994,
+    "topMs": 2316.7502999999997,
+    "dataOrigin": {
+      "timestamp": 1463529600,
+      "price": 12.5,
+      "note": "数据起点为本交易所首根 K 线，并非品种诞生；之前的历史缺失，价格 0 至首根之间视为没有细节的一段",
+      "virtualStart": {
+        "price": 0,
+        "timestamp": 1462752000
+      }
+    },
+    "families": [
+      {
+        "key": "complete-driving",
+        "legal": 1,
+        "pending": 1,
+        "excluded": 122,
+        "excludedReasons": {
+          "3浪一定不是最短的": 8,
+          "5 须为驱动浪(五浪)，走不成干净的驱动浪(五浪)（更像调整浪(三波)）": 1,
+          "1 须为调整浪(三波)，走不成干净的调整浪(三波)（更像驱动浪(五浪)）": 1,
+          "楔形的1–3与2–4边界须向未来收敛": 2,
+          "3浪须超过1浪的终点": 82,
+          "楔形允许4浪切入1浪，但须落在2、1浪终点之间": 16,
+          "扩散终结：1-3与2-4边界向未来张开（书§4.6；详细专章未提供）": 2,
+          "4浪时间≤3浪时间2倍（书§3.21，驱动浪通用）": 1,
+          "推动浪的4浪不能切入1浪": 9
+        },
+        "p1Range": {
+          "min": {
+            "price": 3581.6,
+            "timestamp": 1648944000
+          },
+          "max": {
+            "price": 3581.6,
+            "timestamp": 1648944000
+          }
+        },
+        "p2Range": {
+          "min": {
+            "price": 879.8,
+            "timestamp": 1655510400
+          },
+          "max": {
+            "price": 879.8,
+            "timestamp": 1655510400
+          }
+        },
+        "windowRole": {
+          "positions": [
+            "高一级调整 → 高一级调整"
+          ],
+          "correction": {
+            "wave": "整个 0 → 历史最高的驱动浪",
+            "from": {
+              "price": 0,
+              "timestamp": 1462752000
+            },
+            "to": {
+              "price": 4955.9,
+              "timestamp": 1755993600
+            }
+          },
+          "firstSegment": true,
+          "description": "窗口下跌是顶层高一级调整的第一段"
+        }
+      },
+      {
+        "key": "fourth-wave",
+        "legal": 1,
+        "pending": 1,
+        "excluded": 68,
+        "excludedReasons": {
+          "P1 不是价格 0 至 P2 之前的最高价": 66,
+          "1 浪子浪角色违规：1 浪 须为驱动浪(五浪)，走不成干净的驱动浪(五浪)（更像调整浪(三波)）": 1,
+          "4 浪进入 1 浪区域（§1.5、§3.17）": 1
+        },
+        "p1Range": {
+          "min": {
+            "price": 420,
+            "timestamp": 1497225600
+          },
+          "max": {
+            "price": 420,
+            "timestamp": 1497225600
+          }
+        },
+        "p2Range": {
+          "min": {
+            "price": 0.1,
+            "timestamp": 1498003200
+          },
+          "max": {
+            "price": 0.1,
+            "timestamp": 1498003200
+          }
+        },
+        "windowRole": {
+          "positions": [
+            "4 浪 → 4 浪"
+          ],
+          "correction": {
+            "wave": "3 浪",
+            "fromRange": {
+              "min": {
+                "price": 0.1,
+                "timestamp": 1498003200
+              },
+              "max": {
+                "price": 0.1,
+                "timestamp": 1498003200
+              }
+            },
+            "to": {
+              "price": 4955.9,
+              "timestamp": 1755993600
+            }
+          },
+          "firstSegment": true,
+          "description": "窗口下跌是顶层4 浪的第一段"
+        }
+      }
+    ],
+    "spikes": [
+      {
+        "index": 270,
+        "timestamp": 1487030400,
+        "endTimestamp": 1487116800,
+        "type": "H",
+        "originalPrice": 14.7,
+        "referencePrice": 13.2,
+        "conditions": [
+          "structure"
+        ],
+        "atr": 0.6056628919052003,
+        "protrusion": 1.5,
+        "wick": 1.5599999999999987,
+        "volume": 47055.44884212,
+        "medianVolume": 4550.566008015,
+        "volumeRatio": 10.340570548639516,
+        "volumeSamples": 48,
+        "classification": "volume",
+        "usedTimeframe": "1h",
+        "volumeTimestamp": 1487095200,
+        "confidence": "normal",
+        "note": "",
+        "fallbackReason": null,
+        "clipped": false,
+        "adjustedPrice": 14.7
+      },
+      {
+        "index": 397,
+        "timestamp": 1498003200,
+        "endTimestamp": 1498089600,
+        "type": "L",
+        "originalPrice": 0.1,
+        "referencePrice": 305,
+        "conditions": [
+          "structure",
+          "price"
+        ],
+        "atr": 61.77796857844677,
+        "protrusion": 304.9,
+        "wick": 325.31,
+        "volume": 178184.34936497,
+        "medianVolume": 7247.737388955,
+        "volumeRatio": 24.58482417374964,
+        "volumeSamples": 48,
+        "classification": "volume",
+        "usedTimeframe": "1h",
+        "volumeTimestamp": 1498071600,
+        "confidence": "normal",
+        "note": "",
+        "fallbackReason": null,
+        "clipped": false,
+        "adjustedPrice": 0.1
+      },
+      {
+        "index": 581,
+        "timestamp": 1513900800,
+        "endTimestamp": 1513987200,
+        "type": "L",
+        "originalPrice": 460,
+        "referencePrice": 670,
+        "conditions": [
+          "structure"
+        ],
+        "atr": 93.46719960724613,
+        "protrusion": 210,
+        "wick": 222.11,
+        "volume": 112347.96430631,
+        "medianVolume": 12757.59429589,
+        "volumeRatio": 8.80635970235424,
+        "volumeSamples": 48,
+        "classification": "volume",
+        "usedTimeframe": "1h",
+        "volumeTimestamp": 1513951200,
+        "confidence": "normal",
+        "note": "",
+        "fallbackReason": null,
+        "clipped": false,
+        "adjustedPrice": 460
+      }
+    ]
+  }
+]

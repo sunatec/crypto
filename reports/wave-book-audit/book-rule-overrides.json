@@ -1,0 +1,19 @@
+{
+  "overrides": [
+    {
+      "id": "OV-001",
+      "source": "用户明确确认书籍勘误",
+      "bookSection": "7.1",
+      "bookParagraph": "p0024",
+      "patterns": [
+        "zigzag-double",
+        "zigzag-triple"
+      ],
+      "condition": "Y/W > 0.9",
+      "bookStrength": "hard",
+      "effectiveStrength": "guideline",
+      "implementation": "preserve",
+      "invalidateOnFailure": false
+    }
+  ]
+}
