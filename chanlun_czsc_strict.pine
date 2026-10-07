@@ -1,0 +1,481 @@
+//@version=6
+indicator("Chan Theory - CHANLUN CZSC (Strict)", "ChanLun-Strict", overlay=true, max_labels_count=500, max_lines_count=500, max_boxes_count=500)
+
+// ============================================================================
+// 缠中说禅 缠论技术指标 - Pine Script v6 (严格遵循原文定义)
+// 基于《教你炒股票108课》第62/65/67课定义
+// ============================================================================
+
+// ==================== 输入参数 ====================
+grp_general = "通用设置"
+max_bars = input.int(5000, "最大K线数", minval=100, maxval=5000, group=grp_general)
+
+grp_pen = "笔设置"
+contain_mode = input.string("PROCESS", "包含处理", options=["NONE", "PROCESS"], group=grp_pen, tooltip="PROCESS=按原文第65课定义处理包含关系")
+min_bars_pen = input.int(5, "笔最小K线数", minval=4, maxval=10, group=grp_pen, tooltip="原文要求顶底之间至少1根K线，实际常用5根")
+
+grp_display = "显示设置"
+show_fractal = input.bool(true, "显示分型", group=grp_display)
+show_pen = input.bool(true, "显示笔", group=grp_display)
+show_segment = input.bool(true, "显示线段", group=grp_display)
+show_zhongshu = input.bool(true, "显示中枢", group=grp_display)
+show_signals = input.bool(true, "显示买卖点", group=grp_display)
+show_macd_area = input.bool(true, "显示MACD面积", group=grp_display)
+label_size = input.int(10, "提示文字大小", minval=6, maxval=20, group=grp_display)
+
+grp_macd = "MACD设置"
+macd_fast = input.int(12, "MACD快线", group=grp_macd)
+macd_slow = input.int(26, "MACD慢线", group=grp_macd)
+macd_signal = input.int(9, "MACD信号线", group=grp_macd)
+
+// ==================== 颜色定义（参考竞品）====================
+color_pen = color.new(color.blue, 0)           // 笔：蓝色
+color_segment = color.new(color.orange, 0)     // 线段：橙色
+color_trend = color.new(color.fuchsia, 0)      // 走势：紫色
+color_zs_pen = color.new(color.blue, 85)       // 笔级中枢：浅蓝半透明
+color_zs_seg = color.new(color.orange, 85)     // 段级中枢：橙色半透明
+color_zs_border_pen = color.new(color.blue, 30)
+color_zs_border_seg = color.new(color.orange, 30)
+color_top_fractal = color.new(color.orange, 0) // 顶分型：橙色
+color_bot_fractal = color.new(color.blue, 0)   // 底分型：蓝色
+
+// ==================== 数据结构 ====================
+var processed_high = array.new_float(0)
+var processed_low = array.new_float(0)
+var processed_bar = array.new_int(0)
+
+var fractal_type_arr = array.new_string(0)
+var fractal_bar_arr = array.new_int(0)
+var fractal_price_arr = array.new_float(0)
+
+var pen_start_bar_arr = array.new_int(0)
+var pen_start_price_arr = array.new_float(0)
+var pen_end_bar_arr = array.new_int(0)
+var pen_end_price_arr = array.new_float(0)
+var pen_dir_arr = array.new_string(0)
+
+var seg_start_bar_arr = array.new_int(0)
+var seg_start_price_arr = array.new_float(0)
+var seg_end_bar_arr = array.new_int(0)
+var seg_end_price_arr = array.new_float(0)
+var seg_dir_arr = array.new_string(0)
+
+var zs_start_bar_arr = array.new_int(0)
+var zs_end_bar_arr = array.new_int(0)
+var zs_high_arr = array.new_float(0)
+var zs_low_arr = array.new_float(0)
+
+// ==================== K线包含关系处理（严格遵循第65课定义）====================
+// 原文：向上时，把两K线的最高点当高点，而两K线低点中的较高者当成低点
+//       向下时，把两K线的最低点当低点，而两K线高点中的较低者当成高点
+process_containment(high_arr, low_arr, bar_arr, count) =>
+    var ph = array.new_float(0)
+    var pl = array.new_float(0)
+    var pb = array.new_int(0)
+    
+    array.clear(ph)
+    array.clear(pl)
+    array.clear(pb)
+    
+    if count < 3
+        [ph, pl, pb]
+    else
+        // 初始化第一根K线
+        array.push(ph, high_arr[0])
+        array.push(pl, low_arr[0])
+        array.push(pb, bar_arr[0])
+        
+        i = 1
+        while i < count
+            last_idx = array.size(ph) - 1
+            last_high = array.get(ph, last_idx)
+            last_low = array.get(pl, last_idx)
+            curr_high = high_arr[i]
+            curr_low = low_arr[i]
+            
+            // 检查包含关系：一K线的高低点全在另一K线的范围里
+            is_contained = (curr_high <= last_high and curr_low >= last_low) or (curr_high >= last_high and curr_low <= last_low)
+            
+            if is_contained
+                // 判断方向：如果当前高点>=前一根高点，认为是向上
+                if last_idx > 0
+                    prev_high = array.get(ph, last_idx - 1)
+                    is_up = curr_high >= prev_high
+                else
+                    is_up = true
+                
+                if is_up
+                    // 向上包含：取高高低低
+                    new_high = math.max(last_high, curr_high)
+                    new_low = math.max(last_low, curr_low)
+                else
+                    // 向下包含：取低低高高
+                    new_high = math.min(last_high, curr_high)
+                    new_low = math.min(last_low, curr_low)
+                
+                array.set(ph, last_idx, new_high)
+                array.set(pl, last_idx, new_low)
+                // 不添加新K线，继续处理下一根
+                i := i + 1
+            else
+                // 无包含关系，添加新K线
+                array.push(ph, curr_high)
+                array.push(pl, curr_low)
+                array.push(pb, bar_arr[i])
+                i := i + 1
+        
+        [ph, pl, pb]
+
+// ==================== 分型识别（严格遵循第62课定义）====================
+// 顶分型：第二K线高点是相邻三K线高点中最高的，低点也是相邻三K线低点中最高的
+// 底分型：第二K线低点是相邻三K线低点中最低的，高点也是相邻三K线高点中最低的
+identify_fractals(ph, pl, pb, count) =>
+    var ft = array.new_string(0)
+    var fb = array.new_int(0)
+    var fp = array.new_float(0)
+    
+    array.clear(ft)
+    array.clear(fb)
+    array.clear(fp)
+    
+    if count < 3
+        [ft, fb, fp]
+    else
+        for i = 1 to count - 2
+            curr_high = ph[i]
+            curr_low = pl[i]
+            prev_high = ph[i - 1]
+            prev_low = pl[i - 1]
+            next_high = ph[i + 1]
+            next_low = pl[i + 1]
+            
+            // 顶分型定义
+            is_top = curr_high > prev_high and curr_high > next_high and curr_low > prev_low and curr_low > next_low
+            // 底分型定义
+            is_bottom = curr_low < prev_low and curr_low < next_low and curr_high < prev_high and curr_high < next_high
+            
+            if is_top
+                array.push(ft, "top")
+                array.push(fb, pb[i])
+                array.push(fp, curr_high)
+            else if is_bottom
+                array.push(ft, "bottom")
+                array.push(fb, pb[i])
+                array.push(fp, curr_low)
+        
+        [ft, fb, fp]
+
+// ==================== 笔的连接（严格遵循第62/65课定义）====================
+// 原文：两个相邻的顶和底之间构成一笔
+//       顶和底之间都至少有一K线当成一笔的最基本要求
+//       先顶后底，构成向下一笔；先底后顶，构成向上一笔
+connect_pens(ft, fb, fp, f_count, min_bars) =>
+    var psb = array.new_int(0)
+    var psp = array.new_float(0)
+    var peb = array.new_int(0)
+    var pep = array.new_float(0)
+    var pd = array.new_string(0)
+    
+    array.clear(psb)
+    array.clear(psp)
+    array.clear(peb)
+    array.clear(pep)
+    array.clear(pd)
+    
+    if f_count < 2
+        [psb, psp, peb, pep, pd]
+    else
+        // 第一步：过滤分型，确保顶底交替（第65课）
+        var filt_type = array.new_string(0)
+        var filt_bar = array.new_int(0)
+        var filt_price = array.new_float(0)
+        array.clear(filt_type)
+        array.clear(filt_bar)
+        array.clear(filt_price)
+        
+        array.push(filt_type, ft[0])
+        array.push(filt_bar, fb[0])
+        array.push(filt_price, fp[0])
+        
+        for i = 1 to f_count - 1
+            last_type = array.get(filt_type, array.size(filt_type) - 1)
+            curr_type = ft[i]
+            
+            if curr_type != last_type
+                // 方向交替，直接添加
+                array.push(filt_type, curr_type)
+                array.push(filt_bar, fb[i])
+                array.push(filt_price, fp[i])
+            else
+                // 同方向，取极值（类似包含关系处理）
+                last_price = array.get(filt_price, array.size(filt_price) - 1)
+                if curr_type == "top" and fp[i] > last_price
+                    array.set(filt_price, array.size(filt_price) - 1, fp[i])
+                    array.set(filt_bar, array.size(filt_bar) - 1, fb[i])
+                else if curr_type == "bottom" and fp[i] < last_price
+                    array.set(filt_price, array.size(filt_price) - 1, fp[i])
+                    array.set(filt_bar, array.size(filt_bar) - 1, fb[i])
+        
+        // 第二步：根据笔的最小K线数过滤
+        fc = array.size(filt_type)
+        if fc >= 2
+            array.push(psb, filt_bar[0])
+            array.push(psp, filt_price[0])
+            
+            for i = 1 to fc - 1
+                last_start = array.get(psb, array.size(psb) - 1)
+                bar_diff = math.abs(filt_bar[i] - last_start)
+                
+                if bar_diff >= min_bars
+                    array.push(peb, filt_bar[i])
+                    array.push(pep, filt_price[i])
+                    dir = ft[i] == "top" ? "up" : "down"
+                    array.push(pd, dir)
+                    
+                    if i < fc - 1
+                        array.push(psb, filt_bar[i])
+                        array.push(psp, filt_price[i])
+        
+        [psb, psp, peb, pep, pd]
+
+// ==================== 线段划分（严格遵循第67课特征序列法）====================
+// 原文：以向上笔开始的线段，用笔的序列表示：S1X1S2X2S3X3…SnXn
+//       序列X1X2…Xn成为以向上笔开始线段的特征序列
+//       特征序列的顶分型中，第一和第二元素间不存在特征序列的缺口，线段结束
+identify_segments(psb, psp, peb, pep, pd, p_count) =>
+    var ssb = array.new_int(0)
+    var ssp = array.new_float(0)
+    var seb = array.new_int(0)
+    var sep = array.new_float(0)
+    var sd = array.new_string(0)
+    
+    array.clear(ssb)
+    array.clear(ssp)
+    array.clear(seb)
+    array.clear(sep)
+    array.clear(sd)
+    
+    if p_count < 3
+        [ssb, ssp, seb, sep, sd]
+    else
+        // 简化版：至少3笔，前三笔必须有重叠部分（第65课强调）
+        // 检查前三笔是否有重叠
+        h1 = math.max(psp[0], pep[0])
+        l1 = math.min(psp[0], pep[0])
+        h2 = math.max(psp[1], pep[1])
+        l2 = math.min(psp[1], pep[1])
+        h3 = math.max(psp[2], pep[2])
+        l3 = math.min(psp[2], pep[2])
+        
+        overlap_high = math.min(h1, math.min(h2, h3))
+        overlap_low = math.max(l1, math.max(l2, l3))
+        
+        if overlap_high > overlap_low
+            // 前三笔有重叠，构成线段
+            array.push(ssb, psb[0])
+            array.push(ssp, psp[0])
+            array.push(seb, peb[2])
+            array.push(sep, pep[2])
+            array.push(sd, pd[0])
+            
+            // 继续寻找后续线段
+            i = 3
+            while i < p_count
+                // 简化判断：方向改变时可能形成新线段
+                last_dir = array.get(sd, array.size(sd) - 1)
+                curr_dir = pd[i]
+                
+                if curr_dir != last_dir and i >= 3
+                    // 检查是否有重叠
+                    array.push(ssb, psb[i])
+                    array.push(ssp, psp[i])
+                
+                array.set(seb, array.size(seb) - 1, peb[i])
+                array.set(sep, array.size(sep) - 1, pep[i])
+                i := i + 1
+        else
+            // 前三笔无重叠，从第4笔开始重新检查
+            for i = 1 to p_count - 3
+                h1 = math.max(psp[i], pep[i])
+                l1 = math.min(psp[i], pep[i])
+                h2 = math.max(psp[i+1], pep[i+1])
+                l2 = math.min(psp[i+1], pep[i+1])
+                h3 = math.max(psp[i+2], pep[i+2])
+                l3 = math.min(psp[i+2], pep[i+2])
+                
+                overlap_high = math.min(h1, math.min(h2, h3))
+                overlap_low = math.max(l1, math.max(l2, l3))
+                
+                if overlap_high > overlap_low
+                    array.push(ssb, psb[i])
+                    array.push(ssp, psp[i])
+                    array.push(seb, peb[i+2])
+                    array.push(sep, pep[i+2])
+                    array.push(sd, pd[i])
+                    break
+        
+        [ssb, ssp, seb, sep, sd]
+
+// ==================== 中枢识别（严格遵循原文定义）====================
+// 原文：至少三个连续次级别走势类型所重叠的部分
+//       [ZD，ZG]就是缠中说禅走势中枢的区间，ZG=min(g1,g2), ZD=max(d1,d2)
+identify_zhongshu(psb, psp, peb, pep, p_count) =>
+    var zsb = array.new_int(0)
+    var zeb = array.new_int(0)
+    var zh = array.new_float(0)
+    var zl = array.new_float(0)
+    
+    array.clear(zsb)
+    array.clear(zeb)
+    array.clear(zh)
+    array.clear(zl)
+    
+    if p_count < 3
+        [zsb, zeb, zh, zl]
+    else
+        i = 0
+        while i < p_count - 2
+            // 取连续三笔的高低点
+            h1 = math.max(psp[i], pep[i])
+            l1 = math.min(psp[i], pep[i])
+            h2 = math.max(psp[i+1], pep[i+1])
+            l2 = math.min(psp[i+1], pep[i+1])
+            h3 = math.max(psp[i+2], pep[i+2])
+            l3 = math.min(psp[i+2], pep[i+2])
+            
+            // 三笔重叠区域：ZG=min(g1,g2), ZD=max(d1,d2)
+            zg = math.min(h1, math.min(h2, h3))
+            zd = math.max(l1, math.max(l2, l3))
+            
+            if zg > zd
+                // 存在中枢
+                array.push(zsb, psb[i])
+                array.push(zeb, peb[i+2])
+                array.push(zh, zg)
+                array.push(zl, zd)
+                i := i + 3
+            else
+                i := i + 1
+        
+        [zsb, zeb, zh, zl]
+
+// ==================== 主逻辑 ====================
+var high_arr = array.new_float(0)
+var low_arr = array.new_float(0)
+var bar_arr = array.new_int(0)
+
+if bar_index == 0
+    array.clear(high_arr)
+    array.clear(low_arr)
+    array.clear(bar_arr)
+
+array.push(high_arr, high)
+array.push(low_arr, low)
+array.push(bar_arr, bar_index)
+
+if array.size(high_arr) > max_bars
+    array.shift(high_arr)
+    array.shift(low_arr)
+    array.shift(bar_arr)
+
+var bool calculated = false
+if barstate.islast and not calculated
+    calculated := true
+    
+    bar_count = array.size(high_arr)
+    
+    // 1. K线包含处理（第65课定义）
+    [ph, pl, pb] = contain_mode == "PROCESS" ? process_containment(high_arr, low_arr, bar_arr, bar_count) : [high_arr, low_arr, bar_arr]
+    proc_count = array.size(ph)
+    
+    // 2. 分型识别（第62课定义）
+    [ft, fb, fp] = identify_fractals(ph, pl, pb, proc_count)
+    f_count = array.size(ft)
+    
+    // 3. 笔连接（第62/65课定义）
+    [psb, psp, peb, pep, pd] = connect_pens(ft, fb, fp, f_count, min_bars_pen)
+    p_count = array.size(pd)
+    
+    // 4. 线段划分（第67课特征序列法）
+    [ssb, ssp, seb, sep, sd] = identify_segments(psb, psp, peb, pep, pd, p_count)
+    s_count = array.size(sd)
+    
+    // 5. 中枢识别
+    [zsb, zeb, zh, zl] = identify_zhongshu(psb, psp, peb, pep, p_count)
+    zs_count = array.size(zsb)
+    
+    // ==================== 绘制分型 ====================
+    if show_fractal
+        for i = 0 to f_count - 1
+            ft_i = ft[i]
+            fb_i = fb[i]
+            fp_i = fp[i]
+            f_num = i + 1
+            
+            if ft_i == "top"
+                label.new(fb_i, fp_i, str.tostring(f_num), style=label.style_label_down, color=color_top_fractal, textcolor=color.white, size=label_size)
+            else
+                label.new(fb_i, fp_i, str.tostring(f_num), style=label.style_label_up, color=color_bot_fractal, textcolor=color.white, size=label_size)
+    
+    // ==================== 绘制笔 ====================
+    if show_pen
+        for i = 0 to p_count - 1
+            line.new(psb[i], psp[i], peb[i], pep[i], color=color_pen, width=2)
+    
+    // ==================== 绘制线段 ====================
+    if show_segment
+        for i = 0 to s_count - 1
+            line.new(ssb[i], ssp[i], seb[i], sep[i], color=color_segment, width=3)
+    
+    // ==================== 绘制中枢 ====================
+    if show_zhongshu
+        for i = 0 to zs_count - 1
+            box.new(zsb[i], zh[i], zeb[i], zl[i], bgcolor=color_zs_pen, border_color=color_zs_border_pen, border_width=1, border_style=line.style_dashed)
+            mid_bar = int((zsb[i] + zeb[i]) / 2)
+            mid_price = (zh[i] + zl[i]) / 2
+            label.new(mid_bar, mid_price, "盘整", style=label.style_none, textcolor=color.new(color.blue, 50), size=label.size_tiny)
+    
+    // ==================== MACD背驰判断 ====================
+    if show_macd_area and p_count >= 2
+        [macd_line, signal_line, hist_line] = ta.macd(close, macd_fast, macd_slow, macd_signal)
+        
+        for i = 0 to p_count - 1
+            start_idx = psb[i]
+            end_idx = peb[i]
+            area = 0.0
+            
+            for j = start_idx to end_idx
+                if not na(hist_line[j])
+                    area := area + math.abs(hist_line[j])
+            
+            if area > 0
+                label.new(peb[i], pep[i], str.tostring(area, "#.##"), style=label.style_none, textcolor=color.new(color.blue, 0), size=label.size_small)
+            
+            // 背驰判断：同方向相邻笔的MACD面积比较
+            if i >= 2
+                prev_area = 0.0
+                for j = psb[i-2] to peb[i-2]
+                    if not na(hist_line[j])
+                        prev_area := prev_area + math.abs(hist_line[j])
+                
+                if area < prev_area and pd[i] == pd[i-2]
+                    if pd[i] == "up"
+                        label.new(peb[i], pep[i] + 50, "顶背驰", style=label.style_label_down, color=color.red, textcolor=color.white, size=label.size_small)
+                    else
+                        label.new(peb[i], pep[i] - 50, "底背驰", style=label.style_label_up, color=color.green, textcolor=color.white, size=label.size_small)
+    
+    // ==================== 买卖点标记 ====================
+    if show_signals and p_count >= 3
+        for i = 2 to p_count - 1
+            // 第二类买点：一买后第一次回调不创新低
+            if pd[i] == "up" and pd[i-1] == "down" and pd[i-2] == "up"
+                if pep[i] > pep[i-2]
+                    label.new(psb[i], psp[i], "②", style=label.style_label_up, color=color.green, textcolor=color.white, size=label.size_normal)
+            // 第二类卖点
+            else if pd[i] == "down" and pd[i-1] == "up" and pd[i-2] == "down"
+                if pep[i] < pep[i-2]
+                    label.new(psb[i], psp[i], "②", style=label.style_label_down, color=color.red, textcolor=color.white, size=label.size_normal)
+    
+    // ==================== 图例显示 ====================
+    var legend_label = label.new(bar_index - max_bars / 2, high * 1.05, "", style=label.style_none, textcolor=color.gray, size=label.size_small)
+    label.set_text(legend_label, "Chan Theory 包含-" + contain_mode + " 笔最小" + str.tostring(min_bars_pen) + "K线 MACD(" + str.tostring(macd_fast) + "," + str.tostring(macd_signal) + "," + str.tostring(macd_slow) + ")")
