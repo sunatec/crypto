@@ -12,3 +12,7 @@ BTC-USD_*.json
 .omc/state/
 .omc/sessions/
 .omc/project-memory.json
+
+# Python 缓存与一次性探针脚本
+__pycache__/
+_probe_*.js
