@@ -127,6 +127,12 @@ node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+
 - `<product>_<tf>_<start>_<end>_tree.json` — 计数树 + 进行中腿 + 排名 + 跨级别序列化
 - `<product>_<tf>_<start>_<end>_tree.md` — 波浪分析报告（唯一 Markdown 输出）
 
+「当前高点回撤研判」列明高点、结构低点、前段上涨及内部最大回撤的价格与日期，并比较本次回撤幅度。日线及以上按 UTC 日期展示；下钻得到的子级别点带时分与 UTC。结构低点是幅度的量度终点，可能与当前边缘价不同。
+
+按书§3.3，升级线 = 高点 − 前段上涨内部最大回撤幅。未超过时，在「续涨条件」后单列升级线；已超过时在首段注明已跌破；无可比回撤时不显示。Z 目标低于此线的档位会标注「低于升级线」。Z 在升级线上方走完仍看转涨；跌破则按同源的轴③主选身份说明后续（X→Y 下跌、B→C 下跌、推动 3 浪→高一级调整后再涨），不同源或无主选时回退为重新研判。本节 W-X-Y-Z 为子浪级数法，升级后仅作参考。
+
+JSON `inProgressTree.currentPullback.narrative` 保存锚点（`level.extreme/rallyStart/maxInternal.fromTs/toTs`、`structureLow{price,timestamp,tf}`）、可用时的 `upgradeLine`、Z 各档 `belowUpgradeLine` 和跌破结局 `afterUpgrade{basis,lean,text}`。主目标带另记低端、高端及 0.236 破位档的升级线标记。既有 `currentPullback` 平级字段与 `maxInternal.from/to` 价格字段保留。
+
 ### 参数说明
 
 - `--product` 代码，默认 `BTC-USD`。按格式自动识别市场：`BTC-USD`→加密货币（Coinbase）、6 位数字如 `600519`→A 股（东方财富，前复权）、纯字母如 `AAPL`→美股（Twelve Data，按拆股复权）
@@ -152,6 +158,14 @@ node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+
 阶梯并列前段幅度、窗口回撤比、内部最大回撤与 §3.3「可假设」结论的价差/百分比口径；百分比回撤比为 `ln(S/E) / ln(S/前段起点)`，前段幅度和内部回撤按各自起始价计算百分比。两种结论不同会注明「口径不一致，书未规定口径」。背景与主分析共用扎针检测和量能分类：背景只截取疑似乌龙针，保留有量扎针，两者逐条披露；背景处理不改窗口 K 线。背景**只作证据，不改变数法评分、主选或父级候选排序**。
 
 可用 `node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05 --background off` 跳过全部历史请求。股票只声明数浪范围，并注明未生成大级别背景。
+
+### 顶层读法（自价格 0，周线）
+
+背景可用时，轴①在背景之后增加顶层读法，JSON 新增 `topLevel`。复用背景已截取疑似乌龙针的全部日线，保留并披露有量扎针，聚合周线后在首根之前加入价格 0 虚拟 K 线。数据起点为本交易所首根 K 线，并非品种诞生；之前的历史缺失，价格 0 至首根之间视为没有细节的一段。
+
+按 §3.12 只枚举两类驱动读法：0 → 历史最高为完整推动/楔形，以及历史最高为 3 浪终点、4 浪进行中。调整浪不列入。以价格 0 为起点的那一浪，§3.16 价格运动百分比按 +∞ 计算（从 0 涨到任何正价的极限），规则「3 浪不能同时小于 1、5 浪」随之化为「3 浪不得小于 5 浪」照常判定。类别表的合规数指硬规则未被否定的读法，待定数是其中子浪角色或未完成规则仍待验证的读法，不代表完整确认。4 浪进行中的「3 浪非最短」须待 5 浪完成，因此始终待定。表中同时保留排除数与首条原因计数、P1/P2 价格和日期范围、P1 最高的代表读法、窗口所在顶层浪、修正段、父级身份映射和失效价位分档（触及 P1 即排除）。窗口早于历史最高时如实说明跨浪，不直接称为 4 浪第一段。
+
+这里只看最大一级，尚未枚举嵌套、2/3 浪进行中及楔形 4 浪进行中变体；切分与递归沿用引擎的搜索上限，排除仅针对本次枚举的候选。顶层结果**只作证据，不改变评分、主选或父级候选排序**。`--background off`、股票或背景失败时，`topLevel` 标为不可用并注明原因，不新增行情请求。
 
 ### 扎针检测（书 §3.15）
 
@@ -184,10 +198,22 @@ node analyze-wave-tree.js --product MU --tf 1d --start 2026-06-23 --apikey  013a
 node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now
 ```
 
+快速看一眼，不做小时线验证、不拉全部历史：
+
+```bash
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05 --verify-tf off --background off
+```
+
 给引擎评判自己的数法（例如作者的 W-X-Y 双锯齿读法）：
 
 ```bash
 node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2025-10-05T00:00:00+08:00 --end now --count "126296,80524.65,97963.62,57717.55"
+```
+
+报告提示"此数法依赖该扎针"时，加上 --ignore-thin-spikes 再跑一次做对照：
+
+```bash
+node analyze-wave-tree.js --product BTC-USD --tf 1d --start 2017-04-01 --end 2017-05-01 --ignore-thin-spikes
 ```
 
 指定输出文件名：

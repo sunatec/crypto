@@ -66,7 +66,8 @@ test('两口径数字可复核，结论一致与不一致均披露；等于最�
   assert.equal(l.amplitude.percentage, 10);
   assert.equal(l.retrace.absolute, 0.8);
   assert.equal(l.retrace.percentage, Math.log(220 / 60) / Math.log(220 / 20));
-  assert.deepEqual(l.maxInternalRetrace.absolute, { depth: 100, from: 150, to: 50 });
+  assert.deepEqual(l.maxInternalRetrace.absolute, { depth: 100, from: 150, to: 50,
+    fromTs: MONDAY + 7 * 7 * DAY, toTs: MONDAY + 8 * 7 * DAY });
   assert.equal(l.maxInternalRetrace.percentage.ratio, 95 / 120);
   assert.equal(l.section33.absoluteExceeds, true);
   assert.equal(l.section33.percentageExceeds, false);
@@ -173,7 +174,7 @@ test('报告范围、轴①背景、不可用原因，已验证父级首位仍�
   assert.ok(md.indexOf('数浪范围') < md.indexOf('<details>'));
   assert.ok(md.indexOf('## 大级别背景') > md.indexOf('## 在更大结构里的角色'));
   assert.ok(md.indexOf('## 大级别背景') < md.indexOf('# 轴②'));
-  assert.match(md, /大级别背景见轴①/);
+  assert.doesNotMatch(md, /大级别背景见轴①/);
   assert.match(md, /口径不一致/);
   const verified = { ...tree, primary: { ...tree.primary, score: { ...tree.primary.score, verificationStatus: 'verified' } } };
   const pd = E.deriveParentDegree(verified);
@@ -212,12 +213,15 @@ global.fetch = async () => ({ok:true, json:async () => ({quote_increment:'0.01'}
     const json = JSON.parse(await fs.readFile(out, 'utf8'));
     assert.equal(json.scope.topDown, false);
     assert.equal(json.background.available, mode === 'on');
+    assert.equal(json.topLevel.available, mode === 'on');
     if (mode === 'failed') assert.match(json.background.reason, /simulated background network failure/);
     delete json.scope;
     delete json.background;
+    delete json.topLevel;
     const md = (await fs.readFile(report, 'utf8'))
       .replace(/^> 数浪范围：.*\n/gm, '')
       .replace(/^大级别背景(?:不可用|：).*\n/gm, '')
+      .replace(/^- .*，顶层：.*\n/gm, '')
       .replace(/## 大级别背景（周线\/月线）[\s\S]*?(?=\n---\n)/, '')
       .replace(/\n{3,}/g, '\n\n');
     results.push({ json, md });

@@ -1,0 +1,194 @@
+{
+  "source": "Coinbase cached daily candles; original report ending 2026-10-05T14:56:25.702Z",
+  "tf": "1d",
+  "pivots": [
+    {
+      "index": 269,
+      "type": "L",
+      "price": 57717.55,
+      "timestamp": 1782864000
+    },
+    {
+      "index": 278,
+      "type": "H",
+      "price": 64669.42,
+      "timestamp": 1783641600
+    },
+    {
+      "index": 281,
+      "type": "L",
+      "price": 61750.9,
+      "timestamp": 1783900800
+    },
+    {
+      "index": 283,
+      "type": "H",
+      "price": 65559.5,
+      "timestamp": 1784073600
+    },
+    {
+      "index": 285,
+      "type": "L",
+      "price": 62452.52,
+      "timestamp": 1784246400
+    },
+    {
+      "index": 289,
+      "type": "H",
+      "price": 66923.95,
+      "timestamp": 1784592000
+    },
+    {
+      "index": 292,
+      "type": "L",
+      "price": 63641,
+      "timestamp": 1784851200
+    },
+    {
+      "index": 295,
+      "type": "H",
+      "price": 65705.08,
+      "timestamp": 1785110400
+    },
+    {
+      "index": 296,
+      "type": "L",
+      "price": 62645.39,
+      "timestamp": 1785196800
+    },
+    {
+      "index": 299,
+      "type": "H",
+      "price": 65360,
+      "timestamp": 1785456000
+    },
+    {
+      "index": 300,
+      "type": "L",
+      "price": 62209.81,
+      "timestamp": 1785542400
+    },
+    {
+      "index": 308,
+      "type": "H",
+      "price": 65426,
+      "timestamp": 1786233600
+    },
+    {
+      "index": 313,
+      "type": "L",
+      "price": 62468.21,
+      "timestamp": 1786665600
+    },
+    {
+      "index": 320,
+      "type": "H",
+      "price": 79500,
+      "timestamp": 1787270400
+    },
+    {
+      "index": 322,
+      "type": "L",
+      "price": 75538.12,
+      "timestamp": 1787443200
+    },
+    {
+      "index": 324,
+      "type": "H",
+      "price": 81265.3,
+      "timestamp": 1787616000
+    },
+    {
+      "index": 325,
+      "type": "L",
+      "price": 77601.02,
+      "timestamp": 1787702400
+    },
+    {
+      "index": 327,
+      "type": "H",
+      "price": 81479.5,
+      "timestamp": 1787875200
+    },
+    {
+      "index": 332,
+      "type": "L",
+      "price": 76219.18,
+      "timestamp": 1788307200
+    },
+    {
+      "index": 333,
+      "type": "H",
+      "price": 82283,
+      "timestamp": 1788393600
+    },
+    {
+      "index": 338,
+      "type": "L",
+      "price": 77589,
+      "timestamp": 1788825600
+    },
+    {
+      "index": 341,
+      "type": "H",
+      "price": 79852.22,
+      "timestamp": 1789084800
+    },
+    {
+      "index": 345,
+      "type": "L",
+      "price": 74887.5,
+      "timestamp": 1789430400
+    },
+    {
+      "index": 349,
+      "type": "H",
+      "price": 81925,
+      "timestamp": 1789776000
+    },
+    {
+      "index": 350,
+      "type": "L",
+      "price": 80085,
+      "timestamp": 1789862400
+    },
+    {
+      "index": 351,
+      "type": "H",
+      "price": 87397,
+      "timestamp": 1789948800
+    },
+    {
+      "index": 354,
+      "type": "L",
+      "price": 82708.96,
+      "timestamp": 1790208000
+    },
+    {
+      "index": 355,
+      "type": "H",
+      "price": 85250,
+      "timestamp": 1790294400
+    },
+    {
+      "index": 358,
+      "type": "L",
+      "price": 82510.37,
+      "timestamp": 1790553600
+    },
+    {
+      "index": 362,
+      "type": "H",
+      "price": 87249.05,
+      "timestamp": 1790899200
+    },
+    {
+      "index": 363,
+      "type": "L",
+      "price": 84425.07,
+      "timestamp": 1790985600,
+      "provisional": true,
+      "boundary": "end"
+    }
+  ]
+}

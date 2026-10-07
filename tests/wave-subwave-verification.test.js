@@ -150,6 +150,7 @@ test('B parent identity uses B targets and following C in every report section',
   assert.equal(tree.assessment.bounceHyp.lean,'b');
   const brief=E.renderBrief({product:'TEST',timeframe:'1d'},tree);
   assert.ok(brief.includes('主选为 B 浪'));
+  assert.ok(brief.includes('整体下跌为主选 A 浪'), '大局研判的父级身份应与第 2 条 B 浪同源');
   assert.ok(brief.includes('主选 B；'));
   assert.ok(brief.includes('C 浪下跌'));
   assert.ok(!brief.includes('主选 X；'));

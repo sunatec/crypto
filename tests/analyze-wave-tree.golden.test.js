@@ -22,6 +22,40 @@ function buildGoldenTree() {
   return { tree: t.buildCountTree(fine, candles, { maxDepth: 5, beamK: 3 }), candles };
 }
 
+test('金标准：BTC 2026-10-05 回撤锚点、173% XX、升级线与轴③结局一致，主树不变', async () => {
+  const fixture = require('./fixtures/btc-usd-pullback-20261005.json');
+  const fine = fixture.pivots;
+  const high = fine.find(p => p.price === 87397);
+  const bounceHyp = t.bounceHypotheses([{ price: 126296 }, fine[0]], 'corrective', 87397);
+  bounceHyp.xx.aftermath = 'Y 浪下跌';
+  bounceHyp.parentKey = 'combination';
+  const tree = {
+    pricePrecision: 2,
+    assessment: { bounceHyp, invalidation: 57717.55, structDir: 'down' },
+    inProgressStruct: { structUp: true, swingExtreme: high, rallyStart: fine[0], invalidation: 57717.55,
+      pullback: { from: high, to: fine.at(-1), currentLegDir: 'down' } },
+  };
+  const before = JSON.stringify({ fine, assessment: tree.assessment });
+  const nr = await t.enrichCurrentPullback(tree, { product: 'BTC-USD', mainTf: '1d', finePivots: fine, candles: [] },
+    async () => { throw new Error('日线完成段足够，不应下钻'); });
+  assert.equal(nr.structureLine, 82510.37);
+  assert.equal(nr.level.depth, 4886.63);
+  assert.equal(nr.level.maxInternal.depth, 7395.5);
+  assert.equal(nr.upgradeLine, 80001.5);
+  assert.equal(nr.combinationReading.legs.XX.to, 87249.05);
+  assert.equal(Math.round(nr.combinationReading.xxRetracePct * 100), 173);
+  assert.match(nr.text, /87397\*\*（2026-09-21）/);
+  assert.match(nr.text, /79770\.74（低于升级线 80001\.5）/);
+  assert.match(nr.text, /X 已在 87397 完成，接下来看 Y 浪下跌/);
+  assert.equal(nr.afterUpgrade.basis, 'axis3');
+  const report = t.renderAxis3(tree, 2);
+  assert.ok(report.includes(nr.text), '报告重渲必须传入同源轴③主选');
+  assert.equal(JSON.stringify({ fine, assessment: tree.assessment }), before);
+  const serialized = JSON.parse(JSON.stringify(nr));
+  assert.equal(serialized.structureLow.timestamp, Date.parse('2026-09-28') / 1000);
+  assert.equal(serialized.zwaveTargets.breakPath.extreme[0].belowUpgradeLine, true);
+});
+
 test('金标准：fixture 为 314 根 1d 蜡烛', () => {
   assert.equal(rawCandles.length, 314);
 });
@@ -174,6 +208,66 @@ test('金标准：报告以 4 条简报开头，失效点=assessment.invalidatio
   assert.ok(md.includes(`3. 核心生死线（失效点）：${inv}`), `失效点应为 ${inv}`);
   assert.ok(md.includes('警惕 Y 浪下跌'), '主选 XX 时应提示警惕 Y 浪下跌');
   assert.ok(md.includes('非投资建议'), '应有免责声明');
+  assert.ok(md.includes('1. 大局研判：126296 → 57717.55 的整体下跌为主选 W 浪，已经完成，结构为单锯齿 Zigzag 5-3-5（子浪待验证）。'), '大局研判应写父级身份与完整形态名');
+  assert.ok(md.includes('备选：推动浪（大级别之字形 A 浪，现反弹为 B 浪）'), '备选应注明大级别身份');
+  assert.ok(!md.includes('大级别背景见轴①') && !md.includes('触底看反弹/转势'), '旧指引与转势措辞应删除');
+});
+
+test('金标准：大局研判随框架/合法性/父级身份变化', () => {
+  const { tree } = buildGoldenTree();
+  const meta = { product: 'BTC-USD', timeframe: '1d' };
+  const line1 = (tr) => t.renderBrief(meta, tr).split('\n').find((l) => l.startsWith('1. 大局研判'));
+  // 框架B末浪在建胜出：不说已经完成
+  const b = line1({ ...tree, primary: { ...tree.primary, score: { ...tree.primary.score, severe: 9 } }, alternates: [] });
+  assert.ok(b.includes('为主选 W 浪，结构为单锯齿 Zigzag 5-3-5，但末浪可能仍在进行'), b);
+  // 无合法数法：不写父级身份
+  const bad = line1({ ...tree, primary: { ...tree.primary, score: { ...tree.primary.score, tier1: 1 } }, alternates: [], frameworkB: null });
+  assert.ok(bad.includes('违规最轻的读法是单锯齿 Zigzag 5-3-5') && !bad.includes('为主选'), bad);
+  // 反弹走成五浪 → 父级主选新推动浪；驱动类备选不得写成"之前的调整"
+  const imp = t.renderBrief(meta, { ...tree, inProgressStruct: { ...tree.inProgressStruct, swingChar: 'driving' } });
+  assert.ok(imp.includes('整体下跌为主选新推动浪之前的熊市调整，已经完成'), imp);
+  assert.ok(imp.includes('备选：推动浪；'), '驱动类备选在新推动浪父级下不写身份');
+});
+
+test('金标准：顶层位置待定的楔形备选按父级 A 浪定名为引导楔形', () => {
+  const { tree } = buildGoldenTree();
+  const alt = tree.alternates[0];
+  const wedge = { ...alt, patternId: 'diagonal-leading', manual: { ...alt.manual, label: '驱动浪（楔形 Diagonal，位置待定）' } };
+  const brief = t.renderBrief({ product: 'BTC-USD', timeframe: '1d' }, { ...tree, alternates: [wedge], frameworkB: null });
+  assert.ok(brief.includes('备选：引导楔形（大级别之字形 A 浪，现反弹为 B 浪）'), brief);
+});
+
+test('金标准：进行中段终点标为最近枢轴（带日期），现价取最新收盘；越过摆动极值时不再说回调中', () => {
+  const { tree } = buildGoldenTree();
+  const ips = tree.inProgressStruct;
+  const pt = ips.pullback.to, ext = ips.swingExtreme.price;
+  const when = new Date(pt.timestamp * 1000 + 8 * 3600 * 1000).toISOString().slice(0, 10); // UTC+8 日期
+  const kind = pt.type === 'H' ? '最近高点' : '最近低点';
+  const meta = { product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(), generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: 314, lastClose: (pt.price + ext) / 2 };
+  const md = t.renderMarkdownReport(meta, tree);
+  const P = t.formatPrice;
+  assert.ok(md.includes(`目前处于回调/震荡中（${kind} ${P(pt.price)} @ ${when}，现 ${P(meta.lastClose)}）`), '简报第 2 条应分开标最近枢轴与现价');
+  assert.ok(md.includes(`→ ${P(pt.price)}（${kind} @ ${when}）**；现价 ${P(meta.lastClose)}`), '轴②开头应标最近枢轴并补现价');
+  assert.ok(md.includes(`→ ${kind} ${P(pt.price)} @ ${when}，进行中）`), '轴②内部导读应标最近枢轴');
+  assert.ok(!md.includes('（现在）'), '不应再把最近枢轴称为现在');
+  const beyond = t.renderBrief({ ...meta, lastClose: ext * 1.01 }, tree);
+  assert.ok(beyond.includes(`现 ${P(ext * 1.01)} 已越过 ${P(ext)}，回调或已结束、上冲在延伸。`), beyond);
+  assert.ok(!beyond.includes('震荡中'), '越过极值后不应再写回调/震荡中');
+});
+
+test('金标准：摆动段内部三波列出各腿（括号记号低一级），三处同名', () => {
+  const { tree } = buildGoldenTree();
+  const md = t.renderMarkdownReport({ product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(), generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: 314 }, tree);
+  const up = tree.inProgressStruct.upTree.primary;
+  const P = t.formatPrice;
+  assert.ok(md.includes('内部三波(偏调整)，单锯齿，待确认）'), '轴① ② 应写摆动段形态');
+  const legs = md.split('\n').find((l) => l.startsWith('内部各腿（括号记号比轴②的浪号低一级）：'));
+  assert.ok(legs, '应列出摆动段各腿');
+  ['a', 'b', 'c'].forEach((lab, i) => assert.ok(legs.includes(`(${lab}) ${P(up.points[i].price)} → ${P(up.points[i + 1].price)}`), `${lab} 腿区间应出现`));
+  assert.ok(legs.includes('(b) 64669.42 → 62452.52 平台形 ⏳子浪待验证'), legs);
+  assert.ok(md.includes('内部走出偏调整的 3 波形态（单锯齿，待确认）'), '简报第 2 条应带形态名');
+  assert.ok(md.includes('内部性格：**三波(偏调整，单锯齿，待确认)**'), '轴②开头应带形态名');
+  assert.ok(/→ 回撤中（未确认）：[\d.]+ → 最近(高|低)点 /.test(md) && !md.includes('→ 现回撤中（未确认）'), '轴①回撤行应标最近枢轴');
 });
 
 test('金标准：元信息与数浪范围紧随标题、位于简报 4 条之前', () => {
