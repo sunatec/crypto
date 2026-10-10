@@ -1458,6 +1458,37 @@ function segmentations(segFine, n) {
   return results;
 }
 
+// 楔形专用枚举（diagonal-candidate-enumeration）：楔形的 3、4、5 浪是小幅收敛摆动，常被 segmentations 的
+// 显著性短名单整体漏掉。这里不看显著性，按价格几何直接枚举 6 点读法，只用所有楔形共有的普适条件预筛：
+// 2 浪不越过 0 点、3 浪越过 1 浪终点、4 浪回撤小于 3 浪（终点不越过 3 浪起点）。
+// 收敛、4 浪可否切入 1 浪等楔形专有判断留给形态自带规则集（scoreCandidate），避免预筛与规则分叉。
+const DIAG_ENUM_MAX_PIVOTS = 60; // 内部枢轴超过它不枚举（组合量级失控）；沿用原搜索并保持 searchLimited
+const DIAG_ENUM_KEEP = 12; // 枚举结果经基础分筛选后保留的读法数上限
+const DIAGONAL_PATTERN_IDS = ['diagonal-leading', 'diagonal-ending', 'diagonal-ending-expanding'];
+function diagonalSegmentations(segFine, direction) {
+  const n = segFine.length;
+  if (n < 6 || n - 2 > DIAG_ENUM_MAX_PIVOTS) return [];
+  const seq = seqOf(direction, 6);
+  const s = direction === 'up' ? 1 : -1;
+  const px = (i) => s * segFine[i].price;
+  if (segFine[0].type !== seq[0] || segFine[n - 1].type !== seq[5]) return [];
+  const out = [];
+  for (let i1 = 1; i1 < n - 1; i1 += 1) {
+    if (segFine[i1].type !== seq[1]) continue;
+    for (let i2 = i1 + 1; i2 < n - 1; i2 += 1) {
+      if (segFine[i2].type !== seq[2] || px(i2) <= px(0)) continue; // 2 浪不越过 0 点
+      for (let i3 = i2 + 1; i3 < n - 1; i3 += 1) {
+        if (segFine[i3].type !== seq[3] || px(i3) <= px(i1)) continue; // 3 浪越过 1 浪终点
+        for (let i4 = i3 + 1; i4 < n - 1; i4 += 1) {
+          if (segFine[i4].type !== seq[4] || px(i4) <= px(i2)) continue; // 4 浪回撤小于 3 浪
+          out.push([segFine[0], segFine[i1], segFine[i2], segFine[i3], segFine[i4], segFine[n - 1]]);
+        }
+      }
+    }
+  }
+  return out;
+}
+
 function sliceFine(segFine, a, b) {
   const lo = Math.min(a.index, b.index);
   const hi = Math.max(a.index, b.index);
@@ -1864,6 +1895,16 @@ function resolveParentPathRules(score,pts,children,direction,candles) {
   return {...score,pendingRules,failed,tier1,tier2,severe:failed.filter(f=>f.overshoot>SEVERE_OVERSHOOT).length,penalized:tier1>0};
 }
 
+const SCOPE_RANK={'1w':4,'1d':3,'4h':2,'1h':1};
+function coarsestBoundedScope(scopes) {
+  let best=null;
+  for(const scope of scopes) {
+    if(!scope || scope.kind!=='bounded') continue;
+    if(!best || (SCOPE_RANK[scope.finestTimeframe]||0)>(SCOPE_RANK[best.finestTimeframe]||0)) best=scope;
+  }
+  return best;
+}
+
 function scopedVerification(score,ev,manual,boundary) {
   if(score.tier1>0 || ev.violations>0 || ev.evidence.some(e=>e.status==='invalid')) return 'invalid';
   if(manual.sourceIncomplete || score.pendingRules && score.pendingRules.length || score.deferred && score.deferred.length) return 'pending';
@@ -1878,7 +1919,7 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
   // 子腿区间（如两种分段都会切出「97963→60001」），legCharacter 会对它重复递归。
   // 用「区间起止索引 + 允许角色 + 深度」为键缓存，命中直接复用，同 run 内跨候选共享。
   const cacheKey = opts.cache
-    ? `${segFine[0].index}|${segFine[segFine.length - 1].index}|${allowedRoles.join(',')}|${depth}|${opts.triangleEContext ? opts.triangleEContext.depth : ''}|${!!opts.forbidTriangle}|${opts.finestResolution || ''}|${opts.timeframe || ''}|${opts.maxDepth}|${opts.beamK}|${!!opts.evidenceMode}`
+    ? `${segFine[0].index}|${segFine[segFine.length - 1].index}|${allowedRoles.join(',')}|${depth}|${opts.triangleEContext ? opts.triangleEContext.depth : ''}|${!!opts.forbidTriangle}|${opts.finestResolution || ''}|${opts.timeframe || ''}|${opts.maxDepth}|${opts.beamK}|${!!opts.evidenceMode}|${!!opts.diagonalEnumeration}`
     : null;
   if (cacheKey && opts.cache.has(cacheKey)) return opts.cache.get(cacheKey);
 
@@ -1903,6 +1944,8 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
   // 两者会以同一点位重复出现——只保留引导楔形一条，标「位置待定」（enforce-strict-wave-grammar）
   const positionless = depth === 0 && (allowedRoles.includes(DRIVING) || !!opts.positionlessTop);
   const lite = [];
+  const diagonalEnum = depth === 0 && !!opts.diagonalEnumeration;
+  const diagonalStats = [];
   for (const pat of PATTERNS) {
     if (!allowedRoles.some((r) => patternMatchesRole(pat, r))) continue;
     if (opts.forbidTriangle && pat.id==='triangle') continue;
@@ -1913,15 +1956,15 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
 
     // 「区间 × 形态」的切分与基础分与所需角色无关：同一段腿按 corrective / zigzag / simple-corrective
     // 等不同角色各拆一次时共享（enforce-strict-wave-grammar 引入细化角色后的性能配套）
-    const liteKey = opts.cache ? `lite|${start.index}|${end.index}|${pat.id}` : null;
+    const liteKey = opts.cache ? `lite|${start.index}|${end.index}|${pat.id}|${diagonalEnum ? 'diag' : ''}` : null;
     let entries = liteKey ? opts.cache.get(liteKey) : null;
     if (!entries) {
       entries = [];
-      for (const pts of segmentations(segFine, pat.points)) {
-        if (!pts.every((p, i) => p.type === seq[i])) continue;
-        if (!macroAlternates(pts)) continue; // 快筛：淘汰"下降的连接浪"（lower-high 当上冲目标）
+      const liteEntry = (pts) => {
+        if (!pts.every((p, i) => p.type === seq[i])) return null;
+        if (!macroAlternates(pts)) return null; // 快筛：淘汰"下降的连接浪"（lower-high 当上冲目标）
         // §3.15/§4.7：正统终点可不同于极值；但腿内越过自身起点受限（驱动腿禁止，调整腿须 b'<2a'）。
-        if (!legsRespectOrigin(pts, segFine, pat)) continue;
+        if (!legsRespectOrigin(pts, segFine, pat)) return null;
 
         const measures = computeMeasures(pts, direction, candles);
         // 书 3.16 特例：三角形的运行总量按「最长子浪高低差」口径纠正
@@ -1933,10 +1976,34 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
         const manual=pat.build(direction);
         const score = applyInProgressRuleGate({points:pts,direction,manual,score:scoreCandidate(ctx,manual)},candles);
         score.incompleteness = computeIncompleteness(pts); // 同样便宜（只看 pts），提前计入前沿筛选
-        entries.push({ pat, pts, measures, score });
+        return { pat, pts, measures, score };
+      };
+      const ptsKey = (pts) => pts.map((p) => p.index).join(',');
+      const seen = new Set();
+      for (const pts of segmentations(segFine, pat.points)) {
+        seen.add(ptsKey(pts));
+        const entry = liteEntry(pts);
+        if (entry) entries.push(entry);
+      }
+      // 楔形补充枚举：只在验证窗口根（depth 0）且显式开启时做；合格（tier1=0）者按基础分取前 DIAG_ENUM_KEEP
+      if (diagonalEnum && DIAGONAL_PATTERN_IDS.includes(pat.id)) {
+        const stat = { considered: 0, kept: 0, skipped: segFine.length - 2 > DIAG_ENUM_MAX_PIVOTS };
+        const extra = [];
+        for (const pts of diagonalSegmentations(segFine, direction)) {
+          if (seen.has(ptsKey(pts))) continue;
+          stat.considered += 1;
+          const entry = liteEntry(pts);
+          if (entry && entry.score.tier1 === 0) extra.push(entry);
+        }
+        extra.sort((a, b) => compareCandidates(a.score, b.score) || (ptsKey(a.pts) < ptsKey(b.pts) ? -1 : 1));
+        const kept = extra.slice(0, DIAG_ENUM_KEEP);
+        stat.kept = kept.length;
+        entries.push(...kept);
+        entries.diagonalEnumeration = stat;
       }
       if (liteKey) opts.cache.set(liteKey, entries);
     }
+    if (entries.diagonalEnumeration) diagonalStats.push({ patternId: pat.id, ...entries.diagonalEnumeration });
     lite.push(...entries);
   }
 
@@ -2015,7 +2082,8 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
       provenRoles:ev.provenRoles, requiredRoles:ev.requiredRoles,
       pendingRatio:1-ev.provenRoles/ev.requiredRoles,
       verificationStatus:scopedVerification(score,ev,manual,boundary) };
-    const inheritedScope=ev.evidence.map(e=>e.verificationScope).find(scope=>scope && scope.kind==='bounded') || children.map(c=>c.primary && c.primary.verificationScope).find(scope=>scope && scope.kind==='bounded');
+    // 逐级验证下各腿可能截止于不同周期（有的 4h、有的 1h）：父级取最粗的一档，报告不夸大成更细的验证范围。
+    const inheritedScope=coarsestBoundedScope([...ev.evidence.map(e=>e.verificationScope),...children.map(c=>c.primary && c.primary.verificationScope)]);
     candidate.verificationScope={kind:boundary || children.some(c=>c.primary && c.primary.verificationScope && c.primary.verificationScope.kind==='bounded') || ev.evidence.some(e=>e.verificationScope && e.verificationScope.kind==='bounded') ? 'bounded' : 'recursive',
       finestTimeframe:opts.finestResolution || inheritedScope && inheritedScope.finestTimeframe || null,policy:opts.finestResolution?'book-3.23-resolution-boundary':inheritedScope && inheritedScope.policy || null,
       exemptedRoles:boundary?pat.childRoles.map((role,i)=>({role,legLabel:waveLabelsFor(pat.id)[i]})):[],
@@ -2040,6 +2108,7 @@ function decompose(segFine, candles, allowedRoles, depth, opts) {
     primary: ranked[0],
     alternates: isTop ? ranked.slice(1) : ranked.slice(1, opts.beamK),
   };
+  if (diagonalEnum) Object.defineProperty(result, 'diagonalEnumeration', { value: diagonalStats, enumerable: false });
   if (cacheKey) opts.cache.set(cacheKey, result);
   return result;
 }
@@ -5260,6 +5329,9 @@ module.exports = {
   significanceRank,
   significantShortlist,
   indexCombinations,
+  diagonalSegmentations,
+  DIAG_ENUM_MAX_PIVOTS,
+  DIAG_ENUM_KEEP,
   computeIncompleteness,
   legProportionViolated,
   buildCounterTrendFrameworkB,

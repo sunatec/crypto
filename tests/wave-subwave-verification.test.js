@@ -19,13 +19,14 @@ test('daily endpoint buckets locate actual hours, fix prices, share role-window 
   const a=v.evaluate(from,to,'impulse|ending');
   assert.equal(a.located.fromTimestamp,base+2*3600);
   assert.equal(a.located.toTimestamp,base+44*3600);
-  // 最细周期为 1h 时只验 1h：4h 不是分辨率边界，必然 pending、也不能终止验证。
-  assert.deepEqual(a.attempts.map(x=>x.timeframe),['1h']);
-  assert.equal(a.attempts[0].structure.points[0].price,100);
-  assert.equal(a.attempts[0].structure.points.at(-1).price,30);
-  assert.equal(a.attempts[0].structure.timeframe,'1h');
+  // 最细周期为 1h 时逐级验证：4h 拆不出（pending）后继续 1h。
+  assert.deepEqual(a.attempts.map(x=>x.timeframe),['4h','1h']);
+  const finest=a.attempts.at(-1);
+  assert.equal(finest.structure.points[0].price,100);
+  assert.equal(finest.structure.points.at(-1).price,30);
+  assert.equal(finest.structure.timeframe,'1h');
   const only4h=createSubwaveVerifier(E,{hourly:sampleHours(),finestTf:'4h'}).evaluate(from,to,'impulse|ending');
-  assert.deepEqual(only4h.attempts.map(x=>x.timeframe),['4h'],'--verify-tf 4h 时验 4h');
+  assert.deepEqual(only4h.attempts.map(x=>x.timeframe),['4h'],'--verify-tf 4h 时链止于 4h');
   assert.equal(v.evaluate({...from,index:99},{...to,index:999},'impulse|ending'),a);
   assert.equal(v.stats.windows,1);assert.equal(v.stats.cacheHits,1);
 });
@@ -39,11 +40,11 @@ test('small daily pivots trigger intraday role verification in actual explicit-c
   const candles=E.transformCandles(sampleHours(),E.TIMEFRAMES['1d']).map((c,index)=>({...c,index}));
   const verifier=createSubwaveVerifier(E,{hourly:sampleHours()});
   const result=E.evaluateLegRole([from,to],'impulse',candles,0,{maxDepth:5,beamK:3,cache:new Map(),timeframe:'1d',evidenceMode:true,verification:verifier},'a');
-  assert.equal(result.evidence.attempts.length,1);
+  assert.deepEqual(result.evidence.attempts.map(x=>x.timeframe),['4h','1h']);
   assert.equal(result.node.isLeaf,false);
-  assert.equal(result.node.primary.timeframe,'1h');
-  assert.equal(result.node.primary.patternId,result.evidence.attempts[0].structure.patternId);
-  assert.equal(result.evidence.attempts[0].structure.patternId,'impulse-strict');
+  assert.equal(result.node.primary.timeframe,'1h','无截止档时采用最后尝试档的拆解');
+  assert.equal(result.node.primary.patternId,result.evidence.attempts.at(-1).structure.patternId);
+  assert.equal(result.evidence.attempts.at(-1).structure.patternId,'impulse-strict');
   assert.equal(result.violates,false);
   assert.equal(result.evidence.status,'pending','unresolved internal subroles must propagate');
 });
@@ -132,7 +133,7 @@ test('failed hourly page keeps other pages; covered windows still get intraday e
   assert.equal(got.length,36);assert.equal(got.fetchErrors.length,1);
   const laterFailure=sampleHours();laterFailure.fetchErrors=[{fromTimestamp:base+3*day}];
   const evidence=createSubwaveVerifier(E,{hourly:laterFailure,error:'one later page failed'}).evaluate(from,to,'impulse');
-  assert.equal(evidence.attempts.length,1);
+  assert.deepEqual(evidence.attempts.map(x=>x.timeframe),['4h','1h']);
 });
 
 test('limited noisy intraday search cannot conclusively reject a position role',()=>{
@@ -181,7 +182,7 @@ test('short exchange outage bounded by observed parent extremes is interpolated 
   const r=v.evaluate(from,to,'impulse|ending');
   assert.equal(v.stats.hourlyGaps.length,1);assert.equal(v.stats.hourlyGaps[0].filled,true);
   assert.equal(r.dataGaps.length,1);assert.equal(r.dataGaps[0].hours,5);
-  assert.equal(r.attempts.length,1,'跨断档的窗口仍进入 1h 验证');
+  assert.deepEqual(r.attempts.map(x=>x.timeframe),['4h','1h'],'跨断档的窗口仍逐级进入 4h、1h 验证');
   const strict=createSubwaveVerifier(E,{hourly:holed}).evaluate(from,to,'impulse|ending');
   assert.match(strict.reason,/断档.*不插补/,'没有母级 K 线约束时不插补');
 });
@@ -200,4 +201,97 @@ test('pivots on interpolated bars are dropped and alternation is restored',()=>{
   const candles=[{},{},{filled:true},{},{}];
   const out=dropFilledPivots([{index:0,type:'H',price:10},{index:2,type:'L',price:5},{index:3,type:'H',price:12},{index:4,type:'L',price:6}],candles);
   assert.deepEqual(out.map(p=>p.type+p.price),['H12','L6'],'补线上的 L 剔除后，相邻两个 H 取更高者');
+});
+
+// 逐级下钻：1d/1w → 4h → 1h；首个拆得出的档截止。
+// 14 根 4h 线各为一个枢轴，构成 a(五浪 6 点)-b(4 点)-c(五浪 6 点) 的下跌单锯齿 100→30；
+// 4 小时线上 a、b、c 各自可再拆，因此「调整浪」角色在 4h 即可 verified；「推动浪」角色在 4h 拆不出。
+const zigzagLevels=[[100,99,99,99],90,95,75,80,60,70,65,80,70,75,50,55,[31,31,31,30]];
+function zigzagHours(padBefore=0,padAfter=0){
+  // 4h 线 0..13 为结构；之后补 31 直到 padAfter 小时，之前补 98 共 padBefore 小时
+  const out=[];const push=v=>out.push({timestamp:base+out.length*3600,open:v,close:v,high:v,low:v,volume:1});
+  for(let i=0;i<padBefore;i+=1) push(98);
+  zigzagLevels.forEach(l=>{for(let k=0;k<4;k+=1) push(Array.isArray(l)?l[k]:l);});
+  while(out.length<padBefore+56+padAfter) push(31);
+  return out;
+}
+const zzFrom={timestamp:base,index:0,type:'H',price:100};
+const zzTo={timestamp:base+2*day,index:1,type:'L',price:30};
+test('cascade chain order: 1d/1h, 1d/4h, 4h/1h, 1w/1h, 1h/1h',()=>{
+  const hours=zigzagHours(0,16);
+  const chain=(sourceTf,finestTf,f,t,h=hours)=>createSubwaveVerifier(E,{hourly:h,finestTf}).evaluate(f,t,'impulse|ending',sourceTf).attempts.map(a=>a.timeframe);
+  assert.deepEqual(chain('1d','1h',zzFrom,zzTo),['4h','1h']);
+  assert.deepEqual(chain('1d','4h',zzFrom,zzTo),['4h']);
+  // 4h 来源：端点落在 4 小时桶内，只剩 1h 一档
+  assert.deepEqual(chain('4h','1h',{...zzFrom},{timestamp:base+13*14400,index:1,type:'L',price:30}),['1h']);
+  // 周线来源：结构放在第 0 周后段、低点落进第 1 周；周线桶需完整 168 小时
+  const weekly=zigzagHours(140,336-140-56);
+  const wFrom={timestamp:base,index:0,type:'H',price:100},wTo={timestamp:base+7*day,index:1,type:'L',price:30};
+  assert.equal(weekly.length,336);
+  assert.deepEqual(chain('1w','1h',wFrom,wTo,weekly),['4h','1h']);
+  // 1h 来源已是最细：不下钻
+  const none=createSubwaveVerifier(E,{hourly:hours}).evaluate({timestamp:base,index:0,type:'H',price:100},{timestamp:base+55*3600,index:1,type:'L',price:30},'impulse|ending','1h');
+  assert.deepEqual(none.attempts,[]);assert.equal(none.status,'pending');
+});
+test('cascade cuts off at 4h when the role is decomposable there, and records the scope as 4h',()=>{
+  const v=createSubwaveVerifier(E,{hourly:zigzagHours(0,16)});
+  const r=v.evaluate(zzFrom,zzTo,'corrective');
+  assert.deepEqual(r.attempts.map(a=>a.timeframe),['4h'],'4h 截止后不再验 1h');
+  assert.equal(r.status,'verified');
+  assert.equal(r.attempts[0].status,'verified');
+  assert.equal(r.verificationScope.kind,'bounded');
+  assert.equal(r.verificationScope.finestTimeframe,'4h');
+  assert.match(r.reason,/4h 验证（逐级截止）/);
+  assert.equal(r.adoptedNode.primary.timeframe,'4h');
+});
+test('cascade continues to 1h when 4h cannot decompose the role, and stays pending without proof',()=>{
+  const r=createSubwaveVerifier(E,{hourly:zigzagHours(0,16)}).evaluate(zzFrom,zzTo,'impulse|ending');
+  assert.deepEqual(r.attempts.map(a=>a.timeframe),['4h','1h']);
+  assert.notEqual(r.attempts[0].status,'verified');
+  assert.equal(r.verificationScope.finestTimeframe,'1h');
+  assert.equal(r.adoptedNode.primary.timeframe,'1h','无截止时采用最后尝试档');
+  assert.equal(r.status,'pending');
+  // 非最细档的 invalid 不终止验证：即便 4h 完整搜索判 invalid，也要继续 1h
+  const hours=sampleHours().map((c,i)=>i>=5 && i<=40?{...c,open:i%2?85:75,close:i%2?85:75,high:i%2?85:75,low:i%2?85:75}:c);
+  const noisy=createSubwaveVerifier(E,{hourly:hours}).evaluate(from,to,'impulse');
+  assert.ok(noisy.attempts.some(a=>a.timeframe==='1h'));
+  assert.equal(noisy.attempts.at(-1).searchLimited,true);
+  assert.equal(noisy.status,'pending','1h 搜索受限时为 pending');
+});
+test('evaluateLegRole adopts the 4h cutoff node and does not flag the leg',()=>{
+  const hours=zigzagHours(0,16);
+  const candles=E.transformCandles(hours,E.TIMEFRAMES['1d']).map((c,index)=>({...c,index}));
+  const legFine=[{...zzFrom,index:0},{...zzTo,index:2}];
+  const opts={maxDepth:5,beamK:3,cache:new Map(),timeframe:'1d',evidenceMode:true};
+  const plain=E.evaluateLegRole(legFine,'corrective',candles,0,opts,'x');
+  assert.equal(plain.node.isLeaf,true,'没有较小周期证据时，日线两点腿只是末级叶子');
+  const r=E.evaluateLegRole(legFine,'corrective',candles,0,{...opts,verification:createSubwaveVerifier(E,{hourly:hours})},'x');
+  assert.equal(r.violates,false);
+  assert.equal(r.evidence.status,'verified');
+  assert.deepEqual(r.evidence.attempts.map(a=>a.timeframe),['4h']);
+  assert.equal(r.node.isLeaf,false);
+  assert.equal(r.node.primary.timeframe,'4h');
+  assert.equal(r.evidence.adoptedTimeframe,'4h');
+});
+
+// 父级验证范围取各腿截止档中最粗的一档：只要有一条腿只证到 4h，就不能写成「验证至 1h」。
+test('parent verification scope takes the coarsest leg cutoff and the report says so',()=>{
+  const points=[100,80,90,50,70,30].map((price,index)=>({price,index,type:index%2?'L':'H',timestamp:base+index*day}));
+  const candles=points.map(p=>({timestamp:p.timestamp,index:p.index,open:p.price,close:p.price,high:p.price,low:p.price,volume:1}));
+  const cutoff=finest=>({status:'verified',reason:'mock',attempts:[],provenRoles:1,requiredRoles:1,verificationScope:{kind:'bounded',finestTimeframe:finest,policy:'book-3.23-resolution-boundary'}});
+  // 浪 1 截至 1h（排在前），浪 3 截至 4h；旧的「取第一个」会得到 1h
+  const verification={evaluate:(from)=>cutoff(from.price===90?'4h':'1h')};
+  const tree=E.decompose(points,candles,['impulse'],0,{beamK:3,maxDepth:2,cache:new Map(),evidenceMode:true,timeframe:'1d',verification});
+  assert.equal(tree.primary.verificationScope.kind,'bounded');
+  assert.equal(tree.primary.verificationScope.finestTimeframe,'4h');
+  const allFine=createTreeWith('1h');
+  assert.equal(allFine.primary.verificationScope.finestTimeframe,'1h','全部腿截至 1h 时仍为 1h');
+  const full=E.buildCountTree(E.anchorBoundaryExtremes(candles,E.detectPivots(candles,1,{})),candles,{maxDepth:2,beamK:3,evidenceMode:true,timeframe:'1d',verification});
+  const text=E.renderMarkdownReport({product:'TEST',timeframe:'1d',source:'mock'},full);
+  assert.equal(full.primary.verificationScope.finestTimeframe,'4h');
+  assert.ok(text.includes('验证范围截至4小时线'));
+  assert.ok(!text.includes('验证范围截至1小时线'));
+  function createTreeWith(tf){
+    return E.decompose(points,candles,['impulse'],0,{beamK:3,maxDepth:2,cache:new Map(),evidenceMode:true,timeframe:'1d',verification:{evaluate:()=>cutoff(tf)}});
+  }
 });

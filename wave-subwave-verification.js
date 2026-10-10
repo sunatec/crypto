@@ -31,6 +31,8 @@ async function fetchSharedHourly(fetchPage, product, start, end, pageHours = 298
 // 现有小时线里——缺口内价格因此被夹在已观测区间内。补线按前收→后开线性插值、高低相同，标 filled；
 // 端点定位只认真实 K 线，落在补线上的枢轴剔除。无母级 K 线、缺口过长或母级极值可能落在缺口里则不补。
 const MAX_GAP_HOURS = 6;
+// 子腿验证的下钻周期链（由粗到细）；4h 与 1h 共用同一份小时行情，4h 由小时线聚合。
+const CASCADE = ['4h', '1h'];
 function fillShortGaps(hours, parentCandles, parentWidth, tolerance) {
   const gaps = [];
   if (!hours.length) return { series: hours, gaps };
@@ -107,7 +109,9 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
     const start = {type:from.type,price:from.price,index:0,timestamp:candles[0].timestamp};
     const finish = {type:to.type,price:to.price,index:candles.length-1,timestamp:candles.at(-1).timestamp};
     // Crop by actual event hours before aggregation, then pin the supplied prices.
-    fine = [start,...fine.filter(p => p.index>0 && p.index<finish.index),finish];
+    // 端点钉死后，原始序列末位枢轴不再是「末端未确认」：清掉 anchorBoundaryExtremes 留下的 provisional/boundary 标记，
+    // 否则含它的末腿永远过不了分辨率边界检查（atResolutionBoundary 拒绝含 provisional 点的腿）。
+    fine = [start,...fine.filter(p => p.index>0 && p.index<finish.index).map(({provisional,boundary,...p}) => p),finish];
     const entry = { candles, fine, start, finish, cache: new Map() };
     prepared.set(key, entry);
     if (prepared.size > PREPARED_MAX) prepared.delete(prepared.keys().next().value);
@@ -164,26 +168,35 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
       return save('小时窗口缺失 K 线'+(detail ? '（'+detail+'；缺口过长或母级极值可能落在缺口内，不插补）' : '')+'，不能完成结构验证');
     }
     // A bar containing both endpoints has no observable intrabar event order.
-    // 只在声明的最细周期上验证：非最细周期不是分辨率边界，子角色没有证据来源，结果必然是 pending；
-    // 其 invalid 也不终止验证。中间周期（如最细为 1h 时的 4h）对结论没有贡献，只耗时（实测占 58%）。
-    const lowerFrames = (sourceTf === '1d' || sourceTf === '1w' || (sourceTf === '4h' && finestTf === '1h')) && finestTf !== sourceTf ? [finestTf] : [];
+    // 周期链逐级下钻（4h → 1h，取比来源细、且不细于声明最细周期的部分）：每一档都当作临时分辨率边界，
+    // 该档拆得出（verified）即截止，不再验更细周期；拆不出（含 invalid、搜索受限）继续下一档，
+    // 只有最细一档的完整搜索失败才判 invalid。
+    const lowerFrames = CASCADE.filter(tf => seconds[tf] < seconds[sourceTf] && seconds[tf] >= seconds[finestTf]);
     if (!lowerFrames.length) return save('已到配置的最细验证周期');
+    const adopt = node => Object.defineProperty(evidence,'adoptedNode',{value:node,writable:true,enumerable:false,configurable:true});
     for (const tf of lowerFrames) {
+      adopt(undefined); // 采用节点 = 截止档的拆解；无截止时为最后尝试档的拆解
       const { candles, fine, start, finish, cache } = prepare(window, tf, from, to);
       if (start.index === finish.index) { evidence.attempts.push({timeframe:tf,status:'pending',reason:'端点位于同一根 K 线，事件顺序不明'}); continue; }
       // expandAllTop:false：验证窗口只按 beam 前沿展开，不像主图顶层那样全量展开（否则全年 1h 验证 OOM）。
-      const node = engine.decompose(fine,candles,[role],0,{beamK:3,maxDepth:3,cache,evidenceMode:true,timeframe:tf,finestResolution:tf===finestTf?finestTf:null,expandAllTop:false});
+      const node = engine.decompose(fine,candles,[role],0,{beamK:3,maxDepth:3,cache,evidenceMode:true,timeframe:tf,finestResolution:tf,expandAllTop:false,diagonalEnumeration:tf==='4h'});
       const best = node.primary;
       // 采用树会挂进母级候选、跨候选长期驻留：只留主选与 beam 内备选，避免上千个窗口各自保留整棵候选池。
-      if(best) Object.defineProperty(evidence,'adoptedNode',{value:{...node,alternates:(node.alternates||[]).slice(0,2)},writable:true,enumerable:false,configurable:true});
+      if(best) adopt({...node,alternates:(node.alternates||[]).slice(0,2)});
       const searchLimited = fine.length > 8 || node.searchLimited;
       const status = !best ? 'pending' : best.score.tier1 === 0 ? best.score.verificationStatus : searchLimited ? 'pending' : 'invalid';
       evidence.provenRoles=best ? best.score.provenRoles || 0 : 0;
       evidence.requiredRoles=best ? best.score.requiredRoles || 1 : 1;
       evidence.verificationScope=best && best.verificationScope || null;
       const attempt = {timeframe:tf,status:status || 'pending',pivotCount:fine.length,searchLimited:!!searchLimited,provenRoles:evidence.provenRoles,requiredRoles:evidence.requiredRoles,patternId:best && best.patternId,violations:best ? engine.candidateViolations(best) : [],pendingRoles:best ? best.score.pendingRoles : 1,structure:engine.serializeTree(node)};
+      if (node.diagonalEnumeration) attempt.diagonalEnumeration = {considered:node.diagonalEnumeration.reduce((n,x)=>n+x.considered,0),kept:node.diagonalEnumeration.reduce((n,x)=>n+x.kept,0),skipped:node.diagonalEnumeration.some(x=>x.skipped)};
       evidence.attempts.push(attempt);
-      if (status === 'verified') { evidence.status='verified'; const filledHours=(evidence.dataGaps||[]).filter(g=>g.filled).reduce((n,g)=>n+g.hours,0); return save('所需角色及直接子结构已在声明的最细分辨率范围验证；边界以下子角色未证明'+(filledHours?'；窗口内 '+filledHours+' 小时交易所断档按母级极值约束插补':'')); }
+      if (status === 'verified') {
+        evidence.status='verified';
+        const filledHours=(evidence.dataGaps||[]).filter(g=>g.filled).reduce((n,g)=>n+g.hours,0);
+        const gapNote=filledHours?'；窗口内 '+filledHours+' 小时交易所断档按母级极值约束插补':'';
+        return save((tf === finestTf ? '所需角色及直接子结构已在声明的最细分辨率范围验证；边界以下子角色未证明' : `所需角色及直接子结构已在 ${tf} 验证（逐级截止）；更细周期未检查`)+gapNote);
+      }
       if (tf === finestTf && status === 'invalid') { evidence.status='invalid'; return save('最细周期的完整候选搜索不满足位置角色'); }
     }
     return save('已检查较小周期，子角色或搜索覆盖仍待验证');
