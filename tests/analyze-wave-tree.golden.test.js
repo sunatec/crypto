@@ -261,7 +261,7 @@ test('金标准：摆动段内部三波列出各腿（括号记号低一级）�
   const up = tree.inProgressStruct.upTree.primary;
   const P = t.formatPrice;
   assert.ok(md.includes('内部三波(偏调整)，单锯齿，待确认）'), '轴① ② 应写摆动段形态');
-  const legs = md.split('\n').find((l) => l.startsWith('内部各腿（括号记号比轴②的浪号低一级）：'));
+  const legs = md.split('\n').find((l) => l.startsWith('内部各腿（括号记号为摆动段 '));
   assert.ok(legs, '应列出摆动段各腿');
   ['a', 'b', 'c'].forEach((lab, i) => assert.ok(legs.includes(`(${lab}) ${P(up.points[i].price)} → ${P(up.points[i + 1].price)}`), `${lab} 腿区间应出现`));
   assert.ok(legs.includes('(b) 64669.42 → 62452.52 平台形 ⏳子浪待验证'), legs);

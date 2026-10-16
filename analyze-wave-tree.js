@@ -3983,7 +3983,7 @@ function renderRankedCounts(tree, pricePrecision, spikes = [], meta = null) {
     const pat = swingPatternCn(ips);
     L.push(`**② 当前在哪：** ${n(ips.invalidation)} → 摆动极值 **${n(ips.swingExtreme.price)}**（${charCn}${pat ? `，${pat}` : ''}）`);
     const legsCn = swingLegsCn(ips, n);
-    if (legsCn) L.push(`内部各腿（括号记号比轴②的浪号低一级）：${legsCn}`);
+    if (legsCn) L.push(`内部各腿（括号记号为摆动段 ${n(ips.invalidation)}→${n(ips.swingExtreme.price)} 的内部子浪）：${legsCn}`);
     if (ips.pullback) {
       const pb = ips.pullback;
       const tg = pb.fibTargets.map((t) => `${t.mult}×→${n(t.price)}`).join(', ');
@@ -4029,7 +4029,11 @@ function renderRankedCounts(tree, pricePrecision, spikes = [], meta = null) {
     // 完整点位序列（塞不进表格单元格），逐条列出带 altCharacter 的备选（可能不止一条）。
     alts.forEach((c, i) => {
       if (!c.altCharacter) return;
-      L.push(`> 备选${i + 1} 对侧点位：${altPointsLine(c.altCharacter)}`);
+      const a = c.altCharacter;
+      const waveWord = (ch) => (ch === 'corrective' ? '三波' : '五波');
+      const legStr = `${n(a.legFrom.price)}→${n(a.legTo.price)}`;
+      L.push(`> 备选${i + 1} 对侧点位：${altPointsLine(a)}`);
+      L.push(`> ↳ 大白话：备选${i + 1}的最后一段 ${legStr} 也能换个数法——现在算作${waveWord(a.shownCharacter)}（${shortLabel(a.shownLabel)}），上面这串点位是改算作${waveWord(a.character)}（${shortLabel(a.label)}）时的拐点。两种数法都不违规，谁对要等后续走势才能定。`);
     });
     if (alts.some((c) => c.altCharacter)) L.push('');
   }
@@ -4729,7 +4733,7 @@ function swingPatternCn(ips) {
   return `${patternShortName(up.patternId)}，${up.score.verificationStatus === 'verified' ? '已验证' : '待确认'}`;
 }
 
-// 摆动段各腿：括号记号表示比轴②的浪号低一级，附内部形态与子浪验证状态。
+// 摆动段各腿：括号记号表示摆动段的内部子浪（级别随轴②读法而定，故不写死相对级别），附内部形态与子浪验证状态。
 function swingLegsCn(ips, n) {
   const up = ips && ips.upTree && ips.upTree.primary;
   if (!up || !up.points || up.points.length < 2) return null;
