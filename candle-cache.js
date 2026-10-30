@@ -95,8 +95,10 @@ async function writeCache(filename, cache) {
  * cacheDir/transport/now are injectable for isolated tests.
  */
 async function getCandles(product, granularity, start, end, options = {}) {
-  if (!/^[A-Za-z0-9_-]+$/.test(product)) throw new Error('Invalid Coinbase product');
-  if (!GRANULARITIES.includes(granularity)) throw new Error('Unsupported Coinbase granularity');
+  if (!/^[A-Za-z0-9_-]+$/.test(product)) throw new Error('Invalid candle product');
+  const source = options.source || 'coinbase';
+  const granularities = options.granularities || GRANULARITIES;
+  if (!granularities.includes(granularity)) throw new Error('Unsupported candle granularity');
   const allHistory = start == null || start === 'all';
   const discover = allHistory || options.discoverListing;
   if (discover && granularity !== 86400) throw new Error('Listing discovery requires daily candles');
@@ -104,7 +106,7 @@ async function getCandles(product, granularity, start, end, options = {}) {
   const endTs = seconds(end);
   const startTs = allHistory ? 0 : seconds(start);
   if (![now, startTs, endTs].every(Number.isFinite) || startTs > endTs) throw new Error('Invalid candle time range');
-  const filename = path.join(options.cacheDir || CACHE_DIR, 'candles', 'coinbase', product, `${granularity}.json`);
+  const filename = path.join(options.cacheDir || CACHE_DIR, 'candles', source, product, `${granularity}.json`);
   const cache = await readCache(filename, product, granularity, options.warn || console.warn);
   // A previously open (or not yet settled) candle must never survive on disk or count as coverage.
   const settle = options.settleSeconds ?? SETTLE_SECONDS;
