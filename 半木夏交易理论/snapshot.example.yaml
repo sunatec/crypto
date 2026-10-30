@@ -1,0 +1,23 @@
+# 手册 §20.2 账户快照的子集，供 `node advise.js BTC-USD --snapshot 半木夏交易理论/snapshot.example.yaml` 使用。
+# 数值是示例，请换成自己交易所的真实快照；不知道的字段留 null，报告里会标"待查"。
+snapshot_at: '2026-10-30 12:00:00 +08:00'
+exchange: Binance
+product: USDⓈ-M Futures
+totalMarginBalance: 20000        # 全仓风险池权益（USDT）
+positions:
+  - symbol: BTCUSDT
+    positionSide: LONG
+    positionAmt: 0.1
+    entryPrice: 78000
+    markPrice: 77500
+    leverage_configured: 5
+    marginType: ISOLATED
+    isolatedWallet: 1600           # 逐仓钱包；逐仓仓位的权益取这个值
+    liquidationPrice: 62000
+  - symbol: BTCUSDT
+    positionSide: SHORT            # 双向持仓：空单单独成一行
+    positionAmt: -0.05
+    entryPrice: 80000
+    leverage_configured: 3
+    marginType: CROSSED            # 全仓仓位的权益取 totalMarginBalance
+    liquidationPrice: null

@@ -8,7 +8,8 @@
     "dev": "ts-node-dev --respawn --transpile-only test-binance.ts"
   },
   "dependencies": {
-    "ccxt": "^4.5.40"
+    "ccxt": "^4.5.40",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^25.3.2",
