@@ -99,7 +99,7 @@ test('§3.6：排名第一仍违规时报告写"无合法数法"，不称主选'
 
 test('§3.6：合法候选照常展示为主选', () => {
   const md = renderRankedCounts({ primary: fake(0, 'pending'), alternates: [] }, 2);
-  assert.match(md, /⏳ 主选：单锯齿/);
+  assert.match(md, /⏳\(待验证\) 主选：单锯齿/);
   assert.doesNotMatch(md, /无合法数法/);
 });
 

@@ -245,3 +245,23 @@ test('§6.20 wave 4 must avoid the full wave-1 territory, including an orthodox 
  c.candles[5].high=110;c.candles[0].high=135;
  assert.equal(rule(E.buildImpulseStrictManual,'impulse.pattern.wave4-not-cross-wave1',c).undetermined,true);
 });
+
+// 书 §4.1/§4.8：单锯齿 b浪运行总量须≤a浪。BTC 2026-09 回撤：b 腿 82563→84352 内部冲到 87220、又跌到 80393.56，
+// 没越过 a 浪起点 87395.67，但运行总量 6826>a 浪 4832，须判违规；b 终点取 87220 则通过。
+test('书§4.1 单锯齿 b浪运行总量>a浪须违规，即使未越过a浪起点（BTC 87220/80393 案例）',()=>{
+ const full=points([87395.67,82874.93,85255,82563,87220,80393.56,84352,79800],[0,3,4,7,11,17,21,24],'down');
+ const cs=candles(full);
+ const abc=(i)=>({points:i.map(k=>full[k]),candles:cs,direction:'down'});
+ const gross=E.buildZigzagManual('down').rules.find(r=>r.id==='zigzag.ratio.b-gross-le-a-gross');
+ const start=E.buildZigzagManual('down').rules.find(r=>r.id==='zigzag.ratio.b-not-break-a-start');
+ const bad=abc([0,3,6,7]);
+ assert.equal(start.test(bad).pass,true,'b 未越过 a 浪起点，旧规则放行');
+ const r=gross.test(bad);assert.equal(r.pass,false);assert.ok(r.overshoot>0);
+ assert.equal(gross.test(abc([0,3,4,7])).pass,true,'b 终点取 87220 → b 运行总量≈a，通过');
+});
+test('书§4.8 单锯齿 b浪价格>0.86a 只是指引未命中，不是规则违规',()=>{
+ const guide=E.buildZigzagManual('down').guidelines.find(g=>g.id==='zigzag.guide.b-not-approach-a-start');
+ assert.equal(guide.test(ctx([100,50,92.5,20],undefined,'down')).pass,true,'b/a=0.85 命中');
+ assert.equal(guide.test(ctx([100,50,94,20],undefined,'down')).pass,false,'b/a=0.88 > 0.86 未命中');
+ assert.equal(rule(E.buildZigzagManual,'zigzag.ratio.b-price-between-0.2a-and-a',ctx([100,50,94,20],undefined,'down')).pass,true);
+});

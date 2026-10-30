@@ -13,12 +13,12 @@ const EASTMONEY_KLINE_API = 'https://push2his.eastmoney.com/api/qt/stock/kline/g
 const TWELVE_DATA_MAX = 5000;
 
 const MARKETS = {
-  crypto: { source: 'coinbase', tz: null },
+  crypto: { source: 'binance', tz: null },
   us: { source: 'twelvedata', tz: 'America/New_York', closeHour: 16, tzLabel: '美东' },
   cn: { source: 'eastmoney', tz: 'Asia/Shanghai', closeHour: 15, tzLabel: 'UTC+8' },
 };
 
-const SOURCES = ['coinbase', 'twelvedata', 'eastmoney'];
+const SOURCES = ['coinbase', 'binance', 'twelvedata', 'eastmoney'];
 
 // 市场按代码格式识别（D1）；source 只换数据源，市场仍按代码定（决定时区/收盘/精度）
 function detectMarket(product, source) {

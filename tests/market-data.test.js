@@ -11,7 +11,8 @@ const t = require('../analyze-wave-tree.js');
 const okJson = (body) => ({ ok: true, status: 200, json: async () => body });
 
 test('市场识别：按代码格式分派，--source 可覆盖', () => {
-  assert.deepEqual(md.detectMarket('BTC-USD'), { market: 'crypto', source: 'coinbase' });
+  assert.deepEqual(md.detectMarket('BTC-USD'), { market: 'crypto', source: 'binance' });
+  assert.deepEqual(md.detectMarket('BTC-USD', 'coinbase'), { market: 'crypto', source: 'coinbase' });
   assert.deepEqual(md.detectMarket('600519'), { market: 'cn', source: 'eastmoney' });
   assert.deepEqual(md.detectMarket('AAPL'), { market: 'us', source: 'twelvedata' });
   assert.deepEqual(md.detectMarket('AAPL', 'eastmoney'), { market: 'us', source: 'eastmoney' });

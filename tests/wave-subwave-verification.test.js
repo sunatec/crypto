@@ -73,14 +73,15 @@ test('BTC old diagonal shrinks wave lengths but diverges in real time',()=>{
   const manual=E.buildDiagonalManual('down','leading');
   const rule=manual.rules.find(r=>r.id==='diagonal.pattern.boundaries-converge');
   assert.equal(rule.test({points:pts,candles:c}).pass,false);
-  assert.equal(manual.rules.find(r=>r.id==='diagonal.ratio.converging').test({points:pts,candles:c}).pass,true);
+  assert.equal(manual.rules.some(r=>r.id==='diagonal.ratio.converging'),false);
+  assert.equal(manual.guidelines.find(g=>g.id==='diagonal.ratio.converging').test({points:pts,candles:c}).pass,true);
 });
-// 日线 c 腿 116410→80524.65 有 8 个枢轴，任何 6 点读法的 4 浪都入 1 浪区域：本周期违规照计，
-// 小周期缺数据（offline）不能把它降成 pending；小周期给出 verified 结构时才撤销。
+// 日线 c 腿 111221.99→80524.65 有 6 个枢轴（98892.97 / 104550 / 99170 / 107482），3 浪到不了 1 浪终点、
+// 推动浪与楔形都拆不成：本周期违规照计，小周期缺数据（offline）不能把它降成 pending；小周期给出 verified 结构时才撤销。
 test('specified W keeps own passing rules; daily C role violation stands until a lower timeframe proves it',()=>{
   const c=require('./fixtures/btc-usd-1d-golden.json').map((v,index)=>({...v,index}));
   const f=E.anchorBoundaryExtremes(c,E.detectPivots(c,1,{}));
-  const pts=E.pointsFromPrices([126296,103516.75,116410.06,80524.65],c);
+  const pts=E.pointsFromPrices([126296,103516.75,111221.99,80524.65],c);
   const v=createSubwaveVerifier(E,{error:'offline'});
   const zigzag=E.evaluateExplicitCount(pts,f,c,{maxDepth:5,timeframe:'1d',evidenceMode:true,verification:v}).results.find(x=>x.patternId==='zigzag');
   assert.ok(zigzag.ruleResults.every(x=>x.pass));
@@ -201,6 +202,37 @@ test('pivots on interpolated bars are dropped and alternation is restored',()=>{
   const candles=[{},{},{filled:true},{},{}];
   const out=dropFilledPivots([{index:0,type:'H',price:10},{index:2,type:'L',price:5},{index:3,type:'H',price:12},{index:4,type:'L',price:6}],candles);
   assert.deepEqual(out.map(p=>p.type+p.price),['H12','L6'],'补线上的 L 剔除后，相邻两个 H 取更高者');
+});
+
+test('mergeAdjacentSameType: 相邻同型取更极端者，钉死的首尾端点永远保留',()=>{
+  const {mergeAdjacentSameType}=require('../wave-subwave-verification');
+  const P=(type,price)=>({type,price});
+  const start=P('L',10),end=P('H',30);
+  const out=mergeAdjacentSameType([start,P('L',11),P('H',15),P('H',18),P('L',12),P('L',11.5),end]);
+  assert.deepEqual(out.map(p=>p.type+p.price),['L10','H18','L11.5','H30']);
+  assert.equal(out[0],start);assert.equal(out.at(-1),end);
+  // 钉死端点不如相邻同型极端时仍保留端点
+  const s2=P('L',10),e2=P('H',20);
+  assert.deepEqual(mergeAdjacentSameType([s2,P('L',9),P('H',15),P('H',25),e2]).map(p=>p.type+p.price),['L10','H20']);
+  // 已交替的序列原样返回
+  const alt=[P('L',1),P('H',2),P('L',1.5),P('H',3)];
+  assert.deepEqual(mergeAdjacentSameType(alt),alt);
+});
+test('钉死端点后紧跟同型枢轴时仍能拆出候选（BTC 2026-09 第5浪，Binance 小时线）',()=>{
+  const hourly=require('./fixtures/btc-usdt-1h-leg5-202609.json');
+  const from={timestamp:1789430400,index:345,type:'L',price:74967.97};
+  const to={timestamp:1789948800,index:351,type:'H',price:87395.67};
+  const r=createSubwaveVerifier(E,{hourly,finestTf:'1h'}).evaluate(from,to,'impulse|ending');
+  assert.deepEqual(r.attempts.map(a=>a.timeframe),['4h','1h']);
+  for(const a of r.attempts){
+    assert.ok(a.patternId,a.timeframe+' 应能拆出候选而非无候选');
+    const pts=a.structure.points;
+    assert.ok(pts.every((p,i)=>!i||pts[i-1].type!==p.type),a.timeframe+' 候选点高低交替');
+  }
+  const h1=r.attempts[1];
+  assert.equal(h1.patternId,'impulse-strict');
+  assert.equal(h1.provenRoles,4,'1h 五个子浪已证四个（第 2 浪仅两根小时线，无内部枢轴）');
+  assert.equal(h1.violations.length,0);
 });
 
 // 逐级下钻：1d/1w → 4h → 1h；首个拆得出的档截止。

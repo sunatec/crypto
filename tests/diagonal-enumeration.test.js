@@ -13,7 +13,7 @@ const verify=(extra={})=>createSubwaveVerifier(E,{hourly:hours,finestTf:'4h',...
 test('baseline: without diagonal enumeration the wave-1 window only offers impulse-strict with a wave-4 overlap violation',()=>{
   const node=decomposeWave1(false);
   assert.equal(node.searchLimited,true);
-  assert.equal(node.segFine.length,38);
+  assert.equal(node.segFine.length,44,'外包线两侧各出一个拐点');
   assert.equal(node.primary.patternId,'impulse-strict');
   assert.ok(E.candidateViolations(node.primary).some(v=>v.desc.includes('4浪不能切入1浪')));
   assert.ok([node.primary,...node.alternates].every(c=>c.patternId!=='diagonal-leading'),'楔形读法被显著性短名单漏掉');
@@ -43,7 +43,7 @@ test('diagonalSegmentations enumerates readings the significance shortlist misse
     assert.equal(pts.length,6);
     assert.equal(pts[0],fine[0]);assert.equal(pts[5],fine[fine.length-1]);
     pts.forEach((p,i)=>assert.equal(p.type,i%2?'H':'L'));
-    assert.ok(pts.every((p,i)=>!i||p.index>pts[i-1].index));
+    assert.ok(pts.every((p,i)=>!i||p.index>=pts[i-1].index),'外包线的高低两个拐点同在一根 K 线上，下标可相等');
   }
   const known=segs.find(pts=>pts.slice(1,-1).map(p=>p.price).join('>')==='63940.79>61250>64669.42>63608.54');
   assert.ok(known,'已知合格读法在枚举结果里');

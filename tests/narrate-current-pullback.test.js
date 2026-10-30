@@ -17,6 +17,7 @@ const {
   drillPullback,
   enrichCurrentPullback,
   renderPullbackNarrative,
+  finalizePullbackAftermath,
 } = require('../analyze-wave-tree.js');
 
 // 合成枢轴：{price,type,index,timestamp}
@@ -99,7 +100,8 @@ test('BTC XX 173%：反弹极值取真低点之后的高点，不取随后回落
   assert.ok(split.bounceExtreme.timestamp > split.trueLow.timestamp);
   const combo = readCombination({ patternId: 'sideways-double', points: split.completed }, split.trueLow, split.bounceExtreme);
   assert.equal(Math.round(combo.xxRetracePct * 100), 173);
-  assert.deepEqual(combo.legs.XX, { from: 82510.37, to: 87249.05 });
+  assert.equal(combo.legs.XX.from, 82510.37);
+  assert.equal(combo.legs.XX.to, 87249.05);
 });
 
 test('readCombination：联合形 W/X/Y 逐腿 + XX 对 Y 回撤%', () => {
@@ -108,9 +110,9 @@ test('readCombination：联合形 W/X/Y 逐腿 + XX 对 Y 回撤%', () => {
     points: [pv(79500, 'H', 0), pv(76202, 'L', 1), pv(78828, 'H', 2), pv(75538, 'L', 3)],
   };
   const combo = readCombination(comboCand, pv(75538, 'L', 3), pv(78055, 'H', 4));
-  assert.deepEqual(combo.legs.W, { from: 79500, to: 76202 });
-  assert.deepEqual(combo.legs.Y, { from: 78828, to: 75538 });
-  assert.deepEqual(combo.legs.XX, { from: 75538, to: 78055 });
+  assert.deepEqual([combo.legs.W.from, combo.legs.W.to], [79500, 76202]);
+  assert.deepEqual([combo.legs.Y.from, combo.legs.Y.to], [78828, 75538]);
+  assert.deepEqual([combo.legs.XX.from, combo.legs.XX.to], [75538, 78055]);
   assert.equal(combo.legs.Z.pending, true);
   // XX 幅=2517.25，Y 幅=3290.25 → 76.5%
   assert.ok(Math.abs(combo.xxRetracePct - (78055 - 75538) / (78828 - 75538)) < 1e-9);
@@ -207,7 +209,8 @@ test('enrichCurrentPullback：高点回撤经下钻产出 subDegree/structureLin
   assert.equal(res.structureLow.tf, '1h');
   assert.match(res.text, /2023-11-15 \d\d:\d\d UTC/);
   assert.ok(res.level && res.level.level, '应给出级别');
-  assert.ok(typeof res.text === 'string' && res.text.includes('当前高点回撤研判'));
+  assert.ok(typeof res.text === 'string' && res.text.includes('进行腿细化') && res.text.includes('回撤目标位'));
+  assert.deepEqual(res.axis2Roles, [], '无轴②结构时身份为空');
   // 挂到 pullback 上，供序列化/渲染读取
   assert.equal(tree.inProgressStruct.pullback.narrative, res);
 });
@@ -225,11 +228,11 @@ test('zwaveProjection：破位路径各档在 trigger 之下且逐档加深；tr
 test('Z 浪叙述：等长位都在 trigger 之上时主目标只写破位档，不再标 Z=W=Y 等长', () => {
   const t = (hi) => renderPullbackNarrative({ level: { kind: 'minor', depthPct: 5, medianPct: 5 }, structureLine: 82510.37,
     zwaveTargets: zwaveProjection(87397 - 82708.96, 85250 - 82510.37, 82510.37, hi), combinationReading: null, subDegree: null }, 2)
-    .split('\n').find((l) => l.includes('Z 浪两条路'));
+    .split('\n').find((l) => l.includes('(z) 浪两条路'));
   const both = t(87249.43);
   assert.match(both, /主目标为破位档 \*\*81863\.82\*\*/);
-  assert.doesNotMatch(both, /Z=W=Y 等长/);
-  assert.match(t(85613.72), /主目标 \*\*80925\.68\*\* 一带（Z=W 等长/);
+  assert.doesNotMatch(both, /\(z\)=\(w\)=\(y\) 等长/);
+  assert.match(t(85613.72), /主目标 \*\*80925\.68\*\* 一带（\(z\)=\(w\) 等长/);
 });
 
 const datedPivot = (price, type, date, index) => ({ price, type, timestamp: Date.parse(date) / 1000, index });
@@ -248,12 +251,11 @@ function btcNarrative(low = 82510.37, tf = '1d') {
     zwaveTargets: zwaveProjection(87397 - 82708.96, 85250 - 82510.37, 82510.37, 87249.05, level.upgradeLine),
   };
 }
-const btcHyp = lean => ({ term: 57717.55, anchor: 87397, lean, xx: { aftermath: 'Y 浪下跌' } });
 
 test('锚点：价与日期齐备、幅度和比较比例自洽、日线日期无时分', () => {
   const nr = btcNarrative();
-  const text = renderPullbackNarrative(nr, 2, btcHyp('xx'));
-  const first = text.split('\n')[2];
+  const text = renderPullbackNarrative(nr, 2);
+  const first = text.split('\n').find((l) => l.startsWith('**级别**'));
   for (const [price, date] of [[87397, '2026-09-21'], [82510.37, '2026-09-28'], [57717.55, '2026-06-22'], [82283, '2026-09-03'], [74887.5, '2026-09-15']]) {
     assert.match(first, new RegExp(String(price).replace('.', '\\.') + '(?:\\*\\*)?（' + date + '）'));
   }
@@ -267,7 +269,7 @@ test('锚点：价与日期齐备、幅度和比较比例自洽、日线日期�
 });
 
 test('下钻锚点：只有子级别结构低点写时分和 UTC', () => {
-  const text = renderPullbackNarrative(btcNarrative(82510.37, '4h'), 2, btcHyp('xx'));
+  const text = renderPullbackNarrative(btcNarrative(82510.37, '4h'), 2);
   assert.match(text, /82510\.37\*\*（2026-09-28 14:00 UTC）/);
   assert.match(text, /87397\*\*（2026-09-21）/);
   assert.match(text, /82283（2026-09-03）/);
@@ -276,7 +278,7 @@ test('下钻锚点：只有子级别结构低点写时分和 UTC', () => {
 test('升级线：子浪级单列在续涨条件之后，等于内部最大幅度仍为子浪级', () => {
   for (const low of [82510.37, 80001.5]) {
     const nr = btcNarrative(low);
-    const text = renderPullbackNarrative(nr, 2, btcHyp('xx'));
+    const text = renderPullbackNarrative(nr, 2);
     assert.equal(nr.level.exceeds, false);
     assert.equal(nr.upgradeLine, 80001.5);
     assert.ok(text.indexOf('**级别升级线**') > text.indexOf('**续涨条件**'));
@@ -286,25 +288,25 @@ test('升级线：子浪级单列在续涨条件之后，等于内部最大幅�
 });
 
 test('升级线：已超过时第一段注明跌破，Z 直接使用升级结局', () => {
-  const nr = btcNarrative(79000);
-  const text = renderPullbackNarrative(nr, 2, btcHyp('xx'));
+  const nr = finalizePullbackAftermath(btcNarrative(79000), 2);
+  const text = renderPullbackNarrative(nr, 2);
   assert.equal(nr.level.exceeds, true);
-  assert.match(text.split('\n')[2], /已跌破升级线 80001\.5/);
-  assert.doesNotMatch(text, /\*\*级别升级线\*\*|两路 \*\*Z 浪走完后转向上涨/);
-  assert.match(text, /接下来看 Y 浪下跌/);
+  assert.match(text.split('\n').find((l) => l.startsWith('**级别**')), /已跌破升级线 80001\.5/);
+  assert.doesNotMatch(text, /\*\*级别升级线\*\*|上方走完，仍属前段上涨内部/);
+  assert.match(text, /已跌破升级线 80001\.5：前段上涨视为已走完；轴②暂无存活情景，去向待定/);
   assert.match(nr.zwaveTargets.breakPath.aftermath, /已跌破升级线/);
 });
 
 test('无可比回撤：JSON 无升级线，Z 仍沿用原转涨结论', () => {
   const level = classifyPullbackDegree([BTC_RALLY[0], BTC_RALLY[3]], true, 82510.37);
   const nr = { tf: '1d', level, structureLine: 82510.37, zwaveTargets: zwaveProjection(4688.04, 2739.63, 82510.37, 87249.05) };
-  const text = renderPullbackNarrative(nr, 2, btcHyp('xx'));
+  const text = renderPullbackNarrative(nr, 2);
   assert.equal(level.exceeds, null);
   assert.equal(Object.hasOwn(level, 'upgradeLine'), false);
   assert.equal(Object.hasOwn(nr, 'afterUpgrade'), false);
   assert.doesNotMatch(JSON.stringify(nr), /upgradeLine/);
   assert.doesNotMatch(text, /升级线|警惕|警戒|NaN|undefined/);
-  assert.match(text, /两路 \*\*Z 浪走完后转向上涨\*\*/);
+  assert.match(text, /两路 \*\*\(z\) 浪走完即 ⏳\(进行中\)腿走完\*\*，之后按轴②：轴②暂无存活情景，去向待定/);
 });
 
 test('下跌方向：升级线为低点加内部最大反弹，保留反弹起止时间', () => {
@@ -317,7 +319,7 @@ test('下跌方向：升级线为低点加内部最大反弹，保留反弹起�
 
 test('Z 档：主/破位/延伸/极端与 trigger 上方等长位各有升级线标记，正文逐价标注', () => {
   const nr = btcNarrative();
-  const text = renderPullbackNarrative(nr, 2, btcHyp('xx'));
+  const text = renderPullbackNarrative(nr, 2);
   const { main, extension, extreme } = nr.zwaveTargets.breakPath;
   assert.equal(main.belowUpgradeLine, false);
   assert.equal(main.breakFib0236BelowUpgradeLine, false);
@@ -334,28 +336,28 @@ test('Z 档：主/破位/延伸/极端与 trigger 上方等长位各有升级线
   assert.equal(zwaveProjection(20, 10, 100, 105, 85).breakPath.main.lowBelowUpgradeLine, false); // 相等未跌破
 });
 
-for (const [lean, role, aftermath] of [['xx', 'X 连接浪', 'Y 浪下跌'], ['b', 'B 反弹', 'C 浪下跌'], ['three', '推动 3 浪', '高一级调整，走完后仍看上涨']]) {
-  test(`跌破结局：同源轴③主选 ${lean}`, () => {
-    const nr = btcNarrative();
-    const text = renderPullbackNarrative(nr, 2, btcHyp(lean));
-    assert.equal(nr.afterUpgrade.basis, 'axis3');
-    assert.equal(nr.afterUpgrade.lean, lean);
-    assert.ok(text.includes(role));
-    assert.ok(text.includes(aftermath));
-    assert.match(text, /在升级线 80001\.5 上方走完/);
-    assert.match(text, /跌破升级线 80001\.5 则前段上涨视为已走完/);
-    assert.match(text, /本节 W-X-Y-Z 为子浪级数法，升级后仅作参考/);
-    assert.doesNotMatch(text, /警惕|警戒|注意风险/);
-    assert.equal(nr.zwaveTargets.breakPath.aftermath, nr.zwaveTargets.trianglePath.aftermath);
-  });
-}
+// 去向取自轴②存活情景（pullback-anchored-to-axis2）：不再读轴③身份研判
+const axis2Role = (rank, label, legName, projection) => ({ rank, label, legCn: '浪②', refCn: '浪①', next: { legName, projection }, refs: [], forms: { text: '', conflict: null } });
+const BTC_ROLES = [axis2Role(1, '新上涨推动·浪②进行中(转势)', '浪③', [108816.22, 127106.23]), axis2Role(2, 'X连接浪/B·中继(先上后跌)', 'c 腿', [97510.75, 108816.22])];
 
-test('不同源或无主选：通用回退，不引用其他反弹腿的身份', () => {
-  for (const h of [null, { ...btcHyp('xx'), term: 60000 }, { ...btcHyp('xx'), anchor: 88000 }, { ...btcHyp('xx'), lean: null }]) {
-    const nr = btcNarrative();
-    const text = renderPullbackNarrative(nr, 2, h);
+test('跌破结局：去向逐条列出轴②存活情景的下一腿', () => {
+  const nr = finalizePullbackAftermath({ ...btcNarrative(), axis2Roles: BTC_ROLES }, 2);
+  const text = renderPullbackNarrative(nr, 2);
+  assert.equal(nr.afterUpgrade.basis, 'axis2');
+  assert.match(text, /#1 新上涨推动·浪②进行中\(转势\) → 浪③ 108816\.22 \/ 127106\.23；#2 X连接浪\/B·中继\(先上后跌\) → c 腿 97510\.75 \/ 108816\.22/);
+  assert.match(text, /在升级线 80001\.5 上方走完/);
+  assert.match(text, /跌破升级线 80001\.5 则前段上涨视为已走完/);
+  assert.doesNotMatch(text, /按轴③主选|警惕|警戒|注意风险/);
+  assert.equal(nr.zwaveTargets.breakPath.aftermath, nr.zwaveTargets.trianglePath.aftermath);
+});
+
+test('轴②无存活情景：通用回退，不引用轴③身份', () => {
+  for (const roles of [undefined, []]) {
+    const nr = finalizePullbackAftermath({ ...btcNarrative(), axis2Roles: roles }, 2);
+    const text = renderPullbackNarrative(nr, 2);
     assert.equal(nr.afterUpgrade.basis, 'generic');
-    assert.match(text, /前段上涨视为已走完，后续按轴③反弹身份重新研判/);
+    assert.match(text, /前段上涨视为已走完；轴②暂无存活情景，去向待定/);
+    assert.match(text, /身份对照\*\*：轴②暂无存活情景，身份待定/);
     assert.doesNotMatch(text, /按轴③主选（/);
   }
 });
@@ -364,14 +366,20 @@ test('Z 结局始终分叉：即使列出的所有目标均在升级线上方，
   const nr = btcNarrative();
   nr.zwaveTargets = zwaveProjection(10, 10, 82510.37, 82515, nr.upgradeLine);
   assert.ok(nr.zwaveTargets.breakPath.extreme.every(e => e.price > nr.upgradeLine));
-  assert.match(renderPullbackNarrative(nr, 2, btcHyp('xx')), /跌破升级线 80001\.5 则前段上涨视为已走完/);
+  assert.match(renderPullbackNarrative(nr, 2), /跌破升级线 80001\.5 则前段上涨视为已走完/);
 });
 
-test('报告重渲时采用新传入的轴③主选，更新 JSON 中的结局来源', () => {
-  const nr = btcNarrative();
-  renderPullbackNarrative(nr, 2, btcHyp('xx'));
-  const text = renderPullbackNarrative(nr, 2, btcHyp('b'));
-  assert.match(text, /接下来看 C 浪下跌/);
-  assert.equal(nr.afterUpgrade.lean, 'b');
-  assert.match(nr.zwaveTargets.breakPath.aftermath, /C 浪下跌/);
+test('渲染只读：轴②身份变化后重渲文字随之更新，JSON 结局须经 finalize 才更新', () => {
+  const nr = finalizePullbackAftermath({ ...btcNarrative(), axis2Roles: BTC_ROLES }, 2);
+  const before = JSON.stringify(nr);
+  renderPullbackNarrative(nr, 2);
+  assert.equal(JSON.stringify(nr), before, '渲染不得改写 narrative');
+  nr.axis2Roles = BTC_ROLES.slice(1).map((r) => ({ ...r, rank: 1 }));
+  const text = renderPullbackNarrative(nr, 2);
+  assert.match(text, /#1 X连接浪\/B·中继\(先上后跌\) → c 腿/);
+  assert.doesNotMatch(text, /→ 浪③/);
+  assert.match(nr.zwaveTargets.breakPath.aftermath, /→ 浪③/, '未 finalize 前 JSON 保持上次数据层结果');
+  finalizePullbackAftermath(nr, 2);
+  assert.match(nr.zwaveTargets.breakPath.aftermath, /#1 X连接浪\/B·中继\(先上后跌\) → c 腿 97510\.75/);
+  assert.doesNotMatch(nr.zwaveTargets.breakPath.aftermath, /→ 浪③/);
 });

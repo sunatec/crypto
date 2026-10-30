@@ -46,10 +46,14 @@ test('金标准：BTC 2026-10-05 回撤锚点、173% XX、升级线与轴③结�
   assert.equal(Math.round(nr.combinationReading.xxRetracePct * 100), 173);
   assert.match(nr.text, /87397\*\*（2026-09-21）/);
   assert.match(nr.text, /79770\.74（低于升级线 80001\.5）/);
-  assert.match(nr.text, /X 已在 87397 完成，接下来看 Y 浪下跌/);
-  assert.equal(nr.afterUpgrade.basis, 'axis3');
+  // 去向取自轴②：本夹具未建 currentWaveStructures → 无存活情景，不得回落到轴③身份
+  assert.deepEqual(nr.axis2Roles, []);
+  assert.match(nr.text, /前段上涨视为已走完；轴②暂无存活情景，去向待定/);
+  assert.doesNotMatch(nr.text, /按轴③主选/);
+  assert.equal(nr.afterUpgrade.basis, 'generic');
   const report = t.renderAxis3(tree, 2);
-  assert.ok(report.includes(nr.text), '报告重渲必须传入同源轴③主选');
+  assert.ok(report.includes(t.renderPullbackTargets(nr, 2)), '轴③只挂回撤目标位');
+  assert.ok(!report.includes('## 进行腿细化'), '结构细化不在轴③（轴③只留一句导读）');
   assert.equal(JSON.stringify({ fine, assessment: tree.assessment }), before);
   const serialized = JSON.parse(JSON.stringify(nr));
   assert.equal(serialized.structureLow.timestamp, Date.parse('2026-09-28') / 1000);
@@ -127,14 +131,14 @@ test('金标准：给我的数法打分——W-X-Y 保留单锯齿子角色要�
   const res = t.evaluateExplicitCount(wxy, fine, candles);
   assert.equal(res.direction, 'down');
   assert.ok(res.results.length >= 4, '应至少匹配单锯齿/双锯齿/平台/双重横向4种');
-  // 书籍勘误后 y/w≈0.879 已不违反价格规则；但 w(126296→80524)、y(97964→57718) 自身都是双锯齿，
-  // 书 7.3 要求须为单锯齿 → 各计一次文法违规（enforce-strict-wave-grammar）
+  // 书籍勘误后 y/w≈0.879 已不违反价格规则。w(126296→80524)、y(97964→57718) 在日线上不再被拆成双锯齿：
+  // 旧枢轴在 w 腿末段有一对方向颠倒的 L94012→H93080（且漏掉 11-05 的 104550 / 11-07 的 99170），修正后 w、y 子角色待验证、不计文法违规
   const double = res.results.find((r) => r.patternId === 'zigzag-double');
   assert.ok(double, '应含双锯齿读法');
   assert.ok(double.ruleResults.filter(rr=>!rr.desc.includes('0-x')).every(rr=>rr.pass),'OV-001不得成为硬失败');
   assert.equal(double.ruleResults.find(rr=>rr.desc.includes('0-x')).pass,false,'书§7.4：实际完整Y路径越线');
   assert.equal(double.total.tier1,double.grammarViolations+1,'新增通道失败与实际文法失败分别计分');
-  assert.ok(double.legNotes.some((n) => n.startsWith('w 须为单锯齿')), double.legNotes.join('; '));
+  assert.equal(double.grammarViolations,0,double.legNotes.join('; '));
   assert.deepEqual([double.evidence[0].role,double.evidence[2].role],['zigzag','zigzag'],'W/Y仍须各自单锯齿，未知或改选不改变角色要求');
   assert.equal(double.grammarViolations,double.legNotes.length);
   // 其余读法（单锯齿/平台/联合形等）与该规则无关，仍应各自非零违规
@@ -247,8 +251,13 @@ test('金标准：进行中段终点标为最近枢轴（带日期），现价�
   const md = t.renderMarkdownReport(meta, tree);
   const P = t.formatPrice;
   assert.ok(md.includes(`目前处于回调/震荡中（${kind} ${P(pt.price)} @ ${when}，现 ${P(meta.lastClose)}）`), '简报第 2 条应分开标最近枢轴与现价');
-  assert.ok(md.includes(`→ ${P(pt.price)}（${kind} @ ${when}）**；现价 ${P(meta.lastClose)}`), '轴②开头应标最近枢轴并补现价');
-  assert.ok(md.includes(`→ ${kind} ${P(pt.price)} @ ${when}，进行中）`), '轴②内部导读应标最近枢轴');
+  // 轴②进行腿终点=回撤极值（夹具里回撤低点 62209.81 之后又反抽到最近高点 63123.68），最近枢轴与现价另标
+  const pe = tree.currentWaveStructures.pullbackExtreme;
+  assert.notEqual(pe.price, pt.price, '夹具应覆盖"回撤极值≠最后一个枢轴"的情形');
+  const peWhen = new Date(pe.timestamp * 1000 + 8 * 3600 * 1000).toISOString().slice(0, 10);
+  const peKind = pe.type === 'H' ? '回撤高点' : '回撤低点';
+  assert.ok(md.includes(`→ ${P(pe.price)}（${peKind} @ ${peWhen}）**；${kind} ${P(pt.price)} @ ${when}；现价 ${P(meta.lastClose)}`), '轴②开头应标回撤极值，并分开标最近枢轴与现价');
+  assert.ok(md.includes(`→ ${peKind} ${P(pe.price)} @ ${peWhen}，${kind} ${P(pt.price)} @ ${when}，进行中）`), '轴②内部导读与表同口径');
   assert.ok(!md.includes('（现在）'), '不应再把最近枢轴称为现在');
   const beyond = t.renderBrief({ ...meta, lastClose: ext * 1.01 }, tree);
   assert.ok(beyond.includes(`现 ${P(ext * 1.01)} 已越过 ${P(ext)}，回调或已结束、上冲在延伸。`), beyond);

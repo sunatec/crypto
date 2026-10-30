@@ -603,7 +603,7 @@ test('inline-extending-leg-fork-in-table：多腿候选(三锯齿5段)只有⏳�
   });
   const tree = { primary, alternates: [], frameworkB: { primary: b1, alternates: [] } };
   const md = renderRankedCounts(tree);
-  assert.ok(md.includes('z:82814→57718⏳两可:单锯齿/推动浪'), '末腿(z)应带内联两可后缀，紧跟在⏳之后');
+  assert.match(md, /z:82814→57718⏳\((进行中|延伸中)\)两可:单锯齿\/推动浪/, '末腿(z)应带内联两可后缀，紧跟在⏳(状态)之后');
   assert.ok(!md.includes('w:126296→80525⏳'), 'w 腿不应被标⏳（非末腿）');
   assert.ok(!/x:80525→97964[^\s]*两可/.test(md), 'x 腿不应带两可后缀');
   assert.ok(!/y:97964→60001[^\s]*两可/.test(md), 'y 腿不应带两可后缀');
@@ -636,7 +636,7 @@ test('inline-extending-leg-fork-in-table：回归——不带altCharacter的候�
   });
   const tree = { primary, alternates: [], frameworkB: { primary: b1, alternates: [] } };
   const md = renderRankedCounts(tree);
-  assert.ok(md.includes('z:82814→57718⏳'), '末腿仍应带⏳状态');
+  assert.match(md, /z:82814→57718⏳\((进行中|延伸中)\)/, '末腿仍应带⏳(状态)');
   assert.ok(!md.includes('两可:'), '未两可的候选不应出现"两可:"后缀');
   assert.ok(!md.includes('对侧点位'), '未两可的候选不应有对侧点位附注行');
 });

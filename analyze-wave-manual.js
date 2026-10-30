@@ -385,6 +385,83 @@ function computeATR(candles, period = 14) {
   return atr;
 }
 
+function outsideBarOrder(c) {
+  if (c.close < c.open) return ['H', 'L'];
+  if (c.close > c.open) return ['L', 'H'];
+  return Math.abs(c.high - c.open) <= Math.abs(c.open - c.low) ? ['H', 'L'] : ['L', 'H'];
+}
+
+// 严格位于两个同型拐点之间、反向最极端的 K 线（H、H 之间取最低点，L、L 之间取最高点）；无中间 K 线时为 null
+function oppositeExtremeBetween(candles, a, b) {
+  const type = a.type === 'H' ? 'L' : 'H';
+  let best = null;
+  for (let k = a.index + 1; k < b.index; k += 1) {
+    const v = type === 'H' ? candles[k].high : candles[k].low;
+    if (!best || (type === 'H' ? v > best.price : v < best.price)) {
+      best = { index: k, type, price: v, timestamp: candles[k].timestamp };
+    }
+  }
+  return best;
+}
+
+// 桥点合并：同型 A、桥点 X、同型 B 中，保留 A、B 里更极端者（同价留后者），连同桥点去掉另一个——
+// 这正是旧的"相邻同型留更极端者"。但被去掉的桥点落进相邻段：留 B 时落在「前一拐点 → B」段，
+// 留 A 时落在「A → 后一拐点」段；桥点越过该段另一端时，合并会丢掉一段真实摆动，此时保留三点。
+function mergeBridges(pivots) {
+  let k = 1;
+  while (k < pivots.length - 1) {
+    const x = pivots[k];
+    if (!x.bridge) { k += 1; continue; }
+    delete x.bridge;
+    const a = pivots[k - 1];
+    const b = pivots[k + 1];
+    const keepB = b.type === 'H' ? b.price >= a.price : b.price <= a.price;
+    const fence = keepB ? pivots[k - 2] : pivots[k + 2];
+    const crosses = fence && (x.type === 'H' ? x.price > fence.price : x.price < fence.price);
+    if (crosses) { k += 1; continue; }
+    pivots.splice(keepB ? k - 1 : k, 2);
+    k = Math.max(1, k - 1);
+  }
+  return pivots;
+}
+
+// 方向颠倒的段（高点低于前一个低点，或低点高于前一个高点）：如逐级下跌中的 L→H，
+// 两点都只是相邻 K 线比较下的局部极值，连成一段却与实际走向相反。成对去掉后前后两点仍高低交替，
+// 且前一点比被去掉的两点更极端、后一点同理，不会再漏掉段内极值。首尾两点保留。
+function dropInvertedLegs(pivots) {
+  let k = 1;
+  while (k < pivots.length && pivots.length > 2) {
+    const a = pivots[k - 1];
+    const b = pivots[k];
+    const inverted = a.type === 'L' ? b.price < a.price : b.price > a.price;
+    if (inverted) {
+      pivots.splice(k - 1, 2);
+      k = Math.max(1, k - 1);
+    } else {
+      k += 1;
+    }
+  }
+  return pivots;
+}
+
+// 拐点归位：每个中间拐点应是它与前后两个拐点之间同向最极端的 K 线。只与相邻 K 线比较时，
+// 若邻近的拐点 K 线影线更长（如阳线高点 K 线当天先探出的低点），段内真正的低点 / 高点会被挤掉。
+// 只往更极端处挪，不改变高低交替，也不会造成方向颠倒。
+function relocateToSwingExtremes(candles, pivots) {
+  for (let k = 1; k < pivots.length - 1; k += 1) {
+    const p = pivots[k];
+    let best = p;
+    for (let i = pivots[k - 1].index + 1; i < pivots[k + 1].index; i += 1) {
+      const v = p.type === 'H' ? candles[i].high : candles[i].low;
+      if (p.type === 'H' ? v > best.price : v < best.price) {
+        best = { index: i, type: p.type, price: v, timestamp: candles[i].timestamp };
+      }
+    }
+    if (best !== p) pivots[k] = best;
+  }
+  return pivots;
+}
+
 function detectPivots(candles, lookback = 2, options = {}) {
   const atrSeries = options.atrSeries || null;
   const atrMultiplier = Number.isFinite(options.atrMultiplier) ? Number(options.atrMultiplier) : 0;
@@ -406,14 +483,10 @@ function detectPivots(candles, lookback = 2, options = {}) {
     if (!isHigh && !isLow) continue;
 
     if (isHigh && isLow) {
-      const prev = candles[i - 1];
-      const next = candles[i + 1];
-      const highStrength = Math.abs(c.high - Math.max(prev.high, next.high));
-      const lowStrength = Math.abs(Math.min(prev.low, next.low) - c.low);
-      if (highStrength >= lowStrength) {
-        pivots.push({ index: i, type: 'H', price: c.high, timestamp: c.timestamp });
-      } else {
-        pivots.push({ index: i, type: 'L', price: c.low, timestamp: c.timestamp });
+      // 外包线：同一根既是局部高点又是局部低点，两侧都是真实拐点，只取一侧会丢掉一整段摆动。
+      // 日内先后本周期看不出：阴线按先高后低、阳线按先低后高，平盘按离开盘近的一端先到。
+      for (const type of outsideBarOrder(c)) {
+        pivots.push({ index: i, type, price: type === 'H' ? c.high : c.low, timestamp: c.timestamp, outsideBar: true });
       }
     } else if (isHigh) {
       pivots.push({ index: i, type: 'H', price: c.high, timestamp: c.timestamp });
@@ -430,6 +503,12 @@ function detectPivots(candles, lookback = 2, options = {}) {
     const last = cleaned[cleaned.length - 1];
 
     if (current.type === last.type) {
+      // 相邻同型：先补上其间最极端的反向 K 线（桥点），是否合并留到 mergeBridges 统一判断
+      const between = oppositeExtremeBetween(candles, last, current);
+      if (between) {
+        cleaned.push({ ...between, bridge: true }, current);
+        continue;
+      }
       const shouldReplace =
         (current.type === 'H' && current.price >= last.price) ||
         (current.type === 'L' && current.price <= last.price);
@@ -438,6 +517,9 @@ function detectPivots(candles, lookback = 2, options = {}) {
       cleaned.push(current);
     }
   }
+  mergeBridges(cleaned);
+  dropInvertedLegs(cleaned);
+  relocateToSwingExtremes(candles, cleaned);
 
   if (!atrSeries || atrMultiplier <= 0) return cleaned;
 

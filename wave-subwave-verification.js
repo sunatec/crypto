@@ -89,6 +89,22 @@ function dropFilledPivots(pivots, candles) {
   return out;
 }
 
+// 钉死端点后，端点与紧邻的同型枢轴会破坏高低交替（如钉死低点后紧跟一个更高的低点），拆解将一个候选都找不到。
+// 相邻同型取更极端者；被钉死的首尾端点永远保留。
+function mergeAdjacentSameType(pivots) {
+  const first = pivots[0], lastP = pivots[pivots.length - 1];
+  const pinned = p => p === first || p === lastP;
+  const out = [];
+  for (const p of pivots) {
+    const last = out[out.length - 1];
+    if (last && last.type === p.type) {
+      const better = p.type === 'H' ? p.price >= last.price : p.price <= last.price;
+      if (pinned(p) || (!pinned(last) && better)) out[out.length - 1] = p;
+    } else out.push(p);
+  }
+  return out;
+}
+
 // Intraday evidence uses its own candle indices. Parent points are never rewritten.
 function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = '1d', finestTf = '1h', error = null, endTs = Infinity, pricePrecision = 2 } = {}) {
   const rawHours = [...new Map((hourly || []).map(c => [c.timestamp, c])).values()].sort((a,b) => a.timestamp-b.timestamp);
@@ -111,7 +127,7 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
     // Crop by actual event hours before aggregation, then pin the supplied prices.
     // 端点钉死后，原始序列末位枢轴不再是「末端未确认」：清掉 anchorBoundaryExtremes 留下的 provisional/boundary 标记，
     // 否则含它的末腿永远过不了分辨率边界检查（atResolutionBoundary 拒绝含 provisional 点的腿）。
-    fine = [start,...fine.filter(p => p.index>0 && p.index<finish.index).map(({provisional,boundary,...p}) => p),finish];
+    fine = mergeAdjacentSameType([start,...fine.filter(p => p.index>0 && p.index<finish.index).map(({provisional,boundary,...p}) => p),finish]);
     const entry = { candles, fine, start, finish, cache: new Map() };
     prepared.set(key, entry);
     if (prepared.size > PREPARED_MAX) prepared.delete(prepared.keys().next().value);
@@ -224,4 +240,4 @@ async function buildVerifiedCountTree(engine, fine, candles, options = {}) {
   tree.verification = {mainTimeframe:mainTf,finestTimeframe:options.finestTf || '1h',...verifier.stats,error};
   return {tree,verifier,verificationOptions,hourly};
 }
-module.exports = {createSubwaveVerifier,buildVerifiedCountTree,fetchSharedHourly,fillShortGaps,dropFilledPivots,MAX_GAP_HOURS};
+module.exports = {createSubwaveVerifier,buildVerifiedCountTree,fetchSharedHourly,fillShortGaps,dropFilledPivots,mergeAdjacentSameType,MAX_GAP_HOURS};
