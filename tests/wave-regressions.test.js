@@ -355,20 +355,29 @@ test('BTC 全流程：进行腿细化归轴②、回撤目标位归轴③，去�
   assert.equal(nr.axis2Roles.length,2);
   assert.equal(nr.afterUpgrade.basis,'axis2');
   assert.equal(nr.retraceLevels[0].confluence[0].label,'(z) 主带');
-  const md=E.renderMarkdownReport({product:'BTC-USD',timeframe:'1d',startUtc:new Date().toISOString(),endUtc:new Date().toISOString(),generatedAtUtc:new Date().toISOString(),source:'fixture',sampleCount:candles.length,lastClose:80154.09},tree);
-  const i2=md.indexOf('# 轴②'),i3=md.indexOf('# 轴③'),iLeg=md.indexOf('## 进行腿细化'),iTgt=md.indexOf('## 回撤目标位');
+  const meta={product:'BTC-USD',timeframe:'1d',startUtc:new Date().toISOString(),endUtc:new Date().toISOString(),generatedAtUtc:new Date().toISOString(),source:'fixture',sampleCount:candles.length,lastClose:80154.09};
+  // 默认 md：轴②只出「这段回调走完了吗」大白话，轴③条件目标一句话；全文在 verbose
+  const plain=E.renderMarkdownReport(meta,tree);
+  const p2=plain.indexOf('# 轴②'),p3=plain.indexOf('# 轴③'),pLeg=plain.indexOf('## 这段回调走完了吗');
+  assert.ok(p2<pLeg&&pLeg<p3,'大白话细化在轴②内');
+  for(const s of ['## 进行腿细化','**身份对照**','**读法一','**两条 70% 线','§3.3','## 上表内部细化导读','**(z) 浪两条路**']) assert.ok(!plain.includes(s),`默认 md 不应含「${s}」`);
+  assert.match(plain.slice(pLeg,p3),/看这几条线：/);
+  assert.ok(plain.indexOf('## 进行中腿的条件目标')>p3,'条件目标仍在轴③内');
+  assert.match(plain,/\| [0-9.]+ \| [^|]*回调 70% 线（冲过则“横着走”成为可能）/,'70% 线进价位梯子');
+  const md=E.renderMarkdownReport(meta,tree,null,{verbose:true});
+  const i2=md.indexOf('# 轴②'),i3=md.indexOf('# 轴③'),iLeg=md.indexOf('## 进行腿细化'),iTgt=md.indexOf('## 进行中腿的条件目标');
   assert.ok(i2<iLeg&&iLeg<i3,'进行腿细化在轴②内');
-  assert.ok(iTgt>i3,'回撤目标位在轴③内');
+  assert.ok(iTgt>i3,'进行中腿条件目标在轴③内');
   assert.ok(!md.includes('当前高点回撤研判'));
   assert.match(md,/\| 1 \| 新上涨推动·浪②进行中\(转势\) \| 浪② \| 不得触及 57800\.19 \|/);
   assert.match(md,/读法一若为单锯齿：\(a\) 87395\.67→79220\.74 跌 8174\.93，是浪①（57800\.19→87395\.67，涨 29595\.48）的 0\.276 倍；常见 0\.31～0\.5 倍，对应 \(a\) 终点 78221\.07～72597\.93，现在跌得偏浅（指引）/);
-  assert.match(md,/0\.382 → \*\*76090\.2\*\*（共振：\(z\) 主带 75356\.43–76201\.02）/);
+  assert.match(md,/\| 76090\.2 \| [^|]*回撤 0\.382（共振 \(z\) 主带）/,'回撤位与共振进价位梯子');
   assert.match(md,/已跌破升级线 [0-9.]+：前段上涨视为已走完（轴②各情景把它当作完整的首腿）；本回撤走完后：#1 新上涨推动·浪②进行中\(转势\) → 浪③/);
   assert.doesNotMatch(md,/按轴③主选（/);
   const seg=md.slice(iLeg,i3);
   assert.doesNotMatch(seg,/(?<![(（/#|])\b[abcwxyz] 浪|\b[WXYZ] 浪|XX/,'腿内部浪名不出现裸字母');
-  const json=E.serializeInProgress?E.serializeInProgress(tree):null;
-  if(json) assert.ok(json.currentPullback.narrative.axis2Roles.length===2);
+  const json=E.serializeInProgress(tree.inProgressStruct);
+  assert.equal(json.currentPullback.narrative.axis2Roles.length,2);
 });
 
 test('T4 ⑤进行中：⑤ 终点取 ④ 之后的极值；已越过的常用倍数记已到，全到则注明延长浪',()=>{
@@ -380,7 +389,10 @@ test('T4 ⑤进行中：⑤ 终点取 ④ 之后的极值；已越过的常用�
   assert.match(t4.currentWave,/已至 140，现回撤中/);
   assert.equal(t4.projection.length,0,'常用倍数 114.4/117/119/123.2 都已被 140 越过');
   assert.equal(t4.projectionReached.length,4);
-  const md=E.renderCurrentWaveStructures({currentWaveStructures:{...cws,structures:[t4]},pricePrecision:2},2);
+  // 违规情景只进"已排除"一行（slim-wave-tree-report）；投影文案以零违规副本校验
+  const mdEx=E.renderCurrentWaveStructures({currentWaveStructures:{...cws,structures:[t4]},pricePrecision:2},2);
+  if(t4.tier1) assert.match(mdEx,/已排除：上涨5浪推动·⑤进行中/);
+  const md=E.renderCurrentWaveStructures({currentWaveStructures:{...cws,structures:[{...t4,tier1:0}]},pricePrecision:2},2);
   assert.match(md,/常用倍数均已到（114\.42 \/ 117 \/ 119 \/ 123\.18），⑤为延长浪/);
 });
 
@@ -558,4 +570,14 @@ test('双锯齿渲染：这段的内部列出价链；轴③给 (y) 对 (w) 的�
   assert.match(tgt,/- \*\*双锯齿\*\*（87395\.67→79800→84898→…）：\(y\) 现为 \(w\) 的 0\.747 倍；\(y\) 通常大于 \(w\) 的 0\.9 倍（78061\.9，未到；共振：\(z\) 破位档 77880\.91）；常见目标 1 倍 \*\*77302\.33\*\*（共振：\(z\) 破位档 77880\.91）、1\.618 倍 \*\*72608\.21\*\*（共振：回撤位 0\.5 72597\.93）；指引线 71089\.07/);
   assert.match(tgt,/规则失效 \*\*46919\.65\*\*（\(y\) 价格须小于 \(w\) 的 5 倍；已在轴②底线 57800\.19 之外，实际以底线为准）；时间上限 \*\*2027-02-18\*\*（\(y\) 时间 ≤ \(w\) 时间的 5 倍；已走 4 根 \/ 上限 120 根）/);
   assert.doesNotMatch(tgt,/59408（[^）]*以底线为准/,'单锯齿失效价在底线之上，不加注');
+});
+
+test('「这段回调走完了吗」大白话：无高一级读法 / 已跌破此前低点两种分支',()=>{
+  const base={level:{extreme:{price:100,timestamp:0}},structureLow:{price:80,timestamp:86400},structureLine:80,axis2Roles:[],tf:'1d'};
+  const simple=E.renderPullbackPlain(base,2);
+  assert.match(simple,/## 这段回调走完了吗（100 → 80）/);
+  assert.match(simple,/守住 \*\*80\*\*：这段回调的结构没坏；跌破则回调还在继续。/);
+  const broken=E.renderPullbackPlain({...base,higherDegree:{state:'broken',aEnd:{price:80},newLow:{price:76},bounce:{price:90},line70:94,regularCap:100,xPct:0.5}},2);
+  assert.match(broken,/已跌破此前低点 \*\*80\*\*，最新低 \*\*76\*\*：回调还没走完/);
+  assert.doesNotMatch(broken,/看这几条线/);
 });

@@ -52,7 +52,13 @@ test('金标准：BTC 2026-10-05 回撤锚点、173% XX、升级线与轴③结�
   assert.doesNotMatch(nr.text, /按轴③主选/);
   assert.equal(nr.afterUpgrade.basis, 'generic');
   const report = t.renderAxis3(tree, 2);
-  assert.ok(report.includes(t.renderPullbackTargets(nr, 2)), '轴③只挂回撤目标位');
+  // slim-wave-tree-report：回撤位进价位梯子；默认轴③只挂一句大白话条件目标，verbose 才挂逐形态条件段落
+  const plain = t.renderPullbackTargetsPlain(nr, 2);
+  assert.ok(plain && report.includes(plain), '轴③默认只挂一句条件目标');
+  assert.ok(!report.includes('**(z) 浪两条路**'), '逐形态条件段落不进默认 md');
+  const reportV = t.renderAxis3(tree, 2, null, { verbose: true });
+  assert.ok(reportV.includes(t.renderPullbackTargets(nr, 2, { compact: true })), 'verbose 轴③挂回撤条件段落');
+  assert.ok(!report.includes('## 回撤目标位'), '旧回撤目标位小节并入价位梯子');
   assert.ok(!report.includes('## 进行腿细化'), '结构细化不在轴③（轴③只留一句导读）');
   assert.equal(JSON.stringify({ fine, assessment: tree.assessment }), before);
   const serialized = JSON.parse(JSON.stringify(nr));
@@ -257,10 +263,14 @@ test('金标准：进行中段终点标为最近枢轴（带日期），现价�
   const peWhen = new Date(pe.timestamp * 1000 + 8 * 3600 * 1000).toISOString().slice(0, 10);
   const peKind = pe.type === 'H' ? '回撤高点' : '回撤低点';
   assert.ok(md.includes(`→ ${P(pe.price)}（${peKind} @ ${peWhen}）**；${kind} ${P(pt.price)} @ ${when}；现价 ${P(meta.lastClose)}`), '轴②开头应标回撤极值，并分开标最近枢轴与现价');
-  assert.ok(md.includes(`→ ${peKind} ${P(pe.price)} @ ${peWhen}，${kind} ${P(pt.price)} @ ${when}，进行中）`), '轴②内部导读与表同口径');
+  assert.ok(!md.includes('## 上表内部细化导读'), '内部导读只在 verbose');
+  const mdV = t.renderMarkdownReport(meta, tree, null, { verbose: true });
+  assert.ok(mdV.includes(`→ ${peKind} ${P(pe.price)} @ ${peWhen}，${kind} ${P(pt.price)} @ ${when}，进行中）`), '轴②内部导读与表同口径');
   assert.ok(!md.includes('（现在）'), '不应再把最近枢轴称为现在');
   const beyond = t.renderBrief({ ...meta, lastClose: ext * 1.01 }, tree);
-  assert.ok(beyond.includes(`现 ${P(ext * 1.01)} 已越过 ${P(ext)}，回调或已结束、上冲在延伸。`), beyond);
+  // track-live-swing-extreme：越过即并入摆动段，简报与轴②同写"仍在延伸中"，不再出现"回调或已结束"
+  assert.ok(beyond.includes(`现 ${P(ext * 1.01)} 已越过 ${P(ext)}，仍在延伸中。`), beyond);
+  assert.ok(!beyond.includes('回调或已结束'));
   assert.ok(!beyond.includes('震荡中'), '越过极值后不应再写回调/震荡中');
 });
 
@@ -340,7 +350,7 @@ test('金标准：转折时间窗全报告仅出现一次（归属轴③）', ()
   const { tree } = buildGoldenTree();
   const md = t.renderMarkdownReport({ product: 'BTC-USD', timeframe: '1d', startUtc: new Date().toISOString(), endUtc: new Date().toISOString(), generatedAtUtc: new Date().toISOString(), source: 'fixture', sampleCount: 314 }, tree);
   const countOf = (needle) => md.split(needle).length - 1;
-  assert.equal(countOf('斐波时间窗'), 1, '斐波时间窗小节标题全文应仅出现一次');
+  assert.equal(countOf('可能的转折时间窗'), 1, '斐波时间窗全文应仅出现一次');
   assert.ok(!md.includes('可能的转折时间窗（斐波时间共振'), '大白话版旧的重复时间窗小节不应再出现');
 });
 
@@ -350,7 +360,12 @@ test('金标准：关键数字（主选形态/失效点/反弹目标）仍在，
   assert.ok(md.includes('57718') || md.includes('57717'), '失效点数字应仍在报告中');
   assert.ok(md.includes(tree.primary.manual.label), '采用候选的形态名称应仍在报告中（轴①）');
   // 反弹目标梯度（XX/B/推动3 三选一）只应在轴③出现一次，不与轴①父级候选表重复列出
-  assert.equal(md.split('若是 X 连接浪').length - 1, 1, 'XX 连接浪目标梯度应只在轴③出现一次');
+  assert.equal((md.match(/^- \*\*X{1,2} 连接浪\*\*/gm) || []).length, 1, 'X/XX 连接浪身份说明应只在轴③出现一次');
+  // slim-wave-tree-report：XX 目标价在价位梯子中各只占一行
+  for (const tg of tree.assessment.bounceHyp.xx.targets) {
+    const px = t.formatPrice(tg.price, tree.pricePrecision);
+    assert.equal(md.split(`| ${px} |`).length - 1, 1, `${px} 在价位梯子中只出现一次`);
+  }
   assert.ok(!md.includes('反弹目标（回撤比×参考腿）'), '轴①父级候选表不应再重列目标价梯度');
 });
 
@@ -474,9 +489,11 @@ test('金标准：Markdown 报告在备选表格行内联两可提示、表格�
   const shortShown = alt.shownLabel.replace(/（.*?）/, '');
   const shortAlt = alt.label.replace(/（.*?）/, '');
   assert.ok(md.includes(`两可:${shortShown}/${shortAlt}`), '备选表格"腿"列应内联"两可:现取/对侧"短标签后缀');
-  assert.ok(md.includes(t.formatPrice(alt.legFrom.price)), '报告应含当前实际采用的两可腿起点');
-  assert.ok(md.includes('对侧点位'), '报告应含表格下方的对侧点位附注行');
-  assert.ok(!md.includes('对侧读法点位'), '旧的表格外两行式脚注（含"对侧读法点位"）不应再出现在备选表格处');
+  assert.ok(!md.includes('对侧点位'), '对侧点位附注默认不进 md（只在 --verbose 下输出）');
+  const mdV = t.renderRankedCounts(tree, undefined, [], null, { verbose: true });
+  assert.ok(mdV.includes('对侧点位'), '--verbose 下应含表格下方的对侧点位附注行');
+  assert.ok(mdV.includes(t.formatPrice(alt.legFrom.price)), '--verbose 下应含当前实际采用的两可腿起点');
+  assert.ok(!mdV.includes('对侧读法点位'), '旧的表格外两行式脚注（含"对侧读法点位"）不应再出现在备选表格处');
 });
 
 // ── enumerate-current-wave-structures（当前进行浪：枚举所有合规的具体结构）──

@@ -3,19 +3,21 @@
 const { getCandles } = require('./candle-cache');
 
 // Overlap page boundaries because the API's end can be exclusive.
+// options.granularity：底层序列粒度（默认 3600；--verify-tf 15m 时为 900）。
 async function fetchSharedHourly(fetchPage, product, start, end, pageHours = 298, options = {}) {
   if (!(pageHours > 0 && pageHours < 299)) throw new Error('Hourly page must be below the API limit');
-  if (!fetchPage) return getCandles(product, 3600, start, end, { ...options, pageBars: pageHours });
+  const { granularity = 3600, ...cacheOptions } = options;
+  if (!fetchPage) return getCandles(product, granularity, start, end, { ...cacheOptions, pageBars: pageHours });
   // Explicitly injected fetchers retain the original offline, non-persistent path.
   const pages=[];
   for (let cursor=start.getTime();cursor<end.getTime();) {
-    const stop=Math.min(cursor+pageHours*3600000,end.getTime());pages.push([cursor,stop]);cursor=stop;
+    const stop=Math.min(cursor+pageHours*granularity*1000,end.getTime());pages.push([cursor,stop]);cursor=stop;
   }
   const merged=new Map(),fetchErrors=[];
   // Fetch independent pages in small batches; merge in page order for deterministic overlaps.
   for (let i=0;i<pages.length;i+=3) {
     const batch=pages.slice(i,i+3);
-    const results=await Promise.allSettled(batch.map(([from,to])=>fetchPage(product,3600,new Date(from),new Date(to))));
+    const results=await Promise.allSettled(batch.map(([from,to])=>fetchPage(product,granularity,new Date(from),new Date(to))));
     results.forEach((r,j)=>{
       if(r.status==='fulfilled') for (const c of r.value) merged.set(c.timestamp,c);
       else fetchErrors.push({fromTimestamp:batch[j][0]/1000,toTimestamp:batch[j][1]/1000,reason:'小时行情分页请求失败'});
@@ -31,9 +33,13 @@ async function fetchSharedHourly(fetchPage, product, start, end, pageHours = 298
 // 现有小时线里——缺口内价格因此被夹在已观测区间内。补线按前收→后开线性插值、高低相同，标 filled；
 // 端点定位只认真实 K 线，落在补线上的枢轴剔除。无母级 K 线、缺口过长或母级极值可能落在缺口里则不补。
 const MAX_GAP_HOURS = 6;
-// 子腿验证的下钻周期链（由粗到细）；4h 与 1h 共用同一份小时行情，4h 由小时线聚合。
-const CASCADE = ['4h', '1h'];
-function fillShortGaps(hours, parentCandles, parentWidth, tolerance) {
+// 子腿验证的下钻周期链（由粗到细）；各档共用同一份底层行情（默认小时线，最细 15m 时为 15 分钟线），粗档由它聚合。
+const CASCADE = ['4h', '1h', '15m'];
+const SECONDS = { '1w':604800, '1d':86400, '4h':14400, '1h':3600, '15m':900 };
+// 最细验证周期决定底层序列粒度：15m 需要 15 分钟线，其余沿用小时线。
+const baseSecondsFor = finestTf => finestTf === '15m' ? 900 : 3600;
+const unitLabel = step => step === 3600 ? '小时' : (step / 60) + ' 分钟';
+function fillShortGaps(hours, parentCandles, parentWidth, tolerance, step = 3600) {
   const gaps = [];
   if (!hours.length) return { series: hours, gaps };
   const parents = new Map((parentCandles || []).map(c => [c.timestamp, c]));
@@ -55,13 +61,13 @@ function fillShortGaps(hours, parentCandles, parentWidth, tolerance) {
   const series = [hours[0]];
   for (let i = 1; i < hours.length; i += 1) {
     const prev = hours[i - 1], next = hours[i];
-    const missing = Math.round((next.timestamp - prev.timestamp) / 3600) - 1;
+    const missing = Math.round((next.timestamp - prev.timestamp) / step) - 1;
     if (missing > 0) {
-      const gap = { fromTimestamp: prev.timestamp + 3600, toTimestamp: next.timestamp - 3600, hours: missing, filled: false };
-      if (missing <= MAX_GAP_HOURS && bounded(gap.fromTimestamp, gap.toTimestamp)) {
+      const gap = { fromTimestamp: prev.timestamp + step, toTimestamp: next.timestamp - step, hours: missing * step / 3600, filled: false };
+      if (missing * step <= MAX_GAP_HOURS * 3600 && bounded(gap.fromTimestamp, gap.toTimestamp)) {
         for (let k = 1; k <= missing; k += 1) {
           const v = prev.close + (next.open - prev.close) * k / (missing + 1);
-          series.push({ timestamp: prev.timestamp + k * 3600, open: v, close: v, high: v, low: v, volume: 0, filled: true });
+          series.push({ timestamp: prev.timestamp + k * step, open: v, close: v, high: v, low: v, volume: 0, filled: true });
         }
         gap.filled = true;
       }
@@ -108,6 +114,9 @@ function mergeAdjacentSameType(pivots) {
 // Intraday evidence uses its own candle indices. Parent points are never rewritten.
 function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = '1d', finestTf = '1h', error = null, endTs = Infinity, pricePrecision = 2 } = {}) {
   const rawHours = [...new Map((hourly || []).map(c => [c.timestamp, c])).values()].sort((a,b) => a.timestamp-b.timestamp);
+  const baseStep = baseSecondsFor(finestTf), unit = unitLabel(baseStep);
+  // 下钻档与底层序列同粒度时直接用，否则按固定秒数聚合（不依赖主周期表，15m 不必成为 --tf 选项）。
+  const frameOf = tf => SECONDS[tf] === baseStep ? { fetchGranularity: baseStep, aggregate: 'none' } : { fetchGranularity: baseStep, aggregate: 'fixed', seconds: SECONDS[tf] };
   const memo = new Map();
   // 同一窗口、同一周期按不同位置角色各验证一次（P1 细分角色后同一条腿常被 4–6 个角色查询）：
   // 共享聚合 K 线、枢轴与 decompose 缓存，子腿拆解跨角色复用。LRU 限量，防长区间常驻内存。
@@ -116,11 +125,10 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
   function prepare(window, tf, from, to) {
     const key = [tf, window[0].timestamp, window.at(-1).timestamp, from.type, from.price, to.type, to.price].join('|');
     if (prepared.has(key)) { const hit = prepared.get(key); prepared.delete(key); prepared.set(key, hit); stats.preparedHits = (stats.preparedHits || 0) + 1; return hit; }
-    const candles = engine.transformCandles(window,engine.TIMEFRAMES[tf]).map((c,index) => ({...c,index}));
+    const candles = engine.transformCandles(window,frameOf(tf)).map((c,index) => ({...c,index}));
     // 聚合桶内全是补线时整根标 filled（如 4h 桶落在 ≤6 小时的缺口里）
-    const step = engine.TIMEFRAMES[tf].fetchGranularity || 3600;
     const filledTs = new Set(window.filter(c => c.filled).map(c => c.timestamp));
-    if (filledTs.size) candles.forEach(c => { let all = true; for (let t = c.timestamp; t < c.timestamp + step; t += 3600) if (!filledTs.has(t)) { all = false; break; } if (all) c.filled = true; });
+    if (filledTs.size) candles.forEach(c => { let all = true; for (let t = c.timestamp; t < c.timestamp + SECONDS[tf]; t += baseStep) if (!filledTs.has(t)) { all = false; break; } if (all) c.filled = true; });
     let fine = engine.anchorBoundaryExtremes(candles,dropFilledPivots(engine.detectPivots(candles,1,{}),candles));
     const start = {type:from.type,price:from.price,index:0,timestamp:candles[0].timestamp};
     const finish = {type:to.type,price:to.price,index:candles.length-1,timestamp:candles.at(-1).timestamp};
@@ -133,13 +141,13 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
     if (prepared.size > PREPARED_MAX) prepared.delete(prepared.keys().next().value);
     return entry;
   }
-  const stats = { hourlyCandles: rawHours.length, failedPages:hourly && hourly.fetchErrors || [], windows: 0, cacheHits: 0 };
-  const seconds = { '1d':86400, '4h':14400, '1h':3600, '1w':604800 };
+  const stats = { hourlyCandles: rawHours.length, baseGranularity: baseStep, failedPages:hourly && hourly.fetchErrors || [], windows: 0, cacheHits: 0 };
+  const seconds = SECONDS;
   const tolerance = Math.max(1e-8, 10 ** -pricePrecision / 2);
-  const { series: hours, gaps } = fillShortGaps(rawHours, parentCandles, seconds[mainTf], tolerance);
+  const { series: hours, gaps } = fillShortGaps(rawHours, parentCandles, seconds[mainTf], tolerance, baseStep);
   stats.hourlyGaps = gaps;
   const position = new Map(hours.map((c, i) => [c.timestamp, i]));
-  const span = (fromTs, toTs) => { // 按时间取连续小时线（序列已排序去重）
+  const span = (fromTs, toTs) => { // 按时间取连续底层 K 线（序列已排序去重）
     let i = position.get(fromTs);
     if (i === undefined) { i = hours.findIndex(c => c.timestamp >= fromTs); if (i < 0) return []; }
     const out = [];
@@ -150,9 +158,9 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
     const width = seconds[sourceTf];
     if (!width || point.provisional) return null;
     const bucket=span(point.timestamp, point.timestamp+width-1);
-    if (bucket.length!==width/3600 || bucket.some((c,i)=>c.timestamp!==point.timestamp+i*3600 || c.timestamp+3600>endTs || !Number.isFinite(c.high) || !Number.isFinite(c.low) || c.high<c.low)) return null;
+    if (bucket.length!==width/baseStep || bucket.some((c,i)=>c.timestamp!==point.timestamp+i*baseStep || c.timestamp+baseStep>endTs || !Number.isFinite(c.high) || !Number.isFinite(c.low) || c.high<c.low)) return null;
     const field = point.type === 'H' ? 'high' : 'low';
-    const real = bucket.filter(c=>!c.filled); // 端点只认真实成交的小时线
+    const real = bucket.filter(c=>!c.filled); // 端点只认真实成交的 K 线
     const extreme=point.type==='H'?Math.max(...real.map(c=>c.high)):Math.min(...real.map(c=>c.low));
     if (Math.abs(extreme-point.price)>tolerance) return null;
     const matches = real.filter(c=>Math.abs(c[field]-point.price)<=tolerance);
@@ -165,26 +173,26 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
     stats.windows++;
     const evidence = { status:'pending', role, sourceTimeframe:sourceTf, from:{...from}, to:{...to}, attempts:[], reason:null,provenRoles:0,requiredRoles:1 };
     const save = reason => { evidence.reason = reason; memo.set(key,evidence); return evidence; };
-    if (error && !hours.length) return save(`小时行情获取失败：${error}`);
-    if (!hours.length) return save('缺少小时行情');
+    if (error && !hours.length) return save(`${unit}行情获取失败：${error}`);
+    if (!hours.length) return save(`缺少${unit}行情`);
     const a = locate(from,sourceTf), b = locate(to,sourceTf);
     if (!a || !b || b.timestamp <= a.timestamp) {
       const width = seconds[sourceTf] || 0;
       const inBucket = pt => gaps.filter(g => !g.filled && g.toTimestamp >= pt.timestamp && g.fromTimestamp < pt.timestamp + width);
       const open = [...inBucket(from), ...inBucket(to)];
-      if (open.length) return save('母级端点所在 K 线有小时数据断档（'+describeGaps(open)+'；缺口过长或母级极值可能落在缺口内，不插补），无法定位端点');
+      if (open.length) return save('母级端点所在 K 线有'+unit+'数据断档（'+describeGaps(open)+'；缺口过长或母级极值可能落在缺口内，不插补），无法定位端点');
       return save('母级端点未能在完整桶内唯一定位（或端点尚未确认）');
     }
     evidence.located = { fromTimestamp:a.timestamp, toTimestamp:b.timestamp };
     const window = span(a.timestamp, Math.min(b.timestamp, endTs));
     const crossing = gaps.filter(g => g.fromTimestamp > a.timestamp && g.toTimestamp < b.timestamp);
     if (crossing.length) evidence.dataGaps = crossing.map(g => ({ ...g }));
-    if (!window.length || window[0].timestamp !== a.timestamp || window.at(-1).timestamp !== b.timestamp || window.some((c,i) => i && c.timestamp-window[i-1].timestamp !== 3600)) {
+    if (!window.length || window[0].timestamp !== a.timestamp || window.at(-1).timestamp !== b.timestamp || window.some((c,i) => i && c.timestamp-window[i-1].timestamp !== baseStep)) {
       const detail = describeGaps(crossing.filter(g => !g.filled));
-      return save('小时窗口缺失 K 线'+(detail ? '（'+detail+'；缺口过长或母级极值可能落在缺口内，不插补）' : '')+'，不能完成结构验证');
+      return save(unit+'窗口缺失 K 线'+(detail ? '（'+detail+'；缺口过长或母级极值可能落在缺口内，不插补）' : '')+'，不能完成结构验证');
     }
     // A bar containing both endpoints has no observable intrabar event order.
-    // 周期链逐级下钻（4h → 1h，取比来源细、且不细于声明最细周期的部分）：每一档都当作临时分辨率边界，
+    // 周期链逐级下钻（4h → 1h → 15m，取比来源细、且不细于声明最细周期的部分）：每一档都当作临时分辨率边界，
     // 该档拆得出（verified）即截止，不再验更细周期；拆不出（含 invalid、搜索受限）继续下一档，
     // 只有最细一档的完整搜索失败才判 invalid。
     const lowerFrames = CASCADE.filter(tf => seconds[tf] < seconds[sourceTf] && seconds[tf] >= seconds[finestTf]);
@@ -222,16 +230,18 @@ function createSubwaveVerifier(engine, { hourly, parentCandles = null, mainTf = 
 
 async function buildVerifiedCountTree(engine, fine, candles, options = {}) {
   const mainTf = options.mainTf || '1d';
-  let hourly = options.hourly || (mainTf === '1h' ? candles : null);
+  const baseStep = baseSecondsFor(options.finestTf);
+  let hourly = options.hourly || (mainTf === '1h' && baseStep === 3600 ? candles : null);
   let error = null;
-  if (!hourly && options.finestTf !== 'off' && ['1d','4h','1w'].includes(mainTf)) {
-    const seconds = mainTf === '1w' ? 604800 : mainTf === '1d' ? 86400 : 14400;
+  if (!hourly && options.finestTf !== 'off' && SECONDS[mainTf] > baseStep) {
+    const seconds = SECONDS[mainTf];
     // Include the entire endpoint bucket; a daily timestamp is the bucket start.
     const start = new Date(candles[0].timestamp*1000);
     const end = new Date(Math.min(candles.at(-1).timestamp+seconds,options.endTs || Infinity)*1000);
-    try { hourly = options.fetchHourly ? await options.fetchHourly(options.product,3600,start,end) : await fetchSharedHourly(null,options.product,start,end,298,{refresh:options.refresh}); }
-    catch (e) { error = options.fetchHourly ? e.message : 'Coinbase 小时行情请求失败'; }
-    if (hourly && hourly.fetchErrors && hourly.fetchErrors.length) error=hourly.fetchErrors.length+' 个小时行情分页获取失败；保留已获取数据，缺口窗口待验证';
+    const unit = unitLabel(baseStep);
+    try { hourly = options.fetchHourly ? await options.fetchHourly(options.product,baseStep,start,end) : await fetchSharedHourly(null,options.product,start,end,298,{refresh:options.refresh,granularity:baseStep}); }
+    catch (e) { error = options.fetchHourly ? e.message : `Coinbase ${unit}行情请求失败`; }
+    if (hourly && hourly.fetchErrors && hourly.fetchErrors.length) error=hourly.fetchErrors.length+` 个${unit}行情分页获取失败；保留已获取数据，缺口窗口待验证`;
   }
   if (hourly && options.transformHourly) hourly = options.transformHourly(hourly);
   const verifier = createSubwaveVerifier(engine,{...options,hourly,parentCandles:candles,mainTf,error});

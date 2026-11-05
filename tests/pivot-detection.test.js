@@ -60,3 +60,41 @@ test('同型合并：其间反弹没越过所在段另一端时照旧合并，�
   assert.deepEqual(seq(mk(112)),['H110','L100','H112','L98']);
   for(const b of [104,112]){const c=mk(b);assert.deepEqual(swingViolations(c,E.anchorBoundaryExtremes(c,E.detectPivots(c,1,{}))),[]);}
 });
+
+test('左边界：首根 K 线比首个确认拐点更极端时，从首根起锚，再补其间的反向极值',()=>{
+  // BTC 5m 2026-11-02 06:20 起：首根即区间最低 77620，首个确认低点是 77820.56，其间高点 77892.84。
+  // 旧逻辑只补反向极值，起点锚在 77892.84，77620→77892.84 这段被丢掉。
+  const rows=[[77712.27,77712.28,77620,77684.1],[77684.1,77689.71,77660,77689.7],[77689.71,77778.01,77689.7,77778],[77778.01,77792.88,77749.93,77776],
+    [77776,77818.8,77776,77817.98],[77817.99,77835.28,77812,77835.27],[77835.28,77870.85,77835.27,77870.85],[77870.85,77892.84,77823.87,77823.88],
+    [77823.88,77963.61,77820.56,77937.35],[77937.34,78062.55,77914,78047.93],[78047.92,78222.74,78034.96,78138.11],[78138.11,78180.01,78084.02,78092]];
+  const c=rows.map(([o,h,l,cl],i)=>bar(o,h,l,cl,i));
+  const f=pivotsOf(c);
+  assert.deepEqual(f.slice(0,4).map(p=>`${p.type}${p.price}`),['L77620','H77892.84','L77820.56','H78222.74']);
+  assert.equal(f[0].index,0);assert.equal(f[0].boundary,'start');
+  assert.deepEqual(swingViolations(c,f),[]);
+  // 首根同时是区间最高与最低：按外包线惯例定先后。阴线先高后低 → H10、L4；阳线先低后高 → L4、H10，再补其后的低点
+  const rest=[bar(5,6,4.5,5.5,1),bar(5.5,9,5.4,8.8,2),bar(8.8,9.5,7,7.2,3),bar(7.2,7.4,6,6.5,4)];
+  const seq=(c)=>pivotsOf(c).map(p=>`${p.type}${p.price}`);
+  const bear=[bar(10,10,4,5,0),...rest],bull=[bar(5,10,4,9,0),...rest];
+  assert.deepEqual(seq(bear).slice(0,3),['H10','L4','H9.5']);
+  assert.deepEqual(seq(bull).slice(0,4),['L4','H10','L4.5','H9.5']);
+  for(const c of [bear,bull]) assert.deepEqual(swingViolations(c,pivotsOf(c)),[]);
+  // 首根不比首个确认拐点更极端时照旧只补反向极值
+  const plain=[bar(10,12,9,11,0),bar(11,13,10,12,1),bar(12,12.5,8,8.5,2),bar(8.5,11,8.4,10.5,3),bar(10.5,10.8,9,9.5,4)];
+  assert.deepEqual(pivotsOf(plain).slice(0,3).map(p=>`${p.type}${p.price}`),['L9','H13','L8']);
+});
+
+test('sliceFine：外包线同一根上的高低枢轴按身份切片，子腿首尾与父级端点一致', () => {
+  const { sliceFine } = require('../analyze-wave-tree.js');
+  // index 5 是外包线：先 L(40) 后 H(55)
+  const fine = [
+    { type: 'H', price: 60, index: 0 }, { type: 'L', price: 45, index: 2 }, { type: 'H', price: 58, index: 4 },
+    { type: 'L', price: 40, index: 5 }, { type: 'H', price: 55, index: 5 }, { type: 'L', price: 38, index: 8 },
+  ];
+  const ends = (seg) => [seg[0].price, seg.at(-1).price];
+  assert.deepEqual(ends(sliceFine(fine, fine[2], fine[3])), [58, 40], '3 浪止于 L40，不带同根的 H55');
+  assert.deepEqual(ends(sliceFine(fine, fine[3], fine[4])), [40, 55]);
+  assert.deepEqual(ends(sliceFine(fine, fine[4], fine[5])), [55, 38], '5 浪起于 H55，不从同根的 L40 起');
+  // 端点不在列表里：退回按 index 区间
+  assert.deepEqual(sliceFine(fine, { index: 2 }, { index: 4 }).map((p) => p.price), [45, 58]);
+});

@@ -327,3 +327,56 @@ test('parent verification scope takes the coarsest leg cutoff and the report say
     return E.decompose(points,candles,['impulse'],0,{beamK:3,maxDepth:2,cache:new Map(),evidenceMode:true,timeframe:'1d',verification:{evaluate:()=>cutoff(tf)}});
   }
 });
+
+// --verify-tf 15m：底层序列换成 15 分钟线，周期链延伸到 15m；1h 主周期因此也能下钻一级。
+const quarter=900;
+// 小时线逐根拆成 4 根 15 分钟线；只把两个端点小时的极值放在唯一一根上，其余三根略收，避免端点定位出现并列极值。
+function toQuarters(hours,{highAt=null,lowAt=null}={}){
+  const out=[];
+  hours.forEach((c,h)=>{for(let q=0;q<4;q+=1){
+    let v=c.high;
+    if(h===highAt && q) v=c.high-0.5;
+    if(h===lowAt && q<3) v=c.low+0.5;
+    out.push({timestamp:c.timestamp+q*quarter,open:v,close:v,high:v,low:v,volume:1});
+  }});
+  return out;
+}
+test('verify-tf 15m extends the chain: 1d → 4h/1h/15m, 1h → 15m',()=>{
+  const hours=zigzagHours(0,16);
+  const quarters=toQuarters(hours,{highAt:0,lowAt:55});
+  const v=createSubwaveVerifier(E,{hourly:quarters,finestTf:'15m'});
+  assert.equal(v.stats.baseGranularity,900);
+  const daily=v.evaluate(zzFrom,zzTo,'impulse|ending');
+  assert.deepEqual(daily.attempts.map(a=>a.timeframe),['4h','1h','15m'],'1h 拆不出时继续 15m');
+  assert.equal(daily.located.fromTimestamp,base,'端点定位到 15 分钟线');
+  assert.equal(daily.located.toTimestamp,base+55*3600+3*quarter);
+  assert.deepEqual(v.evaluate(zzFrom,zzTo,'corrective').attempts.map(a=>a.timeframe),['4h'],'粗档已拆出时照常截止');
+  // 1h 来源：默认最细 1h 时不下钻；最细 15m 时只剩 15m 一档
+  const hFrom={timestamp:base,index:0,type:'H',price:100},hTo={timestamp:base+55*3600,index:1,type:'L',price:30};
+  assert.deepEqual(createSubwaveVerifier(E,{hourly:hours}).evaluate(hFrom,hTo,'impulse|ending','1h').attempts,[]);
+  assert.deepEqual(v.evaluate(hFrom,hTo,'impulse|ending','1h').attempts.map(a=>a.timeframe),['15m']);
+});
+test('1h source verifies a role on 15m bars and records the 15m resolution boundary',()=>{
+  // 每根 15 分钟线各为一个枢轴：14 根构成 a-b-c 下跌单锯齿 100→30（与 4h 截止用例同形），之后补 31
+  const levels=zigzagLevels.map(l=>Array.isArray(l)?(l[0]>50?Math.max(...l):Math.min(...l)):l);
+  const quarters=[...levels,...Array(18).fill(31)].map((v,i)=>({timestamp:base+i*quarter,open:v,close:v,high:v,low:v,volume:1}));
+  const r=createSubwaveVerifier(E,{hourly:quarters,finestTf:'15m'}).evaluate({timestamp:base,index:0,type:'H',price:100},{timestamp:base+3*3600,index:1,type:'L',price:30},'corrective','1h');
+  assert.deepEqual(r.attempts.map(a=>a.timeframe),['15m']);
+  assert.equal(r.status,'verified');
+  assert.equal(r.verificationScope.finestTimeframe,'15m');
+  assert.match(r.reason,/最细分辨率范围验证/);
+});
+test('async builder fetches 15m bars for a 1h main timeframe only when verify-tf is 15m',async()=>{
+  const hours=zigzagHours(0,16);
+  const candles=hours.map((c,index)=>({...c,index}));
+  const fine=E.anchorBoundaryExtremes(candles,E.detectPivots(candles,1,{}));
+  const grans=[];
+  const fetchHourly=async(_,granularity)=>{grans.push(granularity);return toQuarters(hours);};
+  const fine15=await buildVerifiedCountTree(E,fine,candles,{mainTf:'1h',finestTf:'15m',product:'TEST',maxDepth:2,fetchHourly});
+  assert.deepEqual(grans,[900]);
+  assert.equal(fine15.verifier.stats.baseGranularity,900);
+  assert.equal(fine15.verifier.stats.hourlyCandles,hours.length*4);
+  assert.equal(fine15.tree.verification.finestTimeframe,'15m');
+  await buildVerifiedCountTree(E,fine,candles,{mainTf:'1h',finestTf:'1h',product:'TEST',maxDepth:2,fetchHourly});
+  assert.deepEqual(grans,[900],'最细 1h 时 1h 主周期直接复用主图 K 线，不另取数');
+});

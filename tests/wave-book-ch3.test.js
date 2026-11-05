@@ -188,3 +188,37 @@ test('§3.18.3：叙述写明衰竭5浪的取点', () => {
   const md = renderBounceHypotheses(bounceHypotheses(TRUNC, 'corrective', null, { truncated: true }), null, 2);
   assert.match(md, /整段（100→60，5浪衰竭按 0–3 取点（书§3\.18\.3），幅 40）/);
 });
+
+test('X 改按整段 W 度量时续行浪为 Y；仍按上一子浪度量的 XX 续行浪为 Z', () => {
+  // 下跌结构 200 → 150 → 100（末腿起点 150）；反弹到 160 越过末腿起点 → 整段 W 度量
+  const pts = [200, 150, 100].map((price, i) => ({ price, index: i * 3 }));
+  const broken = bounceHypotheses(pts, 'corrective', 160);
+  assert.equal(broken.xx.ref, 'whole');
+  assert.equal(broken.xx.aftermath, 'Y 浪下跌');
+  const intact = bounceHypotheses(pts, 'corrective', 140);
+  assert.notEqual(intact.xx.ref, 'whole');
+  assert.equal(intact.xx.aftermath, 'Z 浪下跌');
+});
+
+test('上涨结构：轴③叙述按回调镜像用词（回调/跌到/C 浪上涨/翻空/下方）', () => {
+  // 上涨锯齿 0=100 → a=130 → b=115 → c=150，之后回调到 120
+  const up = [100, 130, 115, 150].map((price, i) => ({ price, index: i * 3 }));
+  const h = bounceHypotheses(up, 'driving', 120);
+  assert.equal(h.b.aftermath, 'C 浪上涨');
+  assert.equal(h.xx.aftermath, 'Z 浪上涨');
+  const md = renderBounceHypotheses(h, { from: 150, to: 120, levels: [0.382, 0.5, 0.618].map((r) => ({ ratio: r, price: 120 + r * 30 })) }, 2);
+  assert.match(md, /起的这波回调，身份还没定。按回调内部/);
+  assert.match(md, /若是 B 回调.*需要跌到 0\.5/);
+  assert.match(md, /那下方 .* 一线只作参考支撑，前提是回调内部得走成五浪；果真如此，趋势就此翻空、下方不再设回撤下限/);
+  assert.match(md, /须压在 \*\*131\.46\*\* 之下才算继续走弱，否则反抽 \*\*138\.54\*\*/);
+  assert.doesNotMatch(md, /反弹|翻多|涨到|下跌/);
+});
+
+test('下跌结构：轴③叙述保持反弹用词', () => {
+  const h = bounceHypotheses(TRUNC, 'corrective');
+  assert.equal(h.b.aftermath, 'C 浪下跌');
+  const md = renderBounceHypotheses(h, null, 2);
+  assert.match(md, /这波反弹/);
+  assert.match(md, /需要涨到 0\.5/);
+  assert.match(md, /趋势就此翻多、上方不再设回撤上限/);
+});
