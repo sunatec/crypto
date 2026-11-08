@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "id": "K-NONTRANSITIVE",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "K-001",
+    "K-002",
+    "E-001"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168"
+    ],
+    "lesson": 65,
+    "pdfPages": [
+      168
+    ],
+    "figure": null,
+    "note": "根据所列正文规则人工构造整数tick样例，非原文行情。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "ohlc",
+    "items": [
+      {
+        "id": "raw-0",
+        "time": 1700000000000,
+        "closeTime": 1700000060000,
+        "openTicks": 0,
+        "highTicks": 10,
+        "lowTicks": 0,
+        "closeTicks": 10
+      },
+      {
+        "id": "raw-1",
+        "time": 1700000060000,
+        "closeTime": 1700000120000,
+        "openTicks": 4,
+        "highTicks": 16,
+        "lowTicks": 4,
+        "closeTicks": 16
+      },
+      {
+        "id": "raw-2",
+        "time": 1700000120000,
+        "closeTime": 1700000180000,
+        "openTicks": 6,
+        "highTicks": 14,
+        "lowTicks": 6,
+        "closeTicks": 14
+      },
+      {
+        "id": "raw-3",
+        "time": 1700000180000,
+        "closeTime": 1700000240000,
+        "openTicks": 4,
+        "highTicks": 15,
+        "lowTicks": 4,
+        "closeTicks": 15
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "processedCount": 0,
+        "direction": "waiting"
+      },
+      "structures": [],
+      "events": [],
+      "reason": "等待种子。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "processedCount": 2,
+        "direction": "up",
+        "tailLowTicks": 4,
+        "tailHighTicks": 16
+      },
+      "structures": [],
+      "events": [],
+      "reason": "确定向上。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "processedCount": 2,
+        "direction": "up",
+        "tailLowTicks": 6,
+        "tailHighTicks": 16
+      },
+      "structures": [],
+      "events": [],
+      "reason": "合并得到[6,16]。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "processedCount": 3,
+        "direction": "down",
+        "tailLowTicks": 4,
+        "tailHighTicks": 15
+      },
+      "structures": [],
+      "events": [],
+      "reason": "原始[6,14]被[4,15]包含，但合并结果[6,16]与之非包含，故追加并转向下。"
+    }
+  ]
+}

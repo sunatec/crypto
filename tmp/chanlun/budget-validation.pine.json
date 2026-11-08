@@ -1,0 +1,23 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\budget-validation.pine",
+  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
+  "sha256": "e9172b134febb9e3d1ba4215c0f195246c062e4f3e165913dd0486e98545704b",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "bytes": 86366,
+  "cases": 5,
+  "fixtureHashes": [
+    {
+      "id": "S-FIRST-END",
+      "sha256": "ebc3eb61e645e000c7fba1418e063ec05066f1f85332544f9153be00ee3ba147"
+    },
+    {
+      "id": "S-FIRST-EQUAL-THIRD",
+      "sha256": "1c9a781716e63ea2727bb84470f70656093879541745c9e2016fe0dec8d59b5c"
+    },
+    {
+      "id": "N-OWN-RANGES",
+      "sha256": "0f2d46415c33386490c6b0750c52a7bdf4200dfc95b642d663bc9dc8e664556e"
+    }
+  ],
+  "execution": "not run in Pine"
+}

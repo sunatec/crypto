@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "results": [
+    {
+      "date": "2026-11-02",
+      "status": "user-reported-pass",
+      "coreHash": "fbd7e2ec4e04e388b954b918503001738b18f5860a3b2a2fb0a75d0b07efacd4",
+      "source": "tmp/chanlun/segment-compact/smoke.pine",
+      "snapshot": "tmp/chanlun/compiled/compact-smoke-6db429f8d0be7b548fdfdc20dee5105808e1a73a313da4423ee0ea4fed6b96c3.pine",
+      "requestedFileSha256": "6db429f8d0be7b548fdfdc20dee5105808e1a73a313da4423ee0ea4fed6b96c3",
+      "userReport": "精简单例 PASS",
+      "expectedDisplay": "PASS: 1 S case(s), 10 prefixes",
+      "fixtureIds": [
+        "S-FIRST-WAIT-INCLUSION"
+      ],
+      "prefixes": 10,
+      "resourceChecks": false,
+      "scope": "User report in response to request for this file; uploaded bytes not independently inspected. Does not cover the full 12-case suite, budgets or production chart acceptance."
+    },
+    {
+      "date": "2026-11-02",
+      "status": "user-reported-assertion-failure",
+      "coreHash": "fbd7e2ec4e04e388b954b918503001738b18f5860a3b2a2fb0a75d0b07efacd4",
+      "source": "tmp/chanlun/segment-compact/all-cases.pine",
+      "snapshot": "tmp/chanlun/compiled/compact-full-df05061c99a963363239dfa074c56bf3b4b352778706c3dd81e6ecca9cacf83b.pine",
+      "requestedFileSha256": "df05061c99a963363239dfa074c56bf3b4b352778706c3dd81e6ecca9cacf83b",
+      "expectedDisplay": "PASS: 12 S case(s), 110 prefixes, budgets",
+      "cases": 12,
+      "prefixes": 110,
+      "resourceChecks": true,
+      "userReport": "Error on bar 82: FAIL: S-WAIT-DIRECTION-INSIDE/prefix-12/confirmed-count\nat chan_cv_assert():911\nat chan_cv_prefix():978\nat #main():1127",
+      "scope": "Full script compiled and entered assertions; no full-suite PASS. Subsequently isolated below."
+    },
+    {
+      "date": "2026-11-02",
+      "status": "user-reported-assertion-failure",
+      "coreHash": "fbd7e2ec4e04e388b954b918503001738b18f5860a3b2a2fb0a75d0b07efacd4",
+      "source": "tmp/chanlun/segment-compact/cases/s-wait-direction-inside.pine",
+      "snapshot": "tmp/chanlun/compiled/compact-direction-fail-8428ab1fff3861f311bc152e7907484f3cfb644fd61a74cd6482a287009fcafc.pine",
+      "requestedFileSha256": "8428ab1fff3861f311bc152e7907484f3cfb644fd61a74cd6482a287009fcafc",
+      "userReport": "Error on bar 11: FAIL: S-WAIT-DIRECTION-INSIDE/prefix-12/confirmed-count expected=0 actual=1 observed=1 [S-001/S-002/E-007 20->3 end=1701000540000 confirmed=1701000780000]\nat chan_cv_assert():900\nat chan_cv_prefix():971\nat #main():1025",
+      "fixtureIds": [
+        "S-WAIT-DIRECTION-INSIDE"
+      ],
+      "failingPrefix": 12,
+      "expectedCount": 0,
+      "actualCount": 1
+    },
+    {
+      "date": "2026-11-02",
+      "status": "user-reported-pass",
+      "coreHash": "1c018aea887bb3172790ec51f2cc9c8a7e4eed6ce3447235f3b48deaf3a50200",
+      "source": "tmp/chanlun/segment-compact/all-cases.pine",
+      "snapshot": "tmp/chanlun/compiled/compact-S12-pass-924275a46a6f932bd8b2e51bcdcd9bfa4e9b43e2f3801c3d07a2fa5269d8cf3a.pine",
+      "requestedFileSha256": "924275a46a6f932bd8b2e51bcdcd9bfa4e9b43e2f3801c3d07a2fa5269d8cf3a",
+      "userReport": "S12修正版 PASS",
+      "expectedDisplay": "PASS: 12 S case(s), 110 prefixes, budgets",
+      "cases": 12,
+      "prefixes": 110,
+      "resourceChecks": true,
+      "scope": "User report for this requested artifact, includes original failure and special segment cases. Uploaded bytes not independently inspected; production-chart, K/F/P and market replay acceptance remain separate."
+    },
+    {
+      "source": "chanlun_original.pine",
+      "requestedFileSha256": "ea007bb34b207129cedbb266ac5e2b8c7a36f33a5fd5eb0df9da0cc38e23f2ed",
+      "coreHash": "1c018aea887bb3172790ec51f2cc9c8a7e4eed6ce3447235f3b48deaf3a50200",
+      "snapshot": "tmp/chanlun/compiled/production-pass-ea007bb34b207129cedbb266ac5e2b8c7a36f33a5fd5eb0df9da0cc38e23f2ed.pine",
+      "status": "user-reported-pass",
+      "date": "2026-11-02",
+      "userReport": "正式入口修正版正常",
+      "scope": "User reported compilation, runtime and blue strokes/orange segments normal for this requested version. Fixed-feed, replay, live tick and complete indicator acceptance remain separate."
+    }
+  ],
+  "pending": []
+}

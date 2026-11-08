@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "P-MERGED-DISTANCE",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "P-001"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C77-195"
+    ],
+    "lesson": 77,
+    "pdfPages": [
+      195
+    ],
+    "figure": null,
+    "note": "人工构造的合规已确认分型输入假设，仅测试成员与价格区间资格；不是完整OHLC成笔或P-002完成证明。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "fractal-pairs",
+    "items": [
+      {
+        "id": "P-MERGED-DISTANCE/pair",
+        "first": {
+          "id": "top-1",
+          "kind": "top",
+          "endpointTime": 1700000060000,
+          "priceTicks": 10,
+          "confirmedAt": 1700000240000,
+          "leftId": "k0",
+          "middleId": "k1",
+          "rightId": "k2",
+          "leftOrdinal": 0,
+          "middleOrdinal": 1,
+          "rightOrdinal": 2,
+          "middleHighTicks": 10,
+          "middleLowTicks": 4
+        },
+        "last": {
+          "id": "bottom-4",
+          "kind": "bottom",
+          "endpointTime": 1700003600000,
+          "priceTicks": 0,
+          "confirmedAt": 1700003780000,
+          "leftId": "k3",
+          "middleId": "k4",
+          "rightId": "k5",
+          "leftOrdinal": 3,
+          "middleOrdinal": 4,
+          "rightOrdinal": 5,
+          "middleHighTicks": 6,
+          "middleLowTicks": 0
+        }
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "strokeEligible": false
+      },
+      "structures": [],
+      "events": [],
+      "reason": "原始时间相隔很久，但处理后顶成员k0/k1/k2与底成员k3/k4/k5相邻，没有独立K线。不能按原始间距放行。"
+    }
+  ]
+}

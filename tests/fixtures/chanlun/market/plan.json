@@ -1,0 +1,16 @@
+{
+  "schemaVersion":1,
+  "purpose":"TradingView同源OHLC采集计划，尚非行情验收结果",
+  "endExclusiveUTC":"2026-11-01T00:00:00Z",
+  "barsPerCase":1008,
+  "indicatorParameters":{"fixedStart":true,"sampleLimit":1008,"initialBars":5000,"segmentPendingLimit":64,"segmentWorkLimit":8192,"centerSources":64},
+  "actualIndicatorParameters":"not yet observed on market charts",
+  "cases":[
+    {"id":"BTCUSDT-60","feed":"BINANCE:BTCUSDT","feedCode":1,"timeframe":"60","seconds":3600,"startUTC":"2026-09-20T00:00:00Z"},
+    {"id":"BTCUSDT-240","feed":"BINANCE:BTCUSDT","feedCode":1,"timeframe":"240","seconds":14400,"startUTC":"2026-05-17T00:00:00Z"},
+    {"id":"BTCUSDT-D","feed":"BINANCE:BTCUSDT","feedCode":1,"timeframe":"D","seconds":86400,"startUTC":"2024-01-28T00:00:00Z"},
+    {"id":"ETHUSDT-60","feed":"BINANCE:ETHUSDT","feedCode":2,"timeframe":"60","seconds":3600,"startUTC":"2026-09-20T00:00:00Z"},
+    {"id":"ETHUSDT-240","feed":"BINANCE:ETHUSDT","feedCode":2,"timeframe":"240","seconds":14400,"startUTC":"2026-05-17T00:00:00Z"},
+    {"id":"ETHUSDT-D","feed":"BINANCE:ETHUSDT","feedCode":2,"timeframe":"D","seconds":86400,"startUTC":"2024-01-28T00:00:00Z"}
+  ]
+}

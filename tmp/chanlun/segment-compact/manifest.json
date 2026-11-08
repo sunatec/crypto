@@ -1,0 +1,356 @@
+{
+  "schemaVersion": 1,
+  "productionSha256": "363e1e50618a6770efa7540aef6b4fd65451cb1c5dc5865d448bfff83c368dd0",
+  "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+  "smoke": "smoke.pine",
+  "suite": "all-cases.pine",
+  "status": "awaiting-cloud-compilation",
+  "files": [
+    {
+      "file": "all-cases.pine",
+      "sha256": "76ff67445538ee3fb5c55ea38d77bca4d2c5ad762c14182908eba46680fdb6a7",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-CONTINUE",
+          "fixtureHash": "eb36b6948cd904c79d4134da491ca220ac6a22e3eb4affac6a1e51bb30beb234",
+          "prefixes": 6,
+          "events": 0
+        },
+        {
+          "id": "S-FIRST-END",
+          "fixtureHash": "ebc3eb61e645e000c7fba1418e063ec05066f1f85332544f9153be00ee3ba147",
+          "prefixes": 6,
+          "events": 1
+        },
+        {
+          "id": "S-FIRST-EQUAL-THIRD",
+          "fixtureHash": "1c9a781716e63ea2727bb84470f70656093879541745c9e2016fe0dec8d59b5c",
+          "prefixes": 6,
+          "events": 0
+        },
+        {
+          "id": "S-FIRST-LOCKED-PREFIX",
+          "fixtureHash": "15d5c61b65ab4da74025a6ebe99e118a4700c1998091c16ae27b2319c669449c",
+          "prefixes": 12,
+          "events": 3
+        },
+        {
+          "id": "S-FIRST-WAIT-END",
+          "fixtureHash": "11727374a43a83d9170759b58eb36d5e5f2b105b20b1784300e3458104c5fa6c",
+          "prefixes": 8,
+          "events": 1
+        },
+        {
+          "id": "S-FIRST-WAIT-INCLUSION",
+          "fixtureHash": "bc2926a1f9beeea7fa746f2d6d70f5aabe7383af5aa4bb005a84d2177793acb5",
+          "prefixes": 10,
+          "events": 1
+        },
+        {
+          "id": "S-SPECIAL-INTERNAL-EXTREME",
+          "fixtureHash": "ef29e417f92cd3591ebe1174ae6720b4aa028cbc0b6dca577477270ba2230cfc",
+          "prefixes": 16,
+          "events": 3
+        },
+        {
+          "id": "S-START-AFTER-INVALID",
+          "fixtureHash": "10b4c054f09f8d7ebd15d61fe39d241a5f47e5db4c897b8705efecaec18d1b16",
+          "prefixes": 7,
+          "events": 1
+        },
+        {
+          "id": "S-WAIT-DIRECTION-INSIDE",
+          "fixtureHash": "e3770e9fe73f4d4fea8c654eecc526e7c064c70e5b940d36b1d141adae35bbee",
+          "prefixes": 12,
+          "events": 0
+        },
+        {
+          "id": "S81-EQUAL",
+          "fixtureHash": "46130162e43b1d6833c4f7b5687cfeac7de729c910b04f7e9da4924fc126803e",
+          "prefixes": 9,
+          "events": 0
+        },
+        {
+          "id": "S81-HIGHER",
+          "fixtureHash": "347ed77c118d3ce59c6d6d0c8721f740d9eaef7ad1b7dacf4e8de8d5e6efe9ff",
+          "prefixes": 9,
+          "events": 0
+        },
+        {
+          "id": "S81-LOWER",
+          "fixtureHash": "905187fba7c7d9674eaf3e16ad7603381974be51c4a85d7662e6fa2858688a24",
+          "prefixes": 9,
+          "events": 2
+        }
+      ],
+      "prefixes": 110,
+      "requiredClosedBars": 111,
+      "resourceChecks": true,
+      "bytes": 89295,
+      "lines": 1244,
+      "segmentCallSites": 8,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-first-continue.pine",
+      "sha256": "b948987173608edc2bf1674a025e11fb99b32865ba3e185c7ab3685474e75f59",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-CONTINUE",
+          "fixtureHash": "eb36b6948cd904c79d4134da491ca220ac6a22e3eb4affac6a1e51bb30beb234",
+          "prefixes": 6,
+          "events": 0
+        }
+      ],
+      "prefixes": 6,
+      "requiredClosedBars": 6,
+      "resourceChecks": false,
+      "bytes": 64390,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-first-end.pine",
+      "sha256": "ff5d2ea275b0351297d907707625336f74a8e2ad243eab62239a0bca638f6762",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-END",
+          "fixtureHash": "ebc3eb61e645e000c7fba1418e063ec05066f1f85332544f9153be00ee3ba147",
+          "prefixes": 6,
+          "events": 1
+        }
+      ],
+      "prefixes": 6,
+      "requiredClosedBars": 6,
+      "resourceChecks": false,
+      "bytes": 64560,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-first-equal-third.pine",
+      "sha256": "718e7a860c81fe7bd314fa93f4a3fc6694a437ef4cf20683bb45d27bf15c8832",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-EQUAL-THIRD",
+          "fixtureHash": "1c9a781716e63ea2727bb84470f70656093879541745c9e2016fe0dec8d59b5c",
+          "prefixes": 6,
+          "events": 0
+        }
+      ],
+      "prefixes": 6,
+      "requiredClosedBars": 6,
+      "resourceChecks": false,
+      "bytes": 64394,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-first-locked-prefix.pine",
+      "sha256": "dcf5ee954a776992200eaa31bc26ced31acf4065966c1ec707202e13c323d296",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-LOCKED-PREFIX",
+          "fixtureHash": "15d5c61b65ab4da74025a6ebe99e118a4700c1998091c16ae27b2319c669449c",
+          "prefixes": 12,
+          "events": 3
+        }
+      ],
+      "prefixes": 12,
+      "requiredClosedBars": 12,
+      "resourceChecks": false,
+      "bytes": 65984,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-first-wait-end.pine",
+      "sha256": "197765f6d45fd8e55d62a2b685acdeff0a4cab85b515c3b579b8b135d75c595c",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-WAIT-END",
+          "fixtureHash": "11727374a43a83d9170759b58eb36d5e5f2b105b20b1784300e3458104c5fa6c",
+          "prefixes": 8,
+          "events": 1
+        }
+      ],
+      "prefixes": 8,
+      "requiredClosedBars": 8,
+      "resourceChecks": false,
+      "bytes": 64904,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-first-wait-inclusion.pine",
+      "sha256": "1a776af6f95cc50be09cd9c995ffec4c07c454dc2714d1ab73a4fd8b15b08dce",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-WAIT-INCLUSION",
+          "fixtureHash": "bc2926a1f9beeea7fa746f2d6d70f5aabe7383af5aa4bb005a84d2177793acb5",
+          "prefixes": 10,
+          "events": 1
+        }
+      ],
+      "prefixes": 10,
+      "requiredClosedBars": 10,
+      "resourceChecks": false,
+      "bytes": 65266,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-special-internal-extreme.pine",
+      "sha256": "4fad1a24deddc8d7b5ab8acea71608c7eb2cbeb2348d68d132cac2c2cff4c6e7",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-SPECIAL-INTERNAL-EXTREME",
+          "fixtureHash": "ef29e417f92cd3591ebe1174ae6720b4aa028cbc0b6dca577477270ba2230cfc",
+          "prefixes": 16,
+          "events": 3
+        }
+      ],
+      "prefixes": 16,
+      "requiredClosedBars": 16,
+      "resourceChecks": false,
+      "bytes": 66686,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-start-after-invalid.pine",
+      "sha256": "7a46a15dc83a9f356341639d621df81c04419d5c3f625f5811f3a8ec948c3135",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-START-AFTER-INVALID",
+          "fixtureHash": "10b4c054f09f8d7ebd15d61fe39d241a5f47e5db4c897b8705efecaec18d1b16",
+          "prefixes": 7,
+          "events": 1
+        }
+      ],
+      "prefixes": 7,
+      "requiredClosedBars": 7,
+      "resourceChecks": false,
+      "bytes": 64751,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s-wait-direction-inside.pine",
+      "sha256": "8d262c6dc71def74f48c45ae13cf68f6226151cf9107dcb10fefbaff046ee8e9",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-WAIT-DIRECTION-INSIDE",
+          "fixtureHash": "e3770e9fe73f4d4fea8c654eecc526e7c064c70e5b940d36b1d141adae35bbee",
+          "prefixes": 12,
+          "events": 0
+        }
+      ],
+      "prefixes": 12,
+      "requiredClosedBars": 12,
+      "resourceChecks": false,
+      "bytes": 65360,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s81-equal.pine",
+      "sha256": "7a5f0cf4d4f43bdc3eef3073017af30cd7934e319cc50993f7d90a004944d48d",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S81-EQUAL",
+          "fixtureHash": "46130162e43b1d6833c4f7b5687cfeac7de729c910b04f7e9da4924fc126803e",
+          "prefixes": 9,
+          "events": 0
+        }
+      ],
+      "prefixes": 9,
+      "requiredClosedBars": 9,
+      "resourceChecks": false,
+      "bytes": 64852,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s81-higher.pine",
+      "sha256": "1195c41be5f67fa25ae8f5b597f7252eae678a5b48f5682785ad704664fc92bf",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S81-HIGHER",
+          "fixtureHash": "347ed77c118d3ce59c6d6d0c8721f740d9eaef7ad1b7dacf4e8de8d5e6efe9ff",
+          "prefixes": 9,
+          "events": 0
+        }
+      ],
+      "prefixes": 9,
+      "requiredClosedBars": 9,
+      "resourceChecks": false,
+      "bytes": 64854,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "cases\\s81-lower.pine",
+      "sha256": "d01b97f1d28b839713060a0e7db2fa9958cfa9db50dc6491b9557c341bd29d2e",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S81-LOWER",
+          "fixtureHash": "905187fba7c7d9674eaf3e16ad7603381974be51c4a85d7662e6fa2858688a24",
+          "prefixes": 9,
+          "events": 2
+        }
+      ],
+      "prefixes": 9,
+      "requiredClosedBars": 9,
+      "resourceChecks": false,
+      "bytes": 65254,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "file": "smoke.pine",
+      "sha256": "1a776af6f95cc50be09cd9c995ffec4c07c454dc2714d1ab73a4fd8b15b08dce",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "fixtures": [
+        {
+          "id": "S-FIRST-WAIT-INCLUSION",
+          "fixtureHash": "bc2926a1f9beeea7fa746f2d6d70f5aabe7383af5aa4bb005a84d2177793acb5",
+          "prefixes": 10,
+          "events": 1
+        }
+      ],
+      "prefixes": 10,
+      "requiredClosedBars": 10,
+      "resourceChecks": false,
+      "bytes": 65266,
+      "lines": 1136,
+      "segmentCallSites": 4,
+      "execution": "not run; compile and execute in TradingView"
+    }
+  ]
+}

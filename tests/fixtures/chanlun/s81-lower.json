@@ -1,0 +1,325 @@
+{
+  "schemaVersion": 1,
+  "id": "S81-LOWER",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-correction",
+    "sourceIds": [
+      "C67-172",
+      "C77-195",
+      "C78-198",
+      "C81-209",
+      "C81-210"
+    ],
+    "lesson": 81,
+    "pdfPages": [
+      172,
+      196,
+      199,
+      209,
+      210
+    ],
+    "figure": "第209页图一／图二及第210页更正（合成价格）",
+    "note": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。 输入明确假定每项为已锁定合法笔；初始化及同刻提交约定单列于E-007。只断言确认前缀，不强制未锁定候选的展示集合。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 6,
+        "lowTicks": 0,
+        "highTicks": 6,
+        "direction": "up",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 6,
+        "endTicks": 2,
+        "lowTicks": 2,
+        "highTicks": 6,
+        "direction": "down",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 2,
+        "endTicks": 18,
+        "lowTicks": 2,
+        "highTicks": 18,
+        "direction": "up",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 18,
+        "endTicks": 12,
+        "lowTicks": 12,
+        "highTicks": 18,
+        "direction": "down",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 12,
+        "endTicks": 16,
+        "lowTicks": 12,
+        "highTicks": 16,
+        "direction": "up",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 16,
+        "endTicks": 10,
+        "lowTicks": 10,
+        "highTicks": 16,
+        "direction": "down",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 10,
+        "endTicks": 15,
+        "lowTicks": 10,
+        "highTicks": 15,
+        "direction": "up",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 15,
+        "endTicks": 12,
+        "lowTicks": 12,
+        "highTicks": 15,
+        "direction": "down",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      },
+      {
+        "id": "p9",
+        "startTime": 1701000480000,
+        "endTime": 1701000540000,
+        "completedAt": 1701000600000,
+        "startTicks": 12,
+        "endTicks": 20,
+        "lowTicks": 12,
+        "highTicks": 20,
+        "direction": "up",
+        "dependencies": [
+          "f8",
+          "f9",
+          "proof9"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "confirmedSegments": 2
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 18,
+          "confirmedAt": 1701000600000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6",
+            "p7",
+            "p8",
+            "p9"
+          ]
+        },
+        {
+          "id": "segment-2",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1701000180000,
+          "endTime": 1701000360000,
+          "startTicks": 18,
+          "endTicks": 10,
+          "confirmedAt": 1701000600000,
+          "dependencies": [
+            "p4",
+            "p5",
+            "p6",
+            "p7",
+            "p8",
+            "p9"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/segment-1",
+          "type": "segment",
+          "objectId": "segment-1",
+          "occurredAt": 1701000180000,
+          "confirmedAt": 1701000600000
+        },
+        {
+          "id": "confirm/segment-2",
+          "type": "segment",
+          "objectId": "segment-2",
+          "occurredAt": 1701000360000,
+          "confirmedAt": 1701000600000
+        }
+      ],
+      "reason": "图中5、7对应16与15。原段第一特征分型存在缺口[6,12]，前缀6只能保留第二类候选。前缀9形成第二序列底分型，A(0→18)与B(18→10)同时锁定；原缺口仍未完全回补，不额外要求补缺或递归区分第二序列类型。该前缀同时出现原方向新高20，不能抢在第二序列证明之前一律撤销全部候选。"
+    }
+  ]
+}

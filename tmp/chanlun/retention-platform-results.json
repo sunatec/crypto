@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-05",
+  "productionUnchanged": true,
+  "results": [
+    {
+      "date": "2026-11-05",
+      "source": "tmp/chanlun/retention-validation.pine",
+      "status": "user-reported-pass",
+      "requestedFileSha256": "afc54d1220d77193ffbb2f841e79b92facd62acdd66c5fc5dfb45cd02f264f31",
+      "coreHash": "b3f957e12cf98db1567e55b0384239d574518fc0b0b040b90628da55dd99f460",
+      "fixtureHash": "1b7355248a8a71f1fd1c4596bf28bf98d2ac0537b5e03f17be90ad02494ea827",
+      "strokeFixtureHash": "0f2d46415c33386490c6b0750c52a7bdf4200dfc95b642d663bc9dc8e664556e",
+      "snapshot": "tmp/chanlun/compiled/retention-G3-pass-afc54d1220d77193ffbb2f841e79b92facd62acdd66c5fc5dfb45cd02f264f31.pine",
+      "userReport": "G3 PASS",
+      "cases": 3,
+      "prefixes": 338,
+      "scope": "User reports requested synthetic long-input retention assertions passed at OHLC, locked-stroke and L0 interfaces. Uploaded bytes not independently verified. Does not cover fixed-feed replay, live multi-tick, renderer pressure or unimplemented R/L2/L3 retention."
+    }
+  ],
+  "pending": []
+}

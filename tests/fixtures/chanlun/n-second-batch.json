@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "id": "N-SECOND-BATCH",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "N-001",
+    "E-008",
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-correction",
+    "sourceIds": [
+      "C67-172",
+      "C77-195",
+      "C78-198",
+      "C81-209",
+      "C81-210"
+    ],
+    "lesson": 78,
+    "pdfPages": [
+      172,
+      196,
+      198,
+      199,
+      209,
+      210
+    ],
+    "figure": null,
+    "note": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。 输入为合成已锁定合法笔；标准化邻接与时间锚点采用用户选择的E-008工程约定。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "normalization-strokes",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 6,
+        "lowTicks": 0,
+        "highTicks": 6,
+        "direction": "up",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 6,
+        "endTicks": 2,
+        "lowTicks": 2,
+        "highTicks": 6,
+        "direction": "down",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 2,
+        "endTicks": 18,
+        "lowTicks": 2,
+        "highTicks": 18,
+        "direction": "up",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 18,
+        "endTicks": 12,
+        "lowTicks": 12,
+        "highTicks": 18,
+        "direction": "down",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 12,
+        "endTicks": 16,
+        "lowTicks": 12,
+        "highTicks": 16,
+        "direction": "up",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 16,
+        "endTicks": 10,
+        "lowTicks": 10,
+        "highTicks": 16,
+        "direction": "down",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 10,
+        "endTicks": 15,
+        "lowTicks": 10,
+        "highTicks": 15,
+        "direction": "up",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 15,
+        "endTicks": 12,
+        "lowTicks": 12,
+        "highTicks": 15,
+        "direction": "down",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      },
+      {
+        "id": "p9",
+        "startTime": 1701000480000,
+        "endTime": 1701000540000,
+        "completedAt": 1701000600000,
+        "startTicks": 12,
+        "endTicks": 20,
+        "lowTicks": 12,
+        "highTicks": 20,
+        "direction": "up",
+        "dependencies": [
+          "f8",
+          "f9",
+          "proof9"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "normalizedCount": 2
+      },
+      "structures": [
+        {
+          "id": "N-SECOND-BATCH/N/1/1701000000000",
+          "segmentId": "N-SECOND-BATCH/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 18,
+          "actualLowTicks": 0,
+          "actualHighTicks": 18,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 18,
+          "direction": "up",
+          "confirmedAt": 1701000600000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-SECOND-BATCH/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-SECOND-BATCH/N/2/1701000180000",
+          "segmentId": "N-SECOND-BATCH/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000360000,
+          "realStartTicks": 18,
+          "realEndTicks": 10,
+          "actualLowTicks": 10,
+          "actualHighTicks": 18,
+          "actualLowTime": 1701000360000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000360000,
+          "analysisStartTicks": 18,
+          "analysisEndTicks": 10,
+          "direction": "down",
+          "confirmedAt": 1701000600000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-SECOND-BATCH/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/N-SECOND-BATCH/N/1/1701000000000",
+          "type": "normalized",
+          "objectId": "N-SECOND-BATCH/N/1/1701000000000",
+          "occurredAt": 1701000180000,
+          "confirmedAt": 1701000600000
+        },
+        {
+          "id": "confirm/N-SECOND-BATCH/N/2/1701000180000",
+          "type": "normalized",
+          "objectId": "N-SECOND-BATCH/N/2/1701000180000",
+          "occurredAt": 1701000360000,
+          "confirmedAt": 1701000600000
+        }
+      ],
+      "reason": "第二类同一输入先后锁定两个S，对应两个N按原顺序同批确认；外部证明20不得扩大任一部件。"
+    }
+  ]
+}

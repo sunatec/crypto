@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "id": "F-TOP-SEAL",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "K-001",
+    "F-001",
+    "F-002",
+    "E-001",
+    "E-003"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C62-162",
+      "C65-168"
+    ],
+    "lesson": 62,
+    "pdfPages": [
+      162,
+      168
+    ],
+    "figure": null,
+    "note": "根据所列正文规则人工构造整数tick样例，非原文行情。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "ohlc",
+    "items": [
+      {
+        "id": "raw-0",
+        "time": 1700000000000,
+        "closeTime": 1700000060000,
+        "openTicks": 0,
+        "highTicks": 5,
+        "lowTicks": 0,
+        "closeTicks": 5
+      },
+      {
+        "id": "raw-1",
+        "time": 1700000060000,
+        "closeTime": 1700000120000,
+        "openTicks": 3,
+        "highTicks": 8,
+        "lowTicks": 3,
+        "closeTicks": 8
+      },
+      {
+        "id": "raw-2",
+        "time": 1700000120000,
+        "closeTime": 1700000180000,
+        "openTicks": 1,
+        "highTicks": 6,
+        "lowTicks": 1,
+        "closeTicks": 6
+      },
+      {
+        "id": "raw-3",
+        "time": 1700000180000,
+        "closeTime": 1700000240000,
+        "openTicks": 0,
+        "highTicks": 4,
+        "lowTicks": 0,
+        "closeTicks": 4
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "processedCount": 0,
+        "direction": "waiting",
+        "candidateKind": "none",
+        "confirmedFractals": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "等待方向。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "processedCount": 2,
+        "direction": "up",
+        "tailLowTicks": 3,
+        "tailHighTicks": 8,
+        "candidateKind": "none",
+        "confirmedFractals": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "只有两个处理元素。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "processedCount": 3,
+        "direction": "down",
+        "tailLowTicks": 1,
+        "tailHighTicks": 6,
+        "candidateKind": "top",
+        "confirmedFractals": 0
+      },
+      "structures": [
+        {
+          "id": "F-TOP-SEAL/top/raw-1",
+          "type": "fractal",
+          "level": 0,
+          "status": "candidate",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 8,
+          "endTicks": 8,
+          "confirmedAt": null,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ],
+          "direction": "top"
+        }
+      ],
+      "events": [],
+      "reason": "中间高低同时突出，但右元素未封口，仅候选。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "processedCount": 4,
+        "direction": "down",
+        "tailLowTicks": 0,
+        "tailHighTicks": 4,
+        "candidateKind": "none",
+        "confirmedFractals": 1
+      },
+      "structures": [
+        {
+          "id": "F-TOP-SEAL/top/raw-1",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 8,
+          "endTicks": 8,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ],
+          "direction": "top"
+        }
+      ],
+      "events": [
+        {
+          "id": "F-TOP-SEAL/confirm/raw-1",
+          "type": "fractal",
+          "objectId": "F-TOP-SEAL/top/raw-1",
+          "occurredAt": 1700000060000,
+          "confirmedAt": 1700000240000
+        }
+      ],
+      "reason": "追加非包含元素封口右元素，旧顶分型确认，最新三元素无分型。"
+    }
+  ]
+}

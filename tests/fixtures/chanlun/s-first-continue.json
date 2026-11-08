@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "id": "S-FIRST-CONTINUE",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C71-182",
+      "C71-183",
+      "C77-195"
+    ],
+    "lesson": 71,
+    "pdfPages": [
+      181,
+      182,
+      183,
+      196
+    ],
+    "figure": "第183页上半部右上（合成价格）",
+    "note": "第一破坏笔12→3之后先回到13，突破第一破坏笔起点12，旧段继续；不能在先前0→12候选处提交确认。 输入明确假定每项为已锁定合法笔；初始化及同刻提交约定单列于E-007。只断言确认前缀，不强制未锁定候选的展示集合。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 10,
+        "lowTicks": 0,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 10,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 5,
+        "endTicks": 12,
+        "lowTicks": 5,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 12,
+        "endTicks": 3,
+        "lowTicks": 3,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 3,
+        "endTicks": 13,
+        "lowTicks": 3,
+        "highTicks": 13,
+        "direction": "up",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 13,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 13,
+        "direction": "down",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第一破坏笔12→3之后先回到13，突破第一破坏笔起点12，旧段继续；不能在先前0→12候选处提交确认。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第一破坏笔12→3之后先回到13，突破第一破坏笔起点12，旧段继续；不能在先前0→12候选处提交确认。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第一破坏笔12→3之后先回到13，突破第一破坏笔起点12，旧段继续；不能在先前0→12候选处提交确认。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第一破坏笔12→3之后先回到13，突破第一破坏笔起点12，旧段继续；不能在先前0→12候选处提交确认。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第一破坏笔12→3之后先回到13，突破第一破坏笔起点12，旧段继续；不能在先前0→12候选处提交确认。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "第一破坏笔12→3之后先回到13，突破第一破坏笔起点12，旧段继续；不能在先前0→12候选处提交确认。"
+    }
+  ]
+}

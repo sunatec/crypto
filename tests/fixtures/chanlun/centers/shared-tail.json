@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "sourceIds": ["C18-39", "C20-43"],
+  "note": "将 C99 两个研究样例的区间投影为合成 L0，按 E-010 验证前六个部件相同、随后分岔时的 L1 中枢生命周期。仅验证 Z 的独立预期，不验证 C99 的走势分组或 R 完成。",
+  "cases": [
+    {
+      "id": "Z-SHARED-TAIL-CLOSES",
+      "inputs": [[0,10,0,10], [10,5,5,10], [5,21,5,21], [21,12,12,21], [12,24,12,24], [24,14,14,24], [14,29,14,29], [29,26,26,29]],
+      "expected": [
+        null,
+        null,
+        {"core": [5,10], "stats": [21,10,5,0], "extent": 3, "waves": 2, "event": true, "pending": 3},
+        {"core": [5,10], "stats": [21,10,5,0], "extent": 3, "waves": 2, "closed": true, "closedEvent": true, "leave": 3, "returned": 4, "closedAt": 4},
+        {"core": [5,10], "stats": [21,10,5,0], "extent": 3, "waves": 2, "closed": true, "leave": 3, "returned": 4, "closedAt": 4},
+        {"core": [14,21], "stats": [24,21,14,12], "extent": 6, "waves": 2, "count": 2, "start": 4, "event": true, "relation": "range-overlap"},
+        {"core": [14,21], "stats": [24,21,14,12], "extent": 6, "waves": 2, "count": 2, "pending": 7, "relation": "range-overlap"},
+        {"core": [14,21], "stats": [24,21,14,12], "extent": 6, "waves": 2, "count": 2, "closed": true, "closedEvent": true, "leave": 7, "returned": 8, "closedAt": 8}
+      ]
+    },
+    {
+      "id": "Z-SHARED-TAIL-EXTENDS",
+      "inputs": [[0,10,0,10], [10,5,5,10], [5,21,5,21], [21,12,12,21], [12,24,12,24], [24,14,14,24], [14,20,14,20], [20,16,16,20]],
+      "expected": [
+        null,
+        null,
+        {"core": [5,10], "stats": [21,10,5,0], "extent": 3, "waves": 2, "event": true, "pending": 3},
+        {"core": [5,10], "stats": [21,10,5,0], "extent": 3, "waves": 2, "closed": true, "closedEvent": true, "leave": 3, "returned": 4, "closedAt": 4},
+        {"core": [5,10], "stats": [21,10,5,0], "extent": 3, "waves": 2, "closed": true, "leave": 3, "returned": 4, "closedAt": 4},
+        {"core": [14,21], "stats": [24,21,14,12], "extent": 6, "waves": 2, "count": 2, "start": 4, "event": true, "relation": "range-overlap"},
+        {"core": [14,21], "stats": [24,21,14,12], "extent": 7, "waves": 2, "count": 2, "relation": "range-overlap"},
+        {"core": [14,21], "stats": [24,20,16,12], "extent": 8, "waves": 3, "count": 2, "relation": "range-overlap"}
+      ]
+    }
+  ]
+}

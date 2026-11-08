@@ -1,0 +1,9 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\pressure-validation.pine",
+  "sha256": "25291da4728d452d135071bc08db75a9ff3adc0fd89183346316942702e600f7",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "productionSha256": "7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955",
+  "samples": 5000,
+  "scope": "K/F/P/S, L0 and L1 centers",
+  "execution": "awaiting TradingView run"
+}

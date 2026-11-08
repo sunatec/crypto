@@ -1,0 +1,11 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\center-shared-tail.pine",
+  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "sha256": "ab02cc1b266e54012a13551a384e56a370ad0b1a243b55935ffef7a408f86af1",
+  "bytes": 92200,
+  "cases": 2,
+  "prefixes": 16,
+  "fixtureHash": "14d3fa26b966b23a5be27b415072cd66f89d1b24ea6e76154756e8d755843eea",
+  "execution": "not run in Pine"
+}

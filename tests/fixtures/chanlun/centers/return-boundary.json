@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 2,
+  "sourceIds": ["C18-39", "C20-43"],
+  "note": "合成 L0 输入，单独验证现有 E-010 对闭区间下边界的回试判断。两例只改最后一个部件的最高点，非第88课图形价格重建，不验证背驰或 R 完成。",
+  "cases": [
+    {
+      "id": "Z-RETURN-STRICTLY-BELOW",
+      "inputs": [
+        [5, 10, 5, 10],
+        [10, 8, 8, 10],
+        [8, 9, 8, 9],
+        [9, 5, 5, 9],
+        [5, 7, 5, 7]
+      ],
+      "expected": [
+        null,
+        null,
+        {"core": [8, 9], "stats": [10, 9, 8, 5], "extent": 3, "waves": 2, "event": true},
+        {"core": [8, 9], "stats": [10, 9, 8, 5], "extent": 3, "waves": 2, "pending": 4},
+        {"core": [8, 9], "stats": [10, 9, 8, 5], "extent": 3, "waves": 2, "closed": true, "closedEvent": true, "leave": 4, "returned": 5, "closedAt": 5}
+      ]
+    },
+    {
+      "id": "Z-RETURN-TOUCHES-LOWER-EDGE",
+      "inputs": [
+        [5, 10, 5, 10],
+        [10, 8, 8, 10],
+        [8, 9, 8, 9],
+        [9, 5, 5, 9],
+        [5, 8, 5, 8]
+      ],
+      "expected": [
+        null,
+        null,
+        {"core": [8, 9], "stats": [10, 9, 8, 5], "extent": 3, "waves": 2, "event": true},
+        {"core": [8, 9], "stats": [10, 9, 8, 5], "extent": 3, "waves": 2, "pending": 4},
+        {"core": [8, 9], "stats": [10, 8, 8, 5], "extent": 5, "waves": 3}
+      ]
+    }
+  ]
+}

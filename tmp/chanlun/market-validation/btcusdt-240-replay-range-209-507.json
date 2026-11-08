@@ -1,0 +1,15 @@
+{
+  "caseId": "BTCUSDT-240",
+  "status": "partial replay range matches initial load",
+  "firstPrefix": 209,
+  "lastPrefix": 507,
+  "comparedRows": 299,
+  "missingLeadingRows": 208,
+  "comparedTraceColumns": 44,
+  "rawCsvSha256": "2c1dc30f7e0d81cdb5c725717aab9d0a867e7dc0476564a0fa9b65d870b92870",
+  "loadTraceSha256": "b809b7c84ea381ec05495a1f42de465b7fbe3ebbe32b69dcb0e7fd923a112da8",
+  "csv": "tmp/chanlun/market-validation/BTCUSDT-240-replay-range-209-507.csv",
+  "originalDownload": "C:\\Users\\Admin\\Downloads\\BINANCE_BTCUSDT, 240_c8cf2.csv",
+  "fullObservedPrefix": false,
+  "lastCloseUTC": "2026-08-09T12:00:00.000Z"
+}

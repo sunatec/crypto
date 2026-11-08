@@ -1,0 +1,15 @@
+{
+  "caseId": "BTCUSDT-60",
+  "status": "partial reload export matches initial load",
+  "firstPrefix": 867,
+  "lastPrefix": 1008,
+  "comparedRows": 142,
+  "missingLeadingRows": 866,
+  "expectedRows": 1008,
+  "comparedTraceColumns": 44,
+  "rawCsvSha256": "31cbcbe93c5d90cd95d11b9b50678cf1e812db13f63b5158de80524addd09d08",
+  "loadTraceSha256": "ee3476342f290293bee1e4f5a4283878c05dbcaca217464574dceb2d5f520bd7",
+  "csv": "tmp/chanlun/market-validation/BTCUSDT-60-reload-tail-867-1008.csv",
+  "originalDownload": "C:/Users/Admin/Downloads/BINANCE_BTCUSDT, 60_86799.csv",
+  "fullWindow": false
+}

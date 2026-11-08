@@ -1,0 +1,1155 @@
+//@version=6
+indicator("缠论 S 精简共享验证", overlay = false)
+// Extracted core SHA-256: 1c018aea887bb3172790ec51f2cc9c8a7e4eed6ce3447235f3b48deaf3a50200
+// One closed chart bar advances one fixture prefix; chart OHLC is not input.
+// Fixture S-FIRST-CONTINUE SHA-256: eb36b6948cd904c79d4134da491ca220ac6a22e3eb4affac6a1e51bb30beb234
+// Fixture S-FIRST-END SHA-256: ebc3eb61e645e000c7fba1418e063ec05066f1f85332544f9153be00ee3ba147
+// Fixture S-FIRST-EQUAL-THIRD SHA-256: 1c9a781716e63ea2727bb84470f70656093879541745c9e2016fe0dec8d59b5c
+// Fixture S-FIRST-LOCKED-PREFIX SHA-256: 15d5c61b65ab4da74025a6ebe99e118a4700c1998091c16ae27b2319c669449c
+// Fixture S-FIRST-WAIT-END SHA-256: 11727374a43a83d9170759b58eb36d5e5f2b105b20b1784300e3458104c5fa6c
+// Fixture S-FIRST-WAIT-INCLUSION SHA-256: bc2926a1f9beeea7fa746f2d6d70f5aabe7383af5aa4bb005a84d2177793acb5
+// Fixture S-SPECIAL-INTERNAL-EXTREME SHA-256: ef29e417f92cd3591ebe1174ae6720b4aa028cbc0b6dca577477270ba2230cfc
+// Fixture S-START-AFTER-INVALID SHA-256: 10b4c054f09f8d7ebd15d61fe39d241a5f47e5db4c897b8705efecaec18d1b16
+// Fixture S-WAIT-DIRECTION-INSIDE SHA-256: e3770e9fe73f4d4fea8c654eecc526e7c064c70e5b940d36b1d141adae35bbee
+// Fixture S81-EQUAL SHA-256: 46130162e43b1d6833c4f7b5687cfeac7de729c910b04f7e9da4924fc126803e
+// Fixture S81-HIGHER SHA-256: 347ed77c118d3ce59c6d6d0c8721f740d9eaef7ad1b7dacf4e8de8d5e6efe9ff
+// Fixture S81-LOWER SHA-256: 905187fba7c7d9674eaf3e16ad7603381974be51c4a85d7662e6fa2858688a24
+// K/F contract: chanlun-research-0.1. N/R/Z are deliberately not implemented.
+// All time coordinates are UTC milliseconds; prices are integer ticks.
+type ChanRaw
+    int openTime
+    int closeTime
+    int openTicks
+    int highTicks
+    int lowTicks
+    int closeTicks
+
+type ChanElement
+    string id
+    int ordinal
+    int firstTime
+    int lastTime
+    int highTicks
+    int lowTicks
+    int highTime
+    int lowTime
+    int firstRaw
+    int lastRaw
+    bool sealed
+
+type ChanFractal
+    string id
+    int kind
+    int endpointTime
+    int priceTicks
+    int confirmedAt
+    string leftId
+    string middleId
+    string rightId
+    string ruleId
+    int leftOrdinal
+    int middleOrdinal
+    int rightOrdinal
+    int middleHighTicks
+    int middleLowTicks
+
+// Shared contracts for later modules. An absent proof is represented by na,
+// never by an invented completed structure. These types do not produce signals.
+type ChanStructure
+    string id
+    string objectType
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    bool confirmed = false
+    int confirmedAt = na
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+    int memberLowTicks = na
+    int memberHighTicks = na
+    int memberLowTime = na
+    int memberHighTime = na
+
+type ChanComponent
+    string id
+    string segmentId
+    int realStartTime
+    int realEndTime
+    int realStartTicks
+    int realEndTicks
+    int actualLowTicks
+    int actualHighTicks
+    int actualLowTime
+    int actualHighTime
+    int analysisStartTime
+    int analysisEndTime
+    int analysisStartTicks
+    int analysisEndTicks
+    int direction
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+
+type ChanCenter
+    string id
+    int level
+    int coreLowTicks
+    int coreHighTicks
+    int ggTicks
+    int gTicks
+    int dTicks
+    int ddTicks
+    int startTime
+    int formedAt
+    int extentEndTime
+    int confirmedAt = na
+    bool degenerate = false
+    string lifecycle
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+
+type ChanMovement
+    string id
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    string morphology
+    bool completed = false
+    int confirmedAt = na
+    string completionProof
+    string ruleId
+    array<string> childIds
+    array<string> centerIds
+    int ordinal = 0
+
+type ChanConfirmation
+    string id
+    string objectId
+    string objectType
+    int level
+    int occurredAt
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+
+type ChanState
+    string contextId = ""
+    array<ChanElement> elements
+    ChanRaw seed
+    ChanRaw lastRaw
+    ChanFractal candidate
+    ChanFractal lastConfirmed
+    ChanFractal event
+    int direction = 0
+    int processedCount = 0
+    int inputCount = 0
+    int confirmedFractals = 0
+    int effectiveStart = na
+    ChanFractal strokeAnchor
+    ChanFractal strokeEnd
+    ChanFractal lastStrokeInput
+    ChanStructure strokeCandidate
+    ChanStructure strokeEvent
+    ChanStructure lastStroke
+    int strokeCount = 0
+    int ignoredStrokeFractals = 0
+
+chan_new(string contextId) =>
+    ChanState state = ChanState.new()
+    state.contextId := "chanlun-research-0.1/" + contextId
+    state.elements := array.new<ChanElement>()
+    state
+
+chan_structure_copy(ChanStructure source) =>
+    ChanStructure result = na
+    if not na(source)
+        result := source.copy()
+        if not na(source.dependencies)
+            result.dependencies := source.dependencies.copy()
+    result
+
+// UDT.copy() is shallow: copy the collection and each referenced record explicitly.
+chan_clone(ChanState source) =>
+    ChanState result = source.copy()
+    result.elements := array.new<ChanElement>()
+    if source.elements.size() > 0
+        for element in source.elements
+            result.elements.push(element.copy())
+    if not na(source.seed)
+        result.seed := source.seed.copy()
+    if not na(source.lastRaw)
+        result.lastRaw := source.lastRaw.copy()
+    if not na(source.candidate)
+        result.candidate := source.candidate.copy()
+    if not na(source.lastConfirmed)
+        result.lastConfirmed := source.lastConfirmed.copy()
+    if not na(source.event)
+        result.event := source.event.copy()
+    if not na(source.strokeAnchor)
+        result.strokeAnchor := source.strokeAnchor.copy()
+    if not na(source.strokeEnd)
+        result.strokeEnd := source.strokeEnd.copy()
+    if not na(source.lastStrokeInput)
+        result.lastStrokeInput := source.lastStrokeInput.copy()
+    result.strokeCandidate := chan_structure_copy(source.strokeCandidate)
+    result.strokeEvent := chan_structure_copy(source.strokeEvent)
+    result.lastStroke := chan_structure_copy(source.lastStroke)
+    result
+
+chan_contains(int loA, int hiA, int loB, int hiB) =>
+    (loA <= loB and hiA >= hiB) or (loB <= loA and hiB >= hiA)
+
+chan_element(ChanState state, ChanRaw raw, int ordinal, int rawOrdinal) =>
+    ChanElement.new(state.contextId + "/K/" + str.tostring(raw.openTime), ordinal, raw.openTime, raw.openTime, raw.highTicks, raw.lowTicks, raw.openTime, raw.openTime, rawOrdinal, rawOrdinal, false)
+
+chan_fractal(ChanState state, int offset, int confirmedAt) =>
+    ChanElement left = state.elements.get(offset)
+    ChanElement middle = state.elements.get(offset + 1)
+    ChanElement right = state.elements.get(offset + 2)
+    bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+    bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+    ChanFractal result = na
+    if top or bottom
+        int kind = top ? 1 : -1
+        result := ChanFractal.new(state.contextId + "/F/" + str.tostring(kind) + "/" + left.id + "/" + middle.id + "/" + right.id, kind, top ? middle.highTime : middle.lowTime, top ? middle.highTicks : middle.lowTicks, confirmedAt, left.id, middle.id, right.id, "F-001/F-002", left.ordinal, middle.ordinal, right.ordinal, middle.highTicks, middle.lowTicks)
+    result
+
+// P-001 is only a qualification predicate, not a stroke completion algorithm.
+// The processed-element ordinals and member IDs survive raw containment merges.
+chan_stroke_eligible(ChanFractal first, ChanFractal last) =>
+    bool eligible = false
+    if not na(first) and not na(last)
+        if not na(first.confirmedAt) and not na(last.confirmedAt) and first.kind != last.kind and first.endpointTime < last.endpointTime and first.rightOrdinal + 1 < last.leftOrdinal
+            ChanFractal top = first.kind == 1 ? first : last
+            ChanFractal bottom = first.kind == -1 ? first : last
+            eligible := top.middleHighTicks > bottom.middleHighTicks and top.priceTicks > bottom.priceTicks
+    eligible
+
+chan_fractal_signature(ChanFractal fractal) =>
+    string result = "none"
+    if not na(fractal)
+        result := fractal.id + "/" + str.tostring(fractal.kind) + "/" + str.tostring(fractal.endpointTime) + "/" + str.tostring(fractal.priceTicks) + "/" + str.tostring(fractal.confirmedAt) + "/" + fractal.leftId + "/" + fractal.middleId + "/" + fractal.rightId + "/" + str.tostring(fractal.leftOrdinal) + "/" + str.tostring(fractal.middleOrdinal) + "/" + str.tostring(fractal.rightOrdinal) + "/" + str.tostring(fractal.middleHighTicks) + "/" + str.tostring(fractal.middleLowTicks)
+    result
+
+chan_structure_signature(ChanStructure source) =>
+    string result = "none"
+    if not na(source)
+        result := source.id + "/" + source.objectType + "/" + str.tostring(source.level) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.endTime) + "/" + str.tostring(source.startTicks) + "/" + str.tostring(source.endTicks) + "/" + str.tostring(source.confirmed) + "/" + str.tostring(source.confirmedAt) + "/" + str.tostring(source.ordinal) + "/" + source.ruleId
+        result += "/members/" + str.tostring(source.memberLowTicks) + "/" + str.tostring(source.memberHighTicks) + "/" + str.tostring(source.memberLowTime) + "/" + str.tostring(source.memberHighTime)
+        if not na(source.dependencies)
+            for dependency in source.dependencies
+                result += "/" + dependency
+    result
+
+chan_stroke_make(ChanState state) =>
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/P/" + str.tostring(state.strokeCount + 1) + "/" + str.tostring(state.strokeAnchor.endpointTime)
+    result.objectType := "stroke"
+    result.level := 0
+    result.direction := state.strokeAnchor.kind == -1 ? 1 : -1
+    result.startTime := state.strokeAnchor.endpointTime
+    result.endTime := state.strokeEnd.endpointTime
+    result.startTicks := state.strokeAnchor.priceTicks
+    result.endTicks := state.strokeEnd.priceTicks
+    result.ruleId := "P-001/P-002"
+    result.dependencies := array.from(state.strokeAnchor.id, state.strokeEnd.id)
+    result.ordinal := state.strokeCount + 1
+    result.memberLowTicks := math.min(result.startTicks, result.endTicks)
+    result.memberHighTicks := math.max(result.startTicks, result.endTicks)
+    result.memberLowTime := result.direction == 1 ? result.startTime : result.endTime
+    result.memberHighTime := result.direction == 1 ? result.endTime : result.startTime
+    result
+
+chan_more_extreme(ChanFractal previous, ChanFractal incoming) =>
+    incoming.kind == 1 ? incoming.priceTicks > previous.priceTicks : incoming.priceTicks < previous.priceTicks
+
+// P-002: only a qualified next stroke locks the previous one. Equal extrema
+// retain the first endpoint; rejected opposite fractals never create a turn.
+chan_stroke_step(ChanState state, ChanFractal incoming) =>
+    if na(incoming) or na(incoming.confirmedAt)
+        runtime.error("成笔正式输入必须是已封口分型")
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastStrokeInput)
+        duplicate := state.lastStrokeInput.id == incoming.id
+        if duplicate and chan_fractal_signature(state.lastStrokeInput) != chan_fractal_signature(incoming)
+            runtime.error("已提交分型发生变化，需重载分析上下文")
+        if not duplicate and (incoming.endpointTime <= state.lastStrokeInput.endpointTime or incoming.confirmedAt < state.lastStrokeInput.confirmedAt)
+            runtime.error("成笔分型输入顺序无效")
+    if not duplicate
+        if na(state.strokeAnchor)
+            state.strokeAnchor := incoming.copy()
+        else if na(state.strokeEnd)
+            if incoming.kind == state.strokeAnchor.kind
+                if chan_more_extreme(state.strokeAnchor, incoming)
+                    state.strokeAnchor := incoming.copy()
+            else if chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+            else
+                state.ignoredStrokeFractals += 1
+        else if incoming.kind == state.strokeEnd.kind
+            if chan_more_extreme(state.strokeEnd, incoming) and chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+        else if chan_stroke_eligible(state.strokeEnd, incoming)
+            ChanStructure locked = chan_structure_copy(state.strokeCandidate)
+            locked.confirmed := true
+            locked.confirmedAt := incoming.confirmedAt
+            locked.dependencies.push(incoming.id)
+            state.strokeCount += 1
+            state.lastStroke := locked
+            state.strokeEvent := locked
+            state.strokeAnchor := state.strokeEnd.copy()
+            state.strokeEnd := incoming.copy()
+            state.strokeCandidate := chan_stroke_make(state)
+        else
+            state.ignoredStrokeFractals += 1
+        state.lastStrokeInput := incoming.copy()
+    state
+
+// Project an unsealed fractal only on a deep copy. lastStroke survives a later
+// rejected preview input, unlike strokeEvent, which is cleared on every step.
+chan_stroke_preview(ChanState source) =>
+    ChanState result = chan_clone(source)
+    if not na(source.candidate) and not na(source.lastRaw)
+        ChanFractal tentative = source.candidate.copy()
+        tentative.confirmedAt := source.lastRaw.closeTime
+        chan_stroke_step(result, tentative)
+    result
+
+chan_stroke_pending(ChanState preview, int committedCount) =>
+    ChanStructure result = na
+    if preview.strokeCount > committedCount and not na(preview.lastStroke)
+        result := chan_structure_copy(preview.lastStroke)
+        result.confirmed := false
+        result.confirmedAt := na
+    result
+
+// Consume one closed input, or one input in an isolated preview copy.
+// At most four processed elements are needed for K/F; counts and source spans persist.
+chan_step(ChanState state, ChanRaw raw) =>
+    if na(raw.openTime) or na(raw.closeTime) or na(raw.openTicks) or na(raw.highTicks) or na(raw.lowTicks) or na(raw.closeTicks) or raw.openTime < 0 or raw.closeTime <= raw.openTime or raw.lowTicks > raw.highTicks or raw.openTicks < raw.lowTicks or raw.openTicks > raw.highTicks or raw.closeTicks < raw.lowTicks or raw.closeTicks > raw.highTicks
+        runtime.error("K/F: invalid OHLC input")
+    state.event := na
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastRaw)
+        if raw.openTime < state.lastRaw.openTime or (raw.openTime > state.lastRaw.openTime and raw.openTime < state.lastRaw.closeTime)
+            runtime.error("K/F: inputs must be chronological")
+        if raw.openTime == state.lastRaw.openTime
+            duplicate := raw.closeTime == state.lastRaw.closeTime and raw.openTicks == state.lastRaw.openTicks and raw.highTicks == state.lastRaw.highTicks and raw.lowTicks == state.lastRaw.lowTicks and raw.closeTicks == state.lastRaw.closeTicks
+            if not duplicate
+                runtime.error("K/F: committed input changed; reload the context")
+    if not duplicate
+        state.inputCount += 1
+        bool appended = false
+        if state.direction == 0
+            // E-001: compare adjacent original inputs; never invent an initial direction.
+            if not na(state.seed)
+                if not chan_contains(state.seed.lowTicks, state.seed.highTicks, raw.lowTicks, raw.highTicks)
+                    state.contextId += "/seed/" + str.tostring(state.seed.openTime)
+                    ChanElement first = chan_element(state, state.seed, 0, state.inputCount - 2)
+                    first.sealed := true
+                    state.elements.push(first)
+                    state.elements.push(chan_element(state, raw, 1, state.inputCount - 1))
+                    state.processedCount := 2
+                    state.effectiveStart := state.seed.openTime
+                    state.direction := raw.highTicks > state.seed.highTicks ? 1 : -1
+                    appended := true
+            state.seed := raw.copy()
+        else
+            ChanElement tail = state.elements.last()
+            if chan_contains(tail.lowTicks, tail.highTicks, raw.lowTicks, raw.highTicks)
+                int mergedHigh = state.direction == 1 ? math.max(tail.highTicks, raw.highTicks) : math.min(tail.highTicks, raw.highTicks)
+                int mergedLow = state.direction == 1 ? math.max(tail.lowTicks, raw.lowTicks) : math.min(tail.lowTicks, raw.lowTicks)
+                // E-002: equal extrema keep the earlier source independently.
+                if mergedHigh != tail.highTicks
+                    tail.highTime := raw.openTime
+                if mergedLow != tail.lowTicks
+                    tail.lowTime := raw.openTime
+                tail.highTicks := mergedHigh
+                tail.lowTicks := mergedLow
+                tail.lastTime := raw.openTime
+                tail.lastRaw := state.inputCount - 1
+            else
+                tail.sealed := true
+                state.direction := raw.highTicks > tail.highTicks ? 1 : -1
+                state.elements.push(chan_element(state, raw, state.processedCount, state.inputCount - 1))
+                state.processedCount += 1
+                appended := true
+                if state.elements.size() > 4
+                    state.elements.shift()
+        int count = state.elements.size()
+        if appended and count >= 4
+            ChanFractal confirmed = chan_fractal(state, count - 4, raw.closeTime)
+            if not na(confirmed)
+                state.lastConfirmed := confirmed
+                state.event := confirmed
+                state.confirmedFractals += 1
+                chan_stroke_step(state, confirmed)
+        state.candidate := count >= 3 ? chan_fractal(state, count - 3, na) : na
+        state.lastRaw := raw.copy()
+    state
+
+// Deterministic K/F snapshot for replay and clone-isolation assertions.
+chan_signature(ChanState state) =>
+    string result = state.contextId + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.processedCount) + "/" + str.tostring(state.direction) + "/" + str.tostring(state.effectiveStart) + "/" + str.tostring(state.confirmedFractals)
+    if not na(state.seed)
+        result += "/seed/" + str.tostring(state.seed.openTime) + "/" + str.tostring(state.seed.highTicks) + "/" + str.tostring(state.seed.lowTicks)
+    if not na(state.lastRaw)
+        result += "/raw/" + str.tostring(state.lastRaw.openTime) + "/" + str.tostring(state.lastRaw.closeTime) + "/" + str.tostring(state.lastRaw.openTicks) + "/" + str.tostring(state.lastRaw.highTicks) + "/" + str.tostring(state.lastRaw.lowTicks) + "/" + str.tostring(state.lastRaw.closeTicks)
+    if state.elements.size() > 0
+        for element in state.elements
+            result += "/" + element.id + "/" + str.tostring(element.ordinal) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.firstRaw) + "/" + str.tostring(element.lastRaw) + "/" + str.tostring(element.sealed)
+    if not na(state.candidate)
+        result += "/candidate/" + state.candidate.id + "/" + str.tostring(state.candidate.endpointTime) + "/" + str.tostring(state.candidate.priceTicks)
+    if not na(state.lastConfirmed)
+        result += "/confirmed/" + state.lastConfirmed.id + "/" + str.tostring(state.lastConfirmed.endpointTime) + "/" + str.tostring(state.lastConfirmed.priceTicks) + "/" + str.tostring(state.lastConfirmed.confirmedAt)
+    if not na(state.event)
+        result += "/event/" + state.event.id + "/" + str.tostring(state.event.confirmedAt)
+    result += "/P/" + str.tostring(state.strokeCount) + "/" + str.tostring(state.ignoredStrokeFractals) + "/" + chan_fractal_signature(state.strokeAnchor) + "/" + chan_fractal_signature(state.strokeEnd) + "/" + chan_fractal_signature(state.lastStrokeInput)
+    result += "/candidate/" + chan_structure_signature(state.strokeCandidate) + "/last/" + chan_structure_signature(state.lastStroke) + "/event/" + chan_structure_signature(state.strokeEvent)
+    result
+// S-001/S-002/S-003: a standard feature sequence is a context-specific view of
+// locked strokes. A sequence or feature turn alone never confirms a segment.
+chan_segment_seed(ChanStructure first, ChanStructure middle, ChanStructure third) =>
+    bool eligible = false
+    if not na(first) and not na(middle) and not na(third)
+        bool locked = first.objectType == "stroke" and middle.objectType == "stroke" and third.objectType == "stroke" and first.confirmed and middle.confirmed and third.confirmed and not na(first.confirmedAt) and not na(middle.confirmedAt) and not na(third.confirmedAt)
+        bool connected = first.endTime == middle.startTime and middle.endTime == third.startTime and first.endTicks == middle.startTicks and middle.endTicks == third.startTicks and first.ordinal + 1 == middle.ordinal and middle.ordinal + 1 == third.ordinal
+        bool alternating = (first.direction == 1 or first.direction == -1) and middle.direction == -first.direction and third.direction == first.direction
+        bool causal = first.startTime < first.endTime and middle.startTime < middle.endTime and third.startTime < third.endTime and first.confirmedAt >= first.endTime and middle.confirmedAt >= middle.endTime and third.confirmedAt >= third.endTime and first.confirmedAt <= middle.confirmedAt and middle.confirmedAt <= third.confirmedAt
+        bool prices = first.direction * (first.endTicks - first.startTicks) > 0 and middle.direction * (middle.endTicks - middle.startTicks) > 0 and third.direction * (third.endTicks - third.startTicks) > 0
+        int commonLow = math.max(math.min(first.startTicks, first.endTicks), math.max(math.min(middle.startTicks, middle.endTicks), math.min(third.startTicks, third.endTicks)))
+        int commonHigh = math.min(math.max(first.startTicks, first.endTicks), math.min(math.max(middle.startTicks, middle.endTicks), math.max(third.startTicks, third.endTicks)))
+        eligible := locked and connected and alternating and causal and prices and commonLow <= commonHigh and first.direction * (third.endTicks - first.startTicks) > 0
+    eligible
+
+type ChanFeature
+    string id
+    int lowTicks
+    int highTicks
+    int lowTime
+    int highTime
+    int firstTime
+    int lastTime
+    int firstOrdinal
+    int lastOrdinal
+    int firstSide
+    int lastSide
+    int availableAt
+    bool sealed = false
+    array<string> sourceIds
+
+type ChanFeatureSequence
+    string contextId
+    int segmentDirection
+    int mergeDirection
+    int postDirection
+    int boundaryTime
+    bool secondSequence
+    array<ChanFeature> elements
+    ChanStructure lastInput
+    ChanStructure heldInput
+    int inputCount = 0
+    int selectedCount = 0
+    int boundaryCuts = 0
+    int maxElements = 128
+    int maxSources = 512
+    bool waitingDirection = false
+    bool blocked = false
+
+type ChanFeatureTurn
+    int kind
+    int endpointTime
+    int priceTicks
+    int availableAt
+    string leftId
+    string middleId
+    string rightId
+    bool gap
+    bool rightSealed
+
+chan_feature_new(string contextId, int segmentDirection, int initialDirection, int postDirection, int boundaryTime, bool secondSequence, int maxElements, int maxSources) =>
+    if (segmentDirection != 1 and segmentDirection != -1) or initialDirection < -1 or initialDirection > 1 or postDirection < -1 or postDirection > 1 or maxElements < 1 or maxSources < 1
+        runtime.error("特征序列上下文无效")
+    ChanFeatureSequence result = ChanFeatureSequence.new()
+    result.contextId := contextId
+    result.segmentDirection := segmentDirection
+    result.mergeDirection := initialDirection
+    result.postDirection := postDirection
+    result.boundaryTime := boundaryTime
+    result.secondSequence := secondSequence
+    result.maxElements := maxElements
+    result.maxSources := maxSources
+    result.elements := array.new<ChanFeature>()
+    result
+
+chan_feature_clone(ChanFeatureSequence source) =>
+    ChanFeatureSequence result = source.copy()
+    result.elements := array.new<ChanFeature>()
+    for element in source.elements
+        ChanFeature copied = element.copy()
+        copied.sourceIds := element.sourceIds.copy()
+        result.elements.push(copied)
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result
+
+chan_feature_step(ChanFeatureSequence state, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("特征序列仅消费合法已锁定笔")
+    if not na(state.boundaryTime) and stroke.startTime < state.boundaryTime and stroke.endTime > state.boundaryTime
+        runtime.error("假设分界必须位于笔端点")
+    bool duplicate = false
+    if not na(state.lastInput)
+        duplicate := stroke.id == state.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(state.lastInput)
+            runtime.error("已消费笔发生变化")
+        if not duplicate and (stroke.startTime < state.lastInput.endTime or stroke.confirmedAt < state.lastInput.confirmedAt or stroke.ordinal <= state.lastInput.ordinal)
+            runtime.error("特征序列输入顺序无效")
+    if not duplicate and not state.blocked and not state.waitingDirection
+        bool selected = stroke.direction == -state.segmentDirection
+        if selected
+            int side = not na(state.boundaryTime) and stroke.startTime >= state.boundaryTime ? 1 : 0
+            ChanFeature incoming = ChanFeature.new()
+            incoming.id := state.contextId + "/E/" + stroke.id
+            incoming.lowTicks := math.min(stroke.startTicks, stroke.endTicks)
+            incoming.highTicks := math.max(stroke.startTicks, stroke.endTicks)
+            incoming.lowTime := stroke.direction == 1 ? stroke.startTime : stroke.endTime
+            incoming.highTime := stroke.direction == 1 ? stroke.endTime : stroke.startTime
+            incoming.firstTime := stroke.startTime
+            incoming.lastTime := stroke.endTime
+            incoming.firstOrdinal := stroke.ordinal
+            incoming.lastOrdinal := stroke.ordinal
+            incoming.firstSide := side
+            incoming.lastSide := side
+            incoming.availableAt := stroke.confirmedAt
+            incoming.sourceIds := array.from(stroke.id)
+            ChanFeature tail = state.elements.size() > 0 ? state.elements.last() : na
+            bool contained = not na(tail) and chan_contains(tail.lowTicks, tail.highTicks, incoming.lowTicks, incoming.highTicks)
+            bool crosses = not na(tail) and tail.lastSide != side
+            bool split = crosses and not state.secondSequence
+            bool merge = contained and not split
+            if state.selectedCount >= state.maxSources or (not merge and state.elements.size() >= state.maxElements)
+                state.blocked := true
+                state.heldInput := chan_structure_copy(stroke)
+            else if merge and state.mergeDirection == 0
+                // Preserve the unresolved input. A caller must supply evidenced
+                // prior direction and rebuild; never guess from this inclusion.
+                state.waitingDirection := true
+                state.heldInput := chan_structure_copy(stroke)
+                state.inputCount += 1
+                state.selectedCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+            else
+                state.selectedCount += 1
+                if merge
+                    int highTicks = state.mergeDirection == 1 ? math.max(tail.highTicks, incoming.highTicks) : math.min(tail.highTicks, incoming.highTicks)
+                    int lowTicks = state.mergeDirection == 1 ? math.max(tail.lowTicks, incoming.lowTicks) : math.min(tail.lowTicks, incoming.lowTicks)
+                    if highTicks != tail.highTicks
+                        tail.highTime := incoming.highTime
+                    if lowTicks != tail.lowTicks
+                        tail.lowTime := incoming.lowTime
+                    tail.highTicks := highTicks
+                    tail.lowTicks := lowTicks
+                    tail.lastTime := incoming.lastTime
+                    tail.lastOrdinal := incoming.lastOrdinal
+                    tail.lastSide := side
+                    tail.availableAt := math.max(tail.availableAt, incoming.availableAt)
+                    tail.sourceIds.push(stroke.id)
+                else
+                    if not na(tail)
+                        tail.sealed := true
+                        if contained and split
+                            state.boundaryCuts += 1
+                            state.mergeDirection := state.postDirection
+                        else
+                            state.mergeDirection := incoming.highTicks > tail.highTicks ? 1 : -1
+                    state.elements.push(incoming)
+                state.inputCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+        else
+            state.inputCount += 1
+            state.lastInput := chan_structure_copy(stroke)
+    state
+
+// Geometry and gap diagnostics only: segment start, break proof, ownership,
+// dependency validity and a sealed right element still belong to the S machine.
+chan_feature_turn(ChanFeatureSequence state) =>
+    ChanFeatureTurn result = na
+    int count = state.elements.size()
+    if count >= 3 and not state.blocked and not state.waitingDirection
+        ChanFeature left = state.elements.get(count - 3)
+        ChanFeature middle = state.elements.get(count - 2)
+        ChanFeature right = state.elements.get(count - 1)
+        bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+        bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+        if (state.segmentDirection == 1 and top) or (state.segmentDirection == -1 and bottom)
+            bool gap = state.segmentDirection == 1 ? left.highTicks < middle.lowTicks : middle.highTicks < left.lowTicks
+            result := ChanFeatureTurn.new(state.segmentDirection, state.segmentDirection == 1 ? middle.highTime : middle.lowTime, state.segmentDirection == 1 ? middle.highTicks : middle.lowTicks, math.max(left.availableAt, math.max(middle.availableAt, right.availableAt)), left.id, middle.id, right.id, gap, right.sealed)
+    result
+
+chan_feature_signature(ChanFeatureSequence state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentDirection) + "/" + str.tostring(state.mergeDirection) + "/" + str.tostring(state.postDirection) + "/" + str.tostring(state.boundaryTime) + "/" + str.tostring(state.secondSequence) + "/" + str.tostring(state.maxElements) + "/" + str.tostring(state.maxSources) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.selectedCount) + "/" + str.tostring(state.boundaryCuts) + "/" + str.tostring(state.waitingDirection) + "/" + str.tostring(state.blocked)
+    for element in state.elements
+        result += "/" + element.id + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.firstOrdinal) + "/" + str.tostring(element.lastOrdinal) + "/" + str.tostring(element.firstSide) + "/" + str.tostring(element.lastSide) + "/" + str.tostring(element.availableAt) + "/" + str.tostring(element.sealed)
+        for sourceId in element.sourceIds
+            result += "/" + sourceId
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput)
+// S proofs operate on a bounded suffix of locked strokes. They are rebuilt from
+// those facts; neither drawings nor hypothetical child names are input facts.
+type ChanSegmentProof
+    int kind = 0
+    int endIndex = na
+    int childEndIndex = na
+    int proofIndex = na
+    bool firstBreakActive = false
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+
+type ChanSegmentHypothesis
+    string endStrokeId
+    int endTime
+    int priceTicks
+    int proofKind
+    bool gapPending
+
+type ChanSegmentState
+    string contextId
+    array<ChanStructure> strokes
+    array<ChanStructure> events
+    array<ChanSegmentHypothesis> hypotheses
+    ChanStructure lastInput
+    ChanStructure heldInput
+    ChanStructure lastSegment
+    ChanStructure candidate
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+    int inputCount = 0
+    int segmentCount = 0
+    int skippedInputs = 0
+    int maxPending = 64
+    int maxWork = 8192
+    bool blocked = false
+    bool gapPending = false
+    string limitReason = ""
+
+chan_segment_new(string contextId, int maxPending, int maxWork) =>
+    if maxPending < 6 or maxWork < 1
+        runtime.error("线段依赖预算无效")
+    ChanSegmentState state = ChanSegmentState.new()
+    state.contextId := contextId
+    state.maxPending := maxPending
+    state.maxWork := maxWork
+    state.strokes := array.new<ChanStructure>()
+    state.events := array.new<ChanStructure>()
+    state.hypotheses := array.new<ChanSegmentHypothesis>()
+    state
+
+chan_segment_clone(ChanSegmentState source) =>
+    ChanSegmentState result = source.copy()
+    result.strokes := array.new<ChanStructure>()
+    for stroke in source.strokes
+        result.strokes.push(chan_structure_copy(stroke))
+    result.events := array.new<ChanStructure>()
+    for event in source.events
+        result.events.push(chan_structure_copy(event))
+    result.hypotheses := array.new<ChanSegmentHypothesis>()
+    for hypothesis in source.hypotheses
+        result.hypotheses.push(hypothesis.copy())
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result.lastSegment := chan_structure_copy(source.lastSegment)
+    result.candidate := chan_structure_copy(source.candidate)
+    if not na(source.firstContext)
+        result.firstContext := chan_feature_clone(source.firstContext)
+    if not na(source.secondContext)
+        result.secondContext := chan_feature_clone(source.secondContext)
+    result
+
+chan_segment_span(array<ChanStructure> strokes, int firstIndex, int lastIndex) =>
+    bool eligible = false
+    if firstIndex >= 0 and lastIndex < strokes.size() and lastIndex - firstIndex >= 2 and (lastIndex - firstIndex) % 2 == 0
+        ChanStructure first = strokes.get(firstIndex)
+        ChanStructure last = strokes.get(lastIndex)
+        eligible := chan_segment_seed(first, strokes.get(firstIndex + 1), strokes.get(firstIndex + 2)) and last.direction == first.direction and first.direction * (last.endTicks - first.startTicks) > 0
+    eligible
+
+chan_segment_probe(array<ChanStructure> strokes, int endIndex, string contextId) =>
+    ChanSegmentProof result = ChanSegmentProof.new()
+    result.endIndex := endIndex
+    int count = strokes.size()
+    if chan_segment_span(strokes, 0, endIndex) and endIndex + 3 < count
+        ChanStructure endpoint = strokes.get(endIndex)
+        ChanStructure firstBreak = strokes.get(endIndex + 1)
+        int direction = strokes.first().direction
+        int reverse = -direction
+        // The legal three-stroke seed provides the direction of this hypothesis.
+        // E-007 makes the initial context explicit; it is not a locked segment.
+        ChanFeatureSequence first = chan_feature_new(contextId + "/first", direction, direction, reverse, endpoint.endTime, false, 128, 512)
+        ChanFeatureSequence reverseSequence = chan_feature_new(contextId + "/second", reverse, reverse, direction, endpoint.endTime, true, 128, 512)
+        for i = 0 to endIndex
+            first := chan_feature_step(first, strokes.get(i))
+        // C65 p169: d[j] <= g[i] / g[j] >= d[i], j >= i+2.
+        // The first breaking stroke is identified from the original owned
+        // pivots, not the already-compressed feature element's other extreme.
+        int breakBoundary = strokes.first().endTicks
+        for i = 0 to endIndex - 2 by 2
+            int pivot = strokes.get(i).endTicks
+            breakBoundary := direction == 1 ? math.max(breakBoundary, pivot) : math.min(breakBoundary, pivot)
+        bool directBreak = direction == 1 ? firstBreak.endTicks <= breakBoundary : firstBreak.endTicks >= breakBoundary
+        int invalidIndex = na
+        for i = endIndex + 1 to count - 1
+            ChanStructure inputStroke = strokes.get(i)
+            first := chan_feature_step(first, inputStroke)
+            reverseSequence := chan_feature_step(reverseSequence, inputStroke)
+            if na(invalidIndex) and direction * (inputStroke.endTicks - endpoint.endTicks) > 0
+                invalidIndex := i
+            bool stillEligible = na(invalidIndex) or invalidIndex == i
+            if stillEligible
+                bool reverseSpan = chan_segment_span(strokes, endIndex + 1, i)
+                bool directProof = directBreak and reverseSpan and reverse * (inputStroke.endTicks - firstBreak.endTicks) > 0
+                ChanFeatureTurn firstTurn = chan_feature_turn(first)
+                bool targetTurn = not na(firstTurn) and firstTurn.endpointTime == endpoint.endTime and firstTurn.priceTicks == endpoint.endTicks
+                // When the very first counter-stroke already breaks the old
+                // segment, an inside third stroke must wait (C71 p181-182).
+                // Later inclusion must not manufacture an earlier end proof.
+                if directProof or (not directBreak and targetTurn and not firstTurn.gap and reverseSpan)
+                    result.kind := 1
+                    result.proofIndex := i
+                else if targetTurn and firstTurn.gap
+                    ChanFeatureTurn secondTurn = chan_feature_turn(reverseSequence)
+                    if not na(secondTurn)
+                        int childEnd = na
+                        for j = endIndex + 3 to i
+                            ChanStructure child = strokes.get(j)
+                            if child.endTime == secondTurn.endpointTime and child.endTicks == secondTurn.priceTicks and child.direction == reverse
+                                childEnd := j
+                        if not na(childEnd)
+                            if chan_segment_span(strokes, endIndex + 1, childEnd) and chan_segment_span(strokes, childEnd + 1, i)
+                                result.kind := 2
+                                result.childEndIndex := childEnd
+                                result.proofIndex := i
+            if result.kind > 0
+                break
+            if not na(invalidIndex)
+                result.kind := -1
+                break
+        // An unresolved first breaking stroke governs the whole suffix, not
+        // only this endpoint's local test. A later inner turn cannot rename
+        // its own counter-stroke and bypass that outstanding direction proof.
+        // Keep the barrier on the proving input too, so a retrospectively
+        // cheaper inner proof cannot beat the governing endpoint's proof.
+        result.firstBreakActive := directBreak and result.kind >= 0
+        result.firstContext := first
+        result.secondContext := reverseSequence
+    result
+
+chan_segment_record(ChanSegmentState state, int firstIndex, int lastIndex, int proofIndex, int confirmedAt, string ruleId) =>
+    ChanStructure first = state.strokes.get(firstIndex)
+    ChanStructure last = state.strokes.get(lastIndex)
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/S/" + str.tostring(state.segmentCount + 1) + "/" + str.tostring(first.startTime)
+    result.objectType := "segment"
+    result.level := 0
+    result.direction := first.direction
+    result.startTime := first.startTime
+    result.endTime := last.endTime
+    result.startTicks := first.startTicks
+    result.endTicks := last.endTicks
+    result.confirmed := not na(confirmedAt)
+    result.confirmedAt := confirmedAt
+    result.ruleId := ruleId
+    result.ordinal := state.segmentCount + 1
+    result.dependencies := array.new<string>()
+    // Retain extrema of owned stroke endpoints before releasing those strokes.
+    // Proof-only strokes do not contribute; raw-OHLC normalization remains N.
+    result.memberLowTicks := first.startTicks
+    result.memberHighTicks := first.startTicks
+    result.memberLowTime := first.startTime
+    result.memberHighTime := first.startTime
+    for i = firstIndex to lastIndex
+        ChanStructure member = state.strokes.get(i)
+        if member.endTicks < result.memberLowTicks
+            result.memberLowTicks := member.endTicks
+            result.memberLowTime := member.endTime
+        if member.endTicks > result.memberHighTicks
+            result.memberHighTicks := member.endTicks
+            result.memberHighTime := member.endTime
+    for i = firstIndex to proofIndex
+        result.dependencies.push(state.strokes.get(i).id)
+    result
+
+chan_segment_emit(ChanSegmentState state, ChanStructure segment) =>
+    state.segmentCount += 1
+    state.lastSegment := segment
+    state.events.push(segment)
+    true
+
+// Return a new state: quota failure rolls back the entire input's proposed
+// confirmations, preserving the locked prefix and the unconsumed held input.
+chan_segment_step(ChanSegmentState source, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("线段仅消费已锁定合法笔")
+    ChanSegmentState state = chan_segment_clone(source)
+    state.events := array.new<ChanStructure>()
+    bool duplicate = false
+    if not na(source.lastInput)
+        duplicate := stroke.id == source.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(source.lastInput)
+            runtime.error("线段已消费笔发生变化")
+        if not duplicate and not source.blocked and (stroke.startTime != source.lastInput.endTime or stroke.startTicks != source.lastInput.endTicks or stroke.ordinal != source.lastInput.ordinal + 1 or stroke.direction != -source.lastInput.direction or stroke.confirmedAt < source.lastInput.confirmedAt)
+            runtime.error("线段笔输入不连续")
+    if not duplicate and not source.blocked
+        if source.strokes.size() >= source.maxPending
+            state.blocked := true
+            state.limitReason := "pending-strokes"
+            state.heldInput := chan_structure_copy(stroke)
+        else
+            state.strokes.push(chan_structure_copy(stroke))
+            state.lastInput := chan_structure_copy(stroke)
+            state.inputCount += 1
+            int work = 0
+            bool advance = true
+            while advance
+                advance := false
+                state.hypotheses := array.new<ChanSegmentHypothesis>()
+                state.firstContext := na
+                state.secondContext := na
+                state.gapPending := false
+                // An impossible initial triple cannot become legal retroactively.
+                while state.strokes.size() >= 3 and not chan_segment_span(state.strokes, 0, 2)
+                    if state.segmentCount > 0
+                        runtime.error("已锁定段后的续部起始依赖不合规")
+                    state.strokes.shift()
+                    state.skippedInputs += 1
+                int count = state.strokes.size()
+                ChanSegmentProof best = na
+                if count >= 6
+                    for endIndex = 2 to count - 4 by 2
+                        if chan_segment_span(state.strokes, 0, endIndex)
+                            work += count * 2
+                            if work > state.maxWork
+                                state.blocked := true
+                                break
+                            string hypothesisId = state.contextId + "/turn/" + state.strokes.get(endIndex).id
+                            ChanSegmentProof proof = chan_segment_probe(state.strokes, endIndex, hypothesisId)
+                            if proof.kind >= 0
+                                ChanFeatureTurn turn = not na(proof.firstContext) ? chan_feature_turn(proof.firstContext) : na
+                                bool pending = not na(turn) and turn.gap
+                                state.gapPending := state.gapPending or pending
+                                ChanStructure endpoint = state.strokes.get(endIndex)
+                                state.hypotheses.push(ChanSegmentHypothesis.new(endpoint.id, endpoint.endTime, endpoint.endTicks, proof.kind, pending))
+                                if na(state.firstContext)
+                                    state.firstContext := proof.firstContext
+                                    state.secondContext := proof.secondContext
+                                if proof.kind > 0
+                                    if na(best)
+                                        best := proof
+                                    else if proof.proofIndex < best.proofIndex
+                                        best := proof
+                                if proof.firstBreakActive
+                                    break
+                if state.blocked
+                    // Keep no partial event from this input, even after a chain.
+                    state := chan_segment_clone(source)
+                    state.events := array.new<ChanStructure>()
+                    state.blocked := true
+                    state.limitReason := "probe-work"
+                    state.heldInput := chan_structure_copy(stroke)
+                else if not na(best)
+                    string ruleId = best.kind == 1 ? "S-001/S-002/E-007" : "S-001/S-003/E-007"
+                    ChanStructure completed = chan_segment_record(state, 0, best.endIndex, best.proofIndex, stroke.confirmedAt, ruleId)
+                    if best.proofIndex < count - 1 and state.segmentCount > source.segmentCount
+                        completed.dependencies.push(state.lastSegment.id)
+                    chan_segment_emit(state, completed)
+                    int lastLockedIndex = best.endIndex
+                    if best.kind == 2
+                        ChanStructure child = chan_segment_record(state, best.endIndex + 1, best.childEndIndex, best.proofIndex, stroke.confirmedAt, "S-001/S-003/E-007")
+                        chan_segment_emit(state, child)
+                        lastLockedIndex := best.childEndIndex
+                    for i = 0 to lastLockedIndex
+                        state.strokes.shift()
+                    advance := true
+                else
+                    state.candidate := na
+                    if count >= 3
+                        int selected = 2
+                        int direction = state.strokes.first().direction
+                        for i = 2 to count - 1 by 2
+                            if chan_segment_span(state.strokes, 0, i)
+                                if direction * (state.strokes.get(i).endTicks - state.strokes.get(selected).endTicks) > 0
+                                    selected := i
+                        state.candidate := chan_segment_record(state, 0, selected, selected, na, "S-001/E-007")
+    state
+
+chan_segment_signature(ChanSegmentState state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentCount) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.skippedInputs) + "/" + str.tostring(state.maxPending) + "/" + str.tostring(state.maxWork) + "/" + str.tostring(state.blocked) + "/" + str.tostring(state.gapPending) + "/" + state.limitReason
+    for stroke in state.strokes
+        result += "/P/" + chan_structure_signature(stroke)
+    for event in state.events
+        result += "/event/" + chan_structure_signature(event)
+    for hypothesis in state.hypotheses
+        result += "/hypothesis/" + hypothesis.endStrokeId + "/" + str.tostring(hypothesis.endTime) + "/" + str.tostring(hypothesis.priceTicks) + "/" + str.tostring(hypothesis.proofKind) + "/" + str.tostring(hypothesis.gapPending)
+    if not na(state.firstContext)
+        result += "/first/" + chan_feature_signature(state.firstContext)
+    if not na(state.secondContext)
+        result += "/second/" + chan_feature_signature(state.secondContext)
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput) + "/locked/" + chan_structure_signature(state.lastSegment) + "/candidate/" + chan_structure_signature(state.candidate)
+
+type ChanCompactFixture
+    string id
+    array<ChanStructure> inputs
+    array<ChanStructure> expected
+    array<int> counts
+    array<int> offsets
+    array<int> eventOrdinals
+
+chan_cv_assert(bool condition, string context) =>
+    if not condition
+        runtime.error("FAIL: " + context)
+    true
+
+chan_cv_record(ChanStructure actual, ChanStructure expected, ChanCompactFixture fixture, int prefix, string context) =>
+    chan_cv_assert(actual.id == expected.id and actual.objectType == "segment" and actual.level == 0 and actual.ordinal == expected.ordinal and actual.confirmed, context + "/identity")
+    chan_cv_assert(actual.startTime == expected.startTime and actual.endTime == expected.endTime and actual.startTicks == expected.startTicks and actual.endTicks == expected.endTicks and actual.direction == expected.direction and actual.confirmedAt == expected.confirmedAt, context + "/endpoints-direction-confirmation")
+    chan_cv_assert(actual.dependencies.size() == expected.dependencies.size(), context + "/source-count")
+    if expected.dependencies.size() > 0
+        for i = 0 to expected.dependencies.size() - 1
+            chan_cv_assert(actual.dependencies.get(i) == expected.dependencies.get(i), context + "/source-" + str.tostring(i))
+    bool lowWitness = false
+    bool highWitness = false
+    int members = 0
+    // Only this prefix enters the checks; future fixture input is never read.
+    for i = 0 to prefix
+        ChanStructure member = fixture.inputs.get(i)
+        if member.startTime >= expected.startTime and member.endTime <= expected.endTime
+            members += 1
+            for endpoint = 0 to 1
+                int value = endpoint == 0 ? member.startTicks : member.endTicks
+                int occurredAt = endpoint == 0 ? member.startTime : member.endTime
+                chan_cv_assert(actual.memberLowTicks <= value and actual.memberHighTicks >= value, context + "/member-bounds")
+                if actual.memberLowTicks == value
+                    chan_cv_assert(actual.memberLowTime <= occurredAt, context + "/member-low-earliest")
+                    lowWitness := lowWitness or actual.memberLowTime == occurredAt
+                if actual.memberHighTicks == value
+                    chan_cv_assert(actual.memberHighTime <= occurredAt, context + "/member-high-earliest")
+                    highWitness := highWitness or actual.memberHighTime == occurredAt
+    chan_cv_assert(members > 0 and lowWitness and highWitness, context + "/member-extreme-witness")
+    true
+
+chan_cv_copy_probe(ChanSegmentState online, string context) =>
+    string before = chan_segment_signature(online)
+    ChanSegmentState copy = chan_segment_clone(online)
+    if copy.strokes.size() > 0
+        ChanStructure strokeProbe = copy.strokes.last()
+        strokeProbe.dependencies.push("copy-probe")
+    if copy.events.size() > 0
+        ChanStructure eventProbe = copy.events.first()
+        eventProbe.dependencies.push("copy-probe")
+    if copy.hypotheses.size() > 0
+        ChanSegmentHypothesis hypothesisProbe = copy.hypotheses.first()
+        hypothesisProbe.priceTicks += 1
+    if not na(copy.candidate)
+        copy.candidate.dependencies.push("copy-probe")
+    if not na(copy.lastSegment)
+        copy.lastSegment.dependencies.push("copy-probe")
+    if not na(copy.firstContext)
+        if copy.firstContext.elements.size() > 0
+            ChanFeature featureProbe = copy.firstContext.elements.last()
+            featureProbe.sourceIds.push("copy-probe")
+    if not na(copy.secondContext)
+        if copy.secondContext.elements.size() > 0
+            ChanFeature reverseProbe = copy.secondContext.elements.last()
+            reverseProbe.sourceIds.push("copy-probe")
+    chan_cv_assert(chan_segment_signature(online) == before, context + "/deep-copy-isolation")
+    true
+
+chan_cv_prefix(ChanSegmentState online, array<ChanStructure> observed, ChanCompactFixture fixture, int prefix) =>
+    string context = fixture.id + "/prefix-" + str.tostring(prefix + 1)
+    string prior = chan_segment_signature(online)
+    ChanStructure inputStroke = fixture.inputs.get(prefix)
+    ChanSegmentState next = chan_segment_step(online, inputStroke)
+    chan_cv_assert(chan_segment_signature(online) == prior, context + "/source-state-immutable")
+    for event in next.events
+        observed.push(event)
+    int count = fixture.counts.get(prefix)
+    if next.segmentCount != count or observed.size() != count
+        string detail = "/confirmed-count expected=" + str.tostring(count) + " actual=" + str.tostring(next.segmentCount) + " observed=" + str.tostring(observed.size())
+        for record in observed
+            detail += " [" + record.ruleId + " " + str.tostring(record.startTicks) + "->" + str.tostring(record.endTicks) + " end=" + str.tostring(record.endTime) + " confirmed=" + str.tostring(record.confirmedAt) + "]"
+        chan_cv_assert(false, context + detail)
+    if count > 0
+        for i = 0 to count - 1
+            chan_cv_record(observed.get(i), fixture.expected.get(i), fixture, prefix, context + "/segment-" + str.tostring(i + 1))
+    int eventOffset = fixture.offsets.get(prefix)
+    int eventCount = fixture.offsets.get(prefix + 1) - eventOffset
+    chan_cv_assert(next.events.size() == eventCount, context + "/event-count")
+    if eventCount > 0
+        for i = 0 to eventCount - 1
+            ChanStructure event = next.events.get(i)
+            int ordinal = fixture.eventOrdinals.get(eventOffset + i)
+            ChanStructure expected = fixture.expected.get(ordinal - 1)
+            chan_cv_assert(event.ordinal == ordinal and event.id == expected.id and event.endTime == expected.endTime and event.confirmedAt == expected.confirmedAt, context + "/event-" + str.tostring(i))
+    ChanSegmentState replay = chan_segment_new(fixture.id, 64, 8192)
+    for i = 0 to prefix
+        replay := chan_segment_step(replay, fixture.inputs.get(i))
+    chan_cv_assert(chan_segment_signature(next) == chan_segment_signature(replay), context + "/prefix-reload")
+    string committed = chan_segment_signature(next)
+    ChanSegmentState duplicate = chan_segment_step(next, inputStroke)
+    chan_cv_assert(duplicate.events.size() == 0 and duplicate.segmentCount == next.segmentCount, context + "/duplicate-event")
+    duplicate.events := next.events
+    chan_cv_assert(chan_segment_signature(duplicate) == committed, context + "/duplicate-state")
+    chan_cv_copy_probe(next, context)
+    chan_cv_assert(not next.blocked, context + "/within-budgets")
+    next
+
+chan_cv_fixture(int index) =>
+    ChanCompactFixture result = ChanCompactFixture.new()
+    if index == 0
+        result.id := "S-FIRST-CONTINUE"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 10, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 10, 5, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 5, 12, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 12, 3, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 3, 13, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 13, 4, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6))
+        result.expected := array.new<ChanStructure>()
+        result.counts := array.from(0, 0, 0, 0, 0, 0)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0)
+        result.eventOrdinals := array.new<int>()
+    else if index == 1
+        result.id := "S-FIRST-END"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 10, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 10, 5, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 5, 12, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 12, 3, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 3, 9, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 9, 2, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6))
+        result.expected := array.from(ChanStructure.new("S-FIRST-END/S/1/1701000000000", "segment", 0, 1, 1701000000000, 1701000180000, 0, 12, true, 1701000420000, "INDEPENDENT-FIXTURE", array.from("p1", "p2", "p3", "p4", "p5", "p6"), 1))
+        result.counts := array.from(0, 0, 0, 0, 0, 1)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 1)
+        result.eventOrdinals := array.from(1)
+    else if index == 2
+        result.id := "S-FIRST-EQUAL-THIRD"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 10, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 10, 5, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 5, 12, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 12, 3, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 3, 9, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 9, 3, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6))
+        result.expected := array.new<ChanStructure>()
+        result.counts := array.from(0, 0, 0, 0, 0, 0)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0)
+        result.eventOrdinals := array.new<int>()
+    else if index == 3
+        result.id := "S-FIRST-LOCKED-PREFIX"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 10, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 10, 5, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 5, 12, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 12, 3, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 3, 9, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 9, 2, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, 2, 10, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, -1, 1701000420000, 1701000480000, 10, 4, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8), ChanStructure.new("p9", "stroke", 0, 1, 1701000480000, 1701000540000, 4, 11, true, 1701000600000, "P-001/P-002", array.from("f8", "f9", "proof9"), 9), ChanStructure.new("p10", "stroke", 0, -1, 1701000540000, 1701000600000, 11, 5, true, 1701000660000, "P-001/P-002", array.from("f9", "f10", "proof10"), 10), ChanStructure.new("p11", "stroke", 0, 1, 1701000600000, 1701000660000, 5, 10, true, 1701000720000, "P-001/P-002", array.from("f10", "f11", "proof11"), 11), ChanStructure.new("p12", "stroke", 0, -1, 1701000660000, 1701000720000, 10, 4, true, 1701000780000, "P-001/P-002", array.from("f11", "f12", "proof12"), 12))
+        result.expected := array.from(ChanStructure.new("S-FIRST-LOCKED-PREFIX/S/1/1701000000000", "segment", 0, 1, 1701000000000, 1701000180000, 0, 12, true, 1701000420000, "INDEPENDENT-FIXTURE", array.from("p1", "p2", "p3", "p4", "p5", "p6"), 1), ChanStructure.new("S-FIRST-LOCKED-PREFIX/S/2/1701000180000", "segment", 0, -1, 1701000180000, 1701000360000, 12, 2, true, 1701000600000, "INDEPENDENT-FIXTURE", array.from("p4", "p5", "p6", "p7", "p8", "p9"), 2), ChanStructure.new("S-FIRST-LOCKED-PREFIX/S/3/1701000360000", "segment", 0, 1, 1701000360000, 1701000540000, 2, 11, true, 1701000780000, "INDEPENDENT-FIXTURE", array.from("p7", "p8", "p9", "p10", "p11", "p12"), 3))
+        result.counts := array.from(0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3)
+        result.eventOrdinals := array.from(1, 2, 3)
+    else if index == 4
+        result.id := "S-FIRST-WAIT-END"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 10, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 10, 5, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 5, 12, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 12, 3, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 3, 11, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 11, 4, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, 4, 10, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, -1, 1701000420000, 1701000480000, 10, 2, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8))
+        result.expected := array.from(ChanStructure.new("S-FIRST-WAIT-END/S/1/1701000000000", "segment", 0, 1, 1701000000000, 1701000180000, 0, 12, true, 1701000540000, "INDEPENDENT-FIXTURE", array.from("p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"), 1))
+        result.counts := array.from(0, 0, 0, 0, 0, 0, 0, 1)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0, 0, 1)
+        result.eventOrdinals := array.from(1)
+    else if index == 5
+        result.id := "S-FIRST-WAIT-INCLUSION"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 20, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 20, 10, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 10, 28, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 28, 18, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 18, 26, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 26, 20, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, 20, 27, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, -1, 1701000420000, 1701000480000, 27, 19, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8), ChanStructure.new("p9", "stroke", 0, 1, 1701000480000, 1701000540000, 19, 25, true, 1701000600000, "P-001/P-002", array.from("f8", "f9", "proof9"), 9), ChanStructure.new("p10", "stroke", 0, -1, 1701000540000, 1701000600000, 25, 17, true, 1701000660000, "P-001/P-002", array.from("f9", "f10", "proof10"), 10))
+        result.expected := array.from(ChanStructure.new("S-FIRST-WAIT-INCLUSION/S/1/1701000000000", "segment", 0, 1, 1701000000000, 1701000180000, 0, 28, true, 1701000660000, "INDEPENDENT-FIXTURE", array.from("p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10"), 1))
+        result.counts := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+        result.eventOrdinals := array.from(1)
+    else if index == 6
+        result.id := "S-SPECIAL-INTERNAL-EXTREME"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 6, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 6, 2, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 2, 10, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 10, 6, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 6, 9, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 9, 4, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, 4, 12, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, -1, 1701000420000, 1701000480000, 12, 5, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8), ChanStructure.new("p9", "stroke", 0, 1, 1701000480000, 1701000540000, 5, 11, true, 1701000600000, "P-001/P-002", array.from("f8", "f9", "proof9"), 9), ChanStructure.new("p10", "stroke", 0, -1, 1701000540000, 1701000600000, 11, 3, true, 1701000660000, "P-001/P-002", array.from("f9", "f10", "proof10"), 10), ChanStructure.new("p11", "stroke", 0, 1, 1701000600000, 1701000660000, 3, 8, true, 1701000720000, "P-001/P-002", array.from("f10", "f11", "proof11"), 11), ChanStructure.new("p12", "stroke", 0, -1, 1701000660000, 1701000720000, 8, 4, true, 1701000780000, "P-001/P-002", array.from("f11", "f12", "proof12"), 12), ChanStructure.new("p13", "stroke", 0, 1, 1701000720000, 1701000780000, 4, 15, true, 1701000840000, "P-001/P-002", array.from("f12", "f13", "proof13"), 13), ChanStructure.new("p14", "stroke", 0, -1, 1701000780000, 1701000840000, 15, 5, true, 1701000900000, "P-001/P-002", array.from("f13", "f14", "proof14"), 14), ChanStructure.new("p15", "stroke", 0, 1, 1701000840000, 1701000900000, 5, 12, true, 1701000960000, "P-001/P-002", array.from("f14", "f15", "proof15"), 15), ChanStructure.new("p16", "stroke", 0, -1, 1701000900000, 1701000960000, 12, 4, true, 1701001020000, "P-001/P-002", array.from("f15", "f16", "proof16"), 16))
+        result.expected := array.from(ChanStructure.new("S-SPECIAL-INTERNAL-EXTREME/S/1/1701000000000", "segment", 0, 1, 1701000000000, 1701000180000, 0, 10, true, 1701000420000, "INDEPENDENT-FIXTURE", array.from("p1", "p2", "p3", "p4", "p5", "p6"), 1), ChanStructure.new("S-SPECIAL-INTERNAL-EXTREME/S/2/1701000180000", "segment", 0, -1, 1701000180000, 1701000600000, 10, 3, true, 1701000840000, "INDEPENDENT-FIXTURE", array.from("p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13"), 2), ChanStructure.new("S-SPECIAL-INTERNAL-EXTREME/S/3/1701000600000", "segment", 0, 1, 1701000600000, 1701000780000, 3, 15, true, 1701001020000, "INDEPENDENT-FIXTURE", array.from("p11", "p12", "p13", "p14", "p15", "p16"), 3))
+        result.counts := array.from(0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3)
+        result.eventOrdinals := array.from(1, 2, 3)
+    else if index == 7
+        result.id := "S-START-AFTER-INVALID"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 4, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 4, -3, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, -3, -1, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, -1, -5, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, -5, 1, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 1, -2, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, -2, 2, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7))
+        result.expected := array.from(ChanStructure.new("S-START-AFTER-INVALID/S/1/1701000060000", "segment", 0, -1, 1701000060000, 1701000240000, 4, -5, true, 1701000480000, "INDEPENDENT-FIXTURE", array.from("p2", "p3", "p4", "p5", "p6", "p7"), 1))
+        result.counts := array.from(0, 0, 0, 0, 0, 0, 1)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0, 1)
+        result.eventOrdinals := array.from(1)
+    else if index == 8
+        result.id := "S-WAIT-DIRECTION-INSIDE"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, -1, 1701000000000, 1701000060000, 20, 6, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, 1, 1701000060000, 1701000120000, 6, 12, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, -1, 1701000120000, 1701000180000, 12, 0, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, 1, 1701000180000, 1701000240000, 0, 10, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, -1, 1701000240000, 1701000300000, 10, 5, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, 1, 1701000300000, 1701000360000, 5, 8, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, -1, 1701000360000, 1701000420000, 8, 4, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, 1, 1701000420000, 1701000480000, 4, 7, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8), ChanStructure.new("p9", "stroke", 0, -1, 1701000480000, 1701000540000, 7, 3, true, 1701000600000, "P-001/P-002", array.from("f8", "f9", "proof9"), 9), ChanStructure.new("p10", "stroke", 0, 1, 1701000540000, 1701000600000, 3, 9, true, 1701000660000, "P-001/P-002", array.from("f9", "f10", "proof10"), 10), ChanStructure.new("p11", "stroke", 0, -1, 1701000600000, 1701000660000, 9, 5, true, 1701000720000, "P-001/P-002", array.from("f10", "f11", "proof11"), 11), ChanStructure.new("p12", "stroke", 0, 1, 1701000660000, 1701000720000, 5, 10, true, 1701000780000, "P-001/P-002", array.from("f11", "f12", "proof12"), 12))
+        result.expected := array.new<ChanStructure>()
+        result.counts := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        result.eventOrdinals := array.new<int>()
+    else if index == 9
+        result.id := "S81-EQUAL"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 6, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 6, 2, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 2, 18, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 18, 12, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 12, 16, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 16, 10, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, 10, 16, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, -1, 1701000420000, 1701000480000, 16, 12, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8), ChanStructure.new("p9", "stroke", 0, 1, 1701000480000, 1701000540000, 12, 20, true, 1701000600000, "P-001/P-002", array.from("f8", "f9", "proof9"), 9))
+        result.expected := array.new<ChanStructure>()
+        result.counts := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        result.eventOrdinals := array.new<int>()
+    else if index == 10
+        result.id := "S81-HIGHER"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 6, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 6, 2, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 2, 18, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 18, 12, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 12, 16, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 16, 10, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, 10, 17, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, -1, 1701000420000, 1701000480000, 17, 12, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8), ChanStructure.new("p9", "stroke", 0, 1, 1701000480000, 1701000540000, 12, 20, true, 1701000600000, "P-001/P-002", array.from("f8", "f9", "proof9"), 9))
+        result.expected := array.new<ChanStructure>()
+        result.counts := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        result.eventOrdinals := array.new<int>()
+    else if index == 11
+        result.id := "S81-LOWER"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 6, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 6, 2, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 2, 18, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 18, 12, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 12, 16, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 16, 10, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6), ChanStructure.new("p7", "stroke", 0, 1, 1701000360000, 1701000420000, 10, 15, true, 1701000480000, "P-001/P-002", array.from("f6", "f7", "proof7"), 7), ChanStructure.new("p8", "stroke", 0, -1, 1701000420000, 1701000480000, 15, 12, true, 1701000540000, "P-001/P-002", array.from("f7", "f8", "proof8"), 8), ChanStructure.new("p9", "stroke", 0, 1, 1701000480000, 1701000540000, 12, 20, true, 1701000600000, "P-001/P-002", array.from("f8", "f9", "proof9"), 9))
+        result.expected := array.from(ChanStructure.new("S81-LOWER/S/1/1701000000000", "segment", 0, 1, 1701000000000, 1701000180000, 0, 18, true, 1701000600000, "INDEPENDENT-FIXTURE", array.from("p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"), 1), ChanStructure.new("S81-LOWER/S/2/1701000180000", "segment", 0, -1, 1701000180000, 1701000360000, 18, 10, true, 1701000600000, "INDEPENDENT-FIXTURE", array.from("p4", "p5", "p6", "p7", "p8", "p9"), 2))
+        result.counts := array.from(0, 0, 0, 0, 0, 0, 0, 0, 2)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0, 0, 0, 2)
+        result.eventOrdinals := array.from(1, 2)
+    else
+        runtime.error("unknown compact fixture")
+    result
+
+chan_cv_limits(ChanCompactFixture firstFixture, ChanCompactFixture equalFixture) =>
+    ChanSegmentState work = chan_segment_new("work-limit", 64, 1)
+    for stroke in firstFixture.inputs
+        work := chan_segment_step(work, stroke)
+    chan_cv_assert(work.blocked and work.limitReason == "probe-work" and work.segmentCount == 0 and work.events.size() == 0 and work.inputCount == 5 and work.strokes.size() == 5, "S-LIMIT/atomic-work-stop")
+    chan_cv_assert(not na(work.heldInput) and work.heldInput.id == "p6" and work.lastInput.id == "p5", "S-LIMIT/preserve-unconsumed-input")
+    ChanStructure last = equalFixture.inputs.last()
+    ChanStructure future = ChanStructure.new("future-7", "stroke", 0, 1, last.endTime, last.endTime + 60000, last.endTicks, last.endTicks + 1, true, last.endTime + 120000, "FIXTURE-P", array.from("f6", "f7", "proof7"), 7)
+    work := chan_segment_step(work, future)
+    chan_cv_assert(work.blocked and work.segmentCount == 0 and work.events.size() == 0 and work.heldInput.id == "p6", "S-LIMIT/blocked-future-does-not-restart")
+    ChanSegmentState pending = chan_segment_new("pending-limit", 6, 8192)
+    for stroke in equalFixture.inputs
+        pending := chan_segment_step(pending, stroke)
+    chan_cv_assert(not pending.blocked and pending.segmentCount == 0 and pending.strokes.size() == 6, "S-LIMIT/pending-before-cap")
+    pending := chan_segment_step(pending, future)
+    chan_cv_assert(pending.blocked and pending.limitReason == "pending-strokes" and pending.strokes.size() == 6 and pending.inputCount == 6 and pending.events.size() == 0, "S-LIMIT/pending-cap-preserves-prefix")
+    true
+
+
+var table result = table.new(position.top_right, 1, 3)
+var int caseIndex = 0
+var int prefix = 0
+var int checkedPrefixes = 0
+var int lastProcessedBar = na
+var bool budgetsDone = false
+var ChanSegmentState online = na
+var array<ChanStructure> observed = array.new<ChanStructure>()
+if barstate.isconfirmed and (na(lastProcessedBar) or bar_index != lastProcessedBar)
+    if caseIndex < 12
+        ChanCompactFixture fixture = chan_cv_fixture(caseIndex)
+        if prefix == 0
+            online := chan_segment_new(fixture.id, 64, 8192)
+            observed := array.new<ChanStructure>()
+        online := chan_cv_prefix(online, observed, fixture, prefix)
+        checkedPrefixes += 1
+        prefix += 1
+        if prefix == fixture.inputs.size()
+            caseIndex += 1
+            prefix := 0
+    else if not budgetsDone
+        chan_cv_limits(chan_cv_fixture(1), chan_cv_fixture(2))
+        budgetsDone := true
+    lastProcessedBar := bar_index
+bool passed = caseIndex == 12 and budgetsDone
+table.cell(result, 0, 0, passed ? "PASS: 12 S case(s), 110 prefixes, budgets" : "RUNNING: " + str.tostring(checkedPrefixes) + "/110 prefixes", text_color = passed ? color.green : color.orange)
+table.cell(result, 0, 1, "合成验证 · 非行情分析 · 需要111根已收盘图表K线")
+table.cell(result, 0, 2, "CORE 1c018aea887b")
+plot(na)
+

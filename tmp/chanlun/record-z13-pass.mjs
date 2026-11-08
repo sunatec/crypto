@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import {extractCore} from '../../tools/chanlun/build-validation.mjs';
+const sha=x=>crypto.createHash('sha256').update(x).digest('hex');
+const manifest=JSON.parse(fs.readFileSync('tmp/chanlun/center-validation.pine.json','utf8'));
+const expected='d6e113c784124e1fd380c0b8c587d12adb68d04a6d47fb8034f2d99a2bc07443';
+const pine=fs.readFileSync(manifest.output);
+const production=fs.readFileSync('chanlun_original.pine','utf8');
+if(manifest.sha256!==expected || sha(pine)!==expected || sha(production)!==manifest.productionSha256 || sha(extractCore(production))!==manifest.coreHash)throw Error('requested version changed');
+const snapshot=`tmp/chanlun/compiled/center-Z13-pass-${expected}.pine`;
+fs.writeFileSync(snapshot,pine);
+const file='tmp/chanlun/center-platform-results.json';
+const records=JSON.parse(fs.readFileSync(file,'utf8'));
+if(!records.results.some(r=>r.requestedFileSha256===expected && r.status==='user-reported-pass'))records.results.push({date:'2026-11-04',status:'user-reported-pass',source:'tmp/chanlun/center-validation.pine',requestedFileSha256:expected,coreHash:manifest.coreHash,fixtureHash:manifest.fixtureHash,snapshot,userReport:'“PASS: 13 Z cases, 91 prefixes',cases:13,prefixes:91,scope:'User reports Pine compilation and all 13 cases / 91 prefixes passed, including continuous centers, ownership, pair evidence, event/archive immutability, reload, duplicate, isolation and budget assertions. Uploaded bytes not independently verified. Does not cover production rendering, fixed market replay, R completion or L2 inputs.'});
+records.pending=records.pending.filter(r=>r.sha256!==expected);
+for(const pending of records.pending)if(pending.source==='chanlun_original.pine'){
+  pending.status='awaiting-production-entry-check';
+  pending.sharedValidationPass=expected;
+  pending.expected='Compile/run, blue strokes, orange segments, L0 equals confirmed segment count, purple L1-Z labels and cumulative center count; multiple centers depend on available structure.';
+}
+fs.writeFileSync(file,JSON.stringify(records,null,2)+'\n');
+const edit=(file,from,to)=>{const s=fs.readFileSync(file,'utf8');if(s.includes(to))return;if(!s.includes(from))throw Error('missing text in '+file);fs.writeFileSync(file,s.replace(from,to));};
+edit('openspec/changes/rebuild-chanlun-tradingview-indicator/tasks.md','- [ ] 5.3 实现离开/回试、新中枢、同向趋势延续和波动范围重叠扩展的独立状态，保留各分支证据。','- [x] 5.3 实现离开/回试、新中枢、同向趋势延续和波动范围重叠扩展的独立状态，保留各分支证据。');
+edit('docs/chanlun/README.md','2026-11-04新增连续中枢版仍待Pine实测，不能继承旧版通过结果。当前20/43，5.3待验、R完成规则仍待证据','2026-11-04连续中枢Z13（13组91前缀）已由用户报告PASS，正式入口显示仍待复核。当前21/43，5.3完成、R完成规则仍待证据');
+edit('docs/chanlun/README.md','旧Z7结果保留原版本范围；V2平台结果待回传。','旧Z7结果保留原版本范围；V2已收到Z13全套PASS，正式入口仍待复核。');
+edit('docs/chanlun/center-engine.md','本轮5.3实现连续中枢，新增部分仍待Pine验证。','本轮5.3连续中枢Z13已由用户报告13组91前缀全套PASS；正式入口显示仍待复核。');
+edit('docs/chanlun/installation.md','连续中枢V2仍待实际Pine验证。','连续中枢V2的13组91前缀已由用户报告PASS，正式入口仍待显示复核。');
+edit('docs/chanlun/implementation-blockers.md','13例91前缀待Pine验证。','13例91前缀已由用户报告Pine全套PASS，正式入口显示待复核。');
+const log='docs/chanlun/validation.md',heading='## 用户报告Z13全套PASS（2026-11-04）';
+if(!fs.readFileSync(log,'utf8').includes(heading))fs.appendFileSync(log,`\n${heading}\n\n用户针对拆分加载器后的d6e113c7…请求回传“PASS: 13 Z cases, 91 prefixes”。按请求文件记录为Pine编译及13组91前缀断言通过，覆盖连续中枢及第三中枢、离开／回试归属、上下延续、相等包络、波动重叠、关系证据变化、形成／关闭事件原引用、历史顺序、重载、去重、深复制和预算停止。未独立核验上传字节。\n\n脚本SHA-256为${expected}，CORE为${manifest.coreHash}，独立预期哈希${manifest.fixtureHash}；通过快照${snapshot}。旧Z7通过及原CE10205失败记录均保留原版本。结构化记录见tmp/chanlun/center-platform-results.json。\n\n任务5.3完成，进度21/43。正式入口整文件保持${manifest.productionSha256}，与本次通过脚本内核一致；已转入入口编译／运行和紫色连续中枢显示复核。该通过不替代正式入口渲染、指定feed行情、固定起点回放、真实多tick、资源压力、R完成或L2／L3验收，8.1保持未全部完成。\n`);
+console.log(JSON.stringify({status:'Z13 user-reported PASS recorded',script:expected,production:manifest.productionSha256,core:manifest.coreHash,progress:'21/43',next:'production entry check'},null,2));

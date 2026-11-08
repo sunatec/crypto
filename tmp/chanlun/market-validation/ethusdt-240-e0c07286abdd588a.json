@@ -1,0 +1,30 @@
+{
+  "status": "matching-exported-prefix-traces",
+  "caseId": "ETHUSDT-240",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "baselineSha256": "2c1e7895245eb2753ede9f57ff8dd978cd087f79fd456c9ba0e35f0c34897f2d",
+  "comparedPrefixes": 1008,
+  "leftPrefixes": 1008,
+  "rightPrefixes": 1008,
+  "leftTraceSha256": "e982a78aa9c45b4b93e2cb162616386c04a5b047697612f6b5b0dfbc0ddc0c96",
+  "rightTraceSha256": "e982a78aa9c45b4b93e2cb162616386c04a5b047697612f6b5b0dfbc0ddc0c96",
+  "leftRawCsvSha256": "7c239e767ed55c70aa173851b5bff75418eed134e98ad5ad8806ca863c15db24",
+  "rightRawCsvSha256": "7c239e767ed55c70aa173851b5bff75418eed134e98ad5ad8806ca863c15db24",
+  "actualObservedParameters": {
+    "audit_feed_code": 2,
+    "audit_timeframe_seconds": 14400,
+    "audit_tick_size": 0.01,
+    "audit_standard": 1,
+    "audit_core_tag": 4134408277,
+    "audit_baseline_tag": 740194453,
+    "audit_requested_start": 1778976000000,
+    "audit_sample_limit": 1008,
+    "audit_initial_bars": 5000,
+    "audit_segment_pending_limit": 64,
+    "audit_segment_work_limit": 8192,
+    "audit_center_sources": 64
+  },
+  "leftPath": "C:\\Users\\Admin\\Downloads\\BINANCE_ETHUSDT, 240_76bbf.csv",
+  "rightPath": "D:\\Workspace\\crypto\\tmp\\chanlun\\market-validation\\ETHUSDT-240-reload.csv",
+  "scope": "Numeric states and confirmation-event checksums. Replay and reload context recorded separately."
+}

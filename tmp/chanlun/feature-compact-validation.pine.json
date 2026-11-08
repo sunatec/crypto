@@ -1,0 +1,93 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\feature-compact-validation.pine",
+  "productionSha256": "7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955",
+  "sha256": "4518922b191889a0bfe2295f9653511fb645680550557e0458109d1f50033930",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "bytes": 135148,
+  "cases": 16,
+  "prefixes": 101,
+  "expectedDisplay": "PASS: F16, 101 prefixes",
+  "fixtures": [
+    {
+      "id": "S-FEATURE-81-EQUAL",
+      "fixtureHash": "c0679ddfa15cf44fc6bc40ef30dae9271e5b84677a202490b6395862b9188b0b",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-81-HIGHER",
+      "fixtureHash": "507c7e1e3eb3cfd5674d85c0365563a6b9eae2ebd14db74124037b0dd234a882",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-81-LOWER",
+      "fixtureHash": "ac4e280308aae415e36b3933191b9f1ab8753a0d794451e7c89ee13fe04eb889",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-DOWN-INCLUSION",
+      "fixtureHash": "8b5d36ab69dd363b3e2f0c34329e3aa8d238db4d0a227e6ed0cb59d8bc1bfa7d",
+      "prefixes": 8
+    },
+    {
+      "id": "S-FEATURE-DOWN",
+      "fixtureHash": "f4ebd4251ba89c7615e008a6337d7beba6deef7540f14c4ec4315c03d8ba8b5a",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-ELEMENT-LIMIT",
+      "fixtureHash": "cb84aac16c09c4524381a43ff21f4a02ef9a3b5d9ebc53c045001be36d1935d3",
+      "prefixes": 8
+    },
+    {
+      "id": "S-FEATURE-EQUAL-ORIGIN",
+      "fixtureHash": "a097ab67d36d13e149772fbf70eacf89ead08aa6b4118d7afe142e5e3b889298",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-FIRST-BOUNDARY",
+      "fixtureHash": "d1fb9322f81f21a5ade4e060766b51dc3303ecd250ee1bb388ce946e116559d0",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-GAP",
+      "fixtureHash": "2e66cff15d93e7c1ccbba221257effed5457436cce14b3baf0d6ab41ffefca55",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-NO-START",
+      "fixtureHash": "c5fdc5164b5298d7aee430a35ad8bc7325ec8a7f683b7c18193fc642d3408140",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-SECOND-BOUNDARY",
+      "fixtureHash": "6791715f28d20eeae9c3cb33e2a5bd607eb887a12aa341a5f66303eb8b833f55",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-SOURCE-LIMIT",
+      "fixtureHash": "cee755e7bd4389a4ba91bca555bc8ddef0eff7fe62c74fc6be8e86afdc534b62",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-TOUCH",
+      "fixtureHash": "eb4d4a21635384d3e24f07cf6d9f5bcc8488acb24b29c5256ab2946c0d72a9c1",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-UP-INCLUSION",
+      "fixtureHash": "79ce25b5876c2f0738bf66d20e8d35d4b5614321438d3298193d495aee35b871",
+      "prefixes": 8
+    },
+    {
+      "id": "S-FEATURE-UP",
+      "fixtureHash": "12c69ee2c305fbb7f321e4b23c156c453aaa69630bc9fde282158f0dea5948b3",
+      "prefixes": 6
+    },
+    {
+      "id": "S-FEATURE-WAIT-DIRECTION",
+      "fixtureHash": "dddc4190bb7e31ecb08ac614aa3932a8e79bed40dfc08fbc5f31380dd6e198d0",
+      "prefixes": 5
+    }
+  ],
+  "execution": "not run in Pine"
+}

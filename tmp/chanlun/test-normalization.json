@@ -1,0 +1,42 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\test-normalization.pine",
+  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "fixtures": [
+    {
+      "id": "N-INTERNAL-LOW",
+      "sha256": "911ef7dfdfbb6f6544e0477d3074691a134eb0091dd2c038a2e8a00da5402256",
+      "prefixes": 16,
+      "events": 3
+    },
+    {
+      "id": "N-ORDINARY",
+      "sha256": "b3d7ef92ddc90953c0ba0c6fb5a457c697a317fa89eaa7bec398a5668e44eafd",
+      "prefixes": 6,
+      "events": 1
+    },
+    {
+      "id": "N-OWN-RANGES",
+      "sha256": "0f2d46415c33386490c6b0750c52a7bdf4200dfc95b642d663bc9dc8e664556e",
+      "prefixes": 16,
+      "events": 3
+    },
+    {
+      "id": "N-SECOND-BATCH",
+      "sha256": "bf55df2617026e0519a2872d18ed117b6223de7684e3855147ccf637e85880b9",
+      "prefixes": 9,
+      "events": 2
+    },
+    {
+      "id": "N-WAIT-NO-EVENT",
+      "sha256": "761e6e5a9e60bd5c6dec4d946a07000f367338f93b47cbbbd2e9a7ee1d9b95d4",
+      "prefixes": 12,
+      "events": 0
+    }
+  ],
+  "prefixes": 59,
+  "requiredClosedBars": 59,
+  "bytes": 96915,
+  "sha256": "6a1e4690397efadaeed9f757a36b833ab8075ad482b0d9f38e4001483dd1cd78",
+  "execution": "not run; compile and execute in TradingView"
+}

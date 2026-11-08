@@ -1,0 +1,12 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\retention-validation.pine",
+  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
+  "sha256": "f35540525666c3f2a8019bc8b92e4ee7e7a265fcfed046221594bcd759fc5dde",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "fixtureHash": "1b7355248a8a71f1fd1c4596bf28bf98d2ac0537b5e03f17be90ad02494ea827",
+  "strokeFixtureHash": "0f2d46415c33386490c6b0750c52a7bdf4200dfc95b642d663bc9dc8e664556e",
+  "cases": 3,
+  "prefixes": 338,
+  "bytes": 84929,
+  "execution": "not run in Pine"
+}

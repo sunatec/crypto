@@ -1,0 +1,246 @@
+{
+  "changeName": "rebuild-chanlun-tradingview-indicator",
+  "changeDir": "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator",
+  "schemaName": "spec-driven",
+  "contextFiles": {
+    "proposal": [
+      "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator\\proposal.md"
+    ],
+    "specs": [
+      "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator\\specs\\chanlun-morphology\\spec.md",
+      "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator\\specs\\chanlun-recursion\\spec.md",
+      "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator\\specs\\chanlun-rule-provenance\\spec.md",
+      "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator\\specs\\chanlun-tradingview\\spec.md"
+    ],
+    "design": [
+      "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator\\design.md"
+    ],
+    "tasks": [
+      "D:\\Workspace\\crypto\\openspec\\changes\\rebuild-chanlun-tradingview-indicator\\tasks.md"
+    ]
+  },
+  "progress": {
+    "total": 43,
+    "complete": 20,
+    "remaining": 23
+  },
+  "tasks": [
+    {
+      "id": "1",
+      "description": "1.1 核对仓库 PDF 的作者正文、编者备注及第71/78/81课图形更正，建立课程、页码、图号的来源索引。",
+      "done": true
+    },
+    {
+      "id": "2",
+      "description": "1.2 编写 K/F/P 规则及正反例，明确包含方向、初始化区、分型封口、独立 K 线成员关系、同类极值和相等价格取舍。",
+      "done": true
+    },
+    {
+      "id": "3",
+      "description": "1.3 编写 S 规则及状态转移，明确两类线段终结、假设分界两侧包含、第二序列判断及最早确认时间。",
+      "done": true
+    },
+    {
+      "id": "4",
+      "description": "1.4 编写 N 规则及特殊线段样例，明确真实端点、实际极值与标准化 L0 的映射。",
+      "done": true
+    },
+    {
+      "id": "5",
+      "description": "1.5 编写 R/Z 规则的有限状态转移和正反例，明确自然延伸、新生、扩展、走势完成证明、最终极值归属及上层提交条件。",
+      "done": false
+    },
+    {
+      "id": "6",
+      "description": "1.6 在 `docs/chanlun/rules.md` 固定首版规则版本、工程约定及样例映射，核实闭区间退化边界适用性；未解决证据不得进入依赖模块的确认逻辑。",
+      "done": false
+    },
+    {
+      "id": "7",
+      "description": "2.1 建立 `tests/fixtures/chanlun/` 的输入与预期格式，覆盖 OHLC、低层部件、来源分类、tick 精度、规则 ID、逐前缀结构和确认事件。",
+      "done": true
+    },
+    {
+      "id": "8",
+      "description": "2.2 人工推导包含链、相等极值、分型未封口、合并后不能成笔、两类段终结及分界包含的独立预期，保留原图更正对应关系。",
+      "done": true
+    },
+    {
+      "id": "9",
+      "description": "2.3 人工推导标准化、中枢形成/延伸/新生/扩展、退化区间、走势未完成不升层及迟到确认的独立预期，标明图片重建与合成数据。",
+      "done": false
+    },
+    {
+      "id": "10",
+      "description": "2.4 固定 BTC/ETH 的 60、240、D 六个 feed/窗口及 OHLC 基准，记录 UTC 起止、数据实际可用范围、tick 精度和参数；非相同数据源单独标注。",
+      "done": false
+    },
+    {
+      "id": "11",
+      "description": "3.1 新建独立 `chanlun_original.pine` v6 指标入口及用户类型，统一稳定逻辑 ID、UTC 时间、tick 价格、依赖关系和候选/确认状态。",
+      "done": true
+    },
+    {
+      "id": "12",
+      "description": "3.2 分离核心函数区、逐 K 调度区和绘图区，确保内核可接收明确输入，不把绝对 K 线编号作为 series 历史偏移。",
+      "done": true
+    },
+    {
+      "id": "13",
+      "description": "3.3 在 `tools/chanlun/` 实现从正式 Pine 同一核心函数区和固定样例生成独立验证脚本的工具，明确使用方法且不引入运行时外部库。",
+      "done": true
+    },
+    {
+      "id": "14",
+      "description": "3.4 在验证脚本中实现逐前缀状态/端点/确认事件断言和失败样例定位，预期从独立样例读取，不从待测实现自动生成。",
+      "done": true
+    },
+    {
+      "id": "15",
+      "description": "4.1 实现顺序包含处理、此前方向判断、初始化等待及高低点来源跟踪，核对上下行包含链样例。",
+      "done": true
+    },
+    {
+      "id": "16",
+      "description": "4.2 实现处理后分型、右侧可变元素的封口和候选撤销，核对收盘不等于锁定的样例。",
+      "done": true
+    },
+    {
+      "id": "17",
+      "description": "4.3 实现基于成员关系的成笔、同类极值取舍和末笔延伸，核对过滤后身份/方向一致性及锁定前缀不变。",
+      "done": true
+    },
+    {
+      "id": "18",
+      "description": "4.4 实现按段方向抽取特征元素、标准特征序列包含处理、分界上下文与研究信息。",
+      "done": true
+    },
+    {
+      "id": "19",
+      "description": "4.5 实现无缺口第一类线段终结、起始三笔重叠及完整段端点/笔数条件，核对对应正反例。",
+      "done": true
+    },
+    {
+      "id": "20",
+      "description": "4.6 实现有缺口第二类终结及第二特征序列，不额外要求补原缺口或无限递归判断。",
+      "done": true
+    },
+    {
+      "id": "21",
+      "description": "4.7 实现多候选后缀的依赖失效、端点锁定及唯一确认事件，核对第71/78/81课更正场景和后缀回滚。",
+      "done": true
+    },
+    {
+      "id": "22",
+      "description": "5.1 实现确认线段到 L0 的标准化，保存并验证原段端点与分析端点关系。",
+      "done": true
+    },
+    {
+      "id": "23",
+      "description": "5.2 实现三合规部件中枢形成、固定 ZD/ZG、Z 波动统计、自然延伸及退化边界显示数据。",
+      "done": true
+    },
+    {
+      "id": "24",
+      "description": "5.3 实现离开/回试、新中枢、同向趋势延续和波动范围重叠扩展的独立状态，保留各分支证据。",
+      "done": false
+    },
+    {
+      "id": "25",
+      "description": "5.4 按冻结 R 规则实现走势完成、最终极值归属、完成时刻及事件去重，验证中枢形成和窗口结束不能替代完成证明。",
+      "done": false
+    },
+    {
+      "id": "26",
+      "description": "5.5 连接 L1～L3 已完成子走势输入，保留子对象来源，验证数据不足、层数上限和扩展不改写确认下层。",
+      "done": false
+    },
+    {
+      "id": "27",
+      "description": "6.1 实现历史逐 K 推进、未收盘可变尾部独立预览及收盘唯一提交，验证引用对象复制不会污染正式状态。",
+      "done": false
+    },
+    {
+      "id": "28",
+      "description": "6.2 实现默认最近5,000根的初始上下文、实际有效起点展示、固定起始时间复现模式与显式样本上限。",
+      "done": false
+    },
+    {
+      "id": "29",
+      "description": "6.3 实现增量状态、确认摘要、未完成依赖及原始数据回收，保证持续运行不会因滚动保留窗口悄悄初始化。",
+      "done": false
+    },
+    {
+      "id": "30",
+      "description": "6.4 实现统一绘图注册表与全局配额，计入候选、退化边界和研究标记；回收旧图形不改变计算状态，早期端点用时间定位。",
+      "done": true
+    },
+    {
+      "id": "31",
+      "description": "6.5 实现计算依赖超限时的层级受限提示及停止确认/上报，区分数据不足、样本截断和层数上限，处理非普通图表输入。",
+      "done": false
+    },
+    {
+      "id": "32",
+      "description": "7.1 实现中文参数分组、笔/段/层级配色、同层中枢、确认实线与候选虚线，以及各层独立显示开关。",
+      "done": false
+    },
+    {
+      "id": "33",
+      "description": "7.2 实现按需研究视图：分型、合并跨度、特征元素/缺口、规则 ID、标准化映射、发生时间与确认标记，遵守全局标签配额。",
+      "done": false
+    },
+    {
+      "id": "34",
+      "description": "7.3 编写 `docs/chanlun/` 安装使用、规则解释、数据起点及层级说明，建立竞品公开信息和可观察差异记录，明确后续信号与策略阶段。",
+      "done": false
+    },
+    {
+      "id": "35",
+      "description": "7.4 按指定公开预览的参考映射完善线条层次、同层半透明中枢、走势类型文字、有类型结构编号及字号/线宽/透明度控制，逐项区分首版与后续功能。",
+      "done": false
+    },
+    {
+      "id": "36",
+      "description": "8.1 在 TradingView 编译正式指标和共享内核验证脚本，执行全部原文/合成规则样例与逐前缀断言，记录实际结果并修复失败。",
+      "done": false
+    },
+    {
+      "id": "37",
+      "description": "8.2 在 BTC/ETH 六个固定行情组合执行加载、逐 K 回放和相同数据/固定起点重载核对，记录端点、层级、状态及确认时间证据。",
+      "done": false
+    },
+    {
+      "id": "38",
+      "description": "8.3 检查真实未收盘多 tick 的候选成立/失效、重绘对象更新和收盘唯一提交，证明预览不改动已确认前缀。",
+      "done": false
+    },
+    {
+      "id": "39",
+      "description": "8.4 在默认5,000根、三层及研究开关场景检查时间、数组和绘图预算，验证显示裁剪不改变结构、资源受限停止上报且明确提示。",
+      "done": false
+    },
+    {
+      "id": "40",
+      "description": "8.5 汇总 `docs/chanlun/validation.md` 的预期/实际/证据矩阵，区分通过、失败和尚未执行；缺权限或缺数据的必需检查保持未完成，离线结果不代替平台验收。",
+      "done": false
+    },
+    {
+      "id": "41",
+      "description": "8.6 对普通和研究视图分别保存实际渲染证据，按公开图例参考映射核对层次、K线可读性、标签密度与字号控制；展示差异和算法差异分别记录。",
+      "done": false
+    },
+    {
+      "id": "42",
+      "description": "9.1 确认全部必需验收已通过且证据齐全后，将两份旧 Pine 原样迁入 `archive/chanlun/`，核对迁移前后内容哈希；未过验收继续保留原位。",
+      "done": false
+    },
+    {
+      "id": "43",
+      "description": "9.2 补充归档历史原型说明，更新根 README 的新指标入口、文档与旧版位置，核对引用和恢复路径；保留根摘录、书籍及现有其他分析系统。",
+      "done": false
+    }
+  ],
+  "state": "ready",
+  "instruction": "Read context files, work through pending tasks, mark complete as you go.\nPause if you hit blockers or need clarification."
+}

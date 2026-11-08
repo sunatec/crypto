@@ -1,0 +1,1545 @@
+//@version=6
+indicator("缠论同源行情校验 ETHUSDT-D", overlay=false, precision=8)
+// Frozen OHLC SHA-256: ab930d2b13bc35716fdf45e80b666b553b725392416a90c1c6e790a8364a2365
+// Shared CORE SHA-256: f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f
+// Generated input verification and trace recorder, not independent structure expectations.
+// K/F/P/S/N and continuous L1 centers: chanlun-research-0.1.
+// R completion and completed L2/L3 inputs still require independent proof.
+// All time coordinates are UTC milliseconds; prices are integer ticks.
+type ChanRaw
+    int openTime
+    int closeTime
+    int openTicks
+    int highTicks
+    int lowTicks
+    int closeTicks
+
+type ChanElement
+    string id
+    int ordinal
+    int firstTime
+    int lastTime
+    int highTicks
+    int lowTicks
+    int highTime
+    int lowTime
+    int firstRaw
+    int lastRaw
+    bool sealed
+
+type ChanFractal
+    string id
+    int kind
+    int endpointTime
+    int priceTicks
+    int confirmedAt
+    string leftId
+    string middleId
+    string rightId
+    string ruleId
+    int leftOrdinal
+    int middleOrdinal
+    int rightOrdinal
+    int middleHighTicks
+    int middleLowTicks
+
+// Shared contracts for later modules. An absent proof is represented by na,
+// never by an invented completed structure. These types do not produce signals.
+type ChanStructure
+    string id
+    string objectType
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    bool confirmed = false
+    int confirmedAt = na
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+    int memberLowTicks = na
+    int memberHighTicks = na
+    int memberLowTime = na
+    int memberHighTime = na
+
+type ChanComponent
+    string id
+    string segmentId
+    int realStartTime
+    int realEndTime
+    int realStartTicks
+    int realEndTicks
+    int actualLowTicks
+    int actualHighTicks
+    int actualLowTime
+    int actualHighTime
+    int analysisStartTime
+    int analysisEndTime
+    int analysisStartTicks
+    int analysisEndTicks
+    int direction
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+
+type ChanCenter
+    string id
+    int level
+    int coreLowTicks
+    int coreHighTicks
+    int ggTicks
+    int gTicks
+    int dTicks
+    int ddTicks
+    int startTime
+    int formedAt
+    int extentEndTime
+    int confirmedAt = na
+    bool degenerate = false
+    string lifecycle
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+    int zWaves = 0
+    int closedAt = na
+    string leaveId = ""
+    string returnId = ""
+
+type ChanMovement
+    string id
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    string morphology
+    bool completed = false
+    int confirmedAt = na
+    string completionProof
+    string ruleId
+    array<string> childIds
+    array<string> centerIds
+    int ordinal = 0
+
+type ChanConfirmation
+    string id
+    string objectId
+    string objectType
+    int level
+    int occurredAt
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+
+type ChanState
+    string contextId = ""
+    array<ChanElement> elements
+    ChanRaw seed
+    ChanRaw lastRaw
+    ChanFractal candidate
+    ChanFractal lastConfirmed
+    ChanFractal event
+    int direction = 0
+    int processedCount = 0
+    int inputCount = 0
+    int confirmedFractals = 0
+    int effectiveStart = na
+    ChanFractal strokeAnchor
+    ChanFractal strokeEnd
+    ChanFractal lastStrokeInput
+    ChanStructure strokeCandidate
+    ChanStructure strokeEvent
+    ChanStructure lastStroke
+    int strokeCount = 0
+    int ignoredStrokeFractals = 0
+
+chan_new(string contextId) =>
+    ChanState state = ChanState.new()
+    state.contextId := "chanlun-research-0.1/" + contextId
+    state.elements := array.new<ChanElement>()
+    state
+
+chan_structure_copy(ChanStructure source) =>
+    ChanStructure result = na
+    if not na(source)
+        result := source.copy()
+        if not na(source.dependencies)
+            result.dependencies := source.dependencies.copy()
+    result
+
+// UDT.copy() is shallow: copy the collection and each referenced record explicitly.
+chan_clone(ChanState source) =>
+    ChanState result = source.copy()
+    result.elements := array.new<ChanElement>()
+    if source.elements.size() > 0
+        for element in source.elements
+            result.elements.push(element.copy())
+    if not na(source.seed)
+        result.seed := source.seed.copy()
+    if not na(source.lastRaw)
+        result.lastRaw := source.lastRaw.copy()
+    if not na(source.candidate)
+        result.candidate := source.candidate.copy()
+    if not na(source.lastConfirmed)
+        result.lastConfirmed := source.lastConfirmed.copy()
+    if not na(source.event)
+        result.event := source.event.copy()
+    if not na(source.strokeAnchor)
+        result.strokeAnchor := source.strokeAnchor.copy()
+    if not na(source.strokeEnd)
+        result.strokeEnd := source.strokeEnd.copy()
+    if not na(source.lastStrokeInput)
+        result.lastStrokeInput := source.lastStrokeInput.copy()
+    result.strokeCandidate := chan_structure_copy(source.strokeCandidate)
+    result.strokeEvent := chan_structure_copy(source.strokeEvent)
+    result.lastStroke := chan_structure_copy(source.lastStroke)
+    result
+
+chan_contains(int loA, int hiA, int loB, int hiB) =>
+    (loA <= loB and hiA >= hiB) or (loB <= loA and hiB >= hiA)
+
+chan_element(ChanState state, ChanRaw raw, int ordinal, int rawOrdinal) =>
+    ChanElement.new(state.contextId + "/K/" + str.tostring(raw.openTime), ordinal, raw.openTime, raw.openTime, raw.highTicks, raw.lowTicks, raw.openTime, raw.openTime, rawOrdinal, rawOrdinal, false)
+
+chan_fractal(ChanState state, int offset, int confirmedAt) =>
+    ChanElement left = state.elements.get(offset)
+    ChanElement middle = state.elements.get(offset + 1)
+    ChanElement right = state.elements.get(offset + 2)
+    bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+    bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+    ChanFractal result = na
+    if top or bottom
+        int kind = top ? 1 : -1
+        result := ChanFractal.new(state.contextId + "/F/" + str.tostring(kind) + "/" + left.id + "/" + middle.id + "/" + right.id, kind, top ? middle.highTime : middle.lowTime, top ? middle.highTicks : middle.lowTicks, confirmedAt, left.id, middle.id, right.id, "F-001/F-002", left.ordinal, middle.ordinal, right.ordinal, middle.highTicks, middle.lowTicks)
+    result
+
+// P-001 is only a qualification predicate, not a stroke completion algorithm.
+// The processed-element ordinals and member IDs survive raw containment merges.
+chan_stroke_eligible(ChanFractal first, ChanFractal last) =>
+    bool eligible = false
+    if not na(first) and not na(last)
+        if not na(first.confirmedAt) and not na(last.confirmedAt) and first.kind != last.kind and first.endpointTime < last.endpointTime and first.rightOrdinal + 1 < last.leftOrdinal
+            ChanFractal top = first.kind == 1 ? first : last
+            ChanFractal bottom = first.kind == -1 ? first : last
+            eligible := top.middleHighTicks > bottom.middleHighTicks and top.priceTicks > bottom.priceTicks
+    eligible
+
+chan_fractal_signature(ChanFractal fractal) =>
+    string result = "none"
+    if not na(fractal)
+        result := fractal.id + "/" + str.tostring(fractal.kind) + "/" + str.tostring(fractal.endpointTime) + "/" + str.tostring(fractal.priceTicks) + "/" + str.tostring(fractal.confirmedAt) + "/" + fractal.leftId + "/" + fractal.middleId + "/" + fractal.rightId + "/" + str.tostring(fractal.leftOrdinal) + "/" + str.tostring(fractal.middleOrdinal) + "/" + str.tostring(fractal.rightOrdinal) + "/" + str.tostring(fractal.middleHighTicks) + "/" + str.tostring(fractal.middleLowTicks)
+    result
+
+chan_structure_signature(ChanStructure source) =>
+    string result = "none"
+    if not na(source)
+        result := source.id + "/" + source.objectType + "/" + str.tostring(source.level) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.endTime) + "/" + str.tostring(source.startTicks) + "/" + str.tostring(source.endTicks) + "/" + str.tostring(source.confirmed) + "/" + str.tostring(source.confirmedAt) + "/" + str.tostring(source.ordinal) + "/" + source.ruleId
+        result += "/members/" + str.tostring(source.memberLowTicks) + "/" + str.tostring(source.memberHighTicks) + "/" + str.tostring(source.memberLowTime) + "/" + str.tostring(source.memberHighTime)
+        if not na(source.dependencies)
+            for dependency in source.dependencies
+                result += "/" + dependency
+    result
+
+chan_stroke_make(ChanState state) =>
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/P/" + str.tostring(state.strokeCount + 1) + "/" + str.tostring(state.strokeAnchor.endpointTime)
+    result.objectType := "stroke"
+    result.level := 0
+    result.direction := state.strokeAnchor.kind == -1 ? 1 : -1
+    result.startTime := state.strokeAnchor.endpointTime
+    result.endTime := state.strokeEnd.endpointTime
+    result.startTicks := state.strokeAnchor.priceTicks
+    result.endTicks := state.strokeEnd.priceTicks
+    result.ruleId := "P-001/P-002"
+    result.dependencies := array.from(state.strokeAnchor.id, state.strokeEnd.id)
+    result.ordinal := state.strokeCount + 1
+    result.memberLowTicks := math.min(result.startTicks, result.endTicks)
+    result.memberHighTicks := math.max(result.startTicks, result.endTicks)
+    result.memberLowTime := result.direction == 1 ? result.startTime : result.endTime
+    result.memberHighTime := result.direction == 1 ? result.endTime : result.startTime
+    result
+
+chan_more_extreme(ChanFractal previous, ChanFractal incoming) =>
+    incoming.kind == 1 ? incoming.priceTicks > previous.priceTicks : incoming.priceTicks < previous.priceTicks
+
+// P-002: only a qualified next stroke locks the previous one. Equal extrema
+// retain the first endpoint; rejected opposite fractals never create a turn.
+chan_stroke_step(ChanState state, ChanFractal incoming) =>
+    if na(incoming) or na(incoming.confirmedAt)
+        runtime.error("成笔正式输入必须是已封口分型")
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastStrokeInput)
+        duplicate := state.lastStrokeInput.id == incoming.id
+        if duplicate and chan_fractal_signature(state.lastStrokeInput) != chan_fractal_signature(incoming)
+            runtime.error("已提交分型发生变化，需重载分析上下文")
+        if not duplicate and (incoming.endpointTime <= state.lastStrokeInput.endpointTime or incoming.confirmedAt < state.lastStrokeInput.confirmedAt)
+            runtime.error("成笔分型输入顺序无效")
+    if not duplicate
+        if na(state.strokeAnchor)
+            state.strokeAnchor := incoming.copy()
+        else if na(state.strokeEnd)
+            if incoming.kind == state.strokeAnchor.kind
+                if chan_more_extreme(state.strokeAnchor, incoming)
+                    state.strokeAnchor := incoming.copy()
+            else if chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+            else
+                state.ignoredStrokeFractals += 1
+        else if incoming.kind == state.strokeEnd.kind
+            if chan_more_extreme(state.strokeEnd, incoming) and chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+        else if chan_stroke_eligible(state.strokeEnd, incoming)
+            ChanStructure locked = chan_structure_copy(state.strokeCandidate)
+            locked.confirmed := true
+            locked.confirmedAt := incoming.confirmedAt
+            locked.dependencies.push(incoming.id)
+            state.strokeCount += 1
+            state.lastStroke := locked
+            state.strokeEvent := locked
+            state.strokeAnchor := state.strokeEnd.copy()
+            state.strokeEnd := incoming.copy()
+            state.strokeCandidate := chan_stroke_make(state)
+        else
+            state.ignoredStrokeFractals += 1
+        state.lastStrokeInput := incoming.copy()
+    state
+
+// Project an unsealed fractal only on a deep copy. lastStroke survives a later
+// rejected preview input, unlike strokeEvent, which is cleared on every step.
+chan_stroke_preview(ChanState source) =>
+    ChanState result = chan_clone(source)
+    if not na(source.candidate) and not na(source.lastRaw)
+        ChanFractal tentative = source.candidate.copy()
+        tentative.confirmedAt := source.lastRaw.closeTime
+        chan_stroke_step(result, tentative)
+    result
+
+chan_stroke_pending(ChanState preview, int committedCount) =>
+    ChanStructure result = na
+    if preview.strokeCount > committedCount and not na(preview.lastStroke)
+        result := chan_structure_copy(preview.lastStroke)
+        result.confirmed := false
+        result.confirmedAt := na
+    result
+
+// Consume one closed input, or one input in an isolated preview copy.
+// At most four processed elements are needed for K/F; counts and source spans persist.
+chan_step(ChanState state, ChanRaw raw) =>
+    if na(raw.openTime) or na(raw.closeTime) or na(raw.openTicks) or na(raw.highTicks) or na(raw.lowTicks) or na(raw.closeTicks) or raw.openTime < 0 or raw.closeTime <= raw.openTime or raw.lowTicks > raw.highTicks or raw.openTicks < raw.lowTicks or raw.openTicks > raw.highTicks or raw.closeTicks < raw.lowTicks or raw.closeTicks > raw.highTicks
+        runtime.error("K/F: invalid OHLC input")
+    state.event := na
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastRaw)
+        if raw.openTime < state.lastRaw.openTime or (raw.openTime > state.lastRaw.openTime and raw.openTime < state.lastRaw.closeTime)
+            runtime.error("K/F: inputs must be chronological")
+        if raw.openTime == state.lastRaw.openTime
+            duplicate := raw.closeTime == state.lastRaw.closeTime and raw.openTicks == state.lastRaw.openTicks and raw.highTicks == state.lastRaw.highTicks and raw.lowTicks == state.lastRaw.lowTicks and raw.closeTicks == state.lastRaw.closeTicks
+            if not duplicate
+                runtime.error("K/F: committed input changed; reload the context")
+    if not duplicate
+        state.inputCount += 1
+        bool appended = false
+        if state.direction == 0
+            // E-001: compare adjacent original inputs; never invent an initial direction.
+            if not na(state.seed)
+                if not chan_contains(state.seed.lowTicks, state.seed.highTicks, raw.lowTicks, raw.highTicks)
+                    state.contextId += "/seed/" + str.tostring(state.seed.openTime)
+                    ChanElement first = chan_element(state, state.seed, 0, state.inputCount - 2)
+                    first.sealed := true
+                    state.elements.push(first)
+                    state.elements.push(chan_element(state, raw, 1, state.inputCount - 1))
+                    state.processedCount := 2
+                    state.effectiveStart := state.seed.openTime
+                    state.direction := raw.highTicks > state.seed.highTicks ? 1 : -1
+                    appended := true
+            state.seed := raw.copy()
+        else
+            ChanElement tail = state.elements.last()
+            if chan_contains(tail.lowTicks, tail.highTicks, raw.lowTicks, raw.highTicks)
+                int mergedHigh = state.direction == 1 ? math.max(tail.highTicks, raw.highTicks) : math.min(tail.highTicks, raw.highTicks)
+                int mergedLow = state.direction == 1 ? math.max(tail.lowTicks, raw.lowTicks) : math.min(tail.lowTicks, raw.lowTicks)
+                // E-002: equal extrema keep the earlier source independently.
+                if mergedHigh != tail.highTicks
+                    tail.highTime := raw.openTime
+                if mergedLow != tail.lowTicks
+                    tail.lowTime := raw.openTime
+                tail.highTicks := mergedHigh
+                tail.lowTicks := mergedLow
+                tail.lastTime := raw.openTime
+                tail.lastRaw := state.inputCount - 1
+            else
+                tail.sealed := true
+                state.direction := raw.highTicks > tail.highTicks ? 1 : -1
+                state.elements.push(chan_element(state, raw, state.processedCount, state.inputCount - 1))
+                state.processedCount += 1
+                appended := true
+                if state.elements.size() > 4
+                    state.elements.shift()
+        int count = state.elements.size()
+        if appended and count >= 4
+            ChanFractal confirmed = chan_fractal(state, count - 4, raw.closeTime)
+            if not na(confirmed)
+                state.lastConfirmed := confirmed
+                state.event := confirmed
+                state.confirmedFractals += 1
+                chan_stroke_step(state, confirmed)
+        state.candidate := count >= 3 ? chan_fractal(state, count - 3, na) : na
+        state.lastRaw := raw.copy()
+    state
+
+// Deterministic K/F snapshot for replay and clone-isolation assertions.
+chan_signature(ChanState state) =>
+    string result = state.contextId + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.processedCount) + "/" + str.tostring(state.direction) + "/" + str.tostring(state.effectiveStart) + "/" + str.tostring(state.confirmedFractals)
+    if not na(state.seed)
+        result += "/seed/" + str.tostring(state.seed.openTime) + "/" + str.tostring(state.seed.highTicks) + "/" + str.tostring(state.seed.lowTicks)
+    if not na(state.lastRaw)
+        result += "/raw/" + str.tostring(state.lastRaw.openTime) + "/" + str.tostring(state.lastRaw.closeTime) + "/" + str.tostring(state.lastRaw.openTicks) + "/" + str.tostring(state.lastRaw.highTicks) + "/" + str.tostring(state.lastRaw.lowTicks) + "/" + str.tostring(state.lastRaw.closeTicks)
+    if state.elements.size() > 0
+        for element in state.elements
+            result += "/" + element.id + "/" + str.tostring(element.ordinal) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.firstRaw) + "/" + str.tostring(element.lastRaw) + "/" + str.tostring(element.sealed)
+    if not na(state.candidate)
+        result += "/candidate/" + state.candidate.id + "/" + str.tostring(state.candidate.endpointTime) + "/" + str.tostring(state.candidate.priceTicks)
+    if not na(state.lastConfirmed)
+        result += "/confirmed/" + state.lastConfirmed.id + "/" + str.tostring(state.lastConfirmed.endpointTime) + "/" + str.tostring(state.lastConfirmed.priceTicks) + "/" + str.tostring(state.lastConfirmed.confirmedAt)
+    if not na(state.event)
+        result += "/event/" + state.event.id + "/" + str.tostring(state.event.confirmedAt)
+    result += "/P/" + str.tostring(state.strokeCount) + "/" + str.tostring(state.ignoredStrokeFractals) + "/" + chan_fractal_signature(state.strokeAnchor) + "/" + chan_fractal_signature(state.strokeEnd) + "/" + chan_fractal_signature(state.lastStrokeInput)
+    result += "/candidate/" + chan_structure_signature(state.strokeCandidate) + "/last/" + chan_structure_signature(state.lastStroke) + "/event/" + chan_structure_signature(state.strokeEvent)
+    result
+// S-001/S-002/S-003: a standard feature sequence is a context-specific view of
+// locked strokes. A sequence or feature turn alone never confirms a segment.
+chan_segment_seed(ChanStructure first, ChanStructure middle, ChanStructure third) =>
+    bool eligible = false
+    if not na(first) and not na(middle) and not na(third)
+        bool locked = first.objectType == "stroke" and middle.objectType == "stroke" and third.objectType == "stroke" and first.confirmed and middle.confirmed and third.confirmed and not na(first.confirmedAt) and not na(middle.confirmedAt) and not na(third.confirmedAt)
+        bool connected = first.endTime == middle.startTime and middle.endTime == third.startTime and first.endTicks == middle.startTicks and middle.endTicks == third.startTicks and first.ordinal + 1 == middle.ordinal and middle.ordinal + 1 == third.ordinal
+        bool alternating = (first.direction == 1 or first.direction == -1) and middle.direction == -first.direction and third.direction == first.direction
+        bool causal = first.startTime < first.endTime and middle.startTime < middle.endTime and third.startTime < third.endTime and first.confirmedAt >= first.endTime and middle.confirmedAt >= middle.endTime and third.confirmedAt >= third.endTime and first.confirmedAt <= middle.confirmedAt and middle.confirmedAt <= third.confirmedAt
+        bool prices = first.direction * (first.endTicks - first.startTicks) > 0 and middle.direction * (middle.endTicks - middle.startTicks) > 0 and third.direction * (third.endTicks - third.startTicks) > 0
+        int commonLow = math.max(math.min(first.startTicks, first.endTicks), math.max(math.min(middle.startTicks, middle.endTicks), math.min(third.startTicks, third.endTicks)))
+        int commonHigh = math.min(math.max(first.startTicks, first.endTicks), math.min(math.max(middle.startTicks, middle.endTicks), math.max(third.startTicks, third.endTicks)))
+        eligible := locked and connected and alternating and causal and prices and commonLow <= commonHigh and first.direction * (third.endTicks - first.startTicks) > 0
+    eligible
+
+type ChanFeature
+    string id
+    int lowTicks
+    int highTicks
+    int lowTime
+    int highTime
+    int firstTime
+    int lastTime
+    int firstOrdinal
+    int lastOrdinal
+    int firstSide
+    int lastSide
+    int availableAt
+    bool sealed = false
+    array<string> sourceIds
+
+type ChanFeatureSequence
+    string contextId
+    int segmentDirection
+    int mergeDirection
+    int postDirection
+    int boundaryTime
+    bool secondSequence
+    array<ChanFeature> elements
+    ChanStructure lastInput
+    ChanStructure heldInput
+    int inputCount = 0
+    int selectedCount = 0
+    int boundaryCuts = 0
+    int maxElements = 128
+    int maxSources = 512
+    bool waitingDirection = false
+    bool blocked = false
+
+type ChanFeatureTurn
+    int kind
+    int endpointTime
+    int priceTicks
+    int availableAt
+    string leftId
+    string middleId
+    string rightId
+    bool gap
+    bool rightSealed
+
+chan_feature_new(string contextId, int segmentDirection, int initialDirection, int postDirection, int boundaryTime, bool secondSequence, int maxElements, int maxSources) =>
+    if (segmentDirection != 1 and segmentDirection != -1) or initialDirection < -1 or initialDirection > 1 or postDirection < -1 or postDirection > 1 or maxElements < 1 or maxSources < 1
+        runtime.error("特征序列上下文无效")
+    ChanFeatureSequence result = ChanFeatureSequence.new()
+    result.contextId := contextId
+    result.segmentDirection := segmentDirection
+    result.mergeDirection := initialDirection
+    result.postDirection := postDirection
+    result.boundaryTime := boundaryTime
+    result.secondSequence := secondSequence
+    result.maxElements := maxElements
+    result.maxSources := maxSources
+    result.elements := array.new<ChanFeature>()
+    result
+
+chan_feature_clone(ChanFeatureSequence source) =>
+    ChanFeatureSequence result = source.copy()
+    result.elements := array.new<ChanFeature>()
+    for element in source.elements
+        ChanFeature copied = element.copy()
+        copied.sourceIds := element.sourceIds.copy()
+        result.elements.push(copied)
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result
+
+chan_feature_step(ChanFeatureSequence state, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("特征序列仅消费合法已锁定笔")
+    if not na(state.boundaryTime) and stroke.startTime < state.boundaryTime and stroke.endTime > state.boundaryTime
+        runtime.error("假设分界必须位于笔端点")
+    bool duplicate = false
+    if not na(state.lastInput)
+        duplicate := stroke.id == state.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(state.lastInput)
+            runtime.error("已消费笔发生变化")
+        if not duplicate and (stroke.startTime < state.lastInput.endTime or stroke.confirmedAt < state.lastInput.confirmedAt or stroke.ordinal <= state.lastInput.ordinal)
+            runtime.error("特征序列输入顺序无效")
+    if not duplicate and not state.blocked and not state.waitingDirection
+        bool selected = stroke.direction == -state.segmentDirection
+        if selected
+            int side = not na(state.boundaryTime) and stroke.startTime >= state.boundaryTime ? 1 : 0
+            ChanFeature incoming = ChanFeature.new()
+            incoming.id := state.contextId + "/E/" + stroke.id
+            incoming.lowTicks := math.min(stroke.startTicks, stroke.endTicks)
+            incoming.highTicks := math.max(stroke.startTicks, stroke.endTicks)
+            incoming.lowTime := stroke.direction == 1 ? stroke.startTime : stroke.endTime
+            incoming.highTime := stroke.direction == 1 ? stroke.endTime : stroke.startTime
+            incoming.firstTime := stroke.startTime
+            incoming.lastTime := stroke.endTime
+            incoming.firstOrdinal := stroke.ordinal
+            incoming.lastOrdinal := stroke.ordinal
+            incoming.firstSide := side
+            incoming.lastSide := side
+            incoming.availableAt := stroke.confirmedAt
+            incoming.sourceIds := array.from(stroke.id)
+            ChanFeature tail = state.elements.size() > 0 ? state.elements.last() : na
+            bool contained = not na(tail) and chan_contains(tail.lowTicks, tail.highTicks, incoming.lowTicks, incoming.highTicks)
+            bool crosses = not na(tail) and tail.lastSide != side
+            bool split = crosses and not state.secondSequence
+            bool merge = contained and not split
+            if state.selectedCount >= state.maxSources or (not merge and state.elements.size() >= state.maxElements)
+                state.blocked := true
+                state.heldInput := chan_structure_copy(stroke)
+            else if merge and state.mergeDirection == 0
+                // Preserve the unresolved input. A caller must supply evidenced
+                // prior direction and rebuild; never guess from this inclusion.
+                state.waitingDirection := true
+                state.heldInput := chan_structure_copy(stroke)
+                state.inputCount += 1
+                state.selectedCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+            else
+                state.selectedCount += 1
+                if merge
+                    int highTicks = state.mergeDirection == 1 ? math.max(tail.highTicks, incoming.highTicks) : math.min(tail.highTicks, incoming.highTicks)
+                    int lowTicks = state.mergeDirection == 1 ? math.max(tail.lowTicks, incoming.lowTicks) : math.min(tail.lowTicks, incoming.lowTicks)
+                    if highTicks != tail.highTicks
+                        tail.highTime := incoming.highTime
+                    if lowTicks != tail.lowTicks
+                        tail.lowTime := incoming.lowTime
+                    tail.highTicks := highTicks
+                    tail.lowTicks := lowTicks
+                    tail.lastTime := incoming.lastTime
+                    tail.lastOrdinal := incoming.lastOrdinal
+                    tail.lastSide := side
+                    tail.availableAt := math.max(tail.availableAt, incoming.availableAt)
+                    tail.sourceIds.push(stroke.id)
+                else
+                    if not na(tail)
+                        tail.sealed := true
+                        if contained and split
+                            state.boundaryCuts += 1
+                            state.mergeDirection := state.postDirection
+                        else
+                            state.mergeDirection := incoming.highTicks > tail.highTicks ? 1 : -1
+                    state.elements.push(incoming)
+                state.inputCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+        else
+            state.inputCount += 1
+            state.lastInput := chan_structure_copy(stroke)
+    state
+
+// Geometry and gap diagnostics only: segment start, break proof, ownership,
+// dependency validity and a sealed right element still belong to the S machine.
+chan_feature_turn(ChanFeatureSequence state) =>
+    ChanFeatureTurn result = na
+    int count = state.elements.size()
+    if count >= 3 and not state.blocked and not state.waitingDirection
+        ChanFeature left = state.elements.get(count - 3)
+        ChanFeature middle = state.elements.get(count - 2)
+        ChanFeature right = state.elements.get(count - 1)
+        bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+        bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+        if (state.segmentDirection == 1 and top) or (state.segmentDirection == -1 and bottom)
+            bool gap = state.segmentDirection == 1 ? left.highTicks < middle.lowTicks : middle.highTicks < left.lowTicks
+            result := ChanFeatureTurn.new(state.segmentDirection, state.segmentDirection == 1 ? middle.highTime : middle.lowTime, state.segmentDirection == 1 ? middle.highTicks : middle.lowTicks, math.max(left.availableAt, math.max(middle.availableAt, right.availableAt)), left.id, middle.id, right.id, gap, right.sealed)
+    result
+
+chan_feature_signature(ChanFeatureSequence state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentDirection) + "/" + str.tostring(state.mergeDirection) + "/" + str.tostring(state.postDirection) + "/" + str.tostring(state.boundaryTime) + "/" + str.tostring(state.secondSequence) + "/" + str.tostring(state.maxElements) + "/" + str.tostring(state.maxSources) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.selectedCount) + "/" + str.tostring(state.boundaryCuts) + "/" + str.tostring(state.waitingDirection) + "/" + str.tostring(state.blocked)
+    for element in state.elements
+        result += "/" + element.id + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.firstOrdinal) + "/" + str.tostring(element.lastOrdinal) + "/" + str.tostring(element.firstSide) + "/" + str.tostring(element.lastSide) + "/" + str.tostring(element.availableAt) + "/" + str.tostring(element.sealed)
+        for sourceId in element.sourceIds
+            result += "/" + sourceId
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput)
+// S proofs operate on a bounded suffix of locked strokes. They are rebuilt from
+// those facts; neither drawings nor hypothetical child names are input facts.
+type ChanSegmentProof
+    int kind = 0
+    int endIndex = na
+    int childEndIndex = na
+    int proofIndex = na
+    bool firstBreakActive = false
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+
+type ChanSegmentHypothesis
+    string endStrokeId
+    int endTime
+    int priceTicks
+    int proofKind
+    bool gapPending
+
+type ChanSegmentState
+    string contextId
+    array<ChanStructure> strokes
+    array<ChanStructure> events
+    array<ChanSegmentHypothesis> hypotheses
+    ChanStructure lastInput
+    ChanStructure heldInput
+    ChanStructure lastSegment
+    ChanStructure candidate
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+    int inputCount = 0
+    int segmentCount = 0
+    int skippedInputs = 0
+    int maxPending = 64
+    int maxWork = 8192
+    bool blocked = false
+    bool gapPending = false
+    string limitReason = ""
+
+chan_segment_new(string contextId, int maxPending, int maxWork) =>
+    if maxPending < 6 or maxWork < 1
+        runtime.error("线段依赖预算无效")
+    ChanSegmentState state = ChanSegmentState.new()
+    state.contextId := contextId
+    state.maxPending := maxPending
+    state.maxWork := maxWork
+    state.strokes := array.new<ChanStructure>()
+    state.events := array.new<ChanStructure>()
+    state.hypotheses := array.new<ChanSegmentHypothesis>()
+    state
+
+chan_segment_clone(ChanSegmentState source) =>
+    ChanSegmentState result = source.copy()
+    result.strokes := array.new<ChanStructure>()
+    for stroke in source.strokes
+        result.strokes.push(chan_structure_copy(stroke))
+    result.events := array.new<ChanStructure>()
+    for event in source.events
+        result.events.push(chan_structure_copy(event))
+    result.hypotheses := array.new<ChanSegmentHypothesis>()
+    for hypothesis in source.hypotheses
+        result.hypotheses.push(hypothesis.copy())
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result.lastSegment := chan_structure_copy(source.lastSegment)
+    result.candidate := chan_structure_copy(source.candidate)
+    if not na(source.firstContext)
+        result.firstContext := chan_feature_clone(source.firstContext)
+    if not na(source.secondContext)
+        result.secondContext := chan_feature_clone(source.secondContext)
+    result
+
+chan_segment_span(array<ChanStructure> strokes, int firstIndex, int lastIndex) =>
+    bool eligible = false
+    if firstIndex >= 0 and lastIndex < strokes.size() and lastIndex - firstIndex >= 2 and (lastIndex - firstIndex) % 2 == 0
+        ChanStructure first = strokes.get(firstIndex)
+        ChanStructure last = strokes.get(lastIndex)
+        eligible := chan_segment_seed(first, strokes.get(firstIndex + 1), strokes.get(firstIndex + 2)) and last.direction == first.direction and first.direction * (last.endTicks - first.startTicks) > 0
+    eligible
+
+chan_segment_probe(array<ChanStructure> strokes, int endIndex, string contextId) =>
+    ChanSegmentProof result = ChanSegmentProof.new()
+    result.endIndex := endIndex
+    int count = strokes.size()
+    if chan_segment_span(strokes, 0, endIndex) and endIndex + 3 < count
+        ChanStructure endpoint = strokes.get(endIndex)
+        ChanStructure firstBreak = strokes.get(endIndex + 1)
+        int direction = strokes.first().direction
+        int reverse = -direction
+        // The legal three-stroke seed provides the direction of this hypothesis.
+        // E-007 makes the initial context explicit; it is not a locked segment.
+        ChanFeatureSequence first = chan_feature_new(contextId + "/first", direction, direction, reverse, endpoint.endTime, false, 128, 512)
+        ChanFeatureSequence reverseSequence = chan_feature_new(contextId + "/second", reverse, reverse, direction, endpoint.endTime, true, 128, 512)
+        for i = 0 to endIndex
+            first := chan_feature_step(first, strokes.get(i))
+        // C65 p169: d[j] <= g[i] / g[j] >= d[i], j >= i+2.
+        // The first breaking stroke is identified from the original owned
+        // pivots, not the already-compressed feature element's other extreme.
+        int breakBoundary = strokes.first().endTicks
+        for i = 0 to endIndex - 2 by 2
+            int pivot = strokes.get(i).endTicks
+            breakBoundary := direction == 1 ? math.max(breakBoundary, pivot) : math.min(breakBoundary, pivot)
+        bool directBreak = direction == 1 ? firstBreak.endTicks <= breakBoundary : firstBreak.endTicks >= breakBoundary
+        int invalidIndex = na
+        for i = endIndex + 1 to count - 1
+            ChanStructure inputStroke = strokes.get(i)
+            first := chan_feature_step(first, inputStroke)
+            reverseSequence := chan_feature_step(reverseSequence, inputStroke)
+            if na(invalidIndex) and direction * (inputStroke.endTicks - endpoint.endTicks) > 0
+                invalidIndex := i
+            bool stillEligible = na(invalidIndex) or invalidIndex == i
+            if stillEligible
+                bool reverseSpan = chan_segment_span(strokes, endIndex + 1, i)
+                bool directProof = directBreak and reverseSpan and reverse * (inputStroke.endTicks - firstBreak.endTicks) > 0
+                ChanFeatureTurn firstTurn = chan_feature_turn(first)
+                bool targetTurn = not na(firstTurn) and firstTurn.endpointTime == endpoint.endTime and firstTurn.priceTicks == endpoint.endTicks
+                // When the very first counter-stroke already breaks the old
+                // segment, an inside third stroke must wait (C71 p181-182).
+                // Later inclusion must not manufacture an earlier end proof.
+                if directProof or (not directBreak and targetTurn and not firstTurn.gap and reverseSpan)
+                    result.kind := 1
+                    result.proofIndex := i
+                else if targetTurn and firstTurn.gap
+                    ChanFeatureTurn secondTurn = chan_feature_turn(reverseSequence)
+                    if not na(secondTurn)
+                        int childEnd = na
+                        for j = endIndex + 3 to i
+                            ChanStructure child = strokes.get(j)
+                            if child.endTime == secondTurn.endpointTime and child.endTicks == secondTurn.priceTicks and child.direction == reverse
+                                childEnd := j
+                        if not na(childEnd)
+                            if chan_segment_span(strokes, endIndex + 1, childEnd) and chan_segment_span(strokes, childEnd + 1, i)
+                                result.kind := 2
+                                result.childEndIndex := childEnd
+                                result.proofIndex := i
+            if result.kind > 0
+                break
+            if not na(invalidIndex)
+                result.kind := -1
+                break
+        // An unresolved first breaking stroke governs the whole suffix, not
+        // only this endpoint's local test. A later inner turn cannot rename
+        // its own counter-stroke and bypass that outstanding direction proof.
+        // Keep the barrier on the proving input too, so a retrospectively
+        // cheaper inner proof cannot beat the governing endpoint's proof.
+        result.firstBreakActive := directBreak and result.kind >= 0
+        result.firstContext := first
+        result.secondContext := reverseSequence
+    result
+
+chan_segment_record(ChanSegmentState state, int firstIndex, int lastIndex, int proofIndex, int confirmedAt, string ruleId) =>
+    ChanStructure first = state.strokes.get(firstIndex)
+    ChanStructure last = state.strokes.get(lastIndex)
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/S/" + str.tostring(state.segmentCount + 1) + "/" + str.tostring(first.startTime)
+    result.objectType := "segment"
+    result.level := 0
+    result.direction := first.direction
+    result.startTime := first.startTime
+    result.endTime := last.endTime
+    result.startTicks := first.startTicks
+    result.endTicks := last.endTicks
+    result.confirmed := not na(confirmedAt)
+    result.confirmedAt := confirmedAt
+    result.ruleId := ruleId
+    result.ordinal := state.segmentCount + 1
+    result.dependencies := array.new<string>()
+    // Retain extrema of owned stroke endpoints before releasing those strokes.
+    // Proof-only strokes do not contribute; raw-OHLC normalization remains N.
+    result.memberLowTicks := first.startTicks
+    result.memberHighTicks := first.startTicks
+    result.memberLowTime := first.startTime
+    result.memberHighTime := first.startTime
+    for i = firstIndex to lastIndex
+        ChanStructure member = state.strokes.get(i)
+        if member.endTicks < result.memberLowTicks
+            result.memberLowTicks := member.endTicks
+            result.memberLowTime := member.endTime
+        if member.endTicks > result.memberHighTicks
+            result.memberHighTicks := member.endTicks
+            result.memberHighTime := member.endTime
+    for i = firstIndex to proofIndex
+        result.dependencies.push(state.strokes.get(i).id)
+    result
+
+chan_segment_emit(ChanSegmentState state, ChanStructure segment) =>
+    state.segmentCount += 1
+    state.lastSegment := segment
+    state.events.push(segment)
+    true
+
+// Return a new state: quota failure rolls back the entire input's proposed
+// confirmations, preserving the locked prefix and the unconsumed held input.
+chan_segment_step(ChanSegmentState source, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("线段仅消费已锁定合法笔")
+    ChanSegmentState state = chan_segment_clone(source)
+    state.events := array.new<ChanStructure>()
+    bool duplicate = false
+    if not na(source.lastInput)
+        duplicate := stroke.id == source.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(source.lastInput)
+            runtime.error("线段已消费笔发生变化")
+        if not duplicate and not source.blocked and (stroke.startTime != source.lastInput.endTime or stroke.startTicks != source.lastInput.endTicks or stroke.ordinal != source.lastInput.ordinal + 1 or stroke.direction != -source.lastInput.direction or stroke.confirmedAt < source.lastInput.confirmedAt)
+            runtime.error("线段笔输入不连续")
+    if not duplicate and not source.blocked
+        if source.strokes.size() >= source.maxPending
+            state.blocked := true
+            state.limitReason := "pending-strokes"
+            state.heldInput := chan_structure_copy(stroke)
+        else
+            state.strokes.push(chan_structure_copy(stroke))
+            state.lastInput := chan_structure_copy(stroke)
+            state.inputCount += 1
+            int work = 0
+            bool advance = true
+            while advance
+                advance := false
+                state.hypotheses := array.new<ChanSegmentHypothesis>()
+                state.firstContext := na
+                state.secondContext := na
+                state.gapPending := false
+                // An impossible initial triple cannot become legal retroactively.
+                while state.strokes.size() >= 3 and not chan_segment_span(state.strokes, 0, 2)
+                    if state.segmentCount > 0
+                        runtime.error("已锁定段后的续部起始依赖不合规")
+                    state.strokes.shift()
+                    state.skippedInputs += 1
+                int count = state.strokes.size()
+                ChanSegmentProof best = na
+                if count >= 6
+                    for endIndex = 2 to count - 4 by 2
+                        if chan_segment_span(state.strokes, 0, endIndex)
+                            work += count * 2
+                            if work > state.maxWork
+                                state.blocked := true
+                                break
+                            string hypothesisId = state.contextId + "/turn/" + state.strokes.get(endIndex).id
+                            ChanSegmentProof proof = chan_segment_probe(state.strokes, endIndex, hypothesisId)
+                            if proof.kind >= 0
+                                ChanFeatureTurn turn = not na(proof.firstContext) ? chan_feature_turn(proof.firstContext) : na
+                                bool pending = not na(turn) and turn.gap
+                                state.gapPending := state.gapPending or pending
+                                ChanStructure endpoint = state.strokes.get(endIndex)
+                                state.hypotheses.push(ChanSegmentHypothesis.new(endpoint.id, endpoint.endTime, endpoint.endTicks, proof.kind, pending))
+                                if na(state.firstContext)
+                                    state.firstContext := proof.firstContext
+                                    state.secondContext := proof.secondContext
+                                if proof.kind > 0
+                                    if na(best)
+                                        best := proof
+                                    else if proof.proofIndex < best.proofIndex
+                                        best := proof
+                                if proof.firstBreakActive
+                                    break
+                if state.blocked
+                    // Keep no partial event from this input, even after a chain.
+                    state := chan_segment_clone(source)
+                    state.events := array.new<ChanStructure>()
+                    state.blocked := true
+                    state.limitReason := "probe-work"
+                    state.heldInput := chan_structure_copy(stroke)
+                else if not na(best)
+                    string ruleId = best.kind == 1 ? "S-001/S-002/E-007" : "S-001/S-003/E-007"
+                    ChanStructure completed = chan_segment_record(state, 0, best.endIndex, best.proofIndex, stroke.confirmedAt, ruleId)
+                    if best.proofIndex < count - 1 and state.segmentCount > source.segmentCount
+                        completed.dependencies.push(state.lastSegment.id)
+                    chan_segment_emit(state, completed)
+                    int lastLockedIndex = best.endIndex
+                    if best.kind == 2
+                        ChanStructure child = chan_segment_record(state, best.endIndex + 1, best.childEndIndex, best.proofIndex, stroke.confirmedAt, "S-001/S-003/E-007")
+                        chan_segment_emit(state, child)
+                        lastLockedIndex := best.childEndIndex
+                    for i = 0 to lastLockedIndex
+                        state.strokes.shift()
+                    advance := true
+                else
+                    state.candidate := na
+                    if count >= 3
+                        int selected = 2
+                        int direction = state.strokes.first().direction
+                        for i = 2 to count - 1 by 2
+                            if chan_segment_span(state.strokes, 0, i)
+                                if direction * (state.strokes.get(i).endTicks - state.strokes.get(selected).endTicks) > 0
+                                    selected := i
+                        state.candidate := chan_segment_record(state, 0, selected, selected, na, "S-001/E-007")
+    state
+
+chan_segment_signature(ChanSegmentState state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentCount) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.skippedInputs) + "/" + str.tostring(state.maxPending) + "/" + str.tostring(state.maxWork) + "/" + str.tostring(state.blocked) + "/" + str.tostring(state.gapPending) + "/" + state.limitReason
+    for stroke in state.strokes
+        result += "/P/" + chan_structure_signature(stroke)
+    for event in state.events
+        result += "/event/" + chan_structure_signature(event)
+    for hypothesis in state.hypotheses
+        result += "/hypothesis/" + hypothesis.endStrokeId + "/" + str.tostring(hypothesis.endTime) + "/" + str.tostring(hypothesis.priceTicks) + "/" + str.tostring(hypothesis.proofKind) + "/" + str.tostring(hypothesis.gapPending)
+    if not na(state.firstContext)
+        result += "/first/" + chan_feature_signature(state.firstContext)
+    if not na(state.secondContext)
+        result += "/second/" + chan_feature_signature(state.secondContext)
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput) + "/locked/" + chan_structure_signature(state.lastSegment) + "/candidate/" + chan_structure_signature(state.candidate)
+// N consumes only committed segment events. Each segment owns its own range;
+// geometric time anchors and actual extreme source times are separate (E-008).
+type ChanNormalizationState
+    string contextId
+    int count = 0
+    ChanStructure lastInput
+    ChanComponent lastComponent
+    ChanComponent event
+
+chan_component_copy(ChanComponent source) =>
+    ChanComponent result = na
+    if not na(source)
+        result := source.copy()
+        result.dependencies := source.dependencies.copy()
+    result
+
+chan_component_signature(ChanComponent source) =>
+    string result = "na"
+    if not na(source)
+        result := source.id + "/" + source.segmentId + "/" + str.tostring(source.realStartTime) + "/" + str.tostring(source.realEndTime) + "/" + str.tostring(source.realStartTicks) + "/" + str.tostring(source.realEndTicks) + "/" + str.tostring(source.actualLowTicks) + "/" + str.tostring(source.actualHighTicks) + "/" + str.tostring(source.actualLowTime) + "/" + str.tostring(source.actualHighTime) + "/" + str.tostring(source.analysisStartTime) + "/" + str.tostring(source.analysisEndTime) + "/" + str.tostring(source.analysisStartTicks) + "/" + str.tostring(source.analysisEndTicks) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.confirmedAt) + "/" + source.ruleId + "/" + str.tostring(source.ordinal)
+        for dependency in source.dependencies
+            result += "/" + dependency
+    result
+
+chan_normalization_new(string contextId) =>
+    ChanNormalizationState result = ChanNormalizationState.new()
+    result.contextId := contextId
+    result
+
+chan_normalization_clone(ChanNormalizationState source) =>
+    ChanNormalizationState result = source.copy()
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.lastComponent := chan_component_copy(source.lastComponent)
+    result.event := chan_component_copy(source.event)
+    result
+
+chan_normalization_signature(ChanNormalizationState source) =>
+    source.contextId + "/" + str.tostring(source.count) + "/" + chan_structure_signature(source.lastInput) + "/" + chan_component_signature(source.lastComponent) + "/" + chan_component_signature(source.event)
+
+chan_normalization_valid(ChanStructure source) =>
+    bool valid = false
+    if not na(source)
+        valid := source.objectType == "segment" and source.level == 0 and source.confirmed and not na(source.confirmedAt) and not na(source.id) and source.id != "" and source.ordinal > 0 and (source.direction == 1 or source.direction == -1) and source.startTime < source.endTime and source.confirmedAt >= source.endTime and source.direction * (source.endTicks - source.startTicks) > 0
+        valid := valid and not na(source.memberLowTicks) and not na(source.memberHighTicks) and source.memberLowTicks < source.memberHighTicks and source.memberLowTicks <= math.min(source.startTicks, source.endTicks) and source.memberHighTicks >= math.max(source.startTicks, source.endTicks)
+        valid := valid and source.memberLowTime >= source.startTime and source.memberLowTime <= source.endTime and source.memberHighTime >= source.startTime and source.memberHighTime <= source.endTime and not na(source.dependencies)
+    valid
+
+chan_normalization_step(ChanNormalizationState source, ChanStructure segment) =>
+    if not chan_normalization_valid(segment)
+        runtime.error("标准化仅消费具备归属极值摘要的确认线段")
+    ChanNormalizationState state = chan_normalization_clone(source)
+    state.event := na
+    bool duplicate = not na(source.lastInput) and segment.id == source.lastInput.id
+    if duplicate
+        if chan_structure_signature(segment) != chan_structure_signature(source.lastInput)
+            runtime.error("已标准化线段发生变化")
+    else
+        if segment.ordinal != source.count + 1
+            runtime.error("标准化线段序号不连续")
+        if not na(source.lastInput)
+            if segment.startTime != source.lastInput.endTime or segment.startTicks != source.lastInput.endTicks or segment.direction != -source.lastInput.direction or segment.confirmedAt < source.lastInput.confirmedAt
+                runtime.error("标准化线段输入不连续")
+        ChanComponent component = ChanComponent.new()
+        component.id := source.contextId + "/N/" + str.tostring(segment.ordinal) + "/" + str.tostring(segment.startTime)
+        component.segmentId := segment.id
+        component.realStartTime := segment.startTime
+        component.realEndTime := segment.endTime
+        component.realStartTicks := segment.startTicks
+        component.realEndTicks := segment.endTicks
+        component.actualLowTicks := segment.memberLowTicks
+        component.actualHighTicks := segment.memberHighTicks
+        component.actualLowTime := segment.memberLowTime
+        component.actualHighTime := segment.memberHighTime
+        component.analysisStartTime := segment.startTime
+        component.analysisEndTime := segment.endTime
+        component.analysisStartTicks := segment.direction == 1 ? segment.memberLowTicks : segment.memberHighTicks
+        component.analysisEndTicks := segment.direction == 1 ? segment.memberHighTicks : segment.memberLowTicks
+        component.direction := segment.direction
+        component.confirmedAt := segment.confirmedAt
+        component.ruleId := "N-001/E-008"
+        component.dependencies := array.from(segment.id)
+        component.ordinal := segment.ordinal
+        state.count += 1
+        state.lastInput := chan_structure_copy(segment)
+        state.lastComponent := component
+        state.event := component
+    state
+// L1 center chain. Relation snapshots never emit R completion or L2 input.
+type ChanCenterState
+    string contextId
+    array<ChanComponent> seed
+    ChanComponent lastInput
+    ChanComponent counter
+    ChanComponent heldInput
+    ChanCenter center
+    ChanCenter event
+    int inputCount = 0
+    int direction = 0
+    int waves = 0
+    int maxSources = 64
+    bool waitingRelation = false
+    bool blocked = false
+
+    ChanComponent pendingLeave
+    ChanCenter previous
+    ChanCenter closedEvent
+    array<ChanCenter> history
+    int count = 0
+    string relationKind = "none"
+    int relationAt = na
+
+chan_center_copy(ChanCenter source) =>
+    ChanCenter result = na
+    if not na(source)
+        result := source.copy()
+        result.dependencies := source.dependencies.copy()
+    result
+
+chan_center_new(string contextId, int maxSources) =>
+    if maxSources < 3
+        runtime.error("中枢来源预算至少为3")
+    ChanCenterState result = ChanCenterState.new()
+    result.contextId := contextId
+    result.maxSources := maxSources
+    result.seed := array.new<ChanComponent>()
+    result.history := array.new<ChanCenter>()
+    result
+
+chan_center_clone(ChanCenterState source) =>
+    ChanCenterState result = source.copy()
+    result.seed := array.new<ChanComponent>()
+    for member in source.seed
+        result.seed.push(chan_component_copy(member))
+    result.lastInput := chan_component_copy(source.lastInput)
+    result.counter := chan_component_copy(source.counter)
+    result.heldInput := chan_component_copy(source.heldInput)
+    result.center := chan_center_copy(source.center)
+    result.event := chan_center_copy(source.event)
+    result.pendingLeave := chan_component_copy(source.pendingLeave)
+    result.previous := chan_center_copy(source.previous)
+    result.closedEvent := chan_center_copy(source.closedEvent)
+    result.history := array.new<ChanCenter>()
+    for center in source.history
+        result.history.push(chan_center_copy(center))
+    result
+
+chan_center_record_signature(ChanCenter source) =>
+    string result = "na"
+    if not na(source)
+        result := source.id + "/" + str.tostring(source.level) + "/" + str.tostring(source.coreLowTicks) + "/" + str.tostring(source.coreHighTicks) + "/" + str.tostring(source.ggTicks) + "/" + str.tostring(source.gTicks) + "/" + str.tostring(source.dTicks) + "/" + str.tostring(source.ddTicks) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.formedAt) + "/" + str.tostring(source.extentEndTime) + "/" + str.tostring(source.confirmedAt) + "/" + str.tostring(source.degenerate) + "/" + source.lifecycle + "/" + source.ruleId + "/" + str.tostring(source.ordinal)
+        for dependency in source.dependencies
+            result += "/" + dependency
+        result += "/closure/" + str.tostring(source.zWaves) + "/" + str.tostring(source.closedAt) + "/" + source.leaveId + "/" + source.returnId
+    result
+
+chan_center_signature(ChanCenterState source) =>
+    string result = source.contextId + "/" + str.tostring(source.inputCount) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.waves) + "/" + str.tostring(source.maxSources) + "/" + str.tostring(source.waitingRelation) + "/" + str.tostring(source.blocked)
+    for member in source.seed
+        result += "/seed/" + chan_component_signature(member)
+    result += "/chain/" + str.tostring(source.count) + "/" + source.relationKind + "/" + str.tostring(source.relationAt) + "/" + chan_component_signature(source.pendingLeave) + "/" + chan_center_record_signature(source.previous) + "/" + chan_center_record_signature(source.closedEvent)
+    for center in source.history
+        result += "/history/" + chan_center_record_signature(center)
+    result + "/last/" + chan_component_signature(source.lastInput) + "/counter/" + chan_component_signature(source.counter) + "/held/" + chan_component_signature(source.heldInput) + "/center/" + chan_center_record_signature(source.center) + "/event/" + chan_center_record_signature(source.event)
+
+chan_center_valid(ChanComponent component) =>
+    bool valid = false
+    if not na(component)
+        valid := not na(component.confirmedAt) and component.confirmedAt >= component.realEndTime and component.realStartTime < component.realEndTime and component.actualLowTicks < component.actualHighTicks and (component.direction == 1 or component.direction == -1) and component.direction * (component.realEndTicks - component.realStartTicks) > 0 and component.ordinal > 0
+        valid := valid and component.actualLowTicks <= math.min(component.realStartTicks, component.realEndTicks) and component.actualHighTicks >= math.max(component.realStartTicks, component.realEndTicks)
+        valid := valid and component.analysisStartTime == component.realStartTime and component.analysisEndTime == component.realEndTime and component.analysisStartTicks == (component.direction == 1 ? component.actualLowTicks : component.actualHighTicks) and component.analysisEndTicks == (component.direction == 1 ? component.actualHighTicks : component.actualLowTicks)
+        valid := valid and component.actualLowTime >= component.realStartTime and component.actualLowTime <= component.realEndTime and component.actualHighTime >= component.realStartTime and component.actualHighTime <= component.realEndTime and not na(component.dependencies)
+    valid
+
+chan_center_relation(ChanCenter older, ChanCenter newer) =>
+    string kind = "unavailable"
+    if not na(older) and not na(newer) and older.level == newer.level and not na(older.confirmedAt) and not na(newer.confirmedAt)
+        kind := newer.ddTicks > older.ggTicks ? "up-continuation" : newer.ggTicks < older.ddTicks ? "down-continuation" : (newer.coreLowTicks > older.coreHighTicks or newer.coreHighTicks < older.coreLowTicks) ? "range-overlap" : "core-overlap"
+    kind
+
+chan_center_commit(ChanCenterState state, ChanComponent component) =>
+    if state.center.dependencies.indexof(component.id) < 0
+        if state.center.dependencies.size() >= state.maxSources
+            state.blocked := true
+        else
+            state.center.dependencies.push(component.id)
+            state.center.extentEndTime := component.realEndTime
+            if component.direction == state.direction
+                state.center.ggTicks := math.max(state.center.ggTicks, component.actualHighTicks)
+                state.center.gTicks := math.min(state.center.gTicks, component.actualHighTicks)
+                state.center.dTicks := math.max(state.center.dTicks, component.actualLowTicks)
+                state.center.ddTicks := math.min(state.center.ddTicks, component.actualLowTicks)
+                state.waves += 1
+                state.center.zWaves := state.waves
+    true
+
+chan_center_close(ChanCenterState state, ChanComponent departure, ChanComponent returning) =>
+    state.center.lifecycle := "closed"
+    state.center.closedAt := returning.confirmedAt
+    state.center.leaveId := departure.id
+    state.center.returnId := returning.id
+    state.previous := chan_center_copy(state.center)
+    state.closedEvent := chan_center_copy(state.center)
+    state.history.push(chan_center_copy(state.center))
+    if state.history.size() > 15
+        state.history.shift()
+    state.pendingLeave := na
+    state.seed := array.from(chan_component_copy(returning))
+    state.relationKind := "new-center-pending"
+    state.relationAt := returning.confirmedAt
+    true
+
+chan_center_step(ChanCenterState source, ChanComponent component) =>
+    if not chan_center_valid(component)
+        runtime.error("中枢仅消费已确认L0部件")
+    ChanCenterState state = chan_center_clone(source)
+    state.event := na
+    state.closedEvent := na
+    bool duplicate = not na(source.lastInput) and component.id == source.lastInput.id
+    if duplicate
+        if chan_component_signature(component) != chan_component_signature(source.lastInput)
+            runtime.error("已消费L0发生变化")
+    else if not source.blocked
+        if component.ordinal != source.inputCount + 1
+            runtime.error("中枢L0序号不连续")
+        if not na(source.lastInput)
+            if component.realStartTime != source.lastInput.realEndTime or component.realStartTicks != source.lastInput.realEndTicks or component.direction != -source.lastInput.direction or component.confirmedAt < source.lastInput.confirmedAt
+                runtime.error("中枢L0输入不连续")
+        if na(state.center) or state.center.lifecycle == "closed"
+            state.seed.push(chan_component_copy(component))
+            if state.seed.size() == 3
+                ChanComponent first = state.seed.get(0)
+                ChanComponent middle = state.seed.get(1)
+                ChanComponent last = state.seed.get(2)
+                int coreLow = math.max(first.actualLowTicks, math.max(middle.actualLowTicks, last.actualLowTicks))
+                int coreHigh = math.min(first.actualHighTicks, math.min(middle.actualHighTicks, last.actualHighTicks))
+                if coreLow <= coreHigh
+                    state.direction := first.direction
+                    state.waves := 2
+                    state.count += 1
+                    state.center := ChanCenter.new(state.contextId + "/L1/Z/" + str.tostring(state.count) + "/" + str.tostring(first.realStartTime), 1, coreLow, coreHigh, math.max(first.actualHighTicks, last.actualHighTicks), math.min(first.actualHighTicks, last.actualHighTicks), math.max(first.actualLowTicks, last.actualLowTicks), math.min(first.actualLowTicks, last.actualLowTicks), first.realStartTime, component.confirmedAt, component.realEndTime, component.confirmedAt, coreLow == coreHigh, "extending", "Z-001/Z-002/Z-003/E-010", array.from(first.id, middle.id, last.id), state.count)
+                    state.center.zWaves := 2
+                    if component.realEndTicks > coreHigh or component.realEndTicks < coreLow
+                        state.pendingLeave := chan_component_copy(component)
+                    state.event := state.center
+                    state.seed.clear()
+                else
+                    state.seed.shift()
+        else
+            bool touches = component.actualLowTicks <= state.center.coreHighTicks and component.actualHighTicks >= state.center.coreLowTicks
+            if not na(state.pendingLeave)
+                if touches
+                    chan_center_commit(state, state.pendingLeave)
+                    state.pendingLeave := na
+                else
+                    chan_center_close(state, state.pendingLeave, component)
+            if state.center.lifecycle != "closed" and not state.blocked
+                if component.realEndTicks > state.center.coreHighTicks or component.realEndTicks < state.center.coreLowTicks
+                    state.pendingLeave := chan_component_copy(component)
+                else
+                    chan_center_commit(state, component)
+        if not na(state.previous) and not na(state.center) and state.center.lifecycle != "closed"
+            state.relationKind := chan_center_relation(state.previous, state.center)
+            state.relationAt := component.confirmedAt
+        if state.blocked
+            state := chan_center_clone(source)
+            state.event := na
+            state.closedEvent := na
+            state.blocked := true
+            state.heldInput := chan_component_copy(component)
+        else
+            state.lastInput := chan_component_copy(component)
+            state.inputCount += 1
+    state
+// The same close gate is used by the chart and synthetic tick validation.
+// Persistent states own no drawing objects; frame events exist only for this call.
+type ChanRuntime
+    ChanState morphology
+    ChanSegmentState segments
+    ChanNormalizationState normalized
+    ChanCenterState centers
+    int pendingLimit = 64
+    int workLimit = 8192
+    int centerSources = 64
+
+type ChanRuntimeFrame
+    ChanRuntime committed
+    ChanState visible
+    bool submitted = false
+    array<ChanStructure> segmentEvents
+    array<ChanComponent> componentEvents
+
+type ChanSegmentPreview
+    ChanSegmentState state
+    array<ChanStructure> events
+
+chan_runtime_new(string contextId, int pendingLimit, int workLimit, int centerSources) =>
+    ChanRuntime state = ChanRuntime.new()
+    state.morphology := chan_new(contextId)
+    state.normalized := chan_normalization_new(state.morphology.contextId)
+    state.centers := chan_center_new(state.morphology.contextId, centerSources)
+    state.pendingLimit := pendingLimit
+    state.workLimit := workLimit
+    state.centerSources := centerSources
+    state
+
+chan_runtime_clone(ChanRuntime source) =>
+    ChanRuntime result = source.copy()
+    result.morphology := chan_clone(source.morphology)
+    result.segments := na(source.segments) ? na : chan_segment_clone(source.segments)
+    result.normalized := chan_normalization_clone(source.normalized)
+    result.centers := chan_center_clone(source.centers)
+    result
+
+chan_runtime_signature(ChanRuntime source) =>
+    chan_signature(source.morphology) + "/S/" + (na(source.segments) ? "na" : chan_segment_signature(source.segments)) + "/N/" + chan_normalization_signature(source.normalized) + "/Z/" + chan_center_signature(source.centers) + "/limits/" + str.tostring(source.pendingLimit) + "/" + str.tostring(source.workLimit) + "/" + str.tostring(source.centerSources)
+
+chan_runtime_frame(ChanRuntime source) =>
+    ChanRuntimeFrame result = ChanRuntimeFrame.new()
+    result.committed := source
+    result.visible := source.morphology
+    result.segmentEvents := array.new<ChanStructure>()
+    result.componentEvents := array.new<ChanComponent>()
+    result
+
+// Explicit locked-stroke seam: only the close path calls it in the chart.
+// A batch of S events is delivered to N and Z in its original order.
+chan_runtime_component(ChanRuntime source, ChanStructure segment) =>
+    ChanRuntime state = source.copy()
+    state.normalized := chan_normalization_step(source.normalized, segment)
+    state.centers := chan_center_step(source.centers, state.normalized.event)
+    state
+
+chan_runtime_stroke(ChanRuntime source, ChanStructure stroke) =>
+    ChanRuntime state = source.copy()
+    ChanRuntimeFrame result = chan_runtime_frame(state)
+    if na(state.segments)
+        state.segments := chan_segment_new(state.morphology.contextId, state.pendingLimit, state.workLimit)
+    state.segments := chan_segment_step(state.segments, stroke)
+    for segment in state.segments.events
+        state := chan_runtime_component(state, segment)
+        result.segmentEvents.push(chan_structure_copy(segment))
+        result.componentEvents.push(chan_component_copy(state.normalized.event))
+    result.committed := state
+    result
+
+chan_runtime_update(ChanRuntime source, ChanRaw incoming, bool closed) =>
+    ChanRuntimeFrame result = chan_runtime_frame(source)
+    // chan_step mutates its argument, so even the closed path owns a deep copy.
+    result.visible := chan_step(chan_clone(source.morphology), incoming)
+    if closed
+        ChanRuntime state = source.copy()
+        state.morphology := result.visible
+        if not na(state.morphology.strokeEvent)
+            result := chan_runtime_stroke(state, state.morphology.strokeEvent)
+        else
+            result.committed := state
+        result.submitted := state.morphology.inputCount > source.morphology.inputCount
+    result
+
+// A tick can seal one P and the unsealed fractal projection can hypothesize
+// another. Feed both in order; using only the last one skips a stroke ordinal.
+chan_runtime_segment_preview(ChanRuntime source, ChanState visible, ChanState projected) =>
+    ChanSegmentPreview result = ChanSegmentPreview.new()
+    result.state := na(source.segments) ? na : chan_segment_clone(source.segments)
+    result.events := array.new<ChanStructure>()
+    array<ChanStructure> strokes = array.new<ChanStructure>()
+    if visible.strokeCount > source.morphology.strokeCount and not na(visible.strokeEvent)
+        strokes.push(visible.strokeEvent)
+    if projected.strokeCount > visible.strokeCount and not na(projected.lastStroke)
+        strokes.push(projected.lastStroke)
+    for stroke in strokes
+        if na(result.state)
+            result.state := chan_segment_new(visible.contextId, source.pendingLimit, source.workLimit)
+        result.state := chan_segment_step(result.state, stroke)
+        for event in result.state.events
+            result.events.push(chan_structure_copy(event))
+    result
+// Analysis context is fixed at load. The rolling display budget never reseeds it.
+type ChanWindow
+    bool fixed
+    int requestedStart
+    int startIndex
+    int firstAvailable
+    int maxSamples
+    int count = 0
+    int firstInput = na
+    int lastInput = na
+    bool truncated = false
+
+type ChanWindowFrame
+    ChanWindow state
+    bool eligible
+    bool allowed
+
+chan_window_new(bool fixed, int requestedStart, int recentBars, int anchorIndex, int firstAvailable, int maxSamples) =>
+    if requestedStart < 0 or recentBars < 1 or anchorIndex < 0 or firstAvailable < 0 or maxSamples < 1
+        runtime.error("分析范围参数无效")
+    ChanWindow.new(fixed, requestedStart, math.max(0, anchorIndex - recentBars + 1), firstAvailable, maxSamples)
+
+chan_window_signature(ChanWindow state) =>
+    str.tostring(state.fixed) + "/" + str.tostring(state.requestedStart) + "/" + str.tostring(state.startIndex) + "/" + str.tostring(state.firstAvailable) + "/" + str.tostring(state.maxSamples) + "/" + str.tostring(state.count) + "/" + str.tostring(state.firstInput) + "/" + str.tostring(state.lastInput) + "/" + str.tostring(state.truncated)
+
+chan_window_step(ChanWindow source, int openTime, int index, bool closed) =>
+    ChanWindowFrame result = ChanWindowFrame.new()
+    result.state := source.copy()
+    result.eligible := source.fixed ? openTime >= source.requestedStart : index >= source.startIndex
+    bool capped = source.fixed and source.count >= source.maxSamples
+    result.allowed := result.eligible and not capped
+    if closed and result.eligible
+        bool duplicate = not na(source.lastInput) and openTime == source.lastInput
+        if capped and not duplicate
+            result.state.truncated := true
+        else if result.allowed and not duplicate
+            result.state.count += 1
+            if na(result.state.firstInput)
+                result.state.firstInput := openTime
+            result.state.lastInput := openTime
+    result
+chan_context_allows(bool supported, ChanWindowFrame frame) =>
+    supported and frame.allowed
+
+chan_status_code(ChanRuntime engine, ChanWindow window, bool supported) =>
+    string code = "RUNNING"
+    if not supported
+        code := "UNSUPPORTED"
+    else if window.truncated
+        code := "TRUNCATED"
+    else if window.fixed and window.count >= window.maxSamples
+        code := "SAMPLE_LIMIT"
+    else if not na(engine.segments) and engine.segments.blocked
+        code := engine.segments.limitReason == "pending-strokes" ? "S_PENDING_LIMIT" : "S_WORK_LIMIT"
+    else if engine.centers.blocked
+        code := "Z_SOURCE_LIMIT"
+    else if window.fixed and window.requestedStart < window.firstAvailable
+        code := "HISTORY_SHORT"
+    else if window.count == 0
+        code := "WAIT_START"
+    else if engine.morphology.direction == 0
+        code := "INITIALIZING"
+    else if not na(engine.segments) and engine.segments.gapPending
+        code := "S_PROOF_PENDING"
+    else if not na(engine.centers.pendingLeave)
+        code := "Z_RETURN_PENDING"
+    else if engine.centers.relationKind == "new-center-pending"
+        code := "Z_NEW_PENDING"
+    code
+
+chan_status_text(string code) =>
+    switch code
+        "UNSUPPORTED" => "仅支持有确定收盘时间的普通K线"
+        "TRUNCATED" => "样本已截断：后续K线未计算"
+        "SAMPLE_LIMIT" => "样本上限已达"
+        "S_PENDING_LIMIT" => "线段受限：未完成笔依赖上限"
+        "S_WORK_LIMIT" => "线段受限：计算预算"
+        "Z_SOURCE_LIMIT" => "L1中枢受限：来源预算"
+        "HISTORY_SHORT" => "历史不足：实际可用起点晚于请求"
+        "WAIT_START" => "等待分析起点后的K线"
+        "INITIALIZING" => "初始化：等待非包含输入"
+        "S_PROOF_PENDING" => "线段：第二类候选等待证明"
+        "Z_RETURN_PENDING" => "L1中枢：离开／回试待定"
+        "Z_NEW_PENDING" => "离开已证实：等待新中枢"
+        => "形态预览运行中"
+
+type ChanMarketDigest
+    int a = 0
+    int b = 0
+    int count = 0
+
+chan_mv_assert(bool value, string context) =>
+    if not value
+        runtime.error("FAIL: " + context)
+    true
+
+// Two bounded integer rolling checksums, not cryptographic proof. Full event
+// records can also be inspected in Pine Logs using the optional toggle.
+chan_mv_event(ChanMarketDigest source, string kind, string record, bool eventLogs) =>
+    ChanMarketDigest result = source.copy()
+    string encodedEvent = kind + ":" + str.tostring(str.length(record)) + ":" + record + "|"
+    string alphabet = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+    if str.length(encodedEvent) > 0
+        for i = 0 to str.length(encodedEvent) - 1
+            int code = str.pos(alphabet, str.substring(encodedEvent, i, i + 1))
+            chan_mv_assert(not na(code), "unsupported event audit character")
+            result.a := (result.a * 257 + code + 1) % 1000000007
+            result.b := (result.b * 263 + code + 1) % 1000000009
+    result.count += 1
+    if eventLogs
+        log.info(kind + ":" + record)
+    result
+
+chan_mv_tick(float price, int expected, float tick, string context) =>
+    float units = price / tick
+    int actual = int(math.round(units))
+    chan_mv_assert(not na(price) and math.abs(units - actual) <= 0.00001, context + "/off-tick")
+    chan_mv_assert(actual == expected, context + "/OHLC expected=" + str.tostring(expected) + " actual=" + str.tostring(actual))
+    actual
+
+chan_mv_input(array<string> rows, int index, int start, int period, float tick) =>
+    string context = "prefix-" + str.tostring(index + 1) + "/open=" + str.tostring(time)
+    chan_mv_assert(time == start + index * period and time_close == time + period, context + "/clock-or-gap")
+    array<string> values = str.split(rows.get(index), ",")
+    chan_mv_assert(values.size() == 4, context + "/encoded-row")
+    int o = chan_mv_tick(open, int(str.tonumber(values.get(0))), tick, context + "/open")
+    int h = chan_mv_tick(high, int(str.tonumber(values.get(1))), tick, context + "/high")
+    int l = chan_mv_tick(low, int(str.tonumber(values.get(2))), tick, context + "/low")
+    int c = chan_mv_tick(close, int(str.tonumber(values.get(3))), tick, context + "/close")
+    ChanRaw.new(time, time_close, o, h, l, c)
+
+chan_mv_events(ChanMarketDigest source, ChanRuntime previous, ChanRuntimeFrame frame, bool eventLogs) =>
+    ChanMarketDigest result = source
+    if not na(frame.visible.event)
+        result := chan_mv_event(result, "F", chan_fractal_signature(frame.visible.event) + "/" + frame.visible.event.ruleId, eventLogs)
+    if not na(frame.visible.strokeEvent)
+        result := chan_mv_event(result, "P", chan_structure_signature(frame.visible.strokeEvent), eventLogs)
+    chan_mv_assert(frame.segmentEvents.size() == frame.componentEvents.size(), "S-N batch size")
+    // Inspect every intermediate Z event in a multi-S batch. The final runtime
+    // state alone only retains the final transient event of that batch.
+    ChanCenterState centers = previous.centers
+    for [i, segment] in frame.segmentEvents
+        ChanComponent component = frame.componentEvents.get(i)
+        result := chan_mv_event(result, "S", chan_structure_signature(segment), eventLogs)
+        result := chan_mv_event(result, "N", chan_component_signature(component), eventLogs)
+        centers := chan_center_step(centers, component)
+        if not na(centers.closedEvent)
+            result := chan_mv_event(result, "Z-close", chan_center_record_signature(centers.closedEvent), eventLogs)
+        if not na(centers.event)
+            result := chan_mv_event(result, "Z-form", chan_center_record_signature(centers.event), eventLogs)
+    if frame.componentEvents.size() > 0
+        chan_mv_assert(chan_center_signature(centers) == chan_center_signature(frame.committed.centers), "intermediate Z delivery")
+    result
+
+chan_mv_rows() =>
+    array<string> result = array.new<string>()
+    array<string> chunks = array.new<string>()
+    chunks.push("226794,230824,223989,225690;225690,232234,223380,231760;231761,239198,229700,234301;234300,235160,226357,228314;228315,231172,224000,230428;230428,232474,228194,230906;230907,232998,229275,229649;229650,231100,226600,228979;228979,233841,226911,230183;230184,239240,229900,237264;237263,244444,235400,242510;242509,246315,241101,241955;241956,252500,241916,248656;248656,251645,247157,250024;250024,253963,249345,250721;250722,266558,247200,265999;265999,268612,259000,263999;263999,278600,261840,277481;277480,286765,275925,282259;282258,285740,274000,280180;280181,280421,271901,278593;278592,289500,276425,288120;288120,298452,285693,294480;294480,303309,287456,301481;301481,301715,286800,296790;296791,303602,290651,297140;297140,299380,290605,292224;292225,300748,290640,299262;299262,312200,298361,311259;311260,319600,303659,317594;317595,328814,316002,324236;324235,348800,317616,338310;338311,352281,330000,334009;334010,345000,333854,343343;343342,346004,339001,342140;342139,349180,336000,348781;348780,364094,342378,362776;362775,382204,320000,355365;355366,390000,349940,381859;381858,393381,373500,386876;386876,399375,382000,388336;388337,394200,387001,390521;390520,396467,379126,387847;387847,408623,372295,406480;406480,409392,382898,397996;397997,408300,393223,400479;400479,401098,372300,388170;388169,393402,357000,374219;374219,378112,346880,352309;352309,367868,341200,364471;364470,364502,345409,352046;352047,354809,315088,315864;315865,353524,305656,351653;351653,358732,341200,349285;349284,354252,325000,333635;333635,343548,327008,332953;332953,347122,329876,345498;345499,366600,342012,359042;359043,367886,354262,358733;358732,366584,346002,350119;350120,361178,346500,356049;356049,358437,344591,350974;350974,356581,348500,350564;350565,365532,350509,364529;364529,364595,341371,350380;350380,350560,321200,327896;327896,336740,320279,331083;331083,344393,325092,332740;332739,335000,321000,331785;331785,339842,330668,335159;335159,345994,334408,345420;345420,373071,340636,369461;369461,372734,345046,350639;350640,356295,341182,354564;354564,361830,347452,350252;350252,355240,310000,323743;323742,330190,285200,300701;300701,317423,290673,315511;315511,327785,302319,310199;310200,312801,298600,308422;308421,312375,291447,298541;298541,309440,295098,306440;306440,312889,286518,305646;305645,317188,301875,315579;315579,319718,311649,314767;314766,323500,312915,320020;320019,326361,315200,321946;321946,329356,310490,314080;314079,319164,307220,315580;315581,316770,310200,313130;313130,328500,306674,325556;325555,335740,325045,326345;326344,328695,311513,321673;321674,325095,292100,301405;301404,302324,281700,297246;297246,301672,289326,298619;298619,312699,295832,310261;310261,316800,309285,311723;311724,317193,307299,313641;313640,322140,304635,306260;306259,312985,299800,300569;300569,303815,293648,297421;297420,305900,295077,303623;303624,305389,287803,290999;290998,294567,288646,291245;291245,295520,290117,292929;292930,299640,286476,295099;295099,296060,286200,288193;288193,304136,286375,303255;303255,304124,292280,294470;294470,312000,293306,309201;309200,314698,308361,312294;312294,313664,305338,307119;307120,369400,304767,366178;366179,384154,362428,378960;378959,381369,365315,373773;373772,394929,349800,378361;378360,382961,362610,372828;372828,377943,370903,374926;374925,388420,373117,382647;382647,397700,382337,389422;389421,393109,377390,384469;384469,388855,374259,376743;376744,382535,370258,374791;374790,384994,372375,376229;376229,383330,375267,381582;381582,383859,375262,378091;378092,384999,375843,376706")
+    chunks.push("376707,383165,373000,381023;381023,388747,377733,386599;386600,387860,376000,381346;381347,384139,360000,367832;367831,370950,366008,368157;368158,372152,366636,370640;370640,371367,364274,366785;366785,367300,343200,349733;349733,365901,346207,356012;356013,356165,342800,346940;346940,353261,336226,348180;348180,359439,347310,356874;356875,365379,354105,362441;362441,363837,346339,351146;351147,351720,335500,348342;348342,359001,346565,356051;356051,362596,348600,351308;351308,354755,344682,351850;351850,352119,347509,349575;349576,352145,340638,342091;342091,343576,324000,335273;335274,343088,333676,339491;339491,342675,332501,337144;337177,347700,336174,345044;345044,348770,336522,338015;338015,340832,337186,337880;337880,346000,335266,343816;343816,352494,342378,344220;344220,346412,340200,342135;342135,343210,325100,329548;329549,331345,305034,305970;305970,311000,281000,298178;298179,308178,295506,306683;306683,307308,292224,293100;293099,309706,282280,301901;301901,311520,300400,306665;306665,315151,302400,310105;310106,321724,305476,309957;309957,315789,304558,313388;313389,320180,311337,317593;317593,326872,316367,324508;324520,349363,323322,348339;348320,349859,334655,344413;344414,351700,337600,338705;338705,348998,336720,342650;342649,354027,337700,350353;350353,353965,348000,351750;351750,354700,341140,353592;353593,356282,342234,343960;343961,354100,338900,348251;348251,348782,330000,333581;333582,334250,308753,317548;317547,328636,317100,327461;327460,332759,319101,324901;324900,328430,319811,327016;327016,339677,325800,331766;331766,336640,323318,327921;327920,335000,321375,323274;323274,324257,308002,320340;320340,321860,296700,298961;298961,301802,285900,290364;290365,293546,263000,268892;268891,269744,211100,241959;241976,255623,241419,246133;246133,255132,230904,234280;234279,272410,232040,268250;268250,270798,255261,259878;259879,264470,257649,260992;260992,272000,254000,255538;255538,275000,251005,272230;272230,273840,261137,270244;270244,278000,263220,266145;266145,267560,251571,256989;256990,263097,255004,259273;259272,262969,258750,261451;261451,268916,259453,261215;261215,264808,256358,263636;263636,269500,255500,257282;257281,266374,253622,263071;263071,264469,258420,262288;262289,279913,262140,276248;276249,282000,273126,276800;276801,279228,273321,274613;274612,276200,266666,268049;268049,269998,239296,245733;245733,255460,241880,252833;252833,259540,250588,252761;252760,255217,243114,252600;252599,253395,249192,251301;251300,251628,240000,242572;242571,256483,242352,253801;253800,255360,241112,242529;242528,249000,230665,245071;245071,246600,234804,236881;236881,240883,215055,222523;222524,231127,222098,227358;227358,233358,224094,229730;229730,238141,227280,235950;235951,240000,232041,238852;238852,238932,227768,234055;234054,239193,231539,236176;236175,246482,233735,243919;243919,244060,237672,241779;241780,243032,228375,231610;231609,233570,225239,229568;229567,239363,226329,234180;234179,237614,227734,237475;237474,249495,237260,246521;246521,257193,243731,256140;256140,262334,252897,261240;261240,263257,252458,258100;258099,270282,253949,264697;264698,267096,259156,265320;265320,267350,255405,257995;258009,266622,255920,263226;263225,272860,261521,269443;269443,270435,265000,267521;267521,268370,262973,265762;265762,266350,257500,260223;260224,265900,241400,244779;244778,249900,235200,236410;236409,240338,231000,234980;234980,244164,233915,241441;241441,242823,239005,241466;241466,245780,240700,244003;244002,252100,240300,242271;242270,246666,240118,244089;244088,247361,235142,237047")
+    chunks.push("237047,242136,233066,238649;238649,247145,238186,243950;243949,249051,243435,247640;247640,248492,243640,246891;246892,265400,244339,262979;262979,268860,253736,260741;260741,264779,258867,261110;261110,264837,257540,260580;260579,267558,259649,264217;264217,266349,263102,264820;264820,275900,263554,274691;274691,276948,265501,266670;266671,267192,260656,262281;262281,262820,245000,252461;252460,256265,250731,253582;253582,256633,238259,244062;244063,250800,243012,248251;248251,252799,246413,250780;250780,258967,247167,256748;256749,268186,256120,263880;263880,272230,259966,265919;265919,266900,250300,251861;251861,258680,246767,251149;251149,252345,247000,249423;249423,249639,241100,245773;245773,249139,235759,239821;239821,248000,238074,242255;242260,274470,242030,272187;272188,291611,269949,289547;289547,298169,288640,296175;296175,315740,295371,312621;312620,324852,306900,318321;318320,338761,310500,337159;337159,344250,320767,324380;324379,333100,311669,318716;318716,324040,302856,305882;305881,313106,301450,309001;309001,321997,307200,313287;313288,316211,303499,307600;307599,322494,305001,320780;320781,322120,306540,310744;310745,315920,302941,306997;306997,338673,303259,335581;335588,342592,325754,332778;332778,349751,331272,339391;339391,345000,328140,336120;336121,354666,330001,341449;341449,346249,325200,332473;332474,368492,330240,365328;365327,366192,352976,357879;357880,364798,353428,359221;359222,373898,356840,370360;370359,374680,365920,370761;370761,376000,355432,364342;364343,367000,350000,361451;361451,388724,361451,383780;383780,395600,367700,378520;378521,408773,377726,399887;399887,402446,396800,399622;399622,401558,392350,400415;400415,400617,350900,371200;371200,378076,351589,362825;362824,384864,356234,383181;383182,398741,379680,388161;388160,396847,385294,390680;390680,394500,382503,387029;387030,397461,383150,395909;395909,410780,388400,398624;398624,404182,384796,389301;389301,390719,361742,362680;362680,372000,332680,341701;341701,349784,310190,347221;347220,355518,329311,333892;333892,340300,322110,328183;328183,346699,321697,342253;342253,353965,335819,349318;349317,354795,344093,349700;349700,351494,330463,333505;333504,344416,330660,333351;333351,342868,332223,340400;340401,341378,332617,335648;335648,343759,330500,336184;336183,345100,331559,333778;333778,337485,331388,336038;336039,350999,335450,345567;345568,363000,342344,360901;360900,367160,357242,365688;365688,367525,359370,363599;363600,374483,361063,368745;368744,370086,335631,338131;338131,341510,320820,332729;332729,335727,315800,321920;321920,332249,319397,326704;326705,332018,321756,328283;328283,330000,322449,326730;326730,333900,292000,313751;313751,325667,312565,322563;322563,347375,318636,345152;345151,346079,326544,330805;330804,352572,330750,347363;347364,349439,322700,330771;330771,344899,313048,321512;321520,345369,314278,328400;328399,336800,320460,332754;332755,336599,322285,324260;324261,334797,318500,333821;333822,342800,327590,331009;331010,335068,326866,331877;331876,336200,323000,323261;323261,325391,302001,318244;318244,322301,304003,307772;307772,318252,305406,311390;311390,328343,309106,324739;324738,343731,321380,330099;330099,333198,310170,311754;311754,316320,275071,286968;286968,292100,212501,287990;287989,288850,263260,273119;273119,282695,269913,278825;278825,285764,265528,268664;268663,279750,256251,262210;262211,266730,258880,263246;263246,269890,252002,262718;262718,269379,255985,266119;266119,272504,255824,260259;260259,279545,254692,273827;273827,275728,261276,267587;267587,279178,266446,272595")
+    chunks.push("272595,273900,266228,269304;269304,272731,265126,266141;266141,284970,263771,274405;274405,275693,260544,267199;267200,273670,265603,271550;271551,277059,270718,273804;273804,284532,261672,266300;266300,279807,265333,276322;276323,285734,274541,281969;281970,283995,247033,251352;251352,253349,231349,249570;249569,250750,225377,233637;233638,238160,223057,230772;230772,231418,207626,223759;223759,228114,214273,221739;221740,255058,217204,251811;251812,252356,209791,214901;214902,222188,199320,217151;217150,227351,215503,224159;224159,231999,217690,220220;220221,225847,210182,214160;214160,223493,210506,220358;220357,221200,198966,202041;202043,215240,181001,186510;186511,196320,175428,192343;192342,196000,182972,190820;190820,192309,182181,186459;186459,194564,186131,191165;191164,195719,190375,193717;193718,194087,186038,188700;188701,195240,187998,192631;192630,193620,187231,193154;193154,206990,192758,205606;205605,206790,195217,198379;198379,199673,193710,196575;196574,200661,196434,198069;198068,202074,197681,200599;200599,210411,197767,208120;208120,209770,203708,206615;206616,207921,198160,200952;200952,203738,198706,200366;200367,201593,186000,189690;189690,191360,179720,182808;182809,184901,176769,180774;180774,185422,177675,182243;182243,192790,181788,190498;190498,195700,178153,179522;179521,184526,175000,181723;181723,183568,175872,181687;181688,182729,176439,180601;180602,181700,153750,158076;158077,163900,141101,155304;155304,161867,144130,147341;147341,168900,138505,166951;166951,166985,147102,152225;152224,159147,150463,156685;156685,166959,154606,164418;164419,164975,156201,159776;159776,169150,159556,162377;162378,166121,158312,158878;158877,161366,153807,157714;157715,161696,156320,158362;158363,160064,157354,158860;158860,163181,158501,161327;161326,161919,156559,158736;158736,165875,156407,157957;157957,177800,153726,175626;175625,183486,174495,179507;179508,180282,172290,176965;176964,182732,173860,178460;178460,184116,177894,182088;182087,185747,178190,179129;179129,182798,174471,179988;179988,184299,178047,179781;179781,181680,173170,179361;179362,187317,179252,183811;183810,187100,181300,184220;184220,184860,181000,183352;183352,184995,180300,180886;180886,183355,178185,182019;182019,182090,175200,181700;181700,185000,178701,181111;181111,222600,180871,220739;220739,249077,218433,234504;234504,260000,231700,258323;258322,260813,243551,251457;251458,262400,240663,249547;249548,273850,241530,267971;267971,272599,254726,260974;260975,264703,247603,254869;254870,264931,252940,253712;253713,253816,244642,247508;247509,258761,232321,249778;249778,254736,234838,252814;252814,258863,244240,252419;252419,261595,245220,255099;255100,269299,254483,266482;266483,273423,249830,252650;252649,257585,251508,253040;253041,255426,246300,255122;255122,259900,252586,256370;256370,271236,250946,266081;266081,268914,260850,268160;268161,278800,261905,263139;263139,264923,250735,253134;253135,255034,247533,252806;252806,254779,246856,253921;253920,261500,247500,260741;260742,265538,257500,259336;259335,267988,258350,260768;260768,264086,239166,241401;241402,253136,238149,247610;247610,254436,245700,252463;252464,254863,249058,250983;250984,269399,247773,268013;268013,282700,265561,281640;281641,287922,274375,277161;277160,278483,261624,264265;264266,264545,243698,257919;257919,257943,248872,253076;253077,255951,249200,254761;254762,268034,251485,254417;254417,261860,245380,250995;250995,254842,246578,252500;252500,254691,248503,252112;252113,256900,236736,240649;240649,244880,221600,229573;229572,231448,211189,222770")
+    chunks.push("222770,243868,218800,241166;241166,248204,237611,244845;244846,246869,238969,241849;241850,252092,239432,241596;241596,246354,238253,242317;242317,244780,240581,243562;243562,252500,241200,250009;250009,252430,243100,248547;248547,250080,238652,240501;240501,261928,237300,257041;257041,263550,255612,259125;259126,260317,247424,250804;250804,252981,248795,251641;251642,260500,250350,257035;257035,259057,251200,254229;254230,262821,252359,261525;261525,279574,258978,276874;276874,300000,275550,295129;295129,304015,291375,295822;295821,297978,290385,294328;294329,302031,293649,297203;297203,308300,296281,301362;301361,314414,293246,313789;313790,342500,310100,337135;337135,352344,331077,347687;347688,367384,345868,354692;354692,360830,350679,359201;359200,382456,357913,375669;375669,386000,370101,376233;376232,379865,361654,374621;374621,376420,352700,362829;362829,377100,350285,370694;370695,374700,357376,372496;372497,379300,369766,374110;374111,387982,373100,387210;387211,394100,375400,379900;379900,388644,371604,379379;379379,383403,367765,381000;381000,387867,368433,369839;369839,372402,343175,348820;348821,353769,336829,339394;339394,352179,335428,349674;349675,373673,349073,372099;372099,372224,354600,361200;361201,369860,356419,368331;368331,392777,364763,391031;391030,407100,388000,400950;400951,432620,400663,426062;426063,433260,415307,425057;425058,436646,416677,422322;422322,463970,421904,459052;459052,478385,456433,474930;474931,478800,445133,454684;454684,467267,436800,443947;443947,449042,437254,442199;442200,457600,439398,447233;447234,448188,422586,431299;431299,435500,406734,407559;407558,437800,406000,433616;433616,434026,420420,422530;422530,488759,420739,483207;483207,483207,465970,477840;477840,495678,471100,478015;478015,479797,433413,437618;437617,463346,431104,460063;460063,466393,448153,450671;450671,463397,443000,451121;451120,451675,426500,436018;436018,441561,425720,437370;437370,449847,437263,439183;439183,449184,421061,431450;431450,441678,425785,432650;432649,449064,428323,445046;445046,448205,426533,429755;429756,449000,425603,430745;430746,432930,423600,427314;427315,433602,427081,430619;430619,438406,427900,430637;430636,438187,427676,431009;431008,445357,428510,434932;434933,448109,433882,445882;445883,474840,445071,471216;471216,476936,460500,466653;466654,469236,457689,460449;460448,467028,446600,452374;452374,453825,442400,450129;450130,461677,441200,459053;459054,464447,455370,458766;458766,462072,443570,446859;446859,450871,445445,448042;448041,449816,444300,444497;444498,445576,407700,419908;419909,422903,411439,416426;416425,420690,407374,415281;415281,416104,381500,387436;387435,406830,386765,403224;403224,403901,397298,401838;401839,414488,396600,414216;414216,423586,408225,421507;421507,424500,409210,414515;414515,435546,412308,434803;434803,451674,433273,448435;448435,459159,442800,451287;451288,451793,444000,448715;448716,461817,446705,451432;451432,473593,448825,468401;468402,475500,443043,444770;444770,455800,441008,452572;452572,453152,426506,436809;436809,439363,343500,382972;382972,387830,364333,374679;374680,419770,369474,415229;415229,429200,404229,424085;424086,426338,388874,412502;412501,421760,392674,398561;398561,408649,382604,389451;389450,395045,367450,383157;383158,392773,381907,388921;388920,403094,382704,398258;398258,408530,390873,397922;397922,411000,384024,387305;387304,388927,371000,380553;380553,393486,379654,385680;385680,402639,384586,393488;393488,396922,391240,395382;395381,417878,391903,415846;415846,425372,409500,412015;412016,417555,393133,397920")
+    chunks.push("397919,403666,384037,390299;390300,394874,368000,380509;380495,390609,379636,384799;384800,390939,383100,387377;387378,391823,383912,390658;390658,391429,355882,360383;360384,365454,305700,328705;328705,348046,316666,342429;342429,345646,324545,331514;331514,347300,319420,343605;343604,348800,335558,340151;340151,362325,335866,358346;358346,365898,350730,356785;356785,364827,340524,341776;341776,358819,337165,341492;341491,356584,315422,323154;323155,325671,307000,311240;311240,323000,311068,316788;316787,324900,300400,309529;309529,322338,295946,303144;303144,316995,294656,312366;312365,312554,287364,302548;302548,306361,279001,283422;283421,288673,262357,276585;276586,279901,270433,277012;277012,285816,276829,280216;280216,298700,276300,295338;295338,298082,285732,295936;295936,304500,288869,302656;302656,307137,298578,301523;301523,309900,299436,303115;303114,305264,296191,298916;298917,305302,297530,299126;299125,299947,271604,279907;279907,303376,278219,299607;299607,321499,298558,318836;318839,324035,306637,313326;313326,319333,298308,302178;302177,306900,301258,303806;303806,315000,290752,305985;305986,318051,304087,312416;312416,339785,309080,331804;331804,344744,328810,332414;332414,332737,314528,323739;323738,326550,304531,308486;308486,313568,307860,311464;311464,312954,302444,306350;306349,317750,289457,296485;296485,298187,287600,296230;296230,303092,279102,283349;283350,299740,277519,282857;282856,302000,280863,297950;297949,299441,296417,297793;297793,301340,294400,300202;300203,307739,296343,300949;300948,303579,290093,296502;296503,297815,288870,294747;294748,297146,289120,290395;290390,299438,289426,292799;292800,296089,291713,294905;294905,296123,292454,295091;295091,305778,291025,293790;293791,300980,291944,297369;297369,302808,295891,297164;297165,301000,297115,300419;300419,315001,299249,312545;312546,313671,307600,312711;312711,316722,311875,314470;314471,326566,313502,322499;322499,330886,318327,329684;329683,329684,312542,316872;316872,318439,305465,310665;310666,314841,305869,308840;308840,310412,307799,308672;308672,314727,308446,312345;312346,317149,306555,309575;309575,336779,309196,332582;332583,340289,328048,335492;335492,338419,327372,331869;331870,332679,325301,329628;329628,333026,328396,331056;331056,336882,327886,328403;328404,328458,316538,318955;318956,320050,292000,293988;293988,306907,286611,298227;298228,303833,290602,295269;295270,301926,289240,295641;295641,297041,294384,295322;295323,296029,278700,281689;281690,295121,281237,293035;293035,303508,289977,302677;302677,304578,298367,301078;301078,301350,275453,282259;282260,282865,263601,270738;270737,271464,225000,245195;245196,247598,222200,227015;227016,239662,215714,234702;234701,235988,211000,223372;223372,229574,207668,214826;214825,217377,181818,182683;182683,209394,174780,206338;206337,212170,199457,208708;208708,215203,206410,208974;208973,214773,200862,210502;210502,212471,198938,202267;202267,203231,190319,194118;194119,200142,189724,194785;194785,207368,192472,204872;204872,210767,204237,208659;208659,210332,192888,196658;196659,202351,193724,199833;199834,201533,194166,199166;199167,203905,192378,195591;195590,198755,190700,194908;194908,198118,192297,196888;196888,199556,195562,197335;197335,198313,193500,195782;195782,195833,183713,185630;185630,186958,180000,185194;185195,214839,184674,205748;205748,208333,197535,202768;202768,206352,188700,192984;192984,198499,183536,196451;196451,205480,190741,193971;193971,209000,192000,202735;202734,204148,192956,198280;198281,219900,194508,212728;212728,216366,205475,207286")
+    chunks.push("207286,209333,195595,197868;197868,199604,194809,196959;196960,197980,191614,193710;193711,205352,192965,199298;199297,208819,199100,203651;203650,208558,200717,205197;205197,209500,201759,207352;207351,220903,207012,209222;209221,210609,206160,209616;209616,220287,208335,217830;217829,238602,216473,235297;235297,237666,229415,231739;231738,235000,215321,220339;220339,223372,209938,213781;213782,217684,211688,214622;214621,216827,207078,208487;208486,212721,202600,205389;205390,219857,202304,215203;215203,217516,210302,215623;215622,219902,214635,216902;216902,217219,203454,206043;206043,207719,197093,199275;199276,204745,198317,199474;199474,201965,193882,198464;198465,208500,198028,202648;202648,212403,201264,210543;210543,216785,208208,214035;214035,215937,201704,205717;205718,208176,204066,205383;205383,208400,204463,206552;206551,212349,202150,211017;211017,217479,208750,210716;210716,227387,206024,224001;224001,227055,217978,219000;219000,224600,215731,219020;219017,225799,217610,224505;224506,232993,222900,228499;228500,228857,217500,219165;219164,239471,217568,236946;236946,241550,230290,232244;232244,238561,230850,235995;235994,236959,228510,234817;234816,246491,231743,241900;241900,242764,233992,235032;235033,235530,225272,226327;226328,234678,225967,231385;231384,233875,228419,232714;232715,242375,231295,237407;237408,238200,228542,233026;233027,233750,230022,231499;231498,232321,230055,231950;231949,238000,230672,236944;236945,240437,226609,230367;230366,231088,225824,228942;228942,234695,222036,225290;225290,227900,223164,225751;225751,232528,225721,229563;229563,234360,229291,231697;231697,235692,229759,232265;232265,239893,230924,234716;234717,239950,234493,236077;236076,242374,233800,235084;235084,235230,228010,229106;229106,232122,226561,230706;230707,233837,230000,232644;232643,238253,231183,237127;237126,237492,230400,233987;233988,234085,225627,227496;227497,232336,223413,225865;225866,231933,223864,228325;228326,230029,220511,222466;222465,223151,216255,218077;218077,219814,209148,213100;213100,215724,207723,213008;213008,214695,209447,211193;211193,214900,210329,212944;212944,215750,210515,213376;213377,214139,205779,206585;206586,214995,200930,211768;211769,213214,206300,209985;209986,214198,209226,211301;211301,214049,205506,207377;207377,209740,201600,202484;202483,203000,196700,200990;200989,204659,197648,201454;201454,203200,200200,202244;202244,203800,199375,200701;200702,202150,195604,200673;200673,200678,183902,185984;185984,189307,176962,181305;181305,182050,171728,177077;177076,177499,154019,158340;158340,160122,150568,156969;156968,172193,156410,169051;169050,171450,164500,169049;169048,169688,161402,163952;163952,166796,160344,162159;162160,169359,162160,167346;167346,169107,165209,166641;166642,169728,166220,168118;168119,173228,165490,172562;172563,184954,170966,179613;179614,183977,175800,179299;179300,181021,172534,175060;175061,176299,167179,171111;171111,171951,167911,171119;171118,174955,170406,174108;174108,174145,170200,170694;170694,177990,170694,172819;172819,173625,163565,166713;166713,169367,155295,162217;162218,166054,153290,156784;156786,159470,151200,157868;157868,161102,156286,157399;157400,158882,154837,157196;157196,163758,155043,161307;161307,161441,155020,157201;157200,164626,155292,160958;160959,172500,159722,170057;170057,177578,169472,175821;175822,180765,174409,178064;178064,180800,174879,178565;178565,183340,172895,179956;179956,181316,175757,177145;177145,178500,171344,174354;174355,176236,172193,174516;174517,181200,173768,179685;179685,183000,178658,178776")
+    chunks.push("178776,182692,177946,180680;180680,184600,175020,177672;177671,189614,177341,189187;189187,194652,186438,191786;191786,192948,185754,186471;186471,187108,180305,184193;184194,186758,183758,186261;186261,187938,185171,187223;187224,191816,184314,190477;190477,195300,190074,193009;193009,195645,191068,193425;193426,194150,186944,187838;187838,190980,184809,186144;186144,187707,185122,187489;187488,196736,187385,195472;195472,198124,188249,189253;189253,192967,185688,192223;192222,193568,187200,191072;191072,193699,189399,191831;191832,193615,184870,186260;186260,187545,182206,184494;184495,189850,184367,188536;188536,188595,182862,186050;186050,188244,184838,186975;186974,192800,185550,190890;190891,192051,189204,190410;190410,194302,189435,191418;191419,192672,191227,191674;191675,193822,190756,191065;191065,193157,186796,187316;187316,189780,185362,188259;188258,192500,187329,187981;187980,190000,186367,188615;188616,189130,186428,188220;188220,188659,187601,188264;188264,189231,186917,187600;187601,191871,187246,191360;191359,192327,188578,191785;191785,233365,190600,225280;225281,236000,222154,232682;232683,254678,232499,251630;251631,252999,238500,242260;242260,248462,235571,246341;246342,253295,242473,248231;248231,253250,241464,244264;244265,251538,243232,250678;250678,256653,248174,251094;251094,253505,240597,244280;244279,245976,243045,245767;245767,253498,238728,241688;241689,248995,240135,246765;246764,248550,238334,241857;241858,242900,235641,239192;239191,252984,237014,250751;250750,254666,243161,245585;245586,249357,244447,248034;248033,252620,246092,251448;251448,253664,246600,249016;249016,250799,244168,248506;248507,252330,244244,246813;246814,248476,240585,243827;243827,266599,243377,251643;251644,254601,250864,252593;252592,252756,246202,247710;247710,261500,246471,251575;251572,252000,235888,239826;239826,243064,236911,241826;241826,248374,241356,244728;244728,264600,243689,261214;261214,266800,260294,263269;263270,264989,256433,264521;264521,280734,264371,277619;277620,277755,271591,275363;275363,278900,263539,268471;268470,270600,260015,268805;268806,274300,266733,269161;269162,269779,266479,269633;269633,272412,266978,268865;268865,272142,263569,268871;268871,274860,265220,267798;267798,273851,265692,268601;268601,272200,267313,270642;270643,277733,265088,266859;266859,269000,266567,268723;268724,273950,268654,272694;272693,273800,267963,270998;270999,272513,268373,269749;269749,269980,253806,257414;257415,258728,240611,247480;247488,252054,247105,248770;248769,251951,248603,250652;250652,255522,249785,253694;253694,257988,244300,244717;244716,253852,240909,249795;249794,253044,240369,242160;242161,246705,231800,244208;244207,249400,239348,242354;242355,244166,235679,240282;240281,243000,232900,241031;241031,244627,238518,240801;240800,247800,237262,244920;244919,252662,243687,247376;247377,248249,236032,238914;238913,241777,235155,238760;238761,239024,228246,235882;235882,237152,230870,232987;232986,234472,229309,232455;232455,236435,229744,235036;235035,239155,232320,235968;235969,237955,223300,225313;225313,226249,217408,224554;224554,226876,223700,225566")
+    for chunk in chunks
+        array<string> rows = str.split(chunk, ";")
+        for row in rows
+            result.push(row)
+    result
+
+bool eventLogs = input.bool(false, "输出确认事件日志（Pine Logs）")
+int feedCode = 2
+int seconds = 86400
+float tickSize = 0.01
+int coreTag = 4134408277
+int baselineTag = 2878541099
+int start = 1706400000000
+int bars = 1008
+int initialBars = 5000
+int pendingLimit = 64
+int workLimit = 8192
+int centerSources = 64
+int period = 86400000
+int endExclusive = 1793491200000
+if barstate.isfirst
+    chan_mv_assert(chart.is_standard, "use ordinary candles")
+    chan_mv_assert(ticker.standard(syminfo.tickerid) == "BINANCE:ETHUSDT", "chart feed must be BINANCE:ETHUSDT")
+    chan_mv_assert(timeframe.in_seconds() == seconds, "wrong chart timeframe")
+    chan_mv_assert(math.abs(syminfo.mintick - tickSize) < tickSize * 0.000001, "wrong chart tick size")
+    chan_mv_assert(time <= start, "load history at or before 2024-01-28T00:00:00Z")
+var array<string> rows = chan_mv_rows()
+var ChanWindow window = chan_window_new(true, start, initialBars, last_bar_index, time, bars)
+var ChanRuntime engine = chan_runtime_new("M-ETHUSDT-D", pendingLimit, workLimit, centerSources)
+var ChanMarketDigest digest = ChanMarketDigest.new()
+bool observed = false
+if barstate.isconfirmed
+    ChanWindowFrame gate = chan_window_step(window, time, bar_index, true)
+    if chan_context_allows(chart.is_standard, gate)
+        chan_mv_assert(window.count < rows.size() and time < endExclusive, "missing bars before fixed window end")
+        ChanRaw incoming = chan_mv_input(rows, window.count, start, period, tickSize)
+        ChanRuntimeFrame frame = chan_runtime_update(engine, incoming, true)
+        chan_mv_assert(frame.submitted, "close not submitted")
+        digest := chan_mv_events(digest, engine, frame, eventLogs)
+        engine := frame.committed
+        observed := true
+    window := gate.state
+    chan_mv_assert(window.count == engine.morphology.inputCount, "window/runtime count mismatch")
+    chan_mv_assert(engine.normalized.count == (na(engine.segments) ? 0 : engine.segments.segmentCount), "S/N cumulative count mismatch")
+    if time >= endExclusive
+        chan_mv_assert(window.count == bars, "fixed window incomplete")
+ChanStructure pCandidate = engine.morphology.strokeCandidate
+ChanStructure sCandidate = na(engine.segments) ? na : engine.segments.candidate
+ChanCenter center = engine.centers.center
+var table result = table.new(position.top_right, 1, 4)
+if barstate.islast
+    table.cell(result, 0, 0, window.count == bars ? "PASS: M-ETHUSDT-D, 1008 input bars" : "WAIT/RUN: " + str.tostring(window.count) + "/" + str.tostring(bars), text_color = window.count == bars ? color.lime : color.orange, bgcolor=color.rgb(22,27,34))
+    table.cell(result, 0, 1, "真实CSV逐根核对 · 固定起点／上限1008 · CORE f66e1055", text_color=color.white, bgcolor=color.rgb(22,27,34))
+    table.cell(result, 0, 2, "P=" + str.tostring(engine.morphology.strokeCount) + " S=" + str.tostring(na(engine.segments) ? 0 : engine.segments.segmentCount) + " L0=" + str.tostring(engine.normalized.count) + " Z=" + str.tostring(engine.centers.count) + " · " + chan_status_text(chan_status_code(engine, window, chart.is_standard)), text_color=color.white, bgcolor=color.rgb(22,27,34))
+    table.cell(result, 0, 3, "导出本指标数据供回放和重载对照", text_color=color.orange, bgcolor=color.rgb(22,27,34))
+plot(observed ? (feedCode) : na, "audit_feed_code", display=display.data_window)
+plot(observed ? (seconds) : na, "audit_timeframe_seconds", display=display.data_window)
+plot(observed ? (tickSize) : na, "audit_tick_size", display=display.data_window)
+plot(observed ? (1) : na, "audit_standard", display=display.data_window)
+plot(observed ? (coreTag) : na, "audit_core_tag", display=display.data_window)
+plot(observed ? (baselineTag) : na, "audit_baseline_tag", display=display.data_window)
+plot(observed ? (start) : na, "audit_requested_start", display=display.data_window)
+plot(observed ? (bars) : na, "audit_sample_limit", display=display.data_window)
+plot(observed ? (initialBars) : na, "audit_initial_bars", display=display.data_window)
+plot(observed ? (pendingLimit) : na, "audit_segment_pending_limit", display=display.data_window)
+plot(observed ? (workLimit) : na, "audit_segment_work_limit", display=display.data_window)
+plot(observed ? (centerSources) : na, "audit_center_sources", display=display.data_window)
+plot(observed ? (window.count) : na, "audit_prefix", display=display.data_window)
+plot(observed ? (time_close) : na, "audit_close_time_ms", display=display.data_window)
+plot(observed ? (digest.a) : na, "audit_event_hash_a", display=display.data_window)
+plot(observed ? (digest.b) : na, "audit_event_hash_b", display=display.data_window)
+plot(observed ? (digest.count) : na, "audit_event_count", display=display.data_window)
+plot(observed ? (engine.morphology.confirmedFractals) : na, "audit_fractals", display=display.data_window)
+plot(observed ? (engine.morphology.strokeCount) : na, "audit_strokes", display=display.data_window)
+plot(observed ? (na(engine.segments) ? 0 : engine.segments.segmentCount) : na, "audit_segments", display=display.data_window)
+plot(observed ? (engine.normalized.count) : na, "audit_l0", display=display.data_window)
+plot(observed ? (engine.centers.count) : na, "audit_centers", display=display.data_window)
+plot(observed ? (engine.morphology.effectiveStart) : na, "audit_effective_start", display=display.data_window)
+plot(observed ? (na(pCandidate) ? na : pCandidate.startTime) : na, "audit_p_start_time", display=display.data_window)
+plot(observed ? (na(pCandidate) ? na : pCandidate.endTime) : na, "audit_p_end_time", display=display.data_window)
+plot(observed ? (na(pCandidate) ? na : pCandidate.startTicks) : na, "audit_p_start_ticks", display=display.data_window)
+plot(observed ? (na(pCandidate) ? na : pCandidate.endTicks) : na, "audit_p_end_ticks", display=display.data_window)
+plot(observed ? (na(sCandidate) ? na : sCandidate.startTime) : na, "audit_s_start_time", display=display.data_window)
+plot(observed ? (na(sCandidate) ? na : sCandidate.endTime) : na, "audit_s_end_time", display=display.data_window)
+plot(observed ? (na(sCandidate) ? na : sCandidate.startTicks) : na, "audit_s_start_ticks", display=display.data_window)
+plot(observed ? (na(sCandidate) ? na : sCandidate.endTicks) : na, "audit_s_end_ticks", display=display.data_window)
+plot(observed ? (na(center) ? na : center.coreLowTicks) : na, "audit_z_low", display=display.data_window)
+plot(observed ? (na(center) ? na : center.coreHighTicks) : na, "audit_z_high", display=display.data_window)
+plot(observed ? (na(center) ? na : center.ggTicks) : na, "audit_z_gg", display=display.data_window)
+plot(observed ? (na(center) ? na : center.gTicks) : na, "audit_z_g", display=display.data_window)
+plot(observed ? (na(center) ? na : center.dTicks) : na, "audit_z_d", display=display.data_window)
+plot(observed ? (na(center) ? na : center.ddTicks) : na, "audit_z_dd", display=display.data_window)
+plot(observed ? (na(center) ? na : center.startTime) : na, "audit_z_start", display=display.data_window)
+plot(observed ? (na(center) ? na : center.formedAt) : na, "audit_z_formed", display=display.data_window)
+plot(observed ? (na(center) ? na : center.extentEndTime) : na, "audit_z_extent", display=display.data_window)
+plot(observed ? (na(engine.centers.pendingLeave) ? 0 : engine.centers.pendingLeave.ordinal) : na, "audit_z_pending", display=display.data_window)
+plot(observed ? (na(engine.segments) ? 0 : (engine.segments.blocked ? 1 : 0)) : na, "audit_s_blocked", display=display.data_window)
+plot(observed ? (na(engine.segments) ? 0 : (engine.segments.gapPending ? 1 : 0)) : na, "audit_s_gap", display=display.data_window)
+plot(observed ? (engine.centers.blocked ? 1 : 0) : na, "audit_z_blocked", display=display.data_window)
+

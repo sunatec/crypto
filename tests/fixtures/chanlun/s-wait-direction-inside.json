@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "id": "S-WAIT-DIRECTION-INSIDE",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168",
+      "C71-182",
+      "C77-195"
+    ],
+    "lesson": 71,
+    "pdfPages": [
+      169,
+      181,
+      182,
+      196
+    ],
+    "figure": null,
+    "note": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。 输入明确假定每项为已锁定合法笔；初始化及同刻提交约定单列于E-007。只断言确认前缀，不强制未锁定候选的展示集合。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 20,
+        "endTicks": 6,
+        "lowTicks": 6,
+        "highTicks": 20,
+        "direction": "down",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 6,
+        "endTicks": 12,
+        "lowTicks": 6,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 12,
+        "endTicks": 0,
+        "lowTicks": 0,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 0,
+        "endTicks": 10,
+        "lowTicks": 0,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 10,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 5,
+        "endTicks": 8,
+        "lowTicks": 5,
+        "highTicks": 8,
+        "direction": "up",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 8,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 8,
+        "direction": "down",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 4,
+        "endTicks": 7,
+        "lowTicks": 4,
+        "highTicks": 7,
+        "direction": "up",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      },
+      {
+        "id": "p9",
+        "startTime": 1701000480000,
+        "endTime": 1701000540000,
+        "completedAt": 1701000600000,
+        "startTicks": 7,
+        "endTicks": 3,
+        "lowTicks": 3,
+        "highTicks": 7,
+        "direction": "down",
+        "dependencies": [
+          "f8",
+          "f9",
+          "proof9"
+        ]
+      },
+      {
+        "id": "p10",
+        "startTime": 1701000540000,
+        "endTime": 1701000600000,
+        "completedAt": 1701000660000,
+        "startTicks": 3,
+        "endTicks": 9,
+        "lowTicks": 3,
+        "highTicks": 9,
+        "direction": "up",
+        "dependencies": [
+          "f9",
+          "f10",
+          "proof10"
+        ]
+      },
+      {
+        "id": "p11",
+        "startTime": 1701000600000,
+        "endTime": 1701000660000,
+        "completedAt": 1701000720000,
+        "startTicks": 9,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 9,
+        "direction": "down",
+        "dependencies": [
+          "f10",
+          "f11",
+          "proof11"
+        ]
+      },
+      {
+        "id": "p12",
+        "startTime": 1701000660000,
+        "endTime": 1701000720000,
+        "completedAt": 1701000780000,
+        "startTicks": 5,
+        "endTicks": 10,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f11",
+          "f12",
+          "proof12"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 10,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 11,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    },
+    {
+      "prefix": 12,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "从0开始的第一反向笔0→10已经笔破坏旧下降段，但之后始终未严格先破0或10；到前缀12也仅相等触及10。第三笔及后续包含产生的几何分型不能绕过方向待定守卫，不提交假设20→0或0→8为已完成段。"
+    }
+  ]
+}

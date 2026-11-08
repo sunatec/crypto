@@ -1,0 +1,846 @@
+{
+  "schemaVersion": 1,
+  "id": "N-INTERNAL-LOW",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "N-001",
+    "E-008",
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168",
+      "C71-182",
+      "C77-195",
+      "C78-198"
+    ],
+    "lesson": 78,
+    "pdfPages": [
+      169,
+      181,
+      182,
+      196,
+      198,
+      199
+    ],
+    "figure": null,
+    "note": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。 输入为合成已锁定合法笔；标准化邻接与时间锚点采用用户选择的E-008工程约定。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "normalization-strokes",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": -6,
+        "lowTicks": -6,
+        "highTicks": 0,
+        "direction": "down",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": -6,
+        "endTicks": -2,
+        "lowTicks": -6,
+        "highTicks": -2,
+        "direction": "up",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": -2,
+        "endTicks": -10,
+        "lowTicks": -10,
+        "highTicks": -2,
+        "direction": "down",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": -10,
+        "endTicks": -6,
+        "lowTicks": -10,
+        "highTicks": -6,
+        "direction": "up",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": -6,
+        "endTicks": -9,
+        "lowTicks": -9,
+        "highTicks": -6,
+        "direction": "down",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": -9,
+        "endTicks": -4,
+        "lowTicks": -9,
+        "highTicks": -4,
+        "direction": "up",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": -4,
+        "endTicks": -12,
+        "lowTicks": -12,
+        "highTicks": -4,
+        "direction": "down",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": -12,
+        "endTicks": -5,
+        "lowTicks": -12,
+        "highTicks": -5,
+        "direction": "up",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      },
+      {
+        "id": "p9",
+        "startTime": 1701000480000,
+        "endTime": 1701000540000,
+        "completedAt": 1701000600000,
+        "startTicks": -5,
+        "endTicks": -11,
+        "lowTicks": -11,
+        "highTicks": -5,
+        "direction": "down",
+        "dependencies": [
+          "f8",
+          "f9",
+          "proof9"
+        ]
+      },
+      {
+        "id": "p10",
+        "startTime": 1701000540000,
+        "endTime": 1701000600000,
+        "completedAt": 1701000660000,
+        "startTicks": -11,
+        "endTicks": -3,
+        "lowTicks": -11,
+        "highTicks": -3,
+        "direction": "up",
+        "dependencies": [
+          "f9",
+          "f10",
+          "proof10"
+        ]
+      },
+      {
+        "id": "p11",
+        "startTime": 1701000600000,
+        "endTime": 1701000660000,
+        "completedAt": 1701000720000,
+        "startTicks": -3,
+        "endTicks": -8,
+        "lowTicks": -8,
+        "highTicks": -3,
+        "direction": "down",
+        "dependencies": [
+          "f10",
+          "f11",
+          "proof11"
+        ]
+      },
+      {
+        "id": "p12",
+        "startTime": 1701000660000,
+        "endTime": 1701000720000,
+        "completedAt": 1701000780000,
+        "startTicks": -8,
+        "endTicks": -4,
+        "lowTicks": -8,
+        "highTicks": -4,
+        "direction": "up",
+        "dependencies": [
+          "f11",
+          "f12",
+          "proof12"
+        ]
+      },
+      {
+        "id": "p13",
+        "startTime": 1701000720000,
+        "endTime": 1701000780000,
+        "completedAt": 1701000840000,
+        "startTicks": -4,
+        "endTicks": -15,
+        "lowTicks": -15,
+        "highTicks": -4,
+        "direction": "down",
+        "dependencies": [
+          "f12",
+          "f13",
+          "proof13"
+        ]
+      },
+      {
+        "id": "p14",
+        "startTime": 1701000780000,
+        "endTime": 1701000840000,
+        "completedAt": 1701000900000,
+        "startTicks": -15,
+        "endTicks": -5,
+        "lowTicks": -15,
+        "highTicks": -5,
+        "direction": "up",
+        "dependencies": [
+          "f13",
+          "f14",
+          "proof14"
+        ]
+      },
+      {
+        "id": "p15",
+        "startTime": 1701000840000,
+        "endTime": 1701000900000,
+        "completedAt": 1701000960000,
+        "startTicks": -5,
+        "endTicks": -12,
+        "lowTicks": -12,
+        "highTicks": -5,
+        "direction": "down",
+        "dependencies": [
+          "f14",
+          "f15",
+          "proof15"
+        ]
+      },
+      {
+        "id": "p16",
+        "startTime": 1701000900000,
+        "endTime": 1701000960000,
+        "completedAt": 1701001020000,
+        "startTicks": -12,
+        "endTicks": -4,
+        "lowTicks": -12,
+        "highTicks": -4,
+        "direction": "up",
+        "dependencies": [
+          "f15",
+          "f16",
+          "proof16"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/N-INTERNAL-LOW/N/1/1701000000000",
+          "type": "normalized",
+          "objectId": "N-INTERNAL-LOW/N/1/1701000000000",
+          "occurredAt": 1701000180000,
+          "confirmedAt": 1701000420000
+        }
+      ],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 10,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 11,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 12,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 13,
+      "state": {
+        "normalizedCount": 2
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-INTERNAL-LOW/N/2/1701000180000",
+          "segmentId": "N-INTERNAL-LOW/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": -10,
+          "realEndTicks": -3,
+          "actualLowTicks": -12,
+          "actualHighTicks": -3,
+          "actualLowTime": 1701000420000,
+          "actualHighTime": 1701000600000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": -12,
+          "analysisEndTicks": -3,
+          "direction": "up",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/N-INTERNAL-LOW/N/2/1701000180000",
+          "type": "normalized",
+          "objectId": "N-INTERNAL-LOW/N/2/1701000180000",
+          "occurredAt": 1701000600000,
+          "confirmedAt": 1701000840000
+        }
+      ],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 14,
+      "state": {
+        "normalizedCount": 2
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-INTERNAL-LOW/N/2/1701000180000",
+          "segmentId": "N-INTERNAL-LOW/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": -10,
+          "realEndTicks": -3,
+          "actualLowTicks": -12,
+          "actualHighTicks": -3,
+          "actualLowTime": 1701000420000,
+          "actualHighTime": 1701000600000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": -12,
+          "analysisEndTicks": -3,
+          "direction": "up",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 15,
+      "state": {
+        "normalizedCount": 2
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-INTERNAL-LOW/N/2/1701000180000",
+          "segmentId": "N-INTERNAL-LOW/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": -10,
+          "realEndTicks": -3,
+          "actualLowTicks": -12,
+          "actualHighTicks": -3,
+          "actualLowTime": 1701000420000,
+          "actualHighTime": 1701000600000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": -12,
+          "analysisEndTicks": -3,
+          "direction": "up",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        }
+      ],
+      "events": [],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    },
+    {
+      "prefix": 16,
+      "state": {
+        "normalizedCount": 3
+      },
+      "structures": [
+        {
+          "id": "N-INTERNAL-LOW/N/1/1701000000000",
+          "segmentId": "N-INTERNAL-LOW/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": -10,
+          "actualLowTicks": -10,
+          "actualHighTicks": 0,
+          "actualLowTime": 1701000180000,
+          "actualHighTime": 1701000000000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": -10,
+          "direction": "down",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-INTERNAL-LOW/N/2/1701000180000",
+          "segmentId": "N-INTERNAL-LOW/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": -10,
+          "realEndTicks": -3,
+          "actualLowTicks": -12,
+          "actualHighTicks": -3,
+          "actualLowTime": 1701000420000,
+          "actualHighTime": 1701000600000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": -12,
+          "analysisEndTicks": -3,
+          "direction": "up",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        },
+        {
+          "id": "N-INTERNAL-LOW/N/3/1701000600000",
+          "segmentId": "N-INTERNAL-LOW/S/3/1701000600000",
+          "realStartTime": 1701000600000,
+          "realEndTime": 1701000780000,
+          "realStartTicks": -3,
+          "realEndTicks": -15,
+          "actualLowTicks": -15,
+          "actualHighTicks": -3,
+          "actualLowTime": 1701000780000,
+          "actualHighTime": 1701000600000,
+          "analysisStartTime": 1701000600000,
+          "analysisEndTime": 1701000780000,
+          "analysisStartTicks": -3,
+          "analysisEndTicks": -15,
+          "direction": "down",
+          "confirmedAt": 1701001020000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-INTERNAL-LOW/S/3/1701000600000"
+          ],
+          "ordinal": 3
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/N-INTERNAL-LOW/N/3/1701000600000",
+          "type": "normalized",
+          "objectId": "N-INTERNAL-LOW/N/3/1701000600000",
+          "occurredAt": 1701000780000,
+          "confirmedAt": 1701001020000
+        }
+      ],
+      "reason": "对特殊段笔输入作价格镜像，独立列出上行内部低点预期；来源时间与几何时间不混同，负整数tick为合成数据。"
+    }
+  ]
+}

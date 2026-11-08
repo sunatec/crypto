@@ -1,0 +1,24 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\runtime-validation.pine",
+  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "sha256": "06e0bdb895df695d4817b5fb7e8fc203b7a6b6a6d58943e961a95c9f1aa4639c",
+  "bytes": 91736,
+  "prefixes": 38,
+  "cases": 4,
+  "fixtureHashes": [
+    {
+      "id": "P-OHLC-INTEGRATION",
+      "sha256": "397d1a8b2ef8fab9f40c03cb6eeb0509378116be2c1fa32e038cb7d35739e66d"
+    },
+    {
+      "id": "N-OWN-RANGES",
+      "sha256": "0f2d46415c33386490c6b0750c52a7bdf4200dfc95b642d663bc9dc8e664556e"
+    },
+    {
+      "id": "N-SECOND-BATCH",
+      "sha256": "bf55df2617026e0519a2872d18ed117b6223de7684e3855147ccf637e85880b9"
+    }
+  ],
+  "execution": "not run in Pine"
+}

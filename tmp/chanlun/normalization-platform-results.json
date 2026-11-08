@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "results": [
+    {
+      "date": "2026-11-02",
+      "status": "user-reported-pass",
+      "source": "tmp/chanlun/normalization-validation.pine",
+      "requestedFileSha256": "a2a10affcb7ba697802af62a443ab0f730eab3b288a0b65b2a5bad5978e96a99",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "snapshot": "tmp/chanlun/compiled/normalization-N5-pass-a2a10affcb7ba697802af62a443ab0f730eab3b288a0b65b2a5bad5978e96a99.pine",
+      "userReport": "N5 PASS",
+      "cases": 5,
+      "prefixes": 59,
+      "scope": "User report for requested artifact; uploaded bytes not independently inspected. Synthetic S-to-N assertions only."
+    },
+    {
+      "date": "2026-11-02",
+      "status": "user-reported-pass",
+      "source": "chanlun_original.pine",
+      "requestedFileSha256": "363e1e50618a6770efa7540aef6b4fd65451cb1c5dc5865d448bfff83c368dd0",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "snapshot": "tmp/chanlun/compiled/production-N-pass-363e1e50618a6770efa7540aef6b4fd65451cb1c5dc5865d448bfff83c368dd0.pine",
+      "userReport": "N入口正常",
+      "scope": "User report: blue strokes/orange segments normal; L0 count matches confirmed segments; research N0 mappings and tooltips normal. Fixed-feed, replay and live tick acceptance remain separate."
+    }
+  ],
+  "pending": []
+}

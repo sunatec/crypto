@@ -1,0 +1,565 @@
+{
+  "schemaVersion": 1,
+  "id": "S-FEATURE-UP-INCLUSION",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-002",
+    "E-006"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "engineering",
+    "sourceIds": [
+      "C65-168",
+      "C67-172",
+      "C71-182",
+      "C78-198"
+    ],
+    "lesson": 78,
+    "pdfPages": [
+      168,
+      172,
+      182,
+      199
+    ],
+    "figure": null,
+    "note": "正文特征序列与假设分界原则的合成数值样例，不是原图行情重建。初始／分界后方向是显式测试上下文，不视为行情自行推断的结果。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "feature-strokes",
+    "context": {
+      "segmentDirection": "up",
+      "initialDirection": "waiting",
+      "postDirection": "waiting",
+      "boundaryTime": null,
+      "secondSequence": false,
+      "maxElements": 128,
+      "maxSources": 512
+    },
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 10,
+        "direction": "up",
+        "ordinal": 1,
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 10,
+        "endTicks": 5,
+        "direction": "down",
+        "ordinal": 2,
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 5,
+        "endTicks": 12,
+        "direction": "up",
+        "ordinal": 3,
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 12,
+        "endTicks": 8,
+        "direction": "down",
+        "ordinal": 4,
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 8,
+        "endTicks": 11,
+        "direction": "up",
+        "ordinal": 5,
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 11,
+        "endTicks": 9,
+        "direction": "down",
+        "ordinal": 6,
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 9,
+        "endTicks": 15,
+        "direction": "up",
+        "ordinal": 7,
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 15,
+        "endTicks": 10,
+        "direction": "down",
+        "ordinal": 8,
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "inputCount": 1,
+        "selectedCount": 0,
+        "mergeDirection": "waiting",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": false,
+        "features": []
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "inputCount": 2,
+        "selectedCount": 1,
+        "mergeDirection": "waiting",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": false,
+        "features": [
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p2",
+            "lowTicks": 5,
+            "highTicks": 10,
+            "lowTime": 1701000120000,
+            "highTime": 1701000060000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": false,
+            "sourceIds": [
+              "p2"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "inputCount": 3,
+        "selectedCount": 1,
+        "mergeDirection": "waiting",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p2",
+            "lowTicks": 5,
+            "highTicks": 10,
+            "lowTime": 1701000120000,
+            "highTime": 1701000060000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": false,
+            "sourceIds": [
+              "p2"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "inputCount": 4,
+        "selectedCount": 2,
+        "mergeDirection": "up",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p2",
+            "lowTicks": 5,
+            "highTicks": 10,
+            "lowTime": 1701000120000,
+            "highTime": 1701000060000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p4",
+            "lowTicks": 8,
+            "highTicks": 12,
+            "lowTime": 1701000240000,
+            "highTime": 1701000180000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000240000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 4,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000300000,
+            "sealed": false,
+            "sourceIds": [
+              "p4"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "inputCount": 5,
+        "selectedCount": 2,
+        "mergeDirection": "up",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p2",
+            "lowTicks": 5,
+            "highTicks": 10,
+            "lowTime": 1701000120000,
+            "highTime": 1701000060000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p4",
+            "lowTicks": 8,
+            "highTicks": 12,
+            "lowTime": 1701000240000,
+            "highTime": 1701000180000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000240000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 4,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000300000,
+            "sealed": false,
+            "sourceIds": [
+              "p4"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "inputCount": 6,
+        "selectedCount": 3,
+        "mergeDirection": "up",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p2",
+            "lowTicks": 5,
+            "highTicks": 10,
+            "lowTime": 1701000120000,
+            "highTime": 1701000060000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p4",
+            "lowTicks": 9,
+            "highTicks": 12,
+            "lowTime": 1701000360000,
+            "highTime": 1701000180000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000360000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 6,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000420000,
+            "sealed": false,
+            "sourceIds": [
+              "p4",
+              "p6"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "inputCount": 7,
+        "selectedCount": 3,
+        "mergeDirection": "up",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p2",
+            "lowTicks": 5,
+            "highTicks": 10,
+            "lowTime": 1701000120000,
+            "highTime": 1701000060000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p4",
+            "lowTicks": 9,
+            "highTicks": 12,
+            "lowTime": 1701000360000,
+            "highTime": 1701000180000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000360000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 6,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000420000,
+            "sealed": false,
+            "sourceIds": [
+              "p4",
+              "p6"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "inputCount": 8,
+        "selectedCount": 4,
+        "mergeDirection": "up",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p2",
+            "lowTicks": 5,
+            "highTicks": 10,
+            "lowTime": 1701000120000,
+            "highTime": 1701000060000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p4",
+            "lowTicks": 9,
+            "highTicks": 12,
+            "lowTime": 1701000360000,
+            "highTime": 1701000180000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000360000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 6,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000420000,
+            "sealed": true,
+            "sourceIds": [
+              "p4",
+              "p6"
+            ]
+          },
+          {
+            "id": "S-FEATURE-UP-INCLUSION/E/p8",
+            "lowTicks": 10,
+            "highTicks": 15,
+            "lowTime": 1701000480000,
+            "highTime": 1701000420000,
+            "firstTime": 1701000420000,
+            "lastTime": 1701000480000,
+            "firstOrdinal": 8,
+            "lastOrdinal": 8,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000540000,
+            "sealed": false,
+            "sourceIds": [
+              "p8"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    }
+  ]
+}

@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "id": "R-C99-TAIL-PRESERVE",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "R-001"
+  ],
+  "expectationStatus": "draft",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C99-244"
+    ],
+    "lesson": 99,
+    "pdfPages": [
+      244
+    ],
+    "figure": null,
+    "note": "作者正文提供分支关系。价格和时刻为工程合成约束，假定低层部件已确认且端点相连。coreLowTicks/coreHighTicks 仅指最近三部件的闭区间交集。完整类背驰与级别成立条件待核对。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "a",
+        "startTime": 1700000000000,
+        "endTime": 1700000060000,
+        "completedAt": 1700000090000,
+        "startTicks": 0,
+        "endTicks": 10,
+        "lowTicks": 0,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "segment-a"
+        ]
+      },
+      {
+        "id": "b",
+        "startTime": 1700000060000,
+        "endTime": 1700000120000,
+        "completedAt": 1700000150000,
+        "startTicks": 10,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "segment-b"
+        ]
+      },
+      {
+        "id": "c",
+        "startTime": 1700000120000,
+        "endTime": 1700000180000,
+        "completedAt": 1700000210000,
+        "startTicks": 5,
+        "endTicks": 21,
+        "lowTicks": 5,
+        "highTicks": 21,
+        "direction": "up",
+        "dependencies": [
+          "segment-c"
+        ]
+      },
+      {
+        "id": "d",
+        "startTime": 1700000180000,
+        "endTime": 1700000240000,
+        "completedAt": 1700000270000,
+        "startTicks": 21,
+        "endTicks": 12,
+        "lowTicks": 12,
+        "highTicks": 21,
+        "direction": "down",
+        "dependencies": [
+          "segment-d"
+        ]
+      },
+      {
+        "id": "e",
+        "startTime": 1700000240000,
+        "endTime": 1700000300000,
+        "completedAt": 1700000330000,
+        "startTicks": 12,
+        "endTicks": 24,
+        "lowTicks": 12,
+        "highTicks": 24,
+        "direction": "up",
+        "dependencies": [
+          "segment-e"
+        ]
+      },
+      {
+        "id": "f",
+        "startTime": 1700000300000,
+        "endTime": 1700000360000,
+        "completedAt": 1700000390000,
+        "startTicks": 24,
+        "endTicks": 14,
+        "lowTicks": 14,
+        "highTicks": 24,
+        "direction": "down",
+        "dependencies": [
+          "segment-f"
+        ]
+      },
+      {
+        "id": "g",
+        "startTime": 1700000360000,
+        "endTime": 1700000420000,
+        "completedAt": 1700000450000,
+        "startTicks": 14,
+        "endTicks": 20,
+        "lowTicks": 14,
+        "highTicks": 20,
+        "direction": "up",
+        "dependencies": [
+          "segment-g"
+        ]
+      },
+      {
+        "id": "h",
+        "startTime": 1700000420000,
+        "endTime": 1700000480000,
+        "completedAt": 1700000510000,
+        "startTicks": 20,
+        "endTicks": 16,
+        "lowTicks": 16,
+        "highTicks": 20,
+        "direction": "down",
+        "dependencies": [
+          "segment-h"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true
+      },
+      "structures": [],
+      "events": [],
+      "reason": "a 已可用。当前不足三个部件，保留待核对状态。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true
+      },
+      "structures": [],
+      "events": [],
+      "reason": "a、b 已可用。当前不足三个部件，保留待核对状态。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true,
+        "coreLowTicks": 5,
+        "coreHighTicks": 10
+      },
+      "structures": [],
+      "events": [],
+      "reason": "a+b+c 最近三段的共同区间为 [5,10]。该区间本身不提供走势完成证明。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true
+      },
+      "structures": [],
+      "events": [],
+      "reason": "b+c+d 的共同区间为空。已有候选分解继续保留，未触发 R 完成事件。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true,
+        "coreLowTicks": 12,
+        "coreHighTicks": 21
+      },
+      "structures": [],
+      "events": [],
+      "reason": "c+d+e 最近三段的共同区间为 [12,21]。a…e 即使满足所述类上涨的形态，最终成员归属仍未知。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true,
+        "coreLowTicks": 14,
+        "coreHighTicks": 21
+      },
+      "structures": [],
+      "events": [],
+      "reason": "d+e+f 最近三段的共同区间为 [14,21]。两种后续从此处之前完全相同，尚不能锁定 a…e。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true,
+        "coreLowTicks": 14,
+        "coreHighTicks": 20
+      },
+      "structures": [],
+      "events": [],
+      "reason": "g 反弹到 20，仍在原价格范围内，h 尚未到达。不能提前把 f+g+h 视为中枢或锁定 a…e。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true,
+        "coreLowTicks": 16,
+        "coreHighTicks": 20
+      },
+      "structures": [],
+      "events": [],
+      "reason": "f+g+h 有共同区间 [16,20]，具备原文保留分支所用的局部几何。它仍不能独立证明 a…e 的永久归属。"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "id": "K-DOWN-CHAIN",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "K-001",
+    "K-002",
+    "E-001"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168"
+    ],
+    "lesson": 65,
+    "pdfPages": [
+      168
+    ],
+    "figure": null,
+    "note": "根据所列正文规则人工构造整数tick样例，非原文行情。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "ohlc",
+    "items": [
+      {
+        "id": "raw-0",
+        "time": 1700000000000,
+        "closeTime": 1700000060000,
+        "openTicks": 6,
+        "highTicks": 10,
+        "lowTicks": 6,
+        "closeTicks": 10
+      },
+      {
+        "id": "raw-1",
+        "time": 1700000060000,
+        "closeTime": 1700000120000,
+        "openTicks": 4,
+        "highTicks": 8,
+        "lowTicks": 4,
+        "closeTicks": 8
+      },
+      {
+        "id": "raw-2",
+        "time": 1700000120000,
+        "closeTime": 1700000180000,
+        "openTicks": 3,
+        "highTicks": 12,
+        "lowTicks": 3,
+        "closeTicks": 12
+      },
+      {
+        "id": "raw-3",
+        "time": 1700000180000,
+        "closeTime": 1700000240000,
+        "openTicks": 2,
+        "highTicks": 7,
+        "lowTicks": 2,
+        "closeTicks": 7
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "processedCount": 0,
+        "direction": "waiting"
+      },
+      "structures": [],
+      "events": [],
+      "reason": "无方向。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "processedCount": 2,
+        "direction": "down",
+        "tailLowTicks": 4,
+        "tailHighTicks": 8
+      },
+      "structures": [],
+      "events": [],
+      "reason": "非包含对确定向下。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "processedCount": 2,
+        "direction": "down",
+        "tailLowTicks": 3,
+        "tailHighTicks": 8
+      },
+      "structures": [],
+      "events": [],
+      "reason": "新外包K高点越过前序也不能改方向；双最小[3,8]。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "processedCount": 3,
+        "direction": "down",
+        "tailLowTicks": 2,
+        "tailHighTicks": 7
+      },
+      "structures": [],
+      "events": [],
+      "reason": "非包含追加。"
+    }
+  ]
+}

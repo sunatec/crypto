@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "results": [
+    {
+      "date": "2026-11-02",
+      "id": "KF6",
+      "status": "user-reported-pass",
+      "userReport": "KF6 PASS",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "requestedFileSha256": "06fb9684dd2ecd0d30915cfe0d3ddf2b772411b9d37a44ff179365ca50c319cb",
+      "snapshot": "tmp/chanlun/compiled/baseline-KF6-06fb9684dd2ecd0d30915cfe0d3ddf2b772411b9d37a44ff179365ca50c319cb.pine",
+      "fixtureIds": [
+        "F-TOP-SEAL",
+        "K-DOWN-CHAIN",
+        "K-EQUAL-ORIGIN",
+        "K-INIT-WAIT",
+        "K-NONTRANSITIVE",
+        "K-UP-CHAIN"
+      ],
+      "prefixes": 24
+    },
+    {
+      "date": "2026-11-02",
+      "id": "I1",
+      "status": "user-reported-compilation-failure",
+      "userReport": "type ChanRaw The body of the chan_case_0 function is too long(CE10296)",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "requestedFileSha256": "e310ce7c71de5b88c0a54c07853ed78b1718b65583d12b68c3ffcb05222b78cc",
+      "snapshot": "tmp/chanlun/compiled/baseline-I1-e310ce7c71de5b88c0a54c07853ed78b1718b65583d12b68c3ffcb05222b78cc.pine",
+      "fixtureIds": [
+        "P-OHLC-INTEGRATION"
+      ],
+      "prefixes": 12
+    },
+    {
+      "date": "2026-11-03",
+      "id": "I1",
+      "status": "user-reported-compilation-failure",
+      "requestedFileSha256": "17e853fe4c0570ab0c33e414674f7cff31ebad8abd06597f1e72d45a997fa588",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "snapshot": "tmp/chanlun/compiled/baseline-I1-token-limit-17e853fe4c0570ab0c33e414674f7cff31ebad8abd06597f1e72d45a997fa588.pine",
+      "userReport": "Compiled code contains too many tokens: 102569. The limit is 100256"
+    },
+    {
+      "date": "2026-11-03",
+      "id": "I1",
+      "status": "user-reported-pass",
+      "userReport": "I1 PASS",
+      "requestedFileSha256": "80664f2e19990f9f3064239ed252fc2b43037cfb94b9b447b71a34e201413d38",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "snapshot": "tmp/chanlun/compiled/baseline-I1-pass-80664f2e19990f9f3064239ed252fc2b43037cfb94b9b447b71a34e201413d38.pine",
+      "fixtureIds": [
+        "P-OHLC-INTEGRATION"
+      ],
+      "prefixes": 12,
+      "scope": "User report in response to this requested artifact; uploaded bytes not independently inspected. Synthetic OHLC-to-fractal-to-stroke prefix assertions, not market replay or actual multi-tick acceptance."
+    },
+    {
+      "date": "2026-11-03",
+      "id": "P5",
+      "status": "user-reported-pass",
+      "userReport": "三个均已PASS (P5, P3A, P3B)",
+      "requestedFileSha256": "4858a5b50472ce2a37e0c0599b3333cfd2d2187a23a5cc22f7d68c2b6157d2b4",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "snapshot": "tmp/chanlun/compiled/baseline-P5-pass-4858a5b50472ce2a37e0c0599b3333cfd2d2187a23a5cc22f7d68c2b6157d2b4.pine",
+      "fixtureIds": [
+        "P-INDEPENDENT",
+        "P-MERGED-DISTANCE",
+        "P-SAME-KIND",
+        "P-SHARED-MEMBERS",
+        "P-TOP-IN-BOTTOM"
+      ],
+      "prefixes": 5,
+      "scope": "User report for previously requested version; uploaded bytes not independently inspected. Synthetic qualification or lifecycle assertions only."
+    },
+    {
+      "date": "2026-11-03",
+      "id": "P3A",
+      "status": "user-reported-pass",
+      "userReport": "三个均已PASS (P5, P3A, P3B)",
+      "requestedFileSha256": "30815aaf576d48096e5b7c17b0da61f9fafc5d000200e85507ab807a4476d689",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "snapshot": "tmp/chanlun/compiled/baseline-P3A-pass-30815aaf576d48096e5b7c17b0da61f9fafc5d000200e85507ab807a4476d689.pine",
+      "fixtureIds": [
+        "P-ANCHOR-EXTREME",
+        "P-EQUAL-FIRST",
+        "P-EXTEND"
+      ],
+      "prefixes": 12,
+      "scope": "User report for previously requested version; uploaded bytes not independently inspected. Synthetic qualification or lifecycle assertions only."
+    },
+    {
+      "date": "2026-11-03",
+      "id": "P3B",
+      "status": "user-reported-pass",
+      "userReport": "三个均已PASS (P5, P3A, P3B)",
+      "requestedFileSha256": "23065e8e32843b9f00ceb0a17c4bf03061df9a6fd858e4c6b5194742f8dccdd2",
+      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "snapshot": "tmp/chanlun/compiled/baseline-P3B-pass-23065e8e32843b9f00ceb0a17c4bf03061df9a6fd858e4c6b5194742f8dccdd2.pine",
+      "fixtureIds": [
+        "P-INVALID-OPPOSITE",
+        "P-LOCKED-PREFIX",
+        "P-UP-EXTEND"
+      ],
+      "prefixes": 15,
+      "scope": "User report for previously requested version; uploaded bytes not independently inspected. Synthetic qualification or lifecycle assertions only."
+    }
+  ],
+  "pending": []
+}

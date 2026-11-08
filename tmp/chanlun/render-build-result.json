@@ -1,0 +1,7 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\render-validation.pine",
+  "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+  "rendererHash": "2a914893dd8d9196f8703bb47328db1f4282a8bacba8d1a462e08d78537f1b20",
+  "data": "synthetic display fixtures, not market structures",
+  "execution": "not run; compile and inspect both views in TradingView"
+}

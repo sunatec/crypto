@@ -1,0 +1,30 @@
+{
+  "status": "matching-exported-prefix-traces",
+  "caseId": "BTCUSDT-60",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "baselineSha256": "518cb958675ebe1dea5c34b9a18a8d808dbb9e029fad126d83c37945955d9bb9",
+  "comparedPrefixes": 506,
+  "leftPrefixes": 1008,
+  "rightPrefixes": 506,
+  "leftTraceSha256": "ee3476342f290293bee1e4f5a4283878c05dbcaca217464574dceb2d5f520bd7",
+  "rightTraceSha256": "f65bc83cc0e6af8db03fb6b74535b25e1cec68464cd0f56c6026154c950c6015",
+  "leftRawCsvSha256": "ffcc785255a8c36ad38c17c9b71d6984eb2be0f80be8dba899e393a3b997d660",
+  "rightRawCsvSha256": "4512674c6d6b69362012f94b04e3a4cb59a5c9094f2ed077b0dfdff71b21d2cd",
+  "actualObservedParameters": {
+    "audit_feed_code": 1,
+    "audit_timeframe_seconds": 3600,
+    "audit_tick_size": 0.01,
+    "audit_standard": 1,
+    "audit_core_tag": 4134408277,
+    "audit_baseline_tag": 1368176984,
+    "audit_requested_start": 1789862400000,
+    "audit_sample_limit": 1008,
+    "audit_initial_bars": 5000,
+    "audit_segment_pending_limit": 64,
+    "audit_segment_work_limit": 8192,
+    "audit_center_sources": 64
+  },
+  "leftPath": "D:\\Workspace\\crypto\\tmp\\chanlun\\market-validation\\BTCUSDT-60-load.csv",
+  "rightPath": "C:\\Users\\Admin\\Downloads\\BINANCE_BTCUSDT, 60_64e7d.csv",
+  "scope": "Numeric states and confirmation-event checksums. Replay and reload context recorded separately."
+}

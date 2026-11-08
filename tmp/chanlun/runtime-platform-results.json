@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-05",
+  "historicalKernelBodiesUnchanged": true,
+  "results": [
+    {
+      "date": "2026-11-05",
+      "source": "tmp/chanlun/runtime-validation.pine",
+      "status": "user-reported-pass",
+      "requestedFileSha256": "c9dcd516c9a056cc9333097fa620a536f66d3e72c117e4913c3fffcb6ddd6607",
+      "coreHash": "ef79fb56e484026184c0dc813ac689e4a2d7003f2337682cf7ed0cab3d19e131",
+      "snapshot": "tmp/chanlun/compiled/runtime-T4-pass-c9dcd516c9a056cc9333097fa620a536f66d3e72c117e4913c3fffcb6ddd6607.pine",
+      "userReport": "T4 PASS",
+      "cases": 4,
+      "prefixes": 38,
+      "fixtureHashes": [
+        {
+          "id": "P-OHLC-INTEGRATION",
+          "sha256": "397d1a8b2ef8fab9f40c03cb6eeb0509378116be2c1fa32e038cb7d35739e66d"
+        },
+        {
+          "id": "N-OWN-RANGES",
+          "sha256": "0f2d46415c33386490c6b0750c52a7bdf4200dfc95b642d663bc9dc8e664556e"
+        },
+        {
+          "id": "N-SECOND-BATCH",
+          "sha256": "bf55df2617026e0519a2872d18ed117b6223de7684e3855147ccf637e85880b9"
+        }
+      ],
+      "scope": "User report of requested synthetic tick and locked-stroke interface assertions passed; uploaded bytes not independently verified. No actual market multi-tick, production rendering, fixed-feed replay or R completion acceptance inferred."
+    },
+    {
+      "date": "2026-11-05",
+      "source": "chanlun_original.pine",
+      "status": "user-reported-pass",
+      "requestedFileSha256": "cfb3c09c3295549ba64dfd85ec20a6c1fcebd6698350dd1784c014c72297a49d",
+      "coreHash": "ef79fb56e484026184c0dc813ac689e4a2d7003f2337682cf7ed0cab3d19e131",
+      "snapshot": "tmp/chanlun/compiled/production-runtime-pass-cfb3c09c3295549ba64dfd85ec20a6c1fcebd6698350dd1784c014c72297a49d.pine",
+      "userReport": "调度入口正常",
+      "sharedValidationPass": "c9dcd516c9a056cc9333097fa620a536f66d3e72c117e4913c3fffcb6ddd6607",
+      "scope": "User reports compilation/runtime, blue strokes, orange segments, purple centers, pending dashed preview and L0 count normal. Actual uploaded bytes and market details not independently verified. Does not establish fixed-feed replay, actual multi-tick acceptance, stress, R completion or higher-layer acceptance."
+    }
+  ],
+  "pending": []
+}

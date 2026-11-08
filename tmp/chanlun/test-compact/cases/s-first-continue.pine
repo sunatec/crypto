@@ -1,0 +1,1515 @@
+//@version=6
+indicator("缠论 S 精简共享验证", overlay = false)
+// Extracted core SHA-256: f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f
+// One closed chart bar advances one fixture prefix; chart OHLC is not input.
+// Fixture S-FIRST-CONTINUE SHA-256: eb36b6948cd904c79d4134da491ca220ac6a22e3eb4affac6a1e51bb30beb234
+// K/F/P/S/N and continuous L1 centers: chanlun-research-0.1.
+// R completion and completed L2/L3 inputs still require independent proof.
+// All time coordinates are UTC milliseconds; prices are integer ticks.
+type ChanRaw
+    int openTime
+    int closeTime
+    int openTicks
+    int highTicks
+    int lowTicks
+    int closeTicks
+
+type ChanElement
+    string id
+    int ordinal
+    int firstTime
+    int lastTime
+    int highTicks
+    int lowTicks
+    int highTime
+    int lowTime
+    int firstRaw
+    int lastRaw
+    bool sealed
+
+type ChanFractal
+    string id
+    int kind
+    int endpointTime
+    int priceTicks
+    int confirmedAt
+    string leftId
+    string middleId
+    string rightId
+    string ruleId
+    int leftOrdinal
+    int middleOrdinal
+    int rightOrdinal
+    int middleHighTicks
+    int middleLowTicks
+
+// Shared contracts for later modules. An absent proof is represented by na,
+// never by an invented completed structure. These types do not produce signals.
+type ChanStructure
+    string id
+    string objectType
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    bool confirmed = false
+    int confirmedAt = na
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+    int memberLowTicks = na
+    int memberHighTicks = na
+    int memberLowTime = na
+    int memberHighTime = na
+
+type ChanComponent
+    string id
+    string segmentId
+    int realStartTime
+    int realEndTime
+    int realStartTicks
+    int realEndTicks
+    int actualLowTicks
+    int actualHighTicks
+    int actualLowTime
+    int actualHighTime
+    int analysisStartTime
+    int analysisEndTime
+    int analysisStartTicks
+    int analysisEndTicks
+    int direction
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+
+type ChanCenter
+    string id
+    int level
+    int coreLowTicks
+    int coreHighTicks
+    int ggTicks
+    int gTicks
+    int dTicks
+    int ddTicks
+    int startTime
+    int formedAt
+    int extentEndTime
+    int confirmedAt = na
+    bool degenerate = false
+    string lifecycle
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+    int zWaves = 0
+    int closedAt = na
+    string leaveId = ""
+    string returnId = ""
+
+type ChanMovement
+    string id
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    string morphology
+    bool completed = false
+    int confirmedAt = na
+    string completionProof
+    string ruleId
+    array<string> childIds
+    array<string> centerIds
+    int ordinal = 0
+
+type ChanConfirmation
+    string id
+    string objectId
+    string objectType
+    int level
+    int occurredAt
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+
+type ChanState
+    string contextId = ""
+    array<ChanElement> elements
+    ChanRaw seed
+    ChanRaw lastRaw
+    ChanFractal candidate
+    ChanFractal lastConfirmed
+    ChanFractal event
+    int direction = 0
+    int processedCount = 0
+    int inputCount = 0
+    int confirmedFractals = 0
+    int effectiveStart = na
+    ChanFractal strokeAnchor
+    ChanFractal strokeEnd
+    ChanFractal lastStrokeInput
+    ChanStructure strokeCandidate
+    ChanStructure strokeEvent
+    ChanStructure lastStroke
+    int strokeCount = 0
+    int ignoredStrokeFractals = 0
+
+chan_new(string contextId) =>
+    ChanState state = ChanState.new()
+    state.contextId := "chanlun-research-0.1/" + contextId
+    state.elements := array.new<ChanElement>()
+    state
+
+chan_structure_copy(ChanStructure source) =>
+    ChanStructure result = na
+    if not na(source)
+        result := source.copy()
+        if not na(source.dependencies)
+            result.dependencies := source.dependencies.copy()
+    result
+
+// UDT.copy() is shallow: copy the collection and each referenced record explicitly.
+chan_clone(ChanState source) =>
+    ChanState result = source.copy()
+    result.elements := array.new<ChanElement>()
+    if source.elements.size() > 0
+        for element in source.elements
+            result.elements.push(element.copy())
+    if not na(source.seed)
+        result.seed := source.seed.copy()
+    if not na(source.lastRaw)
+        result.lastRaw := source.lastRaw.copy()
+    if not na(source.candidate)
+        result.candidate := source.candidate.copy()
+    if not na(source.lastConfirmed)
+        result.lastConfirmed := source.lastConfirmed.copy()
+    if not na(source.event)
+        result.event := source.event.copy()
+    if not na(source.strokeAnchor)
+        result.strokeAnchor := source.strokeAnchor.copy()
+    if not na(source.strokeEnd)
+        result.strokeEnd := source.strokeEnd.copy()
+    if not na(source.lastStrokeInput)
+        result.lastStrokeInput := source.lastStrokeInput.copy()
+    result.strokeCandidate := chan_structure_copy(source.strokeCandidate)
+    result.strokeEvent := chan_structure_copy(source.strokeEvent)
+    result.lastStroke := chan_structure_copy(source.lastStroke)
+    result
+
+chan_contains(int loA, int hiA, int loB, int hiB) =>
+    (loA <= loB and hiA >= hiB) or (loB <= loA and hiB >= hiA)
+
+chan_element(ChanState state, ChanRaw raw, int ordinal, int rawOrdinal) =>
+    ChanElement.new(state.contextId + "/K/" + str.tostring(raw.openTime), ordinal, raw.openTime, raw.openTime, raw.highTicks, raw.lowTicks, raw.openTime, raw.openTime, rawOrdinal, rawOrdinal, false)
+
+chan_fractal(ChanState state, int offset, int confirmedAt) =>
+    ChanElement left = state.elements.get(offset)
+    ChanElement middle = state.elements.get(offset + 1)
+    ChanElement right = state.elements.get(offset + 2)
+    bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+    bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+    ChanFractal result = na
+    if top or bottom
+        int kind = top ? 1 : -1
+        result := ChanFractal.new(state.contextId + "/F/" + str.tostring(kind) + "/" + left.id + "/" + middle.id + "/" + right.id, kind, top ? middle.highTime : middle.lowTime, top ? middle.highTicks : middle.lowTicks, confirmedAt, left.id, middle.id, right.id, "F-001/F-002", left.ordinal, middle.ordinal, right.ordinal, middle.highTicks, middle.lowTicks)
+    result
+
+// P-001 is only a qualification predicate, not a stroke completion algorithm.
+// The processed-element ordinals and member IDs survive raw containment merges.
+chan_stroke_eligible(ChanFractal first, ChanFractal last) =>
+    bool eligible = false
+    if not na(first) and not na(last)
+        if not na(first.confirmedAt) and not na(last.confirmedAt) and first.kind != last.kind and first.endpointTime < last.endpointTime and first.rightOrdinal + 1 < last.leftOrdinal
+            ChanFractal top = first.kind == 1 ? first : last
+            ChanFractal bottom = first.kind == -1 ? first : last
+            eligible := top.middleHighTicks > bottom.middleHighTicks and top.priceTicks > bottom.priceTicks
+    eligible
+
+chan_fractal_signature(ChanFractal fractal) =>
+    string result = "none"
+    if not na(fractal)
+        result := fractal.id + "/" + str.tostring(fractal.kind) + "/" + str.tostring(fractal.endpointTime) + "/" + str.tostring(fractal.priceTicks) + "/" + str.tostring(fractal.confirmedAt) + "/" + fractal.leftId + "/" + fractal.middleId + "/" + fractal.rightId + "/" + str.tostring(fractal.leftOrdinal) + "/" + str.tostring(fractal.middleOrdinal) + "/" + str.tostring(fractal.rightOrdinal) + "/" + str.tostring(fractal.middleHighTicks) + "/" + str.tostring(fractal.middleLowTicks)
+    result
+
+chan_structure_signature(ChanStructure source) =>
+    string result = "none"
+    if not na(source)
+        result := source.id + "/" + source.objectType + "/" + str.tostring(source.level) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.endTime) + "/" + str.tostring(source.startTicks) + "/" + str.tostring(source.endTicks) + "/" + str.tostring(source.confirmed) + "/" + str.tostring(source.confirmedAt) + "/" + str.tostring(source.ordinal) + "/" + source.ruleId
+        result += "/members/" + str.tostring(source.memberLowTicks) + "/" + str.tostring(source.memberHighTicks) + "/" + str.tostring(source.memberLowTime) + "/" + str.tostring(source.memberHighTime)
+        if not na(source.dependencies)
+            for dependency in source.dependencies
+                result += "/" + dependency
+    result
+
+chan_stroke_make(ChanState state) =>
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/P/" + str.tostring(state.strokeCount + 1) + "/" + str.tostring(state.strokeAnchor.endpointTime)
+    result.objectType := "stroke"
+    result.level := 0
+    result.direction := state.strokeAnchor.kind == -1 ? 1 : -1
+    result.startTime := state.strokeAnchor.endpointTime
+    result.endTime := state.strokeEnd.endpointTime
+    result.startTicks := state.strokeAnchor.priceTicks
+    result.endTicks := state.strokeEnd.priceTicks
+    result.ruleId := "P-001/P-002"
+    result.dependencies := array.from(state.strokeAnchor.id, state.strokeEnd.id)
+    result.ordinal := state.strokeCount + 1
+    result.memberLowTicks := math.min(result.startTicks, result.endTicks)
+    result.memberHighTicks := math.max(result.startTicks, result.endTicks)
+    result.memberLowTime := result.direction == 1 ? result.startTime : result.endTime
+    result.memberHighTime := result.direction == 1 ? result.endTime : result.startTime
+    result
+
+chan_more_extreme(ChanFractal previous, ChanFractal incoming) =>
+    incoming.kind == 1 ? incoming.priceTicks > previous.priceTicks : incoming.priceTicks < previous.priceTicks
+
+// P-002: only a qualified next stroke locks the previous one. Equal extrema
+// retain the first endpoint; rejected opposite fractals never create a turn.
+chan_stroke_step(ChanState state, ChanFractal incoming) =>
+    if na(incoming) or na(incoming.confirmedAt)
+        runtime.error("成笔正式输入必须是已封口分型")
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastStrokeInput)
+        duplicate := state.lastStrokeInput.id == incoming.id
+        if duplicate and chan_fractal_signature(state.lastStrokeInput) != chan_fractal_signature(incoming)
+            runtime.error("已提交分型发生变化，需重载分析上下文")
+        if not duplicate and (incoming.endpointTime <= state.lastStrokeInput.endpointTime or incoming.confirmedAt < state.lastStrokeInput.confirmedAt)
+            runtime.error("成笔分型输入顺序无效")
+    if not duplicate
+        if na(state.strokeAnchor)
+            state.strokeAnchor := incoming.copy()
+        else if na(state.strokeEnd)
+            if incoming.kind == state.strokeAnchor.kind
+                if chan_more_extreme(state.strokeAnchor, incoming)
+                    state.strokeAnchor := incoming.copy()
+            else if chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+            else
+                state.ignoredStrokeFractals += 1
+        else if incoming.kind == state.strokeEnd.kind
+            if chan_more_extreme(state.strokeEnd, incoming) and chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+        else if chan_stroke_eligible(state.strokeEnd, incoming)
+            ChanStructure locked = chan_structure_copy(state.strokeCandidate)
+            locked.confirmed := true
+            locked.confirmedAt := incoming.confirmedAt
+            locked.dependencies.push(incoming.id)
+            state.strokeCount += 1
+            state.lastStroke := locked
+            state.strokeEvent := locked
+            state.strokeAnchor := state.strokeEnd.copy()
+            state.strokeEnd := incoming.copy()
+            state.strokeCandidate := chan_stroke_make(state)
+        else
+            state.ignoredStrokeFractals += 1
+        state.lastStrokeInput := incoming.copy()
+    state
+
+// Project an unsealed fractal only on a deep copy. lastStroke survives a later
+// rejected preview input, unlike strokeEvent, which is cleared on every step.
+chan_stroke_preview(ChanState source) =>
+    ChanState result = chan_clone(source)
+    if not na(source.candidate) and not na(source.lastRaw)
+        ChanFractal tentative = source.candidate.copy()
+        tentative.confirmedAt := source.lastRaw.closeTime
+        chan_stroke_step(result, tentative)
+    result
+
+chan_stroke_pending(ChanState preview, int committedCount) =>
+    ChanStructure result = na
+    if preview.strokeCount > committedCount and not na(preview.lastStroke)
+        result := chan_structure_copy(preview.lastStroke)
+        result.confirmed := false
+        result.confirmedAt := na
+    result
+
+// Consume one closed input, or one input in an isolated preview copy.
+// At most four processed elements are needed for K/F; counts and source spans persist.
+chan_step(ChanState state, ChanRaw raw) =>
+    if na(raw.openTime) or na(raw.closeTime) or na(raw.openTicks) or na(raw.highTicks) or na(raw.lowTicks) or na(raw.closeTicks) or raw.openTime < 0 or raw.closeTime <= raw.openTime or raw.lowTicks > raw.highTicks or raw.openTicks < raw.lowTicks or raw.openTicks > raw.highTicks or raw.closeTicks < raw.lowTicks or raw.closeTicks > raw.highTicks
+        runtime.error("K/F: invalid OHLC input")
+    state.event := na
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastRaw)
+        if raw.openTime < state.lastRaw.openTime or (raw.openTime > state.lastRaw.openTime and raw.openTime < state.lastRaw.closeTime)
+            runtime.error("K/F: inputs must be chronological")
+        if raw.openTime == state.lastRaw.openTime
+            duplicate := raw.closeTime == state.lastRaw.closeTime and raw.openTicks == state.lastRaw.openTicks and raw.highTicks == state.lastRaw.highTicks and raw.lowTicks == state.lastRaw.lowTicks and raw.closeTicks == state.lastRaw.closeTicks
+            if not duplicate
+                runtime.error("K/F: committed input changed; reload the context")
+    if not duplicate
+        state.inputCount += 1
+        bool appended = false
+        if state.direction == 0
+            // E-001: compare adjacent original inputs; never invent an initial direction.
+            if not na(state.seed)
+                if not chan_contains(state.seed.lowTicks, state.seed.highTicks, raw.lowTicks, raw.highTicks)
+                    state.contextId += "/seed/" + str.tostring(state.seed.openTime)
+                    ChanElement first = chan_element(state, state.seed, 0, state.inputCount - 2)
+                    first.sealed := true
+                    state.elements.push(first)
+                    state.elements.push(chan_element(state, raw, 1, state.inputCount - 1))
+                    state.processedCount := 2
+                    state.effectiveStart := state.seed.openTime
+                    state.direction := raw.highTicks > state.seed.highTicks ? 1 : -1
+                    appended := true
+            state.seed := raw.copy()
+        else
+            ChanElement tail = state.elements.last()
+            if chan_contains(tail.lowTicks, tail.highTicks, raw.lowTicks, raw.highTicks)
+                int mergedHigh = state.direction == 1 ? math.max(tail.highTicks, raw.highTicks) : math.min(tail.highTicks, raw.highTicks)
+                int mergedLow = state.direction == 1 ? math.max(tail.lowTicks, raw.lowTicks) : math.min(tail.lowTicks, raw.lowTicks)
+                // E-002: equal extrema keep the earlier source independently.
+                if mergedHigh != tail.highTicks
+                    tail.highTime := raw.openTime
+                if mergedLow != tail.lowTicks
+                    tail.lowTime := raw.openTime
+                tail.highTicks := mergedHigh
+                tail.lowTicks := mergedLow
+                tail.lastTime := raw.openTime
+                tail.lastRaw := state.inputCount - 1
+            else
+                tail.sealed := true
+                state.direction := raw.highTicks > tail.highTicks ? 1 : -1
+                state.elements.push(chan_element(state, raw, state.processedCount, state.inputCount - 1))
+                state.processedCount += 1
+                appended := true
+                if state.elements.size() > 4
+                    state.elements.shift()
+        int count = state.elements.size()
+        if appended and count >= 4
+            ChanFractal confirmed = chan_fractal(state, count - 4, raw.closeTime)
+            if not na(confirmed)
+                state.lastConfirmed := confirmed
+                state.event := confirmed
+                state.confirmedFractals += 1
+                chan_stroke_step(state, confirmed)
+        state.candidate := count >= 3 ? chan_fractal(state, count - 3, na) : na
+        state.lastRaw := raw.copy()
+    state
+
+// Deterministic K/F snapshot for replay and clone-isolation assertions.
+chan_signature(ChanState state) =>
+    string result = state.contextId + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.processedCount) + "/" + str.tostring(state.direction) + "/" + str.tostring(state.effectiveStart) + "/" + str.tostring(state.confirmedFractals)
+    if not na(state.seed)
+        result += "/seed/" + str.tostring(state.seed.openTime) + "/" + str.tostring(state.seed.highTicks) + "/" + str.tostring(state.seed.lowTicks)
+    if not na(state.lastRaw)
+        result += "/raw/" + str.tostring(state.lastRaw.openTime) + "/" + str.tostring(state.lastRaw.closeTime) + "/" + str.tostring(state.lastRaw.openTicks) + "/" + str.tostring(state.lastRaw.highTicks) + "/" + str.tostring(state.lastRaw.lowTicks) + "/" + str.tostring(state.lastRaw.closeTicks)
+    if state.elements.size() > 0
+        for element in state.elements
+            result += "/" + element.id + "/" + str.tostring(element.ordinal) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.firstRaw) + "/" + str.tostring(element.lastRaw) + "/" + str.tostring(element.sealed)
+    if not na(state.candidate)
+        result += "/candidate/" + state.candidate.id + "/" + str.tostring(state.candidate.endpointTime) + "/" + str.tostring(state.candidate.priceTicks)
+    if not na(state.lastConfirmed)
+        result += "/confirmed/" + state.lastConfirmed.id + "/" + str.tostring(state.lastConfirmed.endpointTime) + "/" + str.tostring(state.lastConfirmed.priceTicks) + "/" + str.tostring(state.lastConfirmed.confirmedAt)
+    if not na(state.event)
+        result += "/event/" + state.event.id + "/" + str.tostring(state.event.confirmedAt)
+    result += "/P/" + str.tostring(state.strokeCount) + "/" + str.tostring(state.ignoredStrokeFractals) + "/" + chan_fractal_signature(state.strokeAnchor) + "/" + chan_fractal_signature(state.strokeEnd) + "/" + chan_fractal_signature(state.lastStrokeInput)
+    result += "/candidate/" + chan_structure_signature(state.strokeCandidate) + "/last/" + chan_structure_signature(state.lastStroke) + "/event/" + chan_structure_signature(state.strokeEvent)
+    result
+// S-001/S-002/S-003: a standard feature sequence is a context-specific view of
+// locked strokes. A sequence or feature turn alone never confirms a segment.
+chan_segment_seed(ChanStructure first, ChanStructure middle, ChanStructure third) =>
+    bool eligible = false
+    if not na(first) and not na(middle) and not na(third)
+        bool locked = first.objectType == "stroke" and middle.objectType == "stroke" and third.objectType == "stroke" and first.confirmed and middle.confirmed and third.confirmed and not na(first.confirmedAt) and not na(middle.confirmedAt) and not na(third.confirmedAt)
+        bool connected = first.endTime == middle.startTime and middle.endTime == third.startTime and first.endTicks == middle.startTicks and middle.endTicks == third.startTicks and first.ordinal + 1 == middle.ordinal and middle.ordinal + 1 == third.ordinal
+        bool alternating = (first.direction == 1 or first.direction == -1) and middle.direction == -first.direction and third.direction == first.direction
+        bool causal = first.startTime < first.endTime and middle.startTime < middle.endTime and third.startTime < third.endTime and first.confirmedAt >= first.endTime and middle.confirmedAt >= middle.endTime and third.confirmedAt >= third.endTime and first.confirmedAt <= middle.confirmedAt and middle.confirmedAt <= third.confirmedAt
+        bool prices = first.direction * (first.endTicks - first.startTicks) > 0 and middle.direction * (middle.endTicks - middle.startTicks) > 0 and third.direction * (third.endTicks - third.startTicks) > 0
+        int commonLow = math.max(math.min(first.startTicks, first.endTicks), math.max(math.min(middle.startTicks, middle.endTicks), math.min(third.startTicks, third.endTicks)))
+        int commonHigh = math.min(math.max(first.startTicks, first.endTicks), math.min(math.max(middle.startTicks, middle.endTicks), math.max(third.startTicks, third.endTicks)))
+        eligible := locked and connected and alternating and causal and prices and commonLow <= commonHigh and first.direction * (third.endTicks - first.startTicks) > 0
+    eligible
+
+type ChanFeature
+    string id
+    int lowTicks
+    int highTicks
+    int lowTime
+    int highTime
+    int firstTime
+    int lastTime
+    int firstOrdinal
+    int lastOrdinal
+    int firstSide
+    int lastSide
+    int availableAt
+    bool sealed = false
+    array<string> sourceIds
+
+type ChanFeatureSequence
+    string contextId
+    int segmentDirection
+    int mergeDirection
+    int postDirection
+    int boundaryTime
+    bool secondSequence
+    array<ChanFeature> elements
+    ChanStructure lastInput
+    ChanStructure heldInput
+    int inputCount = 0
+    int selectedCount = 0
+    int boundaryCuts = 0
+    int maxElements = 128
+    int maxSources = 512
+    bool waitingDirection = false
+    bool blocked = false
+
+type ChanFeatureTurn
+    int kind
+    int endpointTime
+    int priceTicks
+    int availableAt
+    string leftId
+    string middleId
+    string rightId
+    bool gap
+    bool rightSealed
+
+chan_feature_new(string contextId, int segmentDirection, int initialDirection, int postDirection, int boundaryTime, bool secondSequence, int maxElements, int maxSources) =>
+    if (segmentDirection != 1 and segmentDirection != -1) or initialDirection < -1 or initialDirection > 1 or postDirection < -1 or postDirection > 1 or maxElements < 1 or maxSources < 1
+        runtime.error("特征序列上下文无效")
+    ChanFeatureSequence result = ChanFeatureSequence.new()
+    result.contextId := contextId
+    result.segmentDirection := segmentDirection
+    result.mergeDirection := initialDirection
+    result.postDirection := postDirection
+    result.boundaryTime := boundaryTime
+    result.secondSequence := secondSequence
+    result.maxElements := maxElements
+    result.maxSources := maxSources
+    result.elements := array.new<ChanFeature>()
+    result
+
+chan_feature_clone(ChanFeatureSequence source) =>
+    ChanFeatureSequence result = source.copy()
+    result.elements := array.new<ChanFeature>()
+    for element in source.elements
+        ChanFeature copied = element.copy()
+        copied.sourceIds := element.sourceIds.copy()
+        result.elements.push(copied)
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result
+
+chan_feature_step(ChanFeatureSequence state, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("特征序列仅消费合法已锁定笔")
+    if not na(state.boundaryTime) and stroke.startTime < state.boundaryTime and stroke.endTime > state.boundaryTime
+        runtime.error("假设分界必须位于笔端点")
+    bool duplicate = false
+    if not na(state.lastInput)
+        duplicate := stroke.id == state.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(state.lastInput)
+            runtime.error("已消费笔发生变化")
+        if not duplicate and (stroke.startTime < state.lastInput.endTime or stroke.confirmedAt < state.lastInput.confirmedAt or stroke.ordinal <= state.lastInput.ordinal)
+            runtime.error("特征序列输入顺序无效")
+    if not duplicate and not state.blocked and not state.waitingDirection
+        bool selected = stroke.direction == -state.segmentDirection
+        if selected
+            int side = not na(state.boundaryTime) and stroke.startTime >= state.boundaryTime ? 1 : 0
+            ChanFeature incoming = ChanFeature.new()
+            incoming.id := state.contextId + "/E/" + stroke.id
+            incoming.lowTicks := math.min(stroke.startTicks, stroke.endTicks)
+            incoming.highTicks := math.max(stroke.startTicks, stroke.endTicks)
+            incoming.lowTime := stroke.direction == 1 ? stroke.startTime : stroke.endTime
+            incoming.highTime := stroke.direction == 1 ? stroke.endTime : stroke.startTime
+            incoming.firstTime := stroke.startTime
+            incoming.lastTime := stroke.endTime
+            incoming.firstOrdinal := stroke.ordinal
+            incoming.lastOrdinal := stroke.ordinal
+            incoming.firstSide := side
+            incoming.lastSide := side
+            incoming.availableAt := stroke.confirmedAt
+            incoming.sourceIds := array.from(stroke.id)
+            ChanFeature tail = state.elements.size() > 0 ? state.elements.last() : na
+            bool contained = not na(tail) and chan_contains(tail.lowTicks, tail.highTicks, incoming.lowTicks, incoming.highTicks)
+            bool crosses = not na(tail) and tail.lastSide != side
+            bool split = crosses and not state.secondSequence
+            bool merge = contained and not split
+            if state.selectedCount >= state.maxSources or (not merge and state.elements.size() >= state.maxElements)
+                state.blocked := true
+                state.heldInput := chan_structure_copy(stroke)
+            else if merge and state.mergeDirection == 0
+                // Preserve the unresolved input. A caller must supply evidenced
+                // prior direction and rebuild; never guess from this inclusion.
+                state.waitingDirection := true
+                state.heldInput := chan_structure_copy(stroke)
+                state.inputCount += 1
+                state.selectedCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+            else
+                state.selectedCount += 1
+                if merge
+                    int highTicks = state.mergeDirection == 1 ? math.max(tail.highTicks, incoming.highTicks) : math.min(tail.highTicks, incoming.highTicks)
+                    int lowTicks = state.mergeDirection == 1 ? math.max(tail.lowTicks, incoming.lowTicks) : math.min(tail.lowTicks, incoming.lowTicks)
+                    if highTicks != tail.highTicks
+                        tail.highTime := incoming.highTime
+                    if lowTicks != tail.lowTicks
+                        tail.lowTime := incoming.lowTime
+                    tail.highTicks := highTicks
+                    tail.lowTicks := lowTicks
+                    tail.lastTime := incoming.lastTime
+                    tail.lastOrdinal := incoming.lastOrdinal
+                    tail.lastSide := side
+                    tail.availableAt := math.max(tail.availableAt, incoming.availableAt)
+                    tail.sourceIds.push(stroke.id)
+                else
+                    if not na(tail)
+                        tail.sealed := true
+                        if contained and split
+                            state.boundaryCuts += 1
+                            state.mergeDirection := state.postDirection
+                        else
+                            state.mergeDirection := incoming.highTicks > tail.highTicks ? 1 : -1
+                    state.elements.push(incoming)
+                state.inputCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+        else
+            state.inputCount += 1
+            state.lastInput := chan_structure_copy(stroke)
+    state
+
+// Geometry and gap diagnostics only: segment start, break proof, ownership,
+// dependency validity and a sealed right element still belong to the S machine.
+chan_feature_turn(ChanFeatureSequence state) =>
+    ChanFeatureTurn result = na
+    int count = state.elements.size()
+    if count >= 3 and not state.blocked and not state.waitingDirection
+        ChanFeature left = state.elements.get(count - 3)
+        ChanFeature middle = state.elements.get(count - 2)
+        ChanFeature right = state.elements.get(count - 1)
+        bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+        bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+        if (state.segmentDirection == 1 and top) or (state.segmentDirection == -1 and bottom)
+            bool gap = state.segmentDirection == 1 ? left.highTicks < middle.lowTicks : middle.highTicks < left.lowTicks
+            result := ChanFeatureTurn.new(state.segmentDirection, state.segmentDirection == 1 ? middle.highTime : middle.lowTime, state.segmentDirection == 1 ? middle.highTicks : middle.lowTicks, math.max(left.availableAt, math.max(middle.availableAt, right.availableAt)), left.id, middle.id, right.id, gap, right.sealed)
+    result
+
+chan_feature_signature(ChanFeatureSequence state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentDirection) + "/" + str.tostring(state.mergeDirection) + "/" + str.tostring(state.postDirection) + "/" + str.tostring(state.boundaryTime) + "/" + str.tostring(state.secondSequence) + "/" + str.tostring(state.maxElements) + "/" + str.tostring(state.maxSources) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.selectedCount) + "/" + str.tostring(state.boundaryCuts) + "/" + str.tostring(state.waitingDirection) + "/" + str.tostring(state.blocked)
+    for element in state.elements
+        result += "/" + element.id + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.firstOrdinal) + "/" + str.tostring(element.lastOrdinal) + "/" + str.tostring(element.firstSide) + "/" + str.tostring(element.lastSide) + "/" + str.tostring(element.availableAt) + "/" + str.tostring(element.sealed)
+        for sourceId in element.sourceIds
+            result += "/" + sourceId
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput)
+// S proofs operate on a bounded suffix of locked strokes. They are rebuilt from
+// those facts; neither drawings nor hypothetical child names are input facts.
+type ChanSegmentProof
+    int kind = 0
+    int endIndex = na
+    int childEndIndex = na
+    int proofIndex = na
+    bool firstBreakActive = false
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+
+type ChanSegmentHypothesis
+    string endStrokeId
+    int endTime
+    int priceTicks
+    int proofKind
+    bool gapPending
+
+type ChanSegmentState
+    string contextId
+    array<ChanStructure> strokes
+    array<ChanStructure> events
+    array<ChanSegmentHypothesis> hypotheses
+    ChanStructure lastInput
+    ChanStructure heldInput
+    ChanStructure lastSegment
+    ChanStructure candidate
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+    int inputCount = 0
+    int segmentCount = 0
+    int skippedInputs = 0
+    int maxPending = 64
+    int maxWork = 8192
+    bool blocked = false
+    bool gapPending = false
+    string limitReason = ""
+
+chan_segment_new(string contextId, int maxPending, int maxWork) =>
+    if maxPending < 6 or maxWork < 1
+        runtime.error("线段依赖预算无效")
+    ChanSegmentState state = ChanSegmentState.new()
+    state.contextId := contextId
+    state.maxPending := maxPending
+    state.maxWork := maxWork
+    state.strokes := array.new<ChanStructure>()
+    state.events := array.new<ChanStructure>()
+    state.hypotheses := array.new<ChanSegmentHypothesis>()
+    state
+
+chan_segment_clone(ChanSegmentState source) =>
+    ChanSegmentState result = source.copy()
+    result.strokes := array.new<ChanStructure>()
+    for stroke in source.strokes
+        result.strokes.push(chan_structure_copy(stroke))
+    result.events := array.new<ChanStructure>()
+    for event in source.events
+        result.events.push(chan_structure_copy(event))
+    result.hypotheses := array.new<ChanSegmentHypothesis>()
+    for hypothesis in source.hypotheses
+        result.hypotheses.push(hypothesis.copy())
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result.lastSegment := chan_structure_copy(source.lastSegment)
+    result.candidate := chan_structure_copy(source.candidate)
+    if not na(source.firstContext)
+        result.firstContext := chan_feature_clone(source.firstContext)
+    if not na(source.secondContext)
+        result.secondContext := chan_feature_clone(source.secondContext)
+    result
+
+chan_segment_span(array<ChanStructure> strokes, int firstIndex, int lastIndex) =>
+    bool eligible = false
+    if firstIndex >= 0 and lastIndex < strokes.size() and lastIndex - firstIndex >= 2 and (lastIndex - firstIndex) % 2 == 0
+        ChanStructure first = strokes.get(firstIndex)
+        ChanStructure last = strokes.get(lastIndex)
+        eligible := chan_segment_seed(first, strokes.get(firstIndex + 1), strokes.get(firstIndex + 2)) and last.direction == first.direction and first.direction * (last.endTicks - first.startTicks) > 0
+    eligible
+
+chan_segment_probe(array<ChanStructure> strokes, int endIndex, string contextId) =>
+    ChanSegmentProof result = ChanSegmentProof.new()
+    result.endIndex := endIndex
+    int count = strokes.size()
+    if chan_segment_span(strokes, 0, endIndex) and endIndex + 3 < count
+        ChanStructure endpoint = strokes.get(endIndex)
+        ChanStructure firstBreak = strokes.get(endIndex + 1)
+        int direction = strokes.first().direction
+        int reverse = -direction
+        // The legal three-stroke seed provides the direction of this hypothesis.
+        // E-007 makes the initial context explicit; it is not a locked segment.
+        ChanFeatureSequence first = chan_feature_new(contextId + "/first", direction, direction, reverse, endpoint.endTime, false, 128, 512)
+        ChanFeatureSequence reverseSequence = chan_feature_new(contextId + "/second", reverse, reverse, direction, endpoint.endTime, true, 128, 512)
+        for i = 0 to endIndex
+            first := chan_feature_step(first, strokes.get(i))
+        // C65 p169: d[j] <= g[i] / g[j] >= d[i], j >= i+2.
+        // The first breaking stroke is identified from the original owned
+        // pivots, not the already-compressed feature element's other extreme.
+        int breakBoundary = strokes.first().endTicks
+        for i = 0 to endIndex - 2 by 2
+            int pivot = strokes.get(i).endTicks
+            breakBoundary := direction == 1 ? math.max(breakBoundary, pivot) : math.min(breakBoundary, pivot)
+        bool directBreak = direction == 1 ? firstBreak.endTicks <= breakBoundary : firstBreak.endTicks >= breakBoundary
+        int invalidIndex = na
+        for i = endIndex + 1 to count - 1
+            ChanStructure inputStroke = strokes.get(i)
+            first := chan_feature_step(first, inputStroke)
+            reverseSequence := chan_feature_step(reverseSequence, inputStroke)
+            if na(invalidIndex) and direction * (inputStroke.endTicks - endpoint.endTicks) > 0
+                invalidIndex := i
+            bool stillEligible = na(invalidIndex) or invalidIndex == i
+            if stillEligible
+                bool reverseSpan = chan_segment_span(strokes, endIndex + 1, i)
+                bool directProof = directBreak and reverseSpan and reverse * (inputStroke.endTicks - firstBreak.endTicks) > 0
+                ChanFeatureTurn firstTurn = chan_feature_turn(first)
+                bool targetTurn = not na(firstTurn) and firstTurn.endpointTime == endpoint.endTime and firstTurn.priceTicks == endpoint.endTicks
+                // When the very first counter-stroke already breaks the old
+                // segment, an inside third stroke must wait (C71 p181-182).
+                // Later inclusion must not manufacture an earlier end proof.
+                if directProof or (not directBreak and targetTurn and not firstTurn.gap and reverseSpan)
+                    result.kind := 1
+                    result.proofIndex := i
+                else if targetTurn and firstTurn.gap
+                    ChanFeatureTurn secondTurn = chan_feature_turn(reverseSequence)
+                    if not na(secondTurn)
+                        int childEnd = na
+                        for j = endIndex + 3 to i
+                            ChanStructure child = strokes.get(j)
+                            if child.endTime == secondTurn.endpointTime and child.endTicks == secondTurn.priceTicks and child.direction == reverse
+                                childEnd := j
+                        if not na(childEnd)
+                            if chan_segment_span(strokes, endIndex + 1, childEnd) and chan_segment_span(strokes, childEnd + 1, i)
+                                result.kind := 2
+                                result.childEndIndex := childEnd
+                                result.proofIndex := i
+            if result.kind > 0
+                break
+            if not na(invalidIndex)
+                result.kind := -1
+                break
+        // An unresolved first breaking stroke governs the whole suffix, not
+        // only this endpoint's local test. A later inner turn cannot rename
+        // its own counter-stroke and bypass that outstanding direction proof.
+        // Keep the barrier on the proving input too, so a retrospectively
+        // cheaper inner proof cannot beat the governing endpoint's proof.
+        result.firstBreakActive := directBreak and result.kind >= 0
+        result.firstContext := first
+        result.secondContext := reverseSequence
+    result
+
+chan_segment_record(ChanSegmentState state, int firstIndex, int lastIndex, int proofIndex, int confirmedAt, string ruleId) =>
+    ChanStructure first = state.strokes.get(firstIndex)
+    ChanStructure last = state.strokes.get(lastIndex)
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/S/" + str.tostring(state.segmentCount + 1) + "/" + str.tostring(first.startTime)
+    result.objectType := "segment"
+    result.level := 0
+    result.direction := first.direction
+    result.startTime := first.startTime
+    result.endTime := last.endTime
+    result.startTicks := first.startTicks
+    result.endTicks := last.endTicks
+    result.confirmed := not na(confirmedAt)
+    result.confirmedAt := confirmedAt
+    result.ruleId := ruleId
+    result.ordinal := state.segmentCount + 1
+    result.dependencies := array.new<string>()
+    // Retain extrema of owned stroke endpoints before releasing those strokes.
+    // Proof-only strokes do not contribute; raw-OHLC normalization remains N.
+    result.memberLowTicks := first.startTicks
+    result.memberHighTicks := first.startTicks
+    result.memberLowTime := first.startTime
+    result.memberHighTime := first.startTime
+    for i = firstIndex to lastIndex
+        ChanStructure member = state.strokes.get(i)
+        if member.endTicks < result.memberLowTicks
+            result.memberLowTicks := member.endTicks
+            result.memberLowTime := member.endTime
+        if member.endTicks > result.memberHighTicks
+            result.memberHighTicks := member.endTicks
+            result.memberHighTime := member.endTime
+    for i = firstIndex to proofIndex
+        result.dependencies.push(state.strokes.get(i).id)
+    result
+
+chan_segment_emit(ChanSegmentState state, ChanStructure segment) =>
+    state.segmentCount += 1
+    state.lastSegment := segment
+    state.events.push(segment)
+    true
+
+// Return a new state: quota failure rolls back the entire input's proposed
+// confirmations, preserving the locked prefix and the unconsumed held input.
+chan_segment_step(ChanSegmentState source, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("线段仅消费已锁定合法笔")
+    ChanSegmentState state = chan_segment_clone(source)
+    state.events := array.new<ChanStructure>()
+    bool duplicate = false
+    if not na(source.lastInput)
+        duplicate := stroke.id == source.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(source.lastInput)
+            runtime.error("线段已消费笔发生变化")
+        if not duplicate and not source.blocked and (stroke.startTime != source.lastInput.endTime or stroke.startTicks != source.lastInput.endTicks or stroke.ordinal != source.lastInput.ordinal + 1 or stroke.direction != -source.lastInput.direction or stroke.confirmedAt < source.lastInput.confirmedAt)
+            runtime.error("线段笔输入不连续")
+    if not duplicate and not source.blocked
+        if source.strokes.size() >= source.maxPending
+            state.blocked := true
+            state.limitReason := "pending-strokes"
+            state.heldInput := chan_structure_copy(stroke)
+        else
+            state.strokes.push(chan_structure_copy(stroke))
+            state.lastInput := chan_structure_copy(stroke)
+            state.inputCount += 1
+            int work = 0
+            bool advance = true
+            while advance
+                advance := false
+                state.hypotheses := array.new<ChanSegmentHypothesis>()
+                state.firstContext := na
+                state.secondContext := na
+                state.gapPending := false
+                // An impossible initial triple cannot become legal retroactively.
+                while state.strokes.size() >= 3 and not chan_segment_span(state.strokes, 0, 2)
+                    if state.segmentCount > 0
+                        runtime.error("已锁定段后的续部起始依赖不合规")
+                    state.strokes.shift()
+                    state.skippedInputs += 1
+                int count = state.strokes.size()
+                ChanSegmentProof best = na
+                if count >= 6
+                    for endIndex = 2 to count - 4 by 2
+                        if chan_segment_span(state.strokes, 0, endIndex)
+                            work += count * 2
+                            if work > state.maxWork
+                                state.blocked := true
+                                break
+                            string hypothesisId = state.contextId + "/turn/" + state.strokes.get(endIndex).id
+                            ChanSegmentProof proof = chan_segment_probe(state.strokes, endIndex, hypothesisId)
+                            if proof.kind >= 0
+                                ChanFeatureTurn turn = not na(proof.firstContext) ? chan_feature_turn(proof.firstContext) : na
+                                bool pending = not na(turn) and turn.gap
+                                state.gapPending := state.gapPending or pending
+                                ChanStructure endpoint = state.strokes.get(endIndex)
+                                state.hypotheses.push(ChanSegmentHypothesis.new(endpoint.id, endpoint.endTime, endpoint.endTicks, proof.kind, pending))
+                                if na(state.firstContext)
+                                    state.firstContext := proof.firstContext
+                                    state.secondContext := proof.secondContext
+                                if proof.kind > 0
+                                    if na(best)
+                                        best := proof
+                                    else if proof.proofIndex < best.proofIndex
+                                        best := proof
+                                if proof.firstBreakActive
+                                    break
+                if state.blocked
+                    // Keep no partial event from this input, even after a chain.
+                    state := chan_segment_clone(source)
+                    state.events := array.new<ChanStructure>()
+                    state.blocked := true
+                    state.limitReason := "probe-work"
+                    state.heldInput := chan_structure_copy(stroke)
+                else if not na(best)
+                    string ruleId = best.kind == 1 ? "S-001/S-002/E-007" : "S-001/S-003/E-007"
+                    ChanStructure completed = chan_segment_record(state, 0, best.endIndex, best.proofIndex, stroke.confirmedAt, ruleId)
+                    if best.proofIndex < count - 1 and state.segmentCount > source.segmentCount
+                        completed.dependencies.push(state.lastSegment.id)
+                    chan_segment_emit(state, completed)
+                    int lastLockedIndex = best.endIndex
+                    if best.kind == 2
+                        ChanStructure child = chan_segment_record(state, best.endIndex + 1, best.childEndIndex, best.proofIndex, stroke.confirmedAt, "S-001/S-003/E-007")
+                        chan_segment_emit(state, child)
+                        lastLockedIndex := best.childEndIndex
+                    for i = 0 to lastLockedIndex
+                        state.strokes.shift()
+                    advance := true
+                else
+                    state.candidate := na
+                    if count >= 3
+                        int selected = 2
+                        int direction = state.strokes.first().direction
+                        for i = 2 to count - 1 by 2
+                            if chan_segment_span(state.strokes, 0, i)
+                                if direction * (state.strokes.get(i).endTicks - state.strokes.get(selected).endTicks) > 0
+                                    selected := i
+                        state.candidate := chan_segment_record(state, 0, selected, selected, na, "S-001/E-007")
+    state
+
+chan_segment_signature(ChanSegmentState state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentCount) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.skippedInputs) + "/" + str.tostring(state.maxPending) + "/" + str.tostring(state.maxWork) + "/" + str.tostring(state.blocked) + "/" + str.tostring(state.gapPending) + "/" + state.limitReason
+    for stroke in state.strokes
+        result += "/P/" + chan_structure_signature(stroke)
+    for event in state.events
+        result += "/event/" + chan_structure_signature(event)
+    for hypothesis in state.hypotheses
+        result += "/hypothesis/" + hypothesis.endStrokeId + "/" + str.tostring(hypothesis.endTime) + "/" + str.tostring(hypothesis.priceTicks) + "/" + str.tostring(hypothesis.proofKind) + "/" + str.tostring(hypothesis.gapPending)
+    if not na(state.firstContext)
+        result += "/first/" + chan_feature_signature(state.firstContext)
+    if not na(state.secondContext)
+        result += "/second/" + chan_feature_signature(state.secondContext)
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput) + "/locked/" + chan_structure_signature(state.lastSegment) + "/candidate/" + chan_structure_signature(state.candidate)
+// N consumes only committed segment events. Each segment owns its own range;
+// geometric time anchors and actual extreme source times are separate (E-008).
+type ChanNormalizationState
+    string contextId
+    int count = 0
+    ChanStructure lastInput
+    ChanComponent lastComponent
+    ChanComponent event
+
+chan_component_copy(ChanComponent source) =>
+    ChanComponent result = na
+    if not na(source)
+        result := source.copy()
+        result.dependencies := source.dependencies.copy()
+    result
+
+chan_component_signature(ChanComponent source) =>
+    string result = "na"
+    if not na(source)
+        result := source.id + "/" + source.segmentId + "/" + str.tostring(source.realStartTime) + "/" + str.tostring(source.realEndTime) + "/" + str.tostring(source.realStartTicks) + "/" + str.tostring(source.realEndTicks) + "/" + str.tostring(source.actualLowTicks) + "/" + str.tostring(source.actualHighTicks) + "/" + str.tostring(source.actualLowTime) + "/" + str.tostring(source.actualHighTime) + "/" + str.tostring(source.analysisStartTime) + "/" + str.tostring(source.analysisEndTime) + "/" + str.tostring(source.analysisStartTicks) + "/" + str.tostring(source.analysisEndTicks) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.confirmedAt) + "/" + source.ruleId + "/" + str.tostring(source.ordinal)
+        for dependency in source.dependencies
+            result += "/" + dependency
+    result
+
+chan_normalization_new(string contextId) =>
+    ChanNormalizationState result = ChanNormalizationState.new()
+    result.contextId := contextId
+    result
+
+chan_normalization_clone(ChanNormalizationState source) =>
+    ChanNormalizationState result = source.copy()
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.lastComponent := chan_component_copy(source.lastComponent)
+    result.event := chan_component_copy(source.event)
+    result
+
+chan_normalization_signature(ChanNormalizationState source) =>
+    source.contextId + "/" + str.tostring(source.count) + "/" + chan_structure_signature(source.lastInput) + "/" + chan_component_signature(source.lastComponent) + "/" + chan_component_signature(source.event)
+
+chan_normalization_valid(ChanStructure source) =>
+    bool valid = false
+    if not na(source)
+        valid := source.objectType == "segment" and source.level == 0 and source.confirmed and not na(source.confirmedAt) and not na(source.id) and source.id != "" and source.ordinal > 0 and (source.direction == 1 or source.direction == -1) and source.startTime < source.endTime and source.confirmedAt >= source.endTime and source.direction * (source.endTicks - source.startTicks) > 0
+        valid := valid and not na(source.memberLowTicks) and not na(source.memberHighTicks) and source.memberLowTicks < source.memberHighTicks and source.memberLowTicks <= math.min(source.startTicks, source.endTicks) and source.memberHighTicks >= math.max(source.startTicks, source.endTicks)
+        valid := valid and source.memberLowTime >= source.startTime and source.memberLowTime <= source.endTime and source.memberHighTime >= source.startTime and source.memberHighTime <= source.endTime and not na(source.dependencies)
+    valid
+
+chan_normalization_step(ChanNormalizationState source, ChanStructure segment) =>
+    if not chan_normalization_valid(segment)
+        runtime.error("标准化仅消费具备归属极值摘要的确认线段")
+    ChanNormalizationState state = chan_normalization_clone(source)
+    state.event := na
+    bool duplicate = not na(source.lastInput) and segment.id == source.lastInput.id
+    if duplicate
+        if chan_structure_signature(segment) != chan_structure_signature(source.lastInput)
+            runtime.error("已标准化线段发生变化")
+    else
+        if segment.ordinal != source.count + 1
+            runtime.error("标准化线段序号不连续")
+        if not na(source.lastInput)
+            if segment.startTime != source.lastInput.endTime or segment.startTicks != source.lastInput.endTicks or segment.direction != -source.lastInput.direction or segment.confirmedAt < source.lastInput.confirmedAt
+                runtime.error("标准化线段输入不连续")
+        ChanComponent component = ChanComponent.new()
+        component.id := source.contextId + "/N/" + str.tostring(segment.ordinal) + "/" + str.tostring(segment.startTime)
+        component.segmentId := segment.id
+        component.realStartTime := segment.startTime
+        component.realEndTime := segment.endTime
+        component.realStartTicks := segment.startTicks
+        component.realEndTicks := segment.endTicks
+        component.actualLowTicks := segment.memberLowTicks
+        component.actualHighTicks := segment.memberHighTicks
+        component.actualLowTime := segment.memberLowTime
+        component.actualHighTime := segment.memberHighTime
+        component.analysisStartTime := segment.startTime
+        component.analysisEndTime := segment.endTime
+        component.analysisStartTicks := segment.direction == 1 ? segment.memberLowTicks : segment.memberHighTicks
+        component.analysisEndTicks := segment.direction == 1 ? segment.memberHighTicks : segment.memberLowTicks
+        component.direction := segment.direction
+        component.confirmedAt := segment.confirmedAt
+        component.ruleId := "N-001/E-008"
+        component.dependencies := array.from(segment.id)
+        component.ordinal := segment.ordinal
+        state.count += 1
+        state.lastInput := chan_structure_copy(segment)
+        state.lastComponent := component
+        state.event := component
+    state
+// L1 center chain. Relation snapshots never emit R completion or L2 input.
+type ChanCenterState
+    string contextId
+    array<ChanComponent> seed
+    ChanComponent lastInput
+    ChanComponent counter
+    ChanComponent heldInput
+    ChanCenter center
+    ChanCenter event
+    int inputCount = 0
+    int direction = 0
+    int waves = 0
+    int maxSources = 64
+    bool waitingRelation = false
+    bool blocked = false
+
+    ChanComponent pendingLeave
+    ChanCenter previous
+    ChanCenter closedEvent
+    array<ChanCenter> history
+    int count = 0
+    string relationKind = "none"
+    int relationAt = na
+
+chan_center_copy(ChanCenter source) =>
+    ChanCenter result = na
+    if not na(source)
+        result := source.copy()
+        result.dependencies := source.dependencies.copy()
+    result
+
+chan_center_new(string contextId, int maxSources) =>
+    if maxSources < 3
+        runtime.error("中枢来源预算至少为3")
+    ChanCenterState result = ChanCenterState.new()
+    result.contextId := contextId
+    result.maxSources := maxSources
+    result.seed := array.new<ChanComponent>()
+    result.history := array.new<ChanCenter>()
+    result
+
+chan_center_clone(ChanCenterState source) =>
+    ChanCenterState result = source.copy()
+    result.seed := array.new<ChanComponent>()
+    for member in source.seed
+        result.seed.push(chan_component_copy(member))
+    result.lastInput := chan_component_copy(source.lastInput)
+    result.counter := chan_component_copy(source.counter)
+    result.heldInput := chan_component_copy(source.heldInput)
+    result.center := chan_center_copy(source.center)
+    result.event := chan_center_copy(source.event)
+    result.pendingLeave := chan_component_copy(source.pendingLeave)
+    result.previous := chan_center_copy(source.previous)
+    result.closedEvent := chan_center_copy(source.closedEvent)
+    result.history := array.new<ChanCenter>()
+    for center in source.history
+        result.history.push(chan_center_copy(center))
+    result
+
+chan_center_record_signature(ChanCenter source) =>
+    string result = "na"
+    if not na(source)
+        result := source.id + "/" + str.tostring(source.level) + "/" + str.tostring(source.coreLowTicks) + "/" + str.tostring(source.coreHighTicks) + "/" + str.tostring(source.ggTicks) + "/" + str.tostring(source.gTicks) + "/" + str.tostring(source.dTicks) + "/" + str.tostring(source.ddTicks) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.formedAt) + "/" + str.tostring(source.extentEndTime) + "/" + str.tostring(source.confirmedAt) + "/" + str.tostring(source.degenerate) + "/" + source.lifecycle + "/" + source.ruleId + "/" + str.tostring(source.ordinal)
+        for dependency in source.dependencies
+            result += "/" + dependency
+        result += "/closure/" + str.tostring(source.zWaves) + "/" + str.tostring(source.closedAt) + "/" + source.leaveId + "/" + source.returnId
+    result
+
+chan_center_signature(ChanCenterState source) =>
+    string result = source.contextId + "/" + str.tostring(source.inputCount) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.waves) + "/" + str.tostring(source.maxSources) + "/" + str.tostring(source.waitingRelation) + "/" + str.tostring(source.blocked)
+    for member in source.seed
+        result += "/seed/" + chan_component_signature(member)
+    result += "/chain/" + str.tostring(source.count) + "/" + source.relationKind + "/" + str.tostring(source.relationAt) + "/" + chan_component_signature(source.pendingLeave) + "/" + chan_center_record_signature(source.previous) + "/" + chan_center_record_signature(source.closedEvent)
+    for center in source.history
+        result += "/history/" + chan_center_record_signature(center)
+    result + "/last/" + chan_component_signature(source.lastInput) + "/counter/" + chan_component_signature(source.counter) + "/held/" + chan_component_signature(source.heldInput) + "/center/" + chan_center_record_signature(source.center) + "/event/" + chan_center_record_signature(source.event)
+
+chan_center_valid(ChanComponent component) =>
+    bool valid = false
+    if not na(component)
+        valid := not na(component.confirmedAt) and component.confirmedAt >= component.realEndTime and component.realStartTime < component.realEndTime and component.actualLowTicks < component.actualHighTicks and (component.direction == 1 or component.direction == -1) and component.direction * (component.realEndTicks - component.realStartTicks) > 0 and component.ordinal > 0
+        valid := valid and component.actualLowTicks <= math.min(component.realStartTicks, component.realEndTicks) and component.actualHighTicks >= math.max(component.realStartTicks, component.realEndTicks)
+        valid := valid and component.analysisStartTime == component.realStartTime and component.analysisEndTime == component.realEndTime and component.analysisStartTicks == (component.direction == 1 ? component.actualLowTicks : component.actualHighTicks) and component.analysisEndTicks == (component.direction == 1 ? component.actualHighTicks : component.actualLowTicks)
+        valid := valid and component.actualLowTime >= component.realStartTime and component.actualLowTime <= component.realEndTime and component.actualHighTime >= component.realStartTime and component.actualHighTime <= component.realEndTime and not na(component.dependencies)
+    valid
+
+chan_center_relation(ChanCenter older, ChanCenter newer) =>
+    string kind = "unavailable"
+    if not na(older) and not na(newer) and older.level == newer.level and not na(older.confirmedAt) and not na(newer.confirmedAt)
+        kind := newer.ddTicks > older.ggTicks ? "up-continuation" : newer.ggTicks < older.ddTicks ? "down-continuation" : (newer.coreLowTicks > older.coreHighTicks or newer.coreHighTicks < older.coreLowTicks) ? "range-overlap" : "core-overlap"
+    kind
+
+chan_center_commit(ChanCenterState state, ChanComponent component) =>
+    if state.center.dependencies.indexof(component.id) < 0
+        if state.center.dependencies.size() >= state.maxSources
+            state.blocked := true
+        else
+            state.center.dependencies.push(component.id)
+            state.center.extentEndTime := component.realEndTime
+            if component.direction == state.direction
+                state.center.ggTicks := math.max(state.center.ggTicks, component.actualHighTicks)
+                state.center.gTicks := math.min(state.center.gTicks, component.actualHighTicks)
+                state.center.dTicks := math.max(state.center.dTicks, component.actualLowTicks)
+                state.center.ddTicks := math.min(state.center.ddTicks, component.actualLowTicks)
+                state.waves += 1
+                state.center.zWaves := state.waves
+    true
+
+chan_center_close(ChanCenterState state, ChanComponent departure, ChanComponent returning) =>
+    state.center.lifecycle := "closed"
+    state.center.closedAt := returning.confirmedAt
+    state.center.leaveId := departure.id
+    state.center.returnId := returning.id
+    state.previous := chan_center_copy(state.center)
+    state.closedEvent := chan_center_copy(state.center)
+    state.history.push(chan_center_copy(state.center))
+    if state.history.size() > 15
+        state.history.shift()
+    state.pendingLeave := na
+    state.seed := array.from(chan_component_copy(returning))
+    state.relationKind := "new-center-pending"
+    state.relationAt := returning.confirmedAt
+    true
+
+chan_center_step(ChanCenterState source, ChanComponent component) =>
+    if not chan_center_valid(component)
+        runtime.error("中枢仅消费已确认L0部件")
+    ChanCenterState state = chan_center_clone(source)
+    state.event := na
+    state.closedEvent := na
+    bool duplicate = not na(source.lastInput) and component.id == source.lastInput.id
+    if duplicate
+        if chan_component_signature(component) != chan_component_signature(source.lastInput)
+            runtime.error("已消费L0发生变化")
+    else if not source.blocked
+        if component.ordinal != source.inputCount + 1
+            runtime.error("中枢L0序号不连续")
+        if not na(source.lastInput)
+            if component.realStartTime != source.lastInput.realEndTime or component.realStartTicks != source.lastInput.realEndTicks or component.direction != -source.lastInput.direction or component.confirmedAt < source.lastInput.confirmedAt
+                runtime.error("中枢L0输入不连续")
+        if na(state.center) or state.center.lifecycle == "closed"
+            state.seed.push(chan_component_copy(component))
+            if state.seed.size() == 3
+                ChanComponent first = state.seed.get(0)
+                ChanComponent middle = state.seed.get(1)
+                ChanComponent last = state.seed.get(2)
+                int coreLow = math.max(first.actualLowTicks, math.max(middle.actualLowTicks, last.actualLowTicks))
+                int coreHigh = math.min(first.actualHighTicks, math.min(middle.actualHighTicks, last.actualHighTicks))
+                if coreLow <= coreHigh
+                    state.direction := first.direction
+                    state.waves := 2
+                    state.count += 1
+                    state.center := ChanCenter.new(state.contextId + "/L1/Z/" + str.tostring(state.count) + "/" + str.tostring(first.realStartTime), 1, coreLow, coreHigh, math.max(first.actualHighTicks, last.actualHighTicks), math.min(first.actualHighTicks, last.actualHighTicks), math.max(first.actualLowTicks, last.actualLowTicks), math.min(first.actualLowTicks, last.actualLowTicks), first.realStartTime, component.confirmedAt, component.realEndTime, component.confirmedAt, coreLow == coreHigh, "extending", "Z-001/Z-002/Z-003/E-010", array.from(first.id, middle.id, last.id), state.count)
+                    state.center.zWaves := 2
+                    if component.realEndTicks > coreHigh or component.realEndTicks < coreLow
+                        state.pendingLeave := chan_component_copy(component)
+                    state.event := state.center
+                    state.seed.clear()
+                else
+                    state.seed.shift()
+        else
+            bool touches = component.actualLowTicks <= state.center.coreHighTicks and component.actualHighTicks >= state.center.coreLowTicks
+            if not na(state.pendingLeave)
+                if touches
+                    chan_center_commit(state, state.pendingLeave)
+                    state.pendingLeave := na
+                else
+                    chan_center_close(state, state.pendingLeave, component)
+            if state.center.lifecycle != "closed" and not state.blocked
+                if component.realEndTicks > state.center.coreHighTicks or component.realEndTicks < state.center.coreLowTicks
+                    state.pendingLeave := chan_component_copy(component)
+                else
+                    chan_center_commit(state, component)
+        if not na(state.previous) and not na(state.center) and state.center.lifecycle != "closed"
+            state.relationKind := chan_center_relation(state.previous, state.center)
+            state.relationAt := component.confirmedAt
+        if state.blocked
+            state := chan_center_clone(source)
+            state.event := na
+            state.closedEvent := na
+            state.blocked := true
+            state.heldInput := chan_component_copy(component)
+        else
+            state.lastInput := chan_component_copy(component)
+            state.inputCount += 1
+    state
+// The same close gate is used by the chart and synthetic tick validation.
+// Persistent states own no drawing objects; frame events exist only for this call.
+type ChanRuntime
+    ChanState morphology
+    ChanSegmentState segments
+    ChanNormalizationState normalized
+    ChanCenterState centers
+    int pendingLimit = 64
+    int workLimit = 8192
+    int centerSources = 64
+
+type ChanRuntimeFrame
+    ChanRuntime committed
+    ChanState visible
+    bool submitted = false
+    array<ChanStructure> segmentEvents
+    array<ChanComponent> componentEvents
+
+type ChanSegmentPreview
+    ChanSegmentState state
+    array<ChanStructure> events
+
+chan_runtime_new(string contextId, int pendingLimit, int workLimit, int centerSources) =>
+    ChanRuntime state = ChanRuntime.new()
+    state.morphology := chan_new(contextId)
+    state.normalized := chan_normalization_new(state.morphology.contextId)
+    state.centers := chan_center_new(state.morphology.contextId, centerSources)
+    state.pendingLimit := pendingLimit
+    state.workLimit := workLimit
+    state.centerSources := centerSources
+    state
+
+chan_runtime_clone(ChanRuntime source) =>
+    ChanRuntime result = source.copy()
+    result.morphology := chan_clone(source.morphology)
+    result.segments := na(source.segments) ? na : chan_segment_clone(source.segments)
+    result.normalized := chan_normalization_clone(source.normalized)
+    result.centers := chan_center_clone(source.centers)
+    result
+
+chan_runtime_signature(ChanRuntime source) =>
+    chan_signature(source.morphology) + "/S/" + (na(source.segments) ? "na" : chan_segment_signature(source.segments)) + "/N/" + chan_normalization_signature(source.normalized) + "/Z/" + chan_center_signature(source.centers) + "/limits/" + str.tostring(source.pendingLimit) + "/" + str.tostring(source.workLimit) + "/" + str.tostring(source.centerSources)
+
+chan_runtime_frame(ChanRuntime source) =>
+    ChanRuntimeFrame result = ChanRuntimeFrame.new()
+    result.committed := source
+    result.visible := source.morphology
+    result.segmentEvents := array.new<ChanStructure>()
+    result.componentEvents := array.new<ChanComponent>()
+    result
+
+// Explicit locked-stroke seam: only the close path calls it in the chart.
+// A batch of S events is delivered to N and Z in its original order.
+chan_runtime_component(ChanRuntime source, ChanStructure segment) =>
+    ChanRuntime state = source.copy()
+    state.normalized := chan_normalization_step(source.normalized, segment)
+    state.centers := chan_center_step(source.centers, state.normalized.event)
+    state
+
+chan_runtime_stroke(ChanRuntime source, ChanStructure stroke) =>
+    ChanRuntime state = source.copy()
+    ChanRuntimeFrame result = chan_runtime_frame(state)
+    if na(state.segments)
+        state.segments := chan_segment_new(state.morphology.contextId, state.pendingLimit, state.workLimit)
+    state.segments := chan_segment_step(state.segments, stroke)
+    for segment in state.segments.events
+        state := chan_runtime_component(state, segment)
+        result.segmentEvents.push(chan_structure_copy(segment))
+        result.componentEvents.push(chan_component_copy(state.normalized.event))
+    result.committed := state
+    result
+
+chan_runtime_update(ChanRuntime source, ChanRaw incoming, bool closed) =>
+    ChanRuntimeFrame result = chan_runtime_frame(source)
+    // chan_step mutates its argument, so even the closed path owns a deep copy.
+    result.visible := chan_step(chan_clone(source.morphology), incoming)
+    if closed
+        ChanRuntime state = source.copy()
+        state.morphology := result.visible
+        if not na(state.morphology.strokeEvent)
+            result := chan_runtime_stroke(state, state.morphology.strokeEvent)
+        else
+            result.committed := state
+        result.submitted := state.morphology.inputCount > source.morphology.inputCount
+    result
+
+// A tick can seal one P and the unsealed fractal projection can hypothesize
+// another. Feed both in order; using only the last one skips a stroke ordinal.
+chan_runtime_segment_preview(ChanRuntime source, ChanState visible, ChanState projected) =>
+    ChanSegmentPreview result = ChanSegmentPreview.new()
+    result.state := na(source.segments) ? na : chan_segment_clone(source.segments)
+    result.events := array.new<ChanStructure>()
+    array<ChanStructure> strokes = array.new<ChanStructure>()
+    if visible.strokeCount > source.morphology.strokeCount and not na(visible.strokeEvent)
+        strokes.push(visible.strokeEvent)
+    if projected.strokeCount > visible.strokeCount and not na(projected.lastStroke)
+        strokes.push(projected.lastStroke)
+    for stroke in strokes
+        if na(result.state)
+            result.state := chan_segment_new(visible.contextId, source.pendingLimit, source.workLimit)
+        result.state := chan_segment_step(result.state, stroke)
+        for event in result.state.events
+            result.events.push(chan_structure_copy(event))
+    result
+// Analysis context is fixed at load. The rolling display budget never reseeds it.
+type ChanWindow
+    bool fixed
+    int requestedStart
+    int startIndex
+    int firstAvailable
+    int maxSamples
+    int count = 0
+    int firstInput = na
+    int lastInput = na
+    bool truncated = false
+
+type ChanWindowFrame
+    ChanWindow state
+    bool eligible
+    bool allowed
+
+chan_window_new(bool fixed, int requestedStart, int recentBars, int anchorIndex, int firstAvailable, int maxSamples) =>
+    if requestedStart < 0 or recentBars < 1 or anchorIndex < 0 or firstAvailable < 0 or maxSamples < 1
+        runtime.error("分析范围参数无效")
+    ChanWindow.new(fixed, requestedStart, math.max(0, anchorIndex - recentBars + 1), firstAvailable, maxSamples)
+
+chan_window_signature(ChanWindow state) =>
+    str.tostring(state.fixed) + "/" + str.tostring(state.requestedStart) + "/" + str.tostring(state.startIndex) + "/" + str.tostring(state.firstAvailable) + "/" + str.tostring(state.maxSamples) + "/" + str.tostring(state.count) + "/" + str.tostring(state.firstInput) + "/" + str.tostring(state.lastInput) + "/" + str.tostring(state.truncated)
+
+chan_window_step(ChanWindow source, int openTime, int index, bool closed) =>
+    ChanWindowFrame result = ChanWindowFrame.new()
+    result.state := source.copy()
+    result.eligible := source.fixed ? openTime >= source.requestedStart : index >= source.startIndex
+    bool capped = source.fixed and source.count >= source.maxSamples
+    result.allowed := result.eligible and not capped
+    if closed and result.eligible
+        bool duplicate = not na(source.lastInput) and openTime == source.lastInput
+        if capped and not duplicate
+            result.state.truncated := true
+        else if result.allowed and not duplicate
+            result.state.count += 1
+            if na(result.state.firstInput)
+                result.state.firstInput := openTime
+            result.state.lastInput := openTime
+    result
+chan_context_allows(bool supported, ChanWindowFrame frame) =>
+    supported and frame.allowed
+
+chan_status_code(ChanRuntime engine, ChanWindow window, bool supported) =>
+    string code = "RUNNING"
+    if not supported
+        code := "UNSUPPORTED"
+    else if window.truncated
+        code := "TRUNCATED"
+    else if window.fixed and window.count >= window.maxSamples
+        code := "SAMPLE_LIMIT"
+    else if not na(engine.segments) and engine.segments.blocked
+        code := engine.segments.limitReason == "pending-strokes" ? "S_PENDING_LIMIT" : "S_WORK_LIMIT"
+    else if engine.centers.blocked
+        code := "Z_SOURCE_LIMIT"
+    else if window.fixed and window.requestedStart < window.firstAvailable
+        code := "HISTORY_SHORT"
+    else if window.count == 0
+        code := "WAIT_START"
+    else if engine.morphology.direction == 0
+        code := "INITIALIZING"
+    else if not na(engine.segments) and engine.segments.gapPending
+        code := "S_PROOF_PENDING"
+    else if not na(engine.centers.pendingLeave)
+        code := "Z_RETURN_PENDING"
+    else if engine.centers.relationKind == "new-center-pending"
+        code := "Z_NEW_PENDING"
+    code
+
+chan_status_text(string code) =>
+    switch code
+        "UNSUPPORTED" => "仅支持有确定收盘时间的普通K线"
+        "TRUNCATED" => "样本已截断：后续K线未计算"
+        "SAMPLE_LIMIT" => "样本上限已达"
+        "S_PENDING_LIMIT" => "线段受限：未完成笔依赖上限"
+        "S_WORK_LIMIT" => "线段受限：计算预算"
+        "Z_SOURCE_LIMIT" => "L1中枢受限：来源预算"
+        "HISTORY_SHORT" => "历史不足：实际可用起点晚于请求"
+        "WAIT_START" => "等待分析起点后的K线"
+        "INITIALIZING" => "初始化：等待非包含输入"
+        "S_PROOF_PENDING" => "线段：第二类候选等待证明"
+        "Z_RETURN_PENDING" => "L1中枢：离开／回试待定"
+        "Z_NEW_PENDING" => "离开已证实：等待新中枢"
+        => "形态预览运行中"
+
+type ChanCompactFixture
+    string id
+    array<ChanStructure> inputs
+    array<ChanStructure> expected
+    array<int> counts
+    array<int> offsets
+    array<int> eventOrdinals
+
+chan_cv_assert(bool condition, string context) =>
+    if not condition
+        runtime.error("FAIL: " + context)
+    true
+
+chan_cv_record(ChanStructure actual, ChanStructure expected, ChanCompactFixture fixture, int prefix, string context) =>
+    chan_cv_assert(actual.id == expected.id and actual.objectType == "segment" and actual.level == 0 and actual.ordinal == expected.ordinal and actual.confirmed, context + "/identity")
+    chan_cv_assert(actual.startTime == expected.startTime and actual.endTime == expected.endTime and actual.startTicks == expected.startTicks and actual.endTicks == expected.endTicks and actual.direction == expected.direction and actual.confirmedAt == expected.confirmedAt, context + "/endpoints-direction-confirmation")
+    chan_cv_assert(actual.dependencies.size() == expected.dependencies.size(), context + "/source-count")
+    if expected.dependencies.size() > 0
+        for i = 0 to expected.dependencies.size() - 1
+            chan_cv_assert(actual.dependencies.get(i) == expected.dependencies.get(i), context + "/source-" + str.tostring(i))
+    bool lowWitness = false
+    bool highWitness = false
+    int members = 0
+    // Only this prefix enters the checks; future fixture input is never read.
+    for i = 0 to prefix
+        ChanStructure member = fixture.inputs.get(i)
+        if member.startTime >= expected.startTime and member.endTime <= expected.endTime
+            members += 1
+            for endpoint = 0 to 1
+                int value = endpoint == 0 ? member.startTicks : member.endTicks
+                int occurredAt = endpoint == 0 ? member.startTime : member.endTime
+                chan_cv_assert(actual.memberLowTicks <= value and actual.memberHighTicks >= value, context + "/member-bounds")
+                if actual.memberLowTicks == value
+                    chan_cv_assert(actual.memberLowTime <= occurredAt, context + "/member-low-earliest")
+                    lowWitness := lowWitness or actual.memberLowTime == occurredAt
+                if actual.memberHighTicks == value
+                    chan_cv_assert(actual.memberHighTime <= occurredAt, context + "/member-high-earliest")
+                    highWitness := highWitness or actual.memberHighTime == occurredAt
+    chan_cv_assert(members > 0 and lowWitness and highWitness, context + "/member-extreme-witness")
+    true
+
+chan_cv_copy_probe(ChanSegmentState online, string context) =>
+    string before = chan_segment_signature(online)
+    ChanSegmentState copy = chan_segment_clone(online)
+    if copy.strokes.size() > 0
+        ChanStructure strokeProbe = copy.strokes.last()
+        strokeProbe.dependencies.push("copy-probe")
+    if copy.events.size() > 0
+        ChanStructure eventProbe = copy.events.first()
+        eventProbe.dependencies.push("copy-probe")
+    if copy.hypotheses.size() > 0
+        ChanSegmentHypothesis hypothesisProbe = copy.hypotheses.first()
+        hypothesisProbe.priceTicks += 1
+    if not na(copy.candidate)
+        copy.candidate.dependencies.push("copy-probe")
+    if not na(copy.lastSegment)
+        copy.lastSegment.dependencies.push("copy-probe")
+    if not na(copy.firstContext)
+        if copy.firstContext.elements.size() > 0
+            ChanFeature featureProbe = copy.firstContext.elements.last()
+            featureProbe.sourceIds.push("copy-probe")
+    if not na(copy.secondContext)
+        if copy.secondContext.elements.size() > 0
+            ChanFeature reverseProbe = copy.secondContext.elements.last()
+            reverseProbe.sourceIds.push("copy-probe")
+    chan_cv_assert(chan_segment_signature(online) == before, context + "/deep-copy-isolation")
+    true
+
+chan_cv_prefix(ChanSegmentState online, array<ChanStructure> observed, ChanCompactFixture fixture, int prefix) =>
+    string context = fixture.id + "/prefix-" + str.tostring(prefix + 1)
+    string prior = chan_segment_signature(online)
+    ChanStructure inputStroke = fixture.inputs.get(prefix)
+    ChanSegmentState next = chan_segment_step(online, inputStroke)
+    chan_cv_assert(chan_segment_signature(online) == prior, context + "/source-state-immutable")
+    for event in next.events
+        observed.push(event)
+    int count = fixture.counts.get(prefix)
+    if next.segmentCount != count or observed.size() != count
+        string detail = "/confirmed-count expected=" + str.tostring(count) + " actual=" + str.tostring(next.segmentCount) + " observed=" + str.tostring(observed.size())
+        for record in observed
+            detail += " [" + record.ruleId + " " + str.tostring(record.startTicks) + "->" + str.tostring(record.endTicks) + " end=" + str.tostring(record.endTime) + " confirmed=" + str.tostring(record.confirmedAt) + "]"
+        chan_cv_assert(false, context + detail)
+    if count > 0
+        for i = 0 to count - 1
+            chan_cv_record(observed.get(i), fixture.expected.get(i), fixture, prefix, context + "/segment-" + str.tostring(i + 1))
+    int eventOffset = fixture.offsets.get(prefix)
+    int eventCount = fixture.offsets.get(prefix + 1) - eventOffset
+    chan_cv_assert(next.events.size() == eventCount, context + "/event-count")
+    if eventCount > 0
+        for i = 0 to eventCount - 1
+            ChanStructure event = next.events.get(i)
+            int ordinal = fixture.eventOrdinals.get(eventOffset + i)
+            ChanStructure expected = fixture.expected.get(ordinal - 1)
+            chan_cv_assert(event.ordinal == ordinal and event.id == expected.id and event.endTime == expected.endTime and event.confirmedAt == expected.confirmedAt, context + "/event-" + str.tostring(i))
+    ChanSegmentState replay = chan_segment_new(fixture.id, 64, 8192)
+    for i = 0 to prefix
+        replay := chan_segment_step(replay, fixture.inputs.get(i))
+    chan_cv_assert(chan_segment_signature(next) == chan_segment_signature(replay), context + "/prefix-reload")
+    string committed = chan_segment_signature(next)
+    ChanSegmentState duplicate = chan_segment_step(next, inputStroke)
+    chan_cv_assert(duplicate.events.size() == 0 and duplicate.segmentCount == next.segmentCount, context + "/duplicate-event")
+    duplicate.events := next.events
+    chan_cv_assert(chan_segment_signature(duplicate) == committed, context + "/duplicate-state")
+    chan_cv_copy_probe(next, context)
+    chan_cv_assert(not next.blocked, context + "/within-budgets")
+    next
+
+chan_cv_fixture(int index) =>
+    ChanCompactFixture result = ChanCompactFixture.new()
+    if index == 0
+        result.id := "S-FIRST-CONTINUE"
+        result.inputs := array.from(ChanStructure.new("p1", "stroke", 0, 1, 1701000000000, 1701000060000, 0, 10, true, 1701000120000, "P-001/P-002", array.from("f0", "f1", "proof1"), 1), ChanStructure.new("p2", "stroke", 0, -1, 1701000060000, 1701000120000, 10, 5, true, 1701000180000, "P-001/P-002", array.from("f1", "f2", "proof2"), 2), ChanStructure.new("p3", "stroke", 0, 1, 1701000120000, 1701000180000, 5, 12, true, 1701000240000, "P-001/P-002", array.from("f2", "f3", "proof3"), 3), ChanStructure.new("p4", "stroke", 0, -1, 1701000180000, 1701000240000, 12, 3, true, 1701000300000, "P-001/P-002", array.from("f3", "f4", "proof4"), 4), ChanStructure.new("p5", "stroke", 0, 1, 1701000240000, 1701000300000, 3, 13, true, 1701000360000, "P-001/P-002", array.from("f4", "f5", "proof5"), 5), ChanStructure.new("p6", "stroke", 0, -1, 1701000300000, 1701000360000, 13, 4, true, 1701000420000, "P-001/P-002", array.from("f5", "f6", "proof6"), 6))
+        result.expected := array.new<ChanStructure>()
+        result.counts := array.from(0, 0, 0, 0, 0, 0)
+        result.offsets := array.from(0, 0, 0, 0, 0, 0, 0)
+        result.eventOrdinals := array.new<int>()
+    else
+        runtime.error("unknown compact fixture")
+    result
+
+
+var table result = table.new(position.top_right, 1, 3)
+var int caseIndex = 0
+var int prefix = 0
+var int checkedPrefixes = 0
+var int lastProcessedBar = na
+var bool budgetsDone = true
+var ChanSegmentState online = na
+var array<ChanStructure> observed = array.new<ChanStructure>()
+if barstate.isconfirmed and (na(lastProcessedBar) or bar_index != lastProcessedBar)
+    if caseIndex < 1
+        ChanCompactFixture fixture = chan_cv_fixture(caseIndex)
+        if prefix == 0
+            online := chan_segment_new(fixture.id, 64, 8192)
+            observed := array.new<ChanStructure>()
+        online := chan_cv_prefix(online, observed, fixture, prefix)
+        checkedPrefixes += 1
+        prefix += 1
+        if prefix == fixture.inputs.size()
+            caseIndex += 1
+            prefix := 0
+    
+    lastProcessedBar := bar_index
+bool passed = caseIndex == 1 and budgetsDone
+table.cell(result, 0, 0, passed ? "PASS: 1 S case(s), 6 prefixes" : "RUNNING: " + str.tostring(checkedPrefixes) + "/6 prefixes", text_color = passed ? color.green : color.orange)
+table.cell(result, 0, 1, "合成验证 · 非行情分析 · 需要6根已收盘图表K线")
+table.cell(result, 0, 2, "CORE f66e1055bf34")
+plot(na)
+

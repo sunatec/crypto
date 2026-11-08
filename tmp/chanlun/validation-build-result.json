@@ -1,0 +1,102 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\kf-validation.pine",
+  "segmentOutput": "D:\\Workspace\\crypto\\tmp\\chanlun\\segment-validation.pine",
+  "segmentFixtureIds": [
+    "S-FIRST-CONTINUE",
+    "S-FIRST-END",
+    "S-FIRST-EQUAL-THIRD",
+    "S-FIRST-LOCKED-PREFIX",
+    "S-FIRST-WAIT-END",
+    "S-FIRST-WAIT-INCLUSION",
+    "S-SPECIAL-INTERNAL-EXTREME",
+    "S-START-AFTER-INVALID",
+    "S-WAIT-DIRECTION-INSIDE",
+    "S81-EQUAL",
+    "S81-HIGHER",
+    "S81-LOWER"
+  ],
+  "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+  "fixtureIds": [
+    "F-TOP-SEAL",
+    "K-DOWN-CHAIN",
+    "K-EQUAL-ORIGIN",
+    "K-INIT-WAIT",
+    "K-NONTRANSITIVE",
+    "K-UP-CHAIN",
+    "P-ANCHOR-EXTREME",
+    "P-EQUAL-FIRST",
+    "P-EXTEND",
+    "P-INDEPENDENT",
+    "P-INVALID-OPPOSITE",
+    "P-LOCKED-PREFIX",
+    "P-MERGED-DISTANCE",
+    "P-OHLC-INTEGRATION",
+    "P-SAME-KIND",
+    "P-SHARED-MEMBERS",
+    "P-TOP-IN-BOTTOM",
+    "P-UP-EXTEND",
+    "S-FEATURE-81-EQUAL",
+    "S-FEATURE-81-HIGHER",
+    "S-FEATURE-81-LOWER",
+    "S-FEATURE-DOWN-INCLUSION",
+    "S-FEATURE-DOWN",
+    "S-FEATURE-ELEMENT-LIMIT",
+    "S-FEATURE-EQUAL-ORIGIN",
+    "S-FEATURE-FIRST-BOUNDARY",
+    "S-FEATURE-GAP",
+    "S-FEATURE-NO-START",
+    "S-FEATURE-SECOND-BOUNDARY",
+    "S-FEATURE-SOURCE-LIMIT",
+    "S-FEATURE-TOUCH",
+    "S-FEATURE-UP-INCLUSION",
+    "S-FEATURE-UP",
+    "S-FEATURE-WAIT-DIRECTION",
+    "S-FIRST-CONTINUE",
+    "S-FIRST-END",
+    "S-FIRST-EQUAL-THIRD",
+    "S-FIRST-LOCKED-PREFIX",
+    "S-FIRST-WAIT-END",
+    "S-FIRST-WAIT-INCLUSION",
+    "S-SPECIAL-INTERNAL-EXTREME",
+    "S-START-AFTER-INVALID",
+    "S-WAIT-DIRECTION-INSIDE",
+    "S81-EQUAL",
+    "S81-HIGHER",
+    "S81-LOWER"
+  ],
+  "skippedFixtureIds": [
+    "N-INTERNAL-LOW",
+    "N-ORDINARY",
+    "N-OWN-RANGES",
+    "N-SECOND-BATCH",
+    "N-WAIT-NO-EVENT",
+    "R-NO-EARLY-COMPLETION"
+  ],
+  "skippedFixtures": [
+    {
+      "id": "N-INTERNAL-LOW",
+      "reason": "no implemented driver for normalization-strokes"
+    },
+    {
+      "id": "N-ORDINARY",
+      "reason": "no implemented driver for normalization-strokes"
+    },
+    {
+      "id": "N-OWN-RANGES",
+      "reason": "no implemented driver for normalization-strokes"
+    },
+    {
+      "id": "N-SECOND-BATCH",
+      "reason": "no implemented driver for normalization-strokes"
+    },
+    {
+      "id": "N-WAIT-NO-EVENT",
+      "reason": "no implemented driver for normalization-strokes"
+    },
+    {
+      "id": "R-NO-EARLY-COMPLETION",
+      "reason": "draft expectations; not accepted"
+    }
+  ],
+  "execution": "not run; compile and execute in TradingView"
+}

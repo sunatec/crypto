@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "caseId": "ETHUSDT-60",
+  "feed": "BINANCE:ETHUSDT",
+  "feedEvidence": "audit_feed_code emitted by capture helper; original CSV retained, not independent broker verification",
+  "timeframe": "60",
+  "tickSize": "0.01",
+  "requestedStartUTC": "2026-09-20T00:00:00Z",
+  "endExclusiveUTC": "2026-11-01T00:00:00Z",
+  "actualFirstOpenUTC": "2026-09-20T00:00:00.000Z",
+  "actualLastCloseUTC": "2026-11-01T00:00:00.000Z",
+  "exportedFirstOpenUTC": "2026-08-18T17:00:00.000Z",
+  "exportedLastOpenUTC": "2026-11-06T15:00:00.000Z",
+  "bars": 1008,
+  "rawCsvSha256": "8c174f4fff3a7f7c5de0559f949763f97626052e633f932287dc7c351a17dfe1",
+  "canonicalSha256": "8b830702186fe2f39abb6b36bb4c94082a6060721737c01a179012cbfe153604",
+  "planSha256": "92c238c4ad55102f8ed42ad69901ac877e511735da521fd5aba2a2bcc80cbb33",
+  "proposedIndicatorParameters": {
+    "fixedStart": true,
+    "sampleLimit": 1008,
+    "initialBars": 5000,
+    "segmentPendingLimit": 64,
+    "segmentWorkLimit": 8192,
+    "centerSources": 64,
+    "requestedStart": 1789862400000
+  },
+  "actualIndicatorParameters": "not yet independently observed",
+  "status": "OHLC frozen; chart load/replay/reload not executed",
+  "captureHelperSha256": "0def908dff64a6d0538a6de989fbed6ffa27ab5f22f0b6fdab213060e0a85db8",
+  "productionSha256": "7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "versionBinding": "Workspace hashes for planned replay; actual chart script versions/settings not yet verified"
+}

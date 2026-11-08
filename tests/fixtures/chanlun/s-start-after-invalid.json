@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "id": "S-START-AFTER-INVALID",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168",
+      "C71-182",
+      "C77-195"
+    ],
+    "lesson": 77,
+    "pdfPages": [
+      169,
+      181,
+      182,
+      196
+    ],
+    "figure": null,
+    "note": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。 输入明确假定每项为已锁定合法笔；初始化及同刻提交约定单列于E-007。只断言确认前缀，不强制未锁定候选的展示集合。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 4,
+        "lowTicks": 0,
+        "highTicks": 4,
+        "direction": "up",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 4,
+        "endTicks": -3,
+        "lowTicks": -3,
+        "highTicks": 4,
+        "direction": "down",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": -3,
+        "endTicks": -1,
+        "lowTicks": -3,
+        "highTicks": -1,
+        "direction": "up",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": -1,
+        "endTicks": -5,
+        "lowTicks": -5,
+        "highTicks": -1,
+        "direction": "down",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": -5,
+        "endTicks": 1,
+        "lowTicks": -5,
+        "highTicks": 1,
+        "direction": "up",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 1,
+        "endTicks": -2,
+        "lowTicks": -2,
+        "highTicks": 1,
+        "direction": "down",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": -2,
+        "endTicks": 2,
+        "lowTicks": -2,
+        "highTicks": 2,
+        "direction": "up",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1701000060000,
+          "endTime": 1701000240000,
+          "startTicks": 4,
+          "endTicks": -5,
+          "confirmedAt": 1701000480000,
+          "dependencies": [
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6",
+            "p7"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/segment-1",
+          "type": "segment",
+          "objectId": "segment-1",
+          "occurredAt": 1701000240000,
+          "confirmedAt": 1701000480000
+        }
+      ],
+      "reason": "最初0→4→-3→-1无公共重叠，不能作为段起始。下一组三笔从4开始向下且有重叠；前缀7锁定4→-5，初始化无效输入不进入其依赖。"
+    }
+  ]
+}

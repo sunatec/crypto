@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "id": "K-UP-CHAIN",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "K-001",
+    "K-002",
+    "E-001"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168"
+    ],
+    "lesson": 65,
+    "pdfPages": [
+      168
+    ],
+    "figure": null,
+    "note": "根据所列正文规则人工构造整数tick样例，非原文行情。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "ohlc",
+    "items": [
+      {
+        "id": "raw-0",
+        "time": 1700000000000,
+        "closeTime": 1700000060000,
+        "openTicks": 0,
+        "highTicks": 5,
+        "lowTicks": 0,
+        "closeTicks": 5
+      },
+      {
+        "id": "raw-1",
+        "time": 1700000060000,
+        "closeTime": 1700000120000,
+        "openTicks": 2,
+        "highTicks": 8,
+        "lowTicks": 2,
+        "closeTicks": 8
+      },
+      {
+        "id": "raw-2",
+        "time": 1700000120000,
+        "closeTime": 1700000180000,
+        "openTicks": 3,
+        "highTicks": 7,
+        "lowTicks": 3,
+        "closeTicks": 7
+      },
+      {
+        "id": "raw-3",
+        "time": 1700000180000,
+        "closeTime": 1700000240000,
+        "openTicks": 4,
+        "highTicks": 9,
+        "lowTicks": 4,
+        "closeTicks": 9
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "processedCount": 0,
+        "direction": "waiting"
+      },
+      "structures": [],
+      "events": [],
+      "reason": "无方向，等待种子。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "processedCount": 2,
+        "direction": "up",
+        "tailLowTicks": 2,
+        "tailHighTicks": 8
+      },
+      "structures": [],
+      "events": [],
+      "reason": "非包含对确定向上。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "processedCount": 2,
+        "direction": "up",
+        "tailLowTicks": 3,
+        "tailHighTicks": 8
+      },
+      "structures": [],
+      "events": [],
+      "reason": "包含，双最大得到[3,8]。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "processedCount": 3,
+        "direction": "up",
+        "tailLowTicks": 4,
+        "tailHighTicks": 9
+      },
+      "structures": [],
+      "events": [],
+      "reason": "与合并结果非包含，追加，前尾封口。"
+    }
+  ]
+}
