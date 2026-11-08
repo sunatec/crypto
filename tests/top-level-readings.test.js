@@ -164,9 +164,12 @@ test('接入前后只新增顶层子块与候选句，既有报告和全部结�
   const background = fixture().background;
   const snapshot = () => JSON.stringify({ tree: E.serializeTree(tree), ranked: E.serializeRankedCounts(tree),
     parent: E.serializeMultiDegree(tree, '1d'), current: E.serializeCurrentWaveStructures(tree), inProgress: tree.inProgressStruct });
-  const before = snapshot(), oldMd = E.renderMarkdownReport(meta, tree, null, { background });
+  // 顶层读法只在 --verbose 下进 md，故两侧都按 verbose 渲染对比
+  const before = snapshot(), oldMd = E.renderMarkdownReport(meta, tree, null, { background, verbose: true });
   const topLevel = E.buildTopLevelReadings(background, tree.primary);
-  const newMd = E.renderMarkdownReport(meta, tree, null, { background, topLevel });
+  const newMd = E.renderMarkdownReport(meta, tree, null, { background, topLevel, verbose: true });
+  const plainMd = E.renderMarkdownReport(meta, tree, null, { background, topLevel });
+  assert.ok(!plainMd.includes('## 顶层读法') && !plainMd.includes('，顶层：'), '默认 md 不含顶层读法');
   assert.equal(snapshot(), before);
   const normalize = md => md.replace(/^- .*，顶层：.*\n/gm, '')
     .replace(/## 顶层读法（自价格 0，周线）[\s\S]*?(?=\n---\n)/, '').replace(/\n{3,}/g, '\n\n');

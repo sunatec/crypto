@@ -567,9 +567,41 @@ function anchorBoundaryExtremes(candles, pivots) {
   }
 
   const out = pivots.slice();
+  const extremeIn = (from, to, wantHigh) => { // [from, to) 内最高价/最低价所在 K 线，并列取最早
+    let idx = -1;
+    let val = wantHigh ? -Infinity : Infinity;
+    for (let i = from; i < to; i += 1) {
+      const c = candles[i];
+      if (!c) continue;
+      const v = wantHigh ? c.high : c.low;
+      if (wantHigh ? v > val : v < val) { val = v; idx = i; }
+    }
+    return idx < 0 ? null : { index: idx, price: val, timestamp: candles[idx].timestamp };
+  };
 
   const first = out[0];
-  if (first.index > 0) {
+  // 左端同型更极端：first 是低点而它之前还有更低的 K 线（反之亦然），说明真正的起点是贴边那根，
+  // first 只是随后的次低点（如 5m 窗口首根就是区间最低 77620，首个确认低点却是 77820.56）。
+  // 只补反向极值会把起点锚在两者之间的高点上、整段计数错位；改为按时间顺序补齐同型极值与反向极值。
+  const sameType = first.type, oppType = first.type === 'H' ? 'L' : 'H';
+  const sameBefore = first.index > 0 ? extremeIn(0, first.index, sameType === 'H') : null;
+  if (sameBefore && (sameType === 'H' ? sameBefore.price > first.price : sameBefore.price < first.price)) {
+    const oppBefore = extremeIn(0, first.index, oppType === 'H');
+    const same = { ...sameBefore, type: sameType };
+    const opp = { ...oppBefore, type: oppType };
+    // 同一根 K 线同时是两侧极值时，先后按外包线惯例（阴线先高后低、阳线先低后高）
+    const oppFirst = opp.index < same.index
+      || (opp.index === same.index && outsideBarOrder(candles[same.index])[0] === oppType);
+    if (opp.index === same.index) { same.outsideBar = true; opp.outsideBar = true; }
+    if (!oppFirst) {
+      out.unshift({ ...same, boundary: 'start' }, opp); // 同型极值 → 反向极值 → first
+    } else {
+      // 反向极值 → 同型极值 → 其间反向极值 → first；同型极值与 first 之间没有 K 线时直接取代 first
+      const between = extremeIn(same.index + 1, first.index, oppType === 'H');
+      if (between) out.unshift({ ...opp, boundary: 'start' }, same, { ...between, type: oppType });
+      else { out[0] = same; out.unshift({ ...opp, boundary: 'start' }); }
+    }
+  } else if (first.index > 0) {
     const wantHigh = first.type === 'L';
     let bestIdx = 0;
     let bestVal = wantHigh ? -Infinity : Infinity;

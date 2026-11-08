@@ -608,7 +608,9 @@ test('inline-extending-leg-fork-in-table：多腿候选(三锯齿5段)只有⏳�
   assert.ok(!/x:80525→97964[^\s]*两可/.test(md), 'x 腿不应带两可后缀');
   assert.ok(!/y:97964→60001[^\s]*两可/.test(md), 'y 腿不应带两可后缀');
   assert.ok(!/xx:60001→82814[^\s]*两可/.test(md), 'xx 腿不应带两可后缀');
-  assert.ok(md.includes('对侧点位：82814(1970-01-01) → 57718(1970-01-01)') || md.includes('对侧点位'), '表格下方应附对侧点位行');
+  assert.ok(!md.includes('对侧点位'), '对侧点位附注默认不进 md');
+  const mdV = renderRankedCounts(tree, undefined, [], null, { verbose: true });
+  assert.ok(mdV.includes('对侧点位'), '--verbose 下表格下方应附对侧点位行');
 });
 
 test('inline-extending-leg-fork-in-table：主选(## 主选块)带altCharacter时维持完整解释句+独立点位行，不套用表格内联格式', () => {

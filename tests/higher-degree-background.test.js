@@ -175,7 +175,10 @@ test('报告范围、轴①背景、不可用原因，已验证父级首位仍�
   assert.ok(md.indexOf('## 大级别背景') > md.indexOf('## 在更大结构里的角色'));
   assert.ok(md.indexOf('## 大级别背景') < md.indexOf('# 轴②'));
   assert.doesNotMatch(md, /大级别背景见轴①/);
-  assert.match(md, /口径不一致/);
+  assert.match(md, /## 大级别背景（一句话）/);
+  assert.match(md, /前面那段大上涨 50→220（[^）]+），途中没有像样的回调；这轮下跌 220→60 跌了 73%，已经超过前段内部任何回调——那段大上涨大概率已经走完/);
+  assert.doesNotMatch(md, /§3\.3|口径不一致/, '默认 md 的大级别背景不出术语');
+  assert.match(E.renderMarkdownReport(meta, tree, null, { background, verbose: true }), /口径不一致/);
   const verified = { ...tree, primary: { ...tree.primary, score: { ...tree.primary.score, verificationStatus: 'verified' } } };
   const pd = E.deriveParentDegree(verified);
   assert.equal(pd.primary.verificationStatus, 'verified');
@@ -184,7 +187,8 @@ test('报告范围、轴①背景、不可用原因，已验证父级首位仍�
   assert.ok(!parent.includes('✅ 主选'));
   assert.deepEqual(E.serializeMultiDegree(tree, '1d'), before);
   const failed = E.renderMarkdownReport(meta, tree, null, { background: { available: false, reason: '网络超时' } });
-  assert.match(failed, /大级别背景不可用：网络超时/);
+  assert.match(failed, /本次没有生成大级别背景（网络超时）/);
+  assert.match(E.renderMarkdownReport(meta, tree, null, { background: { available: false, reason: '网络超时' }, verbose: true }), /大级别背景不可用：网络超时/);
   const stock = E.buildWaveScope({ ...meta, product: 'MU' }, tree, { available: false, reason: '股票本次未生成大级别背景' });
   assert.match(stock.note, /股票本次未生成大级别背景/);
   assert.equal(stock.topDown, false);
@@ -222,7 +226,7 @@ global.fetch = async () => ({ok:true, json:async () => ({quote_increment:'0.01'}
       .replace(/^> 数浪范围：.*\n/gm, '')
       .replace(/^大级别背景(?:不可用|：).*\n/gm, '')
       .replace(/^- .*，顶层：.*\n/gm, '')
-      .replace(/## 大级别背景（周线\/月线）[\s\S]*?(?=\n---\n)/, '')
+      .replace(/## 大级别背景（[^）\n]*）[\s\S]*?(?=\n---\n)/, '')
       .replace(/\n{3,}/g, '\n\n');
     results.push({ json, md });
   }
@@ -258,4 +262,43 @@ test('数浪范围的日期与报告元信息同一时区（UTC+8 / 交易所时
   // 美股：区间起点按美东，K 线时间戳即交易日
   assert.equal(E.scopeTime('2026-03-02T03:00:00.000Z', { timeframe: '1d', market: 'us' }, 'window'), '2026-03-01');
   assert.equal(E.scopeTime('2026-03-02T00:00:00.000Z', { timeframe: '1d', market: 'us' }, 'bar'), '2026-03-02');
+});
+
+test('默认 md：大级别背景只出一段大白话、不出顶层读法，JSON 不变；--verbose 恢复全文（日线同样适用）', () => {
+  const { meta, tree } = reportFixture();
+  const background = calculate(fixture([10, 100, 20, 120, 25, 130, 40, 150, 50, 200]));
+  const topLevel = E.buildTopLevelReadings(background, tree.primary);
+  const bgBefore = JSON.stringify(background), tlBefore = JSON.stringify(topLevel);
+  for (const timeframe of ['1h', '1d']) {
+    const md = E.renderMarkdownReport({ ...meta, timeframe }, tree, null, { background, topLevel });
+    assert.match(md, /## 大级别背景（一句话）\n\n前面那段大/);
+    assert.match(md, /推算过程见 `--verbose`/);
+    for (const s of ['月线主要摆动', '| 级别 | 前段起点', '## 顶层读法', '，顶层：', '§3.3', '前段证据']) {
+      assert.ok(!md.includes(s), `${timeframe} 默认 md 不应含「${s}」`);
+    }
+    assert.match(md, /数浪范围：/, '数浪范围声明保留');
+  }
+  const verbose = E.renderMarkdownReport({ ...meta, timeframe: '1h' }, tree, null, { background, topLevel, verbose: true });
+  assert.match(verbose, /月线主要摆动/);
+  assert.match(verbose, /\| 级别 \| 前段起点/);
+  assert.match(verbose, /## 顶层读法（自价格 0，周线）/);
+  assert.match(verbose, /，顶层：/);
+  assert.equal(JSON.stringify(background), bgBefore);
+  assert.equal(JSON.stringify(topLevel), tlBefore);
+});
+
+test('大级别背景大白话：前段已走完 / 未走完两种措辞', () => {
+  const mk = (absoluteExceeds) => ({ available: true, ladder: [{
+    start: { price: 49000, timestamp: Date.parse('2024-08-05T00:00:00Z') / 1000 },
+    end: { price: 126199.63, timestamp: Date.parse('2025-10-06T00:00:00Z') / 1000 },
+    windowMove: { absolute: 68399.44, percentage: 0.542 },
+    maxInternalRetrace: { percentage: { ratio: 0.3201 } },
+    section33: { consistent: true, absoluteExceeds, percentageExceeds: absoluteExceeds },
+  }] });
+  const done = E.renderHigherDegreePlain(mk(true), 2);
+  assert.match(done, /前面那段大上涨 49000→126199\.63（2024-08 至 2025-10），途中最深一次回调 32%；这轮下跌 126199\.63→57800\.19 跌了 54%，比那次回调更深/);
+  assert.match(done, /大概率已经走完/);
+  assert.match(done, /要么只是大调整中途的反弹（之后还会再跌），要么是新一轮上涨的开始/);
+  const notDone = E.renderHigherDegreePlain(mk(false), 2);
+  assert.match(notDone, /没超过那次回调——那段上涨可能还没走完/);
 });

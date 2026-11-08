@@ -144,7 +144,8 @@ function parentEvidence(topLevel, key) {
   return alive.map(f => `${f.label}下为${f.parentMapping[key]}`).join('；') + '。';
 }
 
-function renderTopLevelReadings(engine, topLevel, precision) {
+// spikesShown：同一批扎针已在大级别背景列出时只写"见上"，不重列（slim-wave-tree-report）
+function renderTopLevelReadings(engine, topLevel, precision, { spikesShown = [] } = {}) {
   const L = ['## 顶层读法（自价格 0，周线）', ''];
   if (!topLevel.available) return [...L, `顶层读法不可用：${topLevel.reason}。`, ''].join('\n');
   const px = n => engine.formatPrice(n, precision);
@@ -158,12 +159,15 @@ function renderTopLevelReadings(engine, topLevel, precision) {
   for (const f of topLevel.families.filter(f => f.legal > 0)) {
     const c = f.windowRole.correction;
     L.push('', `### ${f.label}`, '', `${f.windowRole.description}；修正的是${c.wave}（${c.fromRange ? span(c.fromRange) : pt(c.from)} → ${pt(c.to)}）。`,
-      `代表读法（P1 最高）：${f.representative.patternId}，${f.representative.points.map(pt).join(' → ')}。`,
+      `代表读法（P1 最高）：${f.representative.points.map(pt).join(' → ')}。`, // 内部模式 id 只进 JSON
       `待定事项：${f.pendingReasons.join('；') || '无'}。`,
       '', `- XX / X：${f.parentMapping.combination}。`, `- B：${f.parentMapping.flat}。`, `- 新推动：${f.parentMapping.impulse}。`, '', `失效条件：${f.invalidation}`);
     for (const t of f.invalidationTiers) L.push(`- 跌破或触及 ${px(t.price)}，累计淘汰 ${t.eliminated}/${t.total} 个读法${t.wholeFamily ? '，类别整体失效' : ''}。`);
   }
-  if (topLevel.spikes.length) {
+  const shownTs = new Set((spikesShown || []).map((x) => x.timestamp));
+  if (topLevel.spikes.length && topLevel.spikes.every((x) => shownTs.has(x.timestamp))) {
+    L.push('', '参与计算的有量扎针（§3.15 保留）：同上方大级别背景所列。');
+  } else if (topLevel.spikes.length) {
     L.push('', '参与计算的有量扎针（§3.15 保留）：');
     for (const s of topLevel.spikes) L.push(`- ${require('./spike-detection').formatSpike(s, px)}`);
   } else L.push('', '参与计算的有量扎针：无。');
