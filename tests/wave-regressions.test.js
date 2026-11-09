@@ -456,7 +456,7 @@ test('BTC 全流程：读法三（⏳ 腿已在 79220.74 走完）与读法一 /
   assert.deepEqual(cr.nextLegs.map(x=>x.nextLeg),['浪③','c 腿']);
   assert.deepEqual([cr.zigzagA.from,cr.zigzagA.to],[87395.67,79800]);
   const txt=nr.text;
-  assert.match(txt,/\*\*87395\.67→79220\.74 这段的内部\*\*：/);
+  assert.match(txt,/\*\*87395\.67→79220\.74 这段的内部（三段式调整类）\*\*：/);
   assert.match(txt,/\*\*单锯齿（Zigzag 5-3-5） \/ 双锯齿（Double Zigzag w-x-y）\*\*（87395\.67 @2026-09-21 → 79800 @2026-10-15 → 84898 @2026-10-21 → 79220\.74 @2026-10-24）/);
   assert.match(txt,/单锯齿与双锯齿是同一组拐点，区别在首段内部：单锯齿要求首段为五浪（推动浪或引导楔形），双锯齿要求 \(w\) 为三波。/);
   assert.doesNotMatch(txt,/失败第五浪/);
@@ -551,7 +551,7 @@ test('双锯齿单独成族：取端点为跨度极值、分段不与平台形�
   const i=fine.findIndex(p=>p.price===87395.67);
   const sp=E.splitPullbackAtLow(fine.slice(i),true);
   const {patterns}=E.analyzePullbackCompleted(sp.completed,candles);
-  assert.deepEqual(patterns.map(p=>p.patternType),['zigzag','zigzag-double','flat','sideways']);
+  assert.deepEqual(patterns.map(p=>p.patternType),['zigzag','zigzag-double','flat','sideways','zigzag-triple'],'三锯齿不再并入单锯齿族');
   const dz=patterns[1];
   assert.deepEqual(dz.points.map(p=>p.price),[87395.67,79800,84898,79220.74]);
   assert.deepEqual(dz.beyondEnds,[]);
@@ -566,7 +566,7 @@ test('双锯齿渲染：这段的内部列出价链；轴③给 (y) 对 (w) 的�
   const nr=await E.enrichCurrentPullback(tree,{product:'BTC-USD',mainTf:'1d',finePivots:fine,candles},async()=>{throw new Error('日线足够，不应下钻');});
   const leg=E.renderPullbackLegDetail(nr,2),tgt=E.renderPullbackTargets(nr,2);
   assert.match(leg,/\*\*单锯齿（Zigzag 5-3-5） \/ 双锯齿（Double Zigzag w-x-y）\*\*（87395\.67 @2026-09-21 → 79800 @2026-10-15 → 84898 @2026-10-21 → 79220\.74 @2026-10-24）；或 \*\*平台形/);
-  assert.match(leg,/较符合 \*\*单锯齿（Zigzag 5-3-5） 或 双锯齿（Double Zigzag w-x-y） 或 平台形（Flat 3-3-5，基础版） 或 双重横向整理（联合形 w-x-y）\*\*/);
+  assert.match(leg,/按三段式调整较符合 \*\*单锯齿（Zigzag 5-3-5） 或 双锯齿（Double Zigzag w-x-y） 或 平台形（Flat 3-3-5，基础版） 或 双重横向整理（联合形 w-x-y） 或 三锯齿（Triple Zigzag w-x-y-xx-z）\*\*；按五浪读较符合 \*\*驱动浪（引导楔形 Leading Diagonal）\*\*（只能作单锯齿的 \(a\)）/);
   assert.match(tgt,/- \*\*双锯齿\*\*（87395\.67→79800→84898→…）：\(y\) 现为 \(w\) 的 0\.747 倍；\(y\) 通常大于 \(w\) 的 0\.9 倍（78061\.9，未到；共振：\(z\) 破位档 77880\.91）；常见目标 1 倍 \*\*77302\.33\*\*（共振：\(z\) 破位档 77880\.91）、1\.618 倍 \*\*72608\.21\*\*（共振：回撤位 0\.5 72597\.93）；指引线 71089\.07/);
   assert.match(tgt,/规则失效 \*\*46919\.65\*\*（\(y\) 价格须小于 \(w\) 的 5 倍；已在轴②底线 57800\.19 之外，实际以底线为准）；时间上限 \*\*2027-02-18\*\*（\(y\) 时间 ≤ \(w\) 时间的 5 倍；已走 4 根 \/ 上限 120 根）/);
   assert.doesNotMatch(tgt,/59408（[^）]*以底线为准/,'单锯齿失效价在底线之上，不加注');

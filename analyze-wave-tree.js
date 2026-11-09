@@ -2775,8 +2775,8 @@ function tfStepDown(tfKey) {
 }
 
 // 镜像 main() 管道，取某级别某窗口的 {tfKey, candles, fine}；fetchFn 可注入便于离线测试
-async function loadCandlesAndPivots(product, tfKey, start, end, fetchFn = getCandles) {
-  const tf = TIMEFRAMES[tfKey];
+async function loadCandlesAndPivots(product, tfKey, start, end, fetchFn = getCandles, tfSpec = null) {
+  const tf = tfSpec || TIMEFRAMES[tfKey];
   if (!tf) return null;
   const base = await fetchFn(product, tf.fetchGranularity, start, end);
   const startTs = Math.floor(start.getTime() / 1000);
@@ -3098,7 +3098,8 @@ function analyzePullbackCompleted(completedFine, candles) {
   for (const c of all) {
     if (!clean(c)) continue; // 滤除 severe/文法违规
     if (c.patternId === 'zigzag-double') continue; // 另行挑选，见下
-    const family = (c.manual && c.manual.patternType) || c.patternId;
+    // 平台形各子类、双重/三重联合形仍按族合并；三锯齿是独立形态，不并入单锯齿族（pullback-internal-roles D3）
+    const family = c.patternId === 'zigzag-triple' ? 'zigzag-triple' : ((c.manual && c.manual.patternType) || c.patternId);
     if (!comboCand && (c.patternId === 'sideways-double' || c.patternId === 'sideways-triple')) comboCand = c;
     if (seen.has(family)) continue; // 按形态族去重
     seen.add(family);
@@ -3116,7 +3117,69 @@ function analyzePullbackCompleted(completedFine, candles) {
     const iSingle = patterns.findIndex((p) => p.patternType === 'zigzag');
     patterns.splice(iSingle + 1, 0, toPattern(doublePick, 'zigzag-double'));
   }
-  return { patterns, comboCand };
+  for (const p of patterns) p.roles = pullbackRolesOf(p.patternType);
+  return { patterns, comboCand, fiveWave: analyzePullbackFiveWave(completedFine, candles) };
+}
+
+// 浪②/b 前提下，已走完段可扮演的角色（pullback-internal-roles D2）：平台形 a、联合形 w 须为三波，双锯齿 w 须为单锯齿，
+// 单锯齿 a 须为五浪（推动浪或引导楔形）。三角形已在上游滤除（浪② 不可为三角形）。
+const PULLBACK_ROLE_CN = {
+  whole: '整条 ⏳(进行中)腿', 'flat-a': '平台形的 (a)', 'double-zigzag-w': '双锯齿的 (w)',
+  'combination-w': '联合形的 (w)', 'zigzag-a': '单锯齿的 (a)',
+};
+function pullbackRolesOf(family) {
+  if (family === 'driving') return ['zigzag-a'];
+  if (family === 'zigzag') return ['whole', 'flat-a', 'double-zigzag-w', 'combination-w'];
+  return ['whole', 'flat-a', 'combination-w'];
+}
+
+// 五浪类读法：按单锯齿 a 浪的位置角色（推动浪 / 引导楔形）拆同一组枢轴，只留硬规则与文法全过的候选，每种形态取排名最前的一个。
+// 楔形另附收敛程度与指引命中，只作注记、不淘汰（书 §2.3 只要求边界收敛；pullback-internal-roles D4）。
+function analyzePullbackFiveWave(completedFine, candles) {
+  if (!Array.isArray(completedFine) || completedFine.length < 6) return [];
+  const res = decompose(completedFine, candles, [ROLE_IMPULSE_LEADING], 0, { beamK: 6, maxDepth: 2, cache: new Map() });
+  if (!res || res.isLeaf) return [];
+  const out = [];
+  for (const c of [res.primary, ...(res.alternates || [])].filter(Boolean)) {
+    const sc = c.score || {};
+    if (sc.severe > 0 || sc.grammarViolations > 0 || sc.tier1 > 0) continue;
+    if (!Array.isArray(c.points) || c.points.length !== 6 || out.some((x) => x.patternId === c.patternId)) continue;
+    const points = c.points.map((p) => ({ price: p.price, timestamp: p.timestamp, type: p.type, index: p.index }));
+    out.push({
+      label: (c.manual && c.manual.label) || c.patternId,
+      patternId: c.patternId,
+      patternType: 'driving',
+      roles: pullbackRolesOf('driving'),
+      score: { tier1: sc.tier1, tier2: sc.tier2, tier3: sc.tier3 },
+      points,
+      beyondEnds: legBeyondEnds(c.points, completedFine),
+      diagonal: c.patternId === 'diagonal-leading' ? diagonalShapeNote(points, candles) : null,
+    });
+  }
+  return out;
+}
+
+// 楔形形状注记：2 浪时→4 浪时的通道收窄比例（与 diagonal.pattern.boundaries-converge 同口径），以及指引逐条命中情况。
+function diagonalShapeNote(points, candles) {
+  const [, p1, p2, p3, p4] = points;
+  const t = (p) => (Number.isFinite(p.timestamp) ? p.timestamp : p.index);
+  const dt13 = t(p3) - t(p1);
+  const dt24 = t(p4) - t(p2);
+  let narrowPct = null;
+  if (dt13 > 0 && dt24 > 0) {
+    const m13 = (p3.price - p1.price) / dt13;
+    const m24 = (p4.price - p2.price) / dt24;
+    const width = (x) => Math.abs(p1.price + m13 * (x - t(p1)) - p2.price - m24 * (x - t(p2)));
+    const w2 = width(t(p2));
+    if (w2 > 0) narrowPct = 1 - width(t(p4)) / w2;
+  }
+  const direction = points[5].price < points[0].price ? 'down' : 'up';
+  const guidelines = buildDiagonalManual(direction, 'leading').guidelines.map((g) => {
+    let pass = null;
+    try { pass = !!g.test({ points, candles, direction }).pass; } catch (e) { pass = null; }
+    return { id: g.id, desc: g.desc, pass };
+  });
+  return { narrowPct, guidelines };
 }
 
 // 腿内出现比腿终点更极端的价（§3.15 失败第五浪 / §4.7 截断）：引擎允许正统终点不是跨度极值，
@@ -3211,7 +3274,7 @@ const HD_C_REGULAR = [0.618, 1, 1.236];
 const HD_C_EXPANDED = [1.236, 1.618];
 const HD_MIN_REBOUND = 0.2; // 状态③取 a 终点时，此前反弹至少要有整段的 20%（单锯齿 b 浪价格下限）
 
-function buildHigherDegreeReading({ split, patterns, combinationReading } = {}) {
+function buildHigherDegreeReading({ split, patterns, combinationReading, fiveWave } = {}) {
   if (!split || !split.swingExtreme || !split.trueLow) return null;
   // 整段内部必须有调整浪读法（三角形不能充当平台形 a 浪 / 联合形 w 浪）
   const forms = (patterns || []).map((p) => p && p.label).filter((l) => l && !/三角/.test(l));
@@ -3249,6 +3312,8 @@ function buildHigherDegreeReading({ split, patterns, combinationReading } = {}) 
   if (!(gross > 0)) return null;
   const bh = Math.max(bounce.price, aEnd.price);
   const line70 = aEnd.price + 0.7 * gross;
+  // 单锯齿 (b) 价格须在 (a) 的 20%~100% 之间（zigzag.ratio.b-price-between-0.2a-and-a）：20% 线是以 aEnd 为 (a) 终点时 (b) 的下限
+  const line20 = aEnd.price + 0.2 * gross;
   const comboCap = aEnd.price + 1.5 * gross;
   const flatCap = aEnd.price + 2 * gross;
   const touched70 = bh >= line70;
@@ -3272,17 +3337,19 @@ function buildHigherDegreeReading({ split, patterns, combinationReading } = {}) 
     aEnd: { price: aEnd.price, timestamp: aEnd.timestamp },
     newLow: { price: newLow.price, timestamp: newLow.timestamp },
     bounce: { price: bh, timestamp: bounce.timestamp },
-    gross, line70, regularCap: extreme.price, comboCap, flatCap,
+    gross, line70, line20, regularCap: extreme.price, comboCap, flatCap,
     shortfall: touched70 ? 0 : line70 - bh,
     xPct: (bh - aEnd.price) / gross,
-    touched70, comboExcluded, invalid, cTargets, lineXX,
+    touched70, touched20: bh >= line20, comboExcluded, invalid, cTargets, lineXX,
+    // 整段内部有无五浪类读法（单锯齿 (a) 的依据）；跌破后 (a) 终点已换成此前低点，与已拆的整段不再是同一段，记为未知
+    fiveWaveA: broken ? null : !!(Array.isArray(fiveWave) && fiveWave.length),
   };
 }
 
 // 读法三（⏳ 腿已在回撤真低点走完）：摆动极值 → 回撤真低点整段即轴②该进行中腿本身，真低点之后的反弹是下一腿的开头
 // （轴②下一腿投影本就从这里起量）。与读法一并列：只在读法一成立且未跌破 (a) 终点时给出——跌破后真低点已换。
 // 否定：跌破真低点；与读法一的区分：下一腿须五浪，读法一的 (b)/(x) 须三波。
-function buildCompletedReading({ hd, patterns, roles } = {}) {
+function buildCompletedReading({ hd, patterns, roles, fiveWave } = {}) {
   if (!hd || hd.state === 'broken') return null;
   const forms = (patterns || []).map((p) => p && p.label).filter((l) => l && !/三角/.test(l)).slice(0, 4);
   if (!forms.length) return null;
@@ -3304,6 +3371,8 @@ function buildCompletedReading({ hd, patterns, roles } = {}) {
     invalidation: hd.aEnd.price, line70: hd.line70, regularCap: hd.regularCap,
     nextLegs: (roles || []).map((r) => ({ rank: r.rank, label: r.label, legCn: r.legCn, nextLeg: r.next.legName, projection: r.next.projection })),
     zigzagA,
+    // 整段若为五浪（单锯齿的 (a)），⏳腿未走完，本读法不成立（pullback-internal-roles）
+    fiveWaveRisk: !!(Array.isArray(fiveWave) && fiveWave.length),
   };
 }
 
@@ -3491,6 +3560,120 @@ function buildExtensionReading(patterns, candles, { zt, fibTargets, trigger, sta
   return { trigger, state: state || null, forms };
 }
 
+// ============================================================
+// 止跌后的反弹确认线 + 推动浪门槛（rebound-start-confirmation）
+// ============================================================
+// 回调（高点 → 低点）止跌后，反弹要越过哪些价位才算开始；反弹走出"一段上涨 + 一次回调"后，守住/冲破哪里才可能是五浪。
+// 低点按 K 线取（边界锚定只补一个反向极值，最后几根 K 线的新低在枢轴里看不到），跌出新低即全部重算。
+const REBOUND_TARGET_MULTS = [1, 1.618];
+
+// 低点之后按 K 线分段：最高价创新高开新段，段内（新高那根之后）记最低价；最深一段给出 ① 高点 / ② 低点。
+function reboundImpulseGate(candles, iLow, lowPrice) {
+  const segs = [];
+  let seg = null;
+  for (let i = iLow + 1; i < candles.length; i += 1) {
+    const c = candles[i];
+    if (!seg || c.high > seg.h1) { seg = { h1: c.high, iH: i, l2: null, iL: null }; segs.push(seg); continue; }
+    if (seg.l2 == null || c.low < seg.l2) { seg.l2 = c.low; seg.iL = i; }
+  }
+  let best = null;
+  for (const s of segs) if (s.l2 != null && s.l2 < s.h1 && (!best || s.h1 - s.l2 > best.h1 - best.l2)) best = s;
+  if (!best) return null;
+  const after = candles.slice(best.iL + 1);
+  const brokeAt = after.find((c) => c.high > best.h1);
+  const iBroke = brokeAt ? candles.indexOf(brokeAt) : -1;
+  const backBelow = iBroke >= 0 ? candles.slice(iBroke + 1).find((c) => c.low < best.h1) : null;
+  const amp1 = best.h1 - lowPrice;
+  const state = iBroke < 0 ? 'pending' : backBelow ? 'overlap' : 'third';
+  return {
+    state,
+    h1: { price: best.h1, timestamp: candles[best.iH].timestamp },
+    l2: { price: best.l2, timestamp: candles[best.iL].timestamp, provisional: best.iL === candles.length - 1 },
+    amp1,
+    retrace2: amp1 > 0 ? (best.h1 - best.l2) / amp1 : null,
+    brokeAt: brokeAt ? brokeAt.timestamp : null,
+    backBelowAt: backBelow ? backBelow.timestamp : null,
+    targets: state === 'overlap' ? [] : REBOUND_TARGET_MULTS.map((m) => ({ mult: m, price: best.l2 + m * amp1 })),
+  };
+}
+
+// 纯函数：candles/fine 为同一细周期（1h 等）自摆动极值起的 K 线与枢轴；finerFine 为可选的 15m 枢轴（覆盖末段）。
+function buildReboundConfirmation({ candles, fine, swingExtreme, finerFine = null, tf = null, finerTf = null } = {}) {
+  if (!Array.isArray(candles) || candles.length < 2 || !swingExtreme) return null;
+  const fromTs = swingExtreme.timestamp;
+  let iHi = -1;
+  candles.forEach((c, i) => { if (c.timestamp >= fromTs - 1 && (iHi < 0 || c.high > candles[iHi].high)) iHi = i; });
+  if (iHi < 0 || iHi >= candles.length - 1) return null;
+  let iLow = iHi + 1;
+  for (let i = iHi + 1; i < candles.length; i += 1) if (candles[i].low < candles[iLow].low) iLow = i;
+  const hi = { price: candles[iHi].high, timestamp: candles[iHi].timestamp };
+  const low = { price: candles[iLow].low, timestamp: candles[iLow].timestamp };
+  if (!(low.price < hi.price)) return null;
+
+  const inner = (Array.isArray(fine) ? fine : []).filter((p) => p.timestamp > hi.timestamp && p.timestamp < low.timestamp);
+  const D = [{ type: 'H', price: hi.price, timestamp: hi.timestamp }, ...inner, { type: 'L', price: low.price, timestamp: low.timestamp }];
+  const lastH = [...inner].reverse().find((p) => p.type === 'H' && p.price > low.price && p.price < hi.price) || null;
+  const maxBounce = maxInternalRetrace(D, false);
+
+  const lines = [];
+  const add = (key, price, extra = {}) => {
+    if (!Number.isFinite(price) || !(price > low.price) || price > hi.price) return;
+    if (lines.some((l) => l.price === price)) return;
+    lines.push({ key, price, ...extra });
+  };
+  if (lastH && Array.isArray(finerFine)) {
+    const f = [...finerFine].reverse().find((p) => p.type === 'H' && p.timestamp > lastH.timestamp && p.timestamp < low.timestamp
+      && p.price < lastH.price && p.price > low.price);
+    if (f) add('finer', f.price, { timestamp: f.timestamp, tf: finerTf });
+  }
+  if (lastH) add('finalLeg', lastH.price, { timestamp: lastH.timestamp, tf });
+  if (maxBounce) add('degree', priceDiff(low.price, -maxBounce.depth), { bounce: maxBounce });
+  add('origin', hi.price, { timestamp: hi.timestamp });
+  lines.sort((a, b) => a.price - b.price);
+
+  const post = candles.slice(iLow + 1);
+  const bounceHigh = post.length ? Math.max(...post.map((c) => c.high)) : low.price;
+  for (const l of lines) {
+    const c = post.find((x) => x.high >= l.price);
+    l.crossed = !!c;
+    l.crossedAt = c ? c.timestamp : null;
+  }
+  const gate = reboundImpulseGate(candles, iLow, low.price);
+  const last = candles[candles.length - 1];
+  return {
+    tf, finerTf: lines.some((l) => l.key === 'finer') ? finerTf : null,
+    high: hi, low, bounceHigh, lastClose: last.close, lastTs: last.timestamp,
+    fib236: priceDiff(low.price, -(hi.price - low.price) * 0.236),
+    lines, gate,
+    next: lines.find((l) => !l.crossed) || null,
+  };
+}
+
+// 取数（D1）：主周期 ≤1h 直接用主周期；否则取 1h（超 3000 根改 4h），1h 时再取末段起点至今的 15m 找最早信号。
+const REBOUND_TFS = { ...TIMEFRAMES, '15m': { fetchGranularity: 900, aggregate: 'none' } };
+async function loadReboundConfirmation(ctx, swingExtreme, fetchFn) {
+  const { product, mainTf, finePivots, candles, endTs } = ctx;
+  const endMs = endTs * 1000 + 1000;
+  let src;
+  if (['1h', '5m'].includes(mainTf)) {
+    src = { tf: mainTf, candles: candles.filter((c) => c.timestamp >= swingExtreme.timestamp), fine: finePivots.filter((p) => p.timestamp >= swingExtreme.timestamp) };
+  } else {
+    const tf = (endMs / 1000 - swingExtreme.timestamp) / 3600 > 3000 ? '4h' : '1h';
+    const loaded = await loadCandlesAndPivots(product, tf, new Date(swingExtreme.timestamp * 1000), new Date(endMs), fetchFn);
+    if (!loaded || loaded.candles.length < 2) return null;
+    src = { tf, candles: loaded.candles, fine: loaded.fine };
+  }
+  const draft = buildReboundConfirmation({ ...src, swingExtreme });
+  const finerTf = src.tf === '1h' ? '15m' : null;
+  const fl = draft && draft.lines.find((l) => l.key === 'finalLeg');
+  if (!finerTf || !fl) return draft;
+  try {
+    const r = await loadCandlesAndPivots(product, finerTf, new Date(fl.timestamp * 1000), new Date(endMs), fetchFn, REBOUND_TFS[finerTf]);
+    if (r && r.fine && r.fine.length) return buildReboundConfirmation({ ...src, swingExtreme, finerFine: r.fine, finerTf });
+  } catch (e) { /* 15m 只是最早信号那一行，取不到就省掉 */ }
+  return draft;
+}
+
 // 编排：对进行中的高点回撤做子级别下钻 + 竞争形态 + 定级 + 联合形 + Z 投影，结果挂到 pullback.narrative
 // 纯计算部分（split/rank/level/combo/zwave）离线可测；仅 drillPullback 触网（拆不出时才触发）。
 async function enrichCurrentPullback(tree, ctx, fetchFn) {
@@ -3532,8 +3715,8 @@ async function enrichCurrentPullback(tree, ctx, fetchFn) {
     if (split) {
       narrative.structureLine = split.trueLow.price;
       narrative.structureLow = { price: split.trueLow.price, timestamp: split.trueLow.timestamp, tf: sub.tfKey };
-      const { patterns, comboCand } = analyzePullbackCompleted(split.completed, sub.candles);
-      narrative.subDegree = { tf: sub.tfKey, drilled, rankedPatterns: patterns };
+      const { patterns, comboCand, fiveWave } = analyzePullbackCompleted(split.completed, sub.candles);
+      narrative.subDegree = { tf: sub.tfKey, drilled, rankedPatterns: patterns, fiveWavePatterns: fiveWave || [] };
       const combo = readCombination(comboCand, split.trueLow, split.bounceExtreme);
       if (combo) {
         narrative.combinationReading = { legs: combo.legs, xxRetracePct: combo.xxRetracePct };
@@ -3541,7 +3724,7 @@ async function enrichCurrentPullback(tree, ctx, fetchFn) {
         const wAmp = wLeg ? Math.abs(wLeg.from - wLeg.to) : null;
         zInputs = [wAmp, combo.yAmp, split.trueLow.price, split.bounceExtreme.price];
       }
-      narrative.higherDegree = buildHigherDegreeReading({ split, patterns, combinationReading: narrative.combinationReading });
+      narrative.higherDegree = buildHigherDegreeReading({ split, patterns, combinationReading: narrative.combinationReading, fiveWave });
     }
   }
 
@@ -3568,6 +3751,7 @@ async function enrichCurrentPullback(tree, ctx, fetchFn) {
   narrative.axis2T4Alive = roleData.t4Alive;
   narrative.completedReading = buildCompletedReading({
     hd, patterns: narrative.subDegree ? narrative.subDegree.rankedPatterns : null, roles: roleData.roles,
+    fiveWave: narrative.subDegree ? narrative.subDegree.fiveWavePatterns : null,
   });
   narrative.axis2CharMismatch = !!(cws && ips.swingChar && cws.leg1Char && ips.swingChar !== cws.leg1Char);
   narrative.retraceLevels = retraceLevelsWithConfluence(pb.fibTargets, narrative.zwaveTargets);
@@ -3575,6 +3759,12 @@ async function enrichCurrentPullback(tree, ctx, fetchFn) {
   narrative.extensionReading = hd && sub && narrative.subDegree ? buildExtensionReading(narrative.subDegree.rankedPatterns, sub.candles, {
     zt: narrative.zwaveTargets, fibTargets: pb.fibTargets, trigger: narrative.structureLine, state: hd.state,
   }) : null;
+
+  // 止跌后的反弹确认线（rebound-start-confirmation）：只在 main() 传入 endTs 时取数，离线测试不触网
+  narrative.reboundConfirmation = null;
+  if (Number.isFinite(ctx.endTs)) {
+    try { narrative.reboundConfirmation = await loadReboundConfirmation(ctx, swingExtreme, fetchFn); } catch (e) { narrative.reboundConfirmation = null; }
+  }
 
   finalizePullbackAftermath(narrative, tree.pricePrecision);
   narrative.text = renderPullbackNarrative(narrative, tree.pricePrecision);
@@ -3649,9 +3839,21 @@ function renderHigherDegree(hd, n, dated, legNames = '') {
   const cNote = `平台形的 (c) 浪视子类与 ${n(hd.aEnd.price)} 的关系各异：规则型可略低或略高但接近，扩散型须越过，顺势型到不了但须与 (a) 浪有价格重叠，所以守住 ${n(hd.aEnd.price)} 本身不构成回撤结束的证据；联合形 (y) 浪的下限本书（第 1~7 章）未给出，不下断言。`;
   const threeWave = '随后的 (c)/(y) 浪走成五浪是平台形、走成三波是联合形，走出前不断言二者之一；(b)/(x) 本身须是三波调整，越过 70% 线的这段若走成五浪则是推动浪、不是 (b)。';
 
+  // 单锯齿 (b) 合法范围是 (a) 的 20%~100%：越过 70% 线仍可是单锯齿（深 (b)），与平台形 / 联合形的区别在 (a) 内部五浪还是三波
+  const line20 = Number.isFinite(hd.line20) ? hd.line20 : hd.aEnd.price + 0.2 * hd.gross;
+  const fiveNote = hd.fiveWaveA === false ? '；整段内部未拆出五浪类读法，单锯齿这条路目前缺少内部结构依据'
+    : hd.fiveWaveA ? '；整段内部已拆出五浪类读法，见上方' : '';
+  const zzDeep = `单锯齿（深 (b)，要求 (a) 为五浪类${fiveNote}）在最高未越过 ${n(hd.extreme.price)} 时仍合规；三者的区别在 (a) 内部：五浪为单锯齿，三波为平台形或联合形`;
+  // 跌破 (a) 终点且 (b)/(x) 不足 70% 时剩下的读法：过 20% 线留单锯齿（须 (a) 五浪）与双锯齿；不到 20% 线则以 aEnd 为 (a) 终点的单锯齿不合规
+  const onBreak = (touched20) => (touched20
+    ? `只剩单锯齿（要求 (a) 浪为推动浪或引导楔形，即五浪类${fiveNote}）或双锯齿`
+    : `(a) 在 ${n(hd.aEnd.price)} 结束的单锯齿也不合规（(b) 不足 (a) 的 20%，20% 线 ${n(line20)}），更可能是 (a) 或末段在延伸；只剩双锯齿`);
+
   if (hd.state === 'below') {
     const band = hd.xPct >= 0.3 && hd.xPct <= 0.7 ? '落在书中常见的 30%~70% 区间内' : '不在书中常见的 30%~70% 区间内';
-    L.push(`反弹尚差 **${n(hd.shortfall)}** 才到该线。①冲破 ${n(hd.line70)}：⏳(进行中)腿可成**平台形（3-3-5）或双重横向整理（3-3-3）**，最高未越过 ${n(hd.extreme.price)} 为规则型；${threeWave}②没到 ${n(hd.line70)} 就跌破 ${n(hd.aEnd.price)}：(b)/(x) 不足 70%，平台形与联合形都被排除，只剩单锯齿（要求 (a) 浪为推动浪或引导楔形，即五浪类）或双锯齿 (w)-(x)-(y)（(x) 价格回撤 (w) 价格 ${pct(hd.xPct)}，${band}）。${cNote}`);
+    const touched20 = hd.touched20 != null ? hd.touched20 : hd.bounce.price >= line20;
+    const line20Cn = `单锯齿 (b) 须回撤 (a) 的 20%～100%：20% 线 **${n(line20)}**，反弹${touched20 ? '已越过' : '尚未越过'}。`;
+    L.push(`反弹尚差 **${n(hd.shortfall)}** 才到该线。${line20Cn}①冲破 ${n(hd.line70)}：⏳(进行中)腿可成**平台形（3-3-5）或双重横向整理（3-3-3）**，最高未越过 ${n(hd.extreme.price)} 为规则型；${zzDeep}。${threeWave}②没到 ${n(hd.line70)} 就跌破 ${n(hd.aEnd.price)}：(b)/(x) 不足 70%，平台形与联合形都被排除，${onBreak(touched20)} (w)-(x)-(y)（(x) 价格回撤 (w) 价格 ${pct(hd.xPct)}，${band}）。${cNote}`);
   } else if (hd.state === 'reached') {
     const kind = hd.subtype === 'regular'
       ? `最高 ${n(hd.bounce.price)} 未越过 ${n(hd.extreme.price)}，属规则型`
@@ -3659,10 +3861,12 @@ function renderHigherDegree(hd, n, dated, legNames = '') {
     const cap = hd.invalid
       ? `；已达平台形上限 ${n(hd.flatCap)}（(b) 运行总量须小于 (a) 的 2 倍），读法一整体作废`
       : hd.comboExcluded ? `；已越过联合形上限 ${n(hd.comboCap)}，联合形被排除，平台形上限 ${n(hd.flatCap)}` : `；${caps}`;
-    L.push(`反弹已触及 70% 线，平台形 / 联合形门槛已开：${kind}${cap}。${hd.invalid ? '' : threeWave}${hd.invalid ? '' : cNote}${hd.cTargets.length ? '平台形 (c) 浪参考位见轴③「回撤目标位」。' : ''}`);
+    const zzReached = hd.subtype === 'regular' && !hd.invalid ? `${zzDeep}。` : '';
+    L.push(`反弹已触及 70% 线，平台形 / 联合形门槛已开：${kind}${cap}。${zzReached}${hd.invalid ? '' : threeWave}${hd.invalid ? '' : cNote}${hd.cTargets.length ? '平台形 (c) 浪参考位见轴③「回撤目标位」。' : ''}`);
   } else {
     const touched = hd.touched70;
-    L.push(`价格已跌破此前的 (a)/(w) 终点 ${n(hd.aEnd.price)}，最新低 **${n(hd.newLow.price)}**（此前反弹最高 ${n(hd.bounce.price)}，${touched ? `曾触及` : '始终未触及'} 70% 线 ${n(hd.line70)}），按 (c)/(y) 浪进行中表述。${touched ? `平台形（(c) 浪此时已越过 (a) 终点）与联合形仍在候选内：(c)/(y) 走成五浪是平台形、走成三波是联合形，走出前不断言二者之一。` : `(b)/(x) 不足 70%，平台形与联合形已被排除，只剩单锯齿（要求 (a) 浪为五浪类）或双锯齿 (w)-(x)-(y)（(x) 价格回撤 (w) 价格 ${pct(hd.xPct)}）。`}联合形 (y) 浪的下限本书（第 1~7 章）未给出，不下断言。`);
+    const t20 = hd.touched20 != null ? hd.touched20 : hd.bounce.price >= line20;
+    L.push(`价格已跌破此前的 (a)/(w) 终点 ${n(hd.aEnd.price)}，最新低 **${n(hd.newLow.price)}**（此前反弹最高 ${n(hd.bounce.price)}，${touched ? `曾触及` : '始终未触及'} 70% 线 ${n(hd.line70)}，${t20 ? '曾触及' : '未触及'} 20% 线 ${n(line20)}），按 (c)/(y) 浪进行中表述。${touched ? `平台形（(c) 浪此时已越过 (a) 终点）与联合形仍在候选内：(c)/(y) 走成五浪是平台形、走成三波是联合形，走出前不断言二者之一。` : `(b)/(x) 不足 70%，平台形与联合形已被排除，${onBreak(t20)} (w)-(x)-(y)（(x) 价格回撤 (w) 价格 ${pct(hd.xPct)}）。`}联合形 (y) 浪的下限本书（第 1~7 章）未给出，不下断言。`);
   }
   L.push('');
 
@@ -3684,6 +3888,7 @@ function renderCompletedReading(cr, n, dated, legNames = '', hasCombo = false, h
     const [lo, hi] = a.typical;
     head += `若${a.legCn}为单锯齿，其 (a) 是单锯齿首段 ${n(a.from)}→${n(a.to)}，${a.to < a.from ? '跌' : '涨'} ${n(a.amp)}，是${a.refCn}的 ${a.value.toFixed(3)} 倍（常见 ${lo}～${hi} 倍${a.typicalPrices ? `，对应 (a) 终点 ${a.typicalPrices.map(n).join('～')}` : ''}，指引）。`;
   }
+  if (cr.fiveWaveRisk) head += `若整段为五浪（单锯齿的 (a)，见上方「五浪类读法」），${legNames || '⏳(进行中)腿'}尚未走完，本读法不成立。`;
   L.push(head);
   L.push('');
   const beyond = [];
@@ -3754,6 +3959,37 @@ function renderAxis2Roles(nr, n, { refs: showRefs = true } = {}) {
   return L;
 }
 
+// 五浪类读法（pullback-internal-roles）：整段为推动浪 / 引导楔形时只能作单锯齿的 (a)——⏳腿未完，真低点后是 (b) 三波反弹，之后还有 (c)。
+// 楔形附通道收窄比例与指引命中，只作注记。不写前提之外的读法（如新一轮下跌的第 1 浪），不改轴②排名。
+function renderFiveWaveReading(fiveWave, nr, n, pd) {
+  const lv = nr.level || {};
+  const ext = lv.extreme ? lv.extreme.price : (fiveWave[0].points[0] || {}).price;
+  const low = nr.structureLow ? nr.structureLow.price : (fiveWave[0].points[5] || {}).price;
+  if (!Number.isFinite(ext) || !Number.isFinite(low)) return [];
+  const line20 = low + 0.2 * (ext - low);
+  const ordCn = ['首段', '第二段', '第三段', '第四段'];
+  const items = fiveWave.map((p) => {
+    const chain = p.points.map((pt) => pd(pt.price, pt.timestamp)).join(' → ');
+    const notes = [];
+    const d = p.diagonal;
+    if (d) {
+      if (Number.isFinite(d.narrowPct)) notes.push(`通道从 2 浪到 4 浪收窄 ${(d.narrowPct * 100).toFixed(1)}%`);
+      const missed = (d.guidelines || []).filter((g) => g.pass === false).map((g) => g.desc.replace(/（.*$/, ''));
+      const hit = (d.guidelines || []).filter((g) => g.pass === true).length;
+      if ((d.guidelines || []).length) notes.push(`楔形指引命中 ${hit}/${d.guidelines.length}${missed.length ? `，未满足：${missed.join('；')}` : ''}`);
+    }
+    for (const b of p.beyondEnds || []) {
+      const down = b.beyond.price < b.end.price;
+      notes.push(`${ordCn[b.leg] || `第 ${b.leg + 1} 段`}内部${down ? '低点' : '高点'} ${n(b.beyond.price)} ${down ? '低于' : '高于'}该段终点 ${n(b.end.price)}，正统终点取 ${n(b.end.price)}`);
+    }
+    return `**${p.label}**（${chain}${notes.length ? `；${notes.join('；')}` : ''}）`;
+  });
+  return [
+    `**五浪类读法（只作${PULLBACK_ROLE_CN['zigzag-a']}）**：${items.join('；或 ')}。若成立，⏳(进行中)腿还没走完：${n(low)} 之后是 (b) 三波反弹（须回撤 (a) 的 20%～100%，即 ${n(line20)}～${n(ext)}，不越过 ${n(ext)}），之后还有 (c)；楔形的收敛程度与指引只作参考，不据此淘汰。`,
+    '',
+  ];
+}
+
 // 轴②「进行腿细化」：身份对照 / 级别 / (a) 内部 / 结构线 / 读法一 / 读法二 / 两条 70% 线。
 // md：报告内渲染（slim-wave-tree-report）——不列书页出处（verbose 除外）、导读指向轴③价位表；
 // narrative.text（JSON）保持原样。
@@ -3771,9 +4007,11 @@ function renderPullbackLegDetail(nr, pricePrecision, { md = false, verbose = fal
   L.push(...renderAxis2Roles(nr, n, { refs: !md || verbose }));
 
   const sd = nr.subDegree;
+  const fiveWave = (sd && sd.fiveWavePatterns) || [];
   const forms = sd && sd.rankedPatterns && sd.rankedPatterns.length
-    ? sd.rankedPatterns.slice(0, 4).map((p) => p.label).join(' 或 ')
+    ? sd.rankedPatterns.map((p) => p.label).join(' 或 ')
     : '形态待明（进行中枢轴不足）';
+  const fiveForms = fiveWave.map((p) => p.label).join(' 或 ');
   const tfNote = sd && sd.drilled ? `（下钻 ${sd.tf} 子级别）` : '';
   const dated = (p, tf = nr.tf) => `${n(p.price)}（${formatPullbackDate(p.timestamp, tf)}）`;
   const subTf = (sd && sd.tf) || nr.tf || '1d';
@@ -3792,7 +4030,9 @@ function renderPullbackLegDetail(nr, pricePrecision, { md = false, verbose = fal
     s1 += `，已超过前段上涨内部任何一次回撤${hasUpgrade ? `，已跌破升级线 ${n(upgradeLine)}（=${n(lv.extreme.price)}−${n(lv.maxInternal.depth)}）` : ''}：按书§3.3 可假设该段上涨已经结束——这正是轴②各情景把它当作完整首腿的前提${nr.axis2T4Alive ? '，并削弱"⑤进行中"情景里"⑤ 内部回撤"的分支' : ''}（仅作证据，不改轴②排名）`;
   } else if (lv.exceeds === false) s1 += '，未超过前段上涨内部最大一次回撤：仍可能只是该段上涨**内部的子浪调整**，上涨未必结束';
   else s1 += '，级别待定（前段上涨内部没有可比的回撤）';
-  s1 += `。摆动极值至回撤真低点这段${tfNote}较符合 **${forms}**。`;
+  s1 += fiveWave.length
+    ? `。摆动极值至回撤真低点这段${tfNote}按三段式调整较符合 **${forms}**；按五浪读较符合 **${fiveForms}**（只能作单锯齿的 (a)）。`
+    : `。摆动极值至回撤真低点这段${tfNote}较符合 **${forms}**。`;
   L.push(s1);
   L.push('');
 
@@ -3840,11 +4080,22 @@ function renderPullbackLegDetail(nr, pricePrecision, { md = false, verbose = fal
         : '';
       const span = lv.extreme && nr.structureLow ? `${n(lv.extreme.price)}→${n(nr.structureLow.price)} ` : '';
       const whose = [done ? '读法三把这段看作整条 ⏳(进行中)腿（已走完）' : '', '读法一把它看作 (a)/(w)', hasCombo ? '读法二另把它拆成 (w)(x)(y)' : ''].filter(Boolean).join('，');
-      L.push(hd
-        ? `**${span}这段的内部**：${desc}——均为三段式调整。${sameChainCn}${beyondCn}${whose}。`
-        : `**回撤内部**：${desc}——均为三段式调整，走完即到头，守住结构线 **${n(nr.structureLine)}** 后按轴②各情景的下一腿${hasCombo ? '；若为读法二（三重联合形）则回撤未完、后面还有 (z) 浪' : ''}。${sameChainCn}${beyondCn}`);
+      // 浪②/b 前提下的角色（pullback-internal-roles D2）：三段式可作整条腿、平台形 (a)、联合形 (w)，单锯齿另可作双锯齿 (w)
+      const rolesCn = `三段式在本腿中可作${['whole', 'flat-a', 'combination-w'].map((k) => PULLBACK_ROLE_CN[k]).join(' / ')}，单锯齿另可作${PULLBACK_ROLE_CN['double-zigzag-w']}`;
+      if (fiveWave.length) {
+        L.push(hd
+          ? `**${span}这段的内部（三段式调整类）**：${desc}。${rolesCn}。${sameChainCn}${beyondCn}${whose}。`
+          : `**回撤内部（三段式调整类）**：${desc}。${rolesCn}；守住结构线 **${n(nr.structureLine)}** 只说明回撤结构未坏${hasCombo ? '；若为读法二（三重联合形）则回撤未完、后面还有 (z) 浪' : ''}。${sameChainCn}${beyondCn}`);
+      } else {
+        L.push(hd
+          ? `**${span}这段的内部**：${desc}——均为三段式调整。${sameChainCn}${beyondCn}${whose}。`
+          : `**回撤内部**：${desc}——均为三段式调整，走完即到头，守住结构线 **${n(nr.structureLine)}** 后按轴②各情景的下一腿${hasCombo ? '；若为读法二（三重联合形）则回撤未完、后面还有 (z) 浪' : ''}。${sameChainCn}${beyondCn}`);
+      }
       L.push('');
     }
+  }
+  if (fiveWave.length) {
+    L.push(...renderFiveWaveReading(fiveWave, nr, n, pd));
   }
   if (hd) {
     L.push(...renderHigherDegree(hd, n, (p) => `${n(p.price)}（${formatPullbackDate(p.timestamp, subTf)}）`, legNames));
@@ -3912,6 +4163,85 @@ function renderPullbackTargetsPlain(nr, pricePrecision) {
   return `${parts.join('')}各形态的倍数、指引线与失效价见 \`--verbose\`。`;
 }
 
+// 止跌后反弹到哪算开始（rebound-start-confirmation）：默认只出价位 / 说明 / 现状与推动浪门槛；verbose 追加推算与规则。
+const REBOUND_LINE_CN = {
+  finer: '最后一小段下跌里的最后一次小反弹被越过：最早的止跌信号',
+  finalLeg: '最后一小段下跌结束，小级别反弹开始',
+  degree: (rc, n) => `反弹超过下跌途中最大的一次反弹：${n(rc.high.price)} → ${n(rc.low.price)} 这一级下跌结束`,
+  origin: (rc, n, leg) => `整段回调结束${leg ? `（${leg} 走完）` : ''}`,
+};
+
+function reboundSupportCn(nr) {
+  const hd = nr && nr.higherDegree;
+  const alive = hd && !hd.invalid && hd.state !== 'broken';
+  return {
+    five: alive && nr.completedReading ? '支持“已走完”' : '回调可能已经走完',
+    three: alive ? '支持“横着走”' : '只是中途反抽',
+  };
+}
+
+function renderReboundGateLines(rc, nr, n, tfCn) {
+  const g = rc.gate;
+  if (!g) return [];
+  const sup = reboundSupportCn(nr);
+  const L = [`**反弹能不能走成五浪**（${tfCn}）：`];
+  const l2 = `**${n(g.l2.price)}**${g.l2.provisional ? '（暂定，还在往下走）' : ''}`;
+  if (g.state === 'pending') {
+    L.push(`- 守住 ${l2} 且冲破 **${n(g.h1.price)}** → 可能在走五浪，${sup.five}`);
+    L.push(`- 没冲破 ${n(g.h1.price)} 就先跌破 ${n(g.l2.price)} → 反弹更像三波，${sup.three}`);
+  } else if (g.state === 'third') {
+    L.push(`- 已冲破 **${n(g.h1.price)}**：可能在走第 3 浪，目标 ${g.targets.map((t) => `**${n(t.price)}**`).join(' / ')}，${sup.five}`);
+    L.push(`- 之后的回调不得跌回 ${n(g.h1.price)} 下方，跌回去更像三波（A-B-C），${sup.three}`);
+  } else {
+    L.push(`- 冲破 ${n(g.h1.price)} 后又跌回它下方：更像三波（A-B-C），${sup.three}`);
+  }
+  L.push(`- 跌破 **${n(rc.low.price)}** → 新低，以上全部从新低重算`);
+  return L;
+}
+
+function renderReboundConfirmation(nr, pricePrecision, { verbose = false } = {}) {
+  const rc = nr && nr.reboundConfirmation;
+  if (!rc || !rc.lines || !rc.lines.length) return '';
+  const n = (v) => formatPrice(v, pricePrecision);
+  const day = (ts, tf) => formatPullbackDate(ts, tf || rc.tf);
+  const leg = [...new Set((nr.axis2Roles || []).map((r) => r.legCn))].join(' / ');
+  const tfCn = `按 ${rc.tf} K 线${rc.finerTf ? `，最早信号一行按 ${rc.finerTf}` : ''}`;
+  const L = [`### 止跌后反弹到哪算开始（低点 ${n(rc.low.price)} @ ${day(rc.low.timestamp)}，跌出新低就重算）`, ''];
+  L.push('| 反弹到 | 说明什么 | 现状 |', '|---|---|---|');
+  for (const l of rc.lines) {
+    const cn = REBOUND_LINE_CN[l.key];
+    const what = typeof cn === 'function' ? cn(rc, n, leg) : cn;
+    const gap = rc.lastClose > 0 ? ((l.price - rc.lastClose) / rc.lastClose) * 100 : null;
+    const st = l.crossed ? `已越过（${day(l.crossedAt, l.key === 'finer' ? rc.finerTf : rc.tf)}）` : `未到${gap != null && gap > 0 ? `（距现价 +${gap.toFixed(1)}%）` : ''}`;
+    L.push(`| ${n(l.price)} | ${what} | ${st} |`);
+  }
+  L.push('');
+  const gate = renderReboundGateLines(rc, nr, n, tfCn);
+  if (gate.length) L.push(...gate, '');
+  if (!verbose) {
+    L.push('每条线的来历见 `--verbose`。', '');
+    return L.join('\n');
+  }
+  L.push('**每条线的来历**：');
+  for (const l of rc.lines) {
+    if (l.key === 'finer') L.push(`- ${n(l.price)}：${rc.finerTf} 上，末段下跌之内、低点之前的最后一个高点。越过它说明最后一小段的跌势停了，是最早、也最不可靠的信号。`);
+    if (l.key === 'finalLeg') L.push(`- ${n(l.price)}：${rc.tf} 上低点之前的最后一个高点（${day(l.timestamp)}），即末段下跌的起点。末段若还在延伸，其内部反弹不能越过起点；越过即说明这一小段走完。`);
+    if (l.key === 'degree') L.push(`- ${n(l.price)} = ${n(rc.low.price)} + ${n(l.bounce.depth)}，后者是下跌途中最大的一次反弹（${n(l.bounce.from)} → ${n(l.bounce.to)}）。书§3.3 的镜像：反弹超过下跌内部任何一次反弹，可假设这段下跌已经结束，反弹属于高一级。`);
+    if (l.key === 'origin') L.push(`- ${n(l.price)}：整段回调的起点，越过即回调${leg ? `（${leg}）` : ''}结束、更大一级的走势在延续。`);
+  }
+  L.push(`- 参考：0.236 回撤位 ${n(rc.fib236)}（= ${n(rc.low.price)} + 0.236 × ${n(priceDiff(rc.high.price, rc.low.price))}），只是比例位、没有结构含义，不进表。`);
+  const g = rc.gate;
+  if (g) {
+    L.push('', '**五浪门槛的来历**：');
+    L.push(`- 取低点之后最深的一次回调：① = ${n(rc.low.price)} → ${n(g.h1.price)}（${n(g.amp1)}），② = ${n(g.h1.price)} → ${n(g.l2.price)}（回撤 ① 的 ${Math.round(g.retrace2 * 100)}%）。取最深而不取第一次，是因为第一次回调常只是 ① 内部的小波动。`);
+    L.push(`- 书面规则只要求浪② 不跌破浪① 起点 ${n(rc.low.price)}；这里用 ② 低点 ${n(g.l2.price)} 作门槛更严——跌破它不违规，但说明 ② 还在加深、五浪的读法变弱。`);
+    L.push(`- 冲破 ① 高点并不能区分推动浪与锯齿形：锯齿形的 C 浪同样会越过 A 浪终点。真正区分要等后续：浪③ 不是最短的一浪，浪④ 不跌进浪① 区域（不跌回 ${n(g.h1.price)} 下方）。`);
+    if (g.targets.length) L.push(`- 浪③ 目标 = ${n(g.l2.price)} + 1 / 1.618 × ${n(g.amp1)} = ${g.targets.map((t) => n(t.price)).join(' / ')}（推断）。`);
+  }
+  L.push('');
+  return L.join('\n');
+}
+
 // 轴②「进行腿细化」默认 md：一节大白话——这段回调走完了吗、三种可能、看哪几条线、时间窗。
 // 身份对照表 / §3.3 级别 / 读法一二三 / 两条 70% 线 / 分级失效线全文只在 --verbose（renderPullbackLegDetail）。
 function renderPullbackPlain(nr, pricePrecision) {
@@ -3942,10 +4272,13 @@ function renderPullbackPlain(nr, pricePrecision) {
       L.push(hd.state === 'reached'
         ? `现在反弹最高到 **${n(hd.bounce.price)}**，已收回这段回调的 ${pct(hd.xPct)}，过了 70% 线 ${n(hd.line70)}。可能有这几种：`
         : `现在反弹最高到 **${n(hd.bounce.price)}**，收回了这段回调的 ${pct(hd.xPct)}。可能有这几种：`);
-      if (done) ways.push(`**已走完**：${n(hd.aEnd.price)} 就是${legNames ? ` ${legNames} ` : '这段回调'}的低点，现在的反弹是${next ? ` ${next} ` : '下一腿'}的开头。`);
+      // pullback-internal-roles：整段有五浪类读法时，"已走完"须提示可能只是第一段（单锯齿的 (a)），"横着走"并列单锯齿
+      const fiveRisk = !!(done && done.fiveWaveRisk);
+      if (done) ways.push(`**已走完**：${n(hd.aEnd.price)} 就是${legNames ? ` ${legNames} ` : '这段回调'}的低点，现在的反弹是${next ? ` ${next} ` : '下一腿'}的开头。${fiveRisk ? `但若 ${n(hd.extreme.price)}→${n(hd.aEnd.price)} 本身是五浪，它只是第一段，回调还没走完。` : ''}`);
+      const sideForms = `${hd.fiveWaveA && hd.subtype !== 'expanded' ? '单锯齿 / ' : ''}平台形 / 联合形`;
       ways.push(hd.state === 'reached'
-        ? '**横着走**：现在只是中间的反弹，之后多半还要回落一段（平台形 / 联合形，过了 70% 线后已成为可能）。'
-        : '**横着走**：现在只是中间的反弹，之后还会再回落一段（平台形 / 联合形）。');
+        ? `**横着走**：现在只是中间的反弹，之后多半还要回落一段（${sideForms}，过了 70% 线后已成为可能）。`
+        : `**横着走**：现在只是中间的反弹，之后还会再回落一段（${sideForms}）。`);
       if (ext) ways.push(`**还要新低**：跌破 ${n(hd.aEnd.price)}，回调继续往下（目标见轴③）。`);
       ways.forEach((w, i) => L.push(`${i + 1}. ${w}`));
       L.push('');
@@ -3957,6 +4290,9 @@ function renderPullbackPlain(nr, pricePrecision) {
       if (hd.state === 'below') {
         L.push(`- 冲过 **${n(hd.line70)}**（回调的 70%）但没过 ${n(hd.regularCap)} → ${iSide} 成为可能`);
         L.push(`- 没到 ${n(hd.line70)} 就跌破 **${n(hd.aEnd.price)}** → ${iNew ? `${iNew}，` : ''}回调还没走完`);
+        if (Number.isFinite(hd.line20) && hd.touched20 === false) {
+          L.push(`- 连 **${n(hd.line20)}**（回调的 20%）都没到就跌破 ${n(hd.aEnd.price)} → 这段下跌本身还在延伸，不只是最后一段`);
+        }
       } else {
         L.push(`- 跌破 **${n(hd.aEnd.price)}** → ${iNew ? `${iNew}，` : ''}回调还没走完`);
       }
@@ -5146,6 +5482,17 @@ function collectPriceLevels(tree, meta = null) {
   // 进行中腿的 70% 线与跌破结构线后的目标（slim：轴②/③ 大白话引用的数字须在梯子里）
   const hdl = nr && nr.higherDegree;
   if (hdl && !hdl.invalid && hdl.state === 'below') add(hdl.line70, '回调 70% 线（冲过则“横着走”成为可能）');
+  // 止跌后反弹确认线与五浪门槛（rebound-start-confirmation）：未越过的确认线、①高点 / ②低点、浪③目标
+  const rbc = nr && nr.reboundConfirmation;
+  if (rbc) {
+    const lineTag = { finer: '反弹确认：最早止跌信号', finalLeg: '反弹确认：小级别反弹开始', degree: '反弹确认：这一级下跌结束', origin: '反弹确认：整段回调结束' };
+    rbc.lines.filter((l) => !l.crossed && l.key !== 'origin').forEach((l) => add(l.price, lineTag[l.key]));
+    add(rbc.low.price, '止跌低点（跌破则反弹确认线全部重算）');
+    const g = rbc.gate;
+    if (g && g.state === 'pending') { add(g.h1.price, '反弹 ① 高点（冲破且守住 ② 低点 → 可能走五浪）'); add(g.l2.price, '反弹 ② 低点（先跌破 → 更像三波）'); }
+    if (g && g.state === 'third') add(g.h1.price, '反弹 ① 高点（之后回调不得跌回）');
+    if (g && g.state !== 'overlap') g.targets.forEach((t) => add(t.price, `反弹浪③ ${t.mult}×`));
+  }
   const etl = hdl ? extensionPlainTargets(nr.extensionReading) : null;
   if (etl) etl.targets.forEach((t) => add(t.price, `${etl.down ? '跌破' : '升破'} ${formatPrice(etl.trigger, tree.pricePrecision)} 后目标${t.conf || t.forms.size > 1 ? '（多种读法共振）' : ''}`));
   else if (ips && ips.pullback && ips.pullback.to) add(ips.pullback.to.price, `最近${ips.pullback.to.type === 'H' ? '高' : '低'}点`);
@@ -5798,6 +6145,14 @@ function renderBrief(meta, tree, { withTitle = true } = {}) {
       L.push(`   * ${bounceCn}目标位：${tg.map((t) => `${px(t.price)}${reached(t.price) ? '（已到）' : ''}`).join(' / ')}（${note}）`);
     }
   }
+  // 止跌后反弹确认（rebound-start-confirmation）：只写最近一条未越过的确认线
+  const rbcNr = ips && ips.pullback && ips.pullback.narrative;
+  const rbc = rbcNr && rbcNr.reboundConfirmation;
+  if (rbc && rbc.next) {
+    const cn = REBOUND_LINE_CN[rbc.next.key];
+    const what = typeof cn === 'function' ? cn(rbc, px, '') : cn;
+    L.push(`   * 反弹确认：站上 ${px(rbc.next.price)}（${what.replace(/：.*$/, '')}；止跌低点 ${px(rbc.low.price)}）`);
+  }
   L.push('');
   L.push('> 以上为概率性推断，非投资建议；明细见下方技术细节。');
   return L.join('\n');
@@ -5903,6 +6258,8 @@ function renderMarkdownReport(meta, tree, userEval, context = {}) {
     if (pbNarr) {
       const pp = pricePrecision == null ? tree.pricePrecision : pricePrecision;
       lines.push(verbose ? renderPullbackLegDetail(pbNarr, pp, { md: true, verbose }) : renderPullbackPlain(pbNarr, pp));
+      const rebound = renderReboundConfirmation(pbNarr, pp, { verbose });
+      if (rebound) lines.push(rebound);
     }
     // 「上表内部细化导读」与轴②表、上一节重复，只在 --verbose 下输出
     const internalNote = tree && verbose ? renderCurrentInternalNote(tree, meta && meta.timeframe, pricePrecision, meta) : '';
@@ -6304,7 +6661,7 @@ async function main() {
       const fetchClipped = ignoreThinSpikes
         ? async (...fetchArgs) => spikeDetection.clipThinSpikes(await cryptoFetch(...fetchArgs, { refresh }), spikes).candles
         : (source === 'binance' ? (...fetchArgs) => cryptoFetch(...fetchArgs, { refresh }) : undefined);
-      await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles, refresh }, fetchClipped);
+      await enrichCurrentPullback(tree, { product: args.product, mainTf: args.tf, finePivots: fine, candles, refresh, endTs }, fetchClipped);
     } catch (e) {
       // 叙述属增量输出，取数/拆解失败时不影响主报告
     }
@@ -6509,6 +6866,9 @@ module.exports = {
   renderHigherDegreeBackground,
   classifyPullbackDegree,
   analyzePullbackCompleted,
+  analyzePullbackFiveWave,
+  diagonalShapeNote,
+  pullbackRolesOf,
   legBeyondEnds,
   buildCompletedReading,
   renderCompletedReading,
@@ -6520,6 +6880,10 @@ module.exports = {
   readCombination,
   zwaveProjection,
   enrichCurrentPullback,
+  buildReboundConfirmation,
+  reboundImpulseGate,
+  loadReboundConfirmation,
+  renderReboundConfirmation,
   renderPullbackNarrative,
   renderPullbackLegDetail,
   renderPullbackTargets,
