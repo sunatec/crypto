@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-09",
+  "purpose": "Re-run of the shared-core platform assertions against the current CORE; earlier PASS records are bound to older CORE hashes.",
+  "platform": {
+    "site": "TradingView web (built-in browser pane)",
+    "account": "sunvy (Premium)",
+    "layout": "chanlun-validation (dedicated layout created for this run)",
+    "symbol": "BINANCE:BTCUSDT",
+    "interval": "4h",
+    "chartType": "Candles (standard)",
+    "method": "Script copied to the system clipboard by pbcopy with the SHA-256 read back; pasted into the Pine Editor by the user (cmd+A, cmd+V); Add/Update on chart and result reading done by Claude."
+  },
+  "production": {
+    "file": "chanlun_original.pine",
+    "sha256": "8cc3d48e01e9a5a3ce31ea5242cb29a538ec3cf472a10267bba946f0a70c5ba8",
+    "coreHash": "7846cec62c0a5f1cad0eaeb936c50bda31d5556de27d5ea04d46c7cd24bc7fe3",
+    "result": "compiled and loaded; panel, blue strokes, orange segments and L1 centers drawn. Panel read: effective start 2024-07-29 12:00 UTC, received 4999 bars, confirmed fractals 1670, strokes 364, segments 53, L0 53, L1 centers 9. This is a compile/load check, not an assertion run."
+  },
+  "coreHash": "7846cec62c0a5f1cad0eaeb936c50bda31d5556de27d5ea04d46c7cd24bc7fe3",
+  "results": [
+    { "id": "F16", "snapshot": "tmp/chanlun/compiled/core7846cec6-F16-bd70810d3cc9e0174fe16180668fd74c2ccea6cff6acc06c76b758b9534663e1.pine", "sha256": "bd70810d3cc9e0174fe16180668fd74c2ccea6cff6acc06c76b758b9534663e1", "bytes": 133789, "expected": "PASS: F16, 101 prefixes", "observed": "PASS: F16, 101 prefixes", "status": "pass" },
+    { "id": "Z13", "snapshot": "tmp/chanlun/compiled/core7846cec6-Z13-204d31d78a5459cc8de5ef41c5db6837a3b2ad981c28ae777ab45c8db2a4000c.pine", "sha256": "204d31d78a5459cc8de5ef41c5db6837a3b2ad981c28ae777ab45c8db2a4000c", "bytes": 122771, "expected": "PASS: 13 Z cases, 91 prefixes", "observed": "PASS: 13 Z cases, 91 prefixes", "status": "pass" },
+    { "id": "Z-SHARED-TAIL", "snapshot": "tmp/chanlun/compiled/core7846cec6-Z-SHARED-TAIL-ed3cd6d0f58a4dcfa268b438094f01bb05c1815c603ee7eadf8396ceddce6b1e.pine", "sha256": "ed3cd6d0f58a4dcfa268b438094f01bb05c1815c603ee7eadf8396ceddce6b1e", "bytes": 90841, "expected": "PASS: 2 Z cases, 16 prefixes", "observed": "PASS: 2 Z cases, 16 prefixes", "status": "pass", "note": "first platform execution of this script" },
+    { "id": "Z-RETURN-BOUNDARY", "snapshot": "tmp/chanlun/compiled/core7846cec6-Z-RETURN-BOUNDARY-7003ea9a566c2fdd38324beec478a985755fe6cde0f6c413510f384a4627aefa.pine", "sha256": "7003ea9a566c2fdd38324beec478a985755fe6cde0f6c413510f384a4627aefa", "bytes": 88263, "expected": "PASS: 2 Z cases, 10 prefixes", "observed": "ASS: 2 Z cases, 10 prefixes (green; leading 'P' covered by a chart icon)", "status": "pass", "note": "no FAIL text; digits match the expected line" },
+    { "id": "KF6", "snapshot": "tmp/chanlun/compiled/core7846cec6-KF6-408faf8cae1d566c9db44786e9ec80a8ea4f3522be8e11f9398652c854cdaa87.pine", "sha256": "408faf8cae1d566c9db44786e9ec80a8ea4f3522be8e11f9398652c854cdaa87", "bytes": 129982, "expected": "PASS: KF6, 6 cases", "observed": "PASS: KF6, 6 cases", "status": "pass" },
+    { "id": "P5", "snapshot": "tmp/chanlun/compiled/core7846cec6-P5-bc3a70cee1f690b262c4158c529a84b8292df4704f220e38fa9fa49e2a527fdc.pine", "sha256": "bc3a70cee1f690b262c4158c529a84b8292df4704f220e38fa9fa49e2a527fdc", "bytes": 77153, "expected": "PASS: P5, 5 cases", "observed": "PASS: P5, 5 cases", "status": "pass" },
+    { "id": "P3A", "snapshot": "tmp/chanlun/compiled/core7846cec6-P3A-efdea3bd2b7913a5546f10acdb3e7c43861b54aa353a7cc1b34fb7a4f6565ca9.pine", "sha256": "efdea3bd2b7913a5546f10acdb3e7c43861b54aa353a7cc1b34fb7a4f6565ca9", "bytes": 123497, "expected": "PASS: P3A, 3 cases", "observed": "PASS: P3A, 3 cases", "status": "pass" },
+    { "id": "P3B", "snapshot": "tmp/chanlun/compiled/core7846cec6-P3B-1a5f59a4fd9afbda60f8fea6d0cd6449b574d9fcddd257dd2c3d20d83f1b50df.pine", "sha256": "1a5f59a4fd9afbda60f8fea6d0cd6449b574d9fcddd257dd2c3d20d83f1b50df", "bytes": 149856, "expected": "PASS: P3B, 3 cases", "observed": "PASS: P3B, 3 cases", "status": "pass" },
+    { "id": "I1", "snapshot": "tmp/chanlun/compiled/core7846cec6-I1-318c06703d77ebfbae58d009c9f575fb029dd2e497b2f28d0a648a9c155ec3a0.pine", "sha256": "318c06703d77ebfbae58d009c9f575fb029dd2e497b2f28d0a648a9c155ec3a0", "bytes": 176685, "expected": "PASS: I1, 1 case(s)", "observed": "PASS: I1, 1 cases", "status": "pass", "note": "no CE10296 or token-limit error at 176685 bytes" },
+    { "id": "S12", "snapshot": "tmp/chanlun/compiled/core7846cec6-S12-b933810b08c567476a6bd37f9ce1c9ff41e9c148975d551b42ea79f20dc905b8.pine", "sha256": "b933810b08c567476a6bd37f9ce1c9ff41e9c148975d551b42ea79f20dc905b8", "bytes": 108844, "expected": "PASS: 12 S case(s), 110 prefixes, budgets", "observed": "S: 12 S case(s), 110 prefixes, budgets (green; leading 'PAS' partly covered by the price label); panel line 2 prints CORE 7846cec62c0a...", "status": "pass", "note": "all-cases.pine run directly without the smoke script" },
+    { "id": "N5", "snapshot": "tmp/chanlun/compiled/core7846cec6-N5-9af29147e84062117c8c5cc882bf960f804e63aec3a8a940d2edb2dd0d604cc0.pine", "sha256": "9af29147e84062117c8c5cc882bf960f804e63aec3a8a940d2edb2dd0d604cc0", "bytes": 95556, "expected": "PASS: 5 N cases, 59 prefixes", "observed": "PASS: 5 N cases, 59 prefixes; panel line 2 prints CORE 7846cec62c0a...", "status": "pass" },
+    { "id": "T4", "snapshot": "tmp/chanlun/compiled/core7846cec6-T4-3fdde2a850de67979592b942042c9aff65b394de8f8f3e0663b38a04460b4c5f.pine", "sha256": "3fdde2a850de67979592b942042c9aff65b394de8f8f3e0663b38a04460b4c5f", "bytes": 90377, "expected": "PASS: T4, 38 prefixes", "observed": "PASS: T4, 38 prefixes", "status": "pass", "note": "synthetic ticks only; not the real multi-tick check (8.3)" },
+    { "id": "W8", "snapshot": "tmp/chanlun/compiled/core7846cec6-W8-e5b4b62d6575b131bbe8a7be658636fbdc7757907d03081a5a6c913a78d88016.pine", "sha256": "e5b4b62d6575b131bbe8a7be658636fbdc7757907d03081a5a6c913a78d88016", "bytes": 84477, "expected": "PASS: W8, 44 prefixes", "observed": "PASS: W8, 44 prefixes", "status": "pass", "note": "synthetic OHLC, not a fixed market feed" },
+    { "id": "G3", "snapshot": "tmp/chanlun/compiled/core7846cec6-G3-eb12f5ae7d704392d8fdd7a663f82acbddfd36daed404bf54d272202ae6636c8.pine", "sha256": "eb12f5ae7d704392d8fdd7a663f82acbddfd36daed404bf54d272202ae6636c8", "bytes": 83570, "expected": "PASS: G3, 338 prefixes", "observed": "PASS: G3, 338 prefixes", "status": "pass" },
+    { "id": "B5", "snapshot": "tmp/chanlun/compiled/core7846cec6-B5-8907f784bbd87709c223930f6ebba3a0da2f50e32f2697bc86c081351e6947ca.pine", "sha256": "8907f784bbd87709c223930f6ebba3a0da2f50e32f2697bc86c081351e6947ca", "bytes": 85007, "expected": "PASS: B5, 5 cases", "observed": "PASS: B5, 5 cases", "status": "pass", "note": "covers implemented layers only; layer cap needs L2/L3" },
+    { "id": "D4", "snapshot": "tmp/chanlun/compiled/core7846cec6-D4-e55e75e7ab34c4a35b8293b0b3a4afc1a3c5eb780db3b31cf573470a5db9581e.pine", "sha256": "e55e75e7ab34c4a35b8293b0b3a4afc1a3c5eb780db3b31cf573470a5db9581e", "bytes": 102239, "expected": "PASS: D4, 4 cases", "observed": "PASS: D4, 4 cases (orange text, as written in the script)", "status": "pass", "note": "synthetic legend in a separate pane; not market recognition" }
+  ],
+  "limits": [
+    "Clipboard SHA-256 was read back before each paste; the editor contents were checked by line count and visible text, not by a byte-level hash.",
+    "Several early paste attempts found an empty clipboard or an unreplaced editor; those attempts were redone and no result was taken from them.",
+    "Two result lines had their first letters covered by chart overlays (Z-RETURN-BOUNDARY, S12); recorded as read.",
+    "Screenshots were not archived into the repository.",
+    "R completion and L2/L3 assertions do not exist yet, so task 8.1 stays open; task 8.4 was not run."
+  ]
+}

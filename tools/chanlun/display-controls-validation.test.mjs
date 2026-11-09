@@ -16,7 +16,7 @@ test('display controls validate real renderer lifecycle with exact production co
 });
 test('production visual controls affect renderer projections without entering calculation core',()=>{
   const renderer=extractSection(source,'RENDERER'),core=extractCore(source);
-  assert.equal(sha(core),'f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f');
+  assert.equal(sha(core),'7846cec62c0a5f1cad0eaeb936c50bda31d5556de27d5ea04d46c7cd24bc7fe3');
   assert(renderer.includes('style.centerWidth, confirmed'));
   assert(renderer.includes('stroke ? style.strokeLabelStride : style.segmentLabelStride'));
   assert(renderer.includes('chan_draw_remove_id(registry, source.id + "/caption")'));
