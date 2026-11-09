@@ -1,0 +1,343 @@
+{
+  "schemaVersion": 1,
+  "id": "N-WAIT-NO-EVENT",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "N-001",
+    "E-008",
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168",
+      "C71-182",
+      "C77-195",
+      "C78-198"
+    ],
+    "lesson": 78,
+    "pdfPages": [
+      169,
+      181,
+      182,
+      196,
+      198,
+      199
+    ],
+    "figure": null,
+    "note": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。 输入为合成已锁定合法笔；标准化邻接与时间锚点采用用户选择的E-008工程约定。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "normalization-strokes",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 20,
+        "endTicks": 6,
+        "lowTicks": 6,
+        "highTicks": 20,
+        "direction": "down",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 6,
+        "endTicks": 12,
+        "lowTicks": 6,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 12,
+        "endTicks": 0,
+        "lowTicks": 0,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 0,
+        "endTicks": 10,
+        "lowTicks": 0,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 10,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 5,
+        "endTicks": 8,
+        "lowTicks": 5,
+        "highTicks": 8,
+        "direction": "up",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 8,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 8,
+        "direction": "down",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 4,
+        "endTicks": 7,
+        "lowTicks": 4,
+        "highTicks": 7,
+        "direction": "up",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      },
+      {
+        "id": "p9",
+        "startTime": 1701000480000,
+        "endTime": 1701000540000,
+        "completedAt": 1701000600000,
+        "startTicks": 7,
+        "endTicks": 3,
+        "lowTicks": 3,
+        "highTicks": 7,
+        "direction": "down",
+        "dependencies": [
+          "f8",
+          "f9",
+          "proof9"
+        ]
+      },
+      {
+        "id": "p10",
+        "startTime": 1701000540000,
+        "endTime": 1701000600000,
+        "completedAt": 1701000660000,
+        "startTicks": 3,
+        "endTicks": 9,
+        "lowTicks": 3,
+        "highTicks": 9,
+        "direction": "up",
+        "dependencies": [
+          "f9",
+          "f10",
+          "proof10"
+        ]
+      },
+      {
+        "id": "p11",
+        "startTime": 1701000600000,
+        "endTime": 1701000660000,
+        "completedAt": 1701000720000,
+        "startTicks": 9,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 9,
+        "direction": "down",
+        "dependencies": [
+          "f10",
+          "f11",
+          "proof11"
+        ]
+      },
+      {
+        "id": "p12",
+        "startTime": 1701000660000,
+        "endTime": 1701000720000,
+        "completedAt": 1701000780000,
+        "startTicks": 5,
+        "endTicks": 10,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f11",
+          "f12",
+          "proof12"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 10,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 11,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    },
+    {
+      "prefix": 12,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S仍在等待原0→10破坏笔方向时，所有12个前缀均无S确认，因而无N；窗口结束不补事件。"
+    }
+  ]
+}

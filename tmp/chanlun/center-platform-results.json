@@ -1,0 +1,108 @@
+{
+  "results": [
+    {
+      "date": "2026-11-03",
+      "status": "user-reported-compilation-failure",
+      "requestedFileSha256": "d3e9c6c201b16a8d3e8d327ec3bf2a4549954b94c6551e61a43cc98c3118040d",
+      "coreHash": "80bf798865315f84166b96623e3338787d87bcb3fda27b425658233ee1e95bb7",
+      "snapshot": "tmp/chanlun/compiled/center-fail-d3e9c6c201b16a8d3e8d327ec3bf2a4549954b94c6551e61a43cc98c3118040d.pine",
+      "userReport": "1139:5 Invalid object name: input. Namespaces of built-ins cannot be used.; low/high shadowing at 1073/1074"
+    },
+    {
+      "date": "2026-11-03",
+      "status": "user-reported-pass",
+      "source": "tmp/chanlun/center-validation.pine",
+      "requestedFileSha256": "6e05278ac9eaf6752b55dedb7b4d9178a8cdb57f26477a6ab1416c8b1c3221f5",
+      "coreHash": "5d12a261aa8cc9900559fb5d1226c8ae839807bf2dce5fd65e7438de3084b186",
+      "snapshot": "tmp/chanlun/compiled/center-Z7-pass-6e05278ac9eaf6752b55dedb7b4d9178a8cdb57f26477a6ab1416c8b1c3221f5.pine",
+      "userReport": "Z7 PASS",
+      "cases": 7,
+      "prefixes": 32,
+      "scope": "User report for requested bytes; first L1 center and extension assertions only, not R completion or market acceptance."
+    },
+    {
+      "date": "2026-11-03",
+      "status": "user-reported-visual-issue",
+      "source": "user attached panel screenshot",
+      "requestContextSha256": "26704f187ea5de4b780a4f4cf87230c06f2c86b4c4de9d5ee62a437211653781",
+      "observation": "Dark text on dark chart; visible counts: confirmed segments 54, L0 54, L1 center 1.",
+      "scope": "Cropped status panel only. Does not show the purple center frame or verify uploaded source bytes."
+    },
+    {
+      "date": "2026-11-03",
+      "source": "chanlun_original.pine",
+      "status": "user-reported-pass",
+      "userReport": "Z入口正常",
+      "coreHash": "5d12a261aa8cc9900559fb5d1226c8ae839807bf2dce5fd65e7438de3084b186",
+      "requestContextSha256": "26704f187ea5de4b780a4f4cf87230c06f2c86b4c4de9d5ee62a437211653781",
+      "versionBinding": "Exact uploaded whole-file version not identified; panel and border display changes occurred while the original question was pending. Do not label latest UI hash as platform-verified.",
+      "scope": "User reported requested first-L1-center entry compilation/runtime and display normal. Does not cover later centers, R completion, fixed feed replay or all display variants."
+    },
+    {
+      "date": "2026-11-04",
+      "source": "tmp/chanlun/center-validation.pine",
+      "sha256": "83838b7515261cdd946095ffc6e5a730deb8a8dacc1b2fa7c7df13d10656e1a6",
+      "coreHash": "d7bb37cc9ef8bd418aeab59ddf990a5c992b5ea7d11a4c2b3448922b175b165e",
+      "fixtureHash": "a4cbcf1b539a9b6e6570ef36a6b009c6c37fa88d235154b63dc2033df18ba68f",
+      "snapshot": "tmp/chanlun/compiled/center-Z13-pending-83838b7515261cdd946095ffc6e5a730deb8a8dacc1b2fa7c7df13d10656e1a6.pine",
+      "status": "user-reported-compilation-failure",
+      "cases": 13,
+      "prefixes": 91,
+      "localChecks": "55 Node tests and OpenSpec strict validation passed; not Pine execution",
+      "expected": "PASS: 13 Z cases, 91 prefixes",
+      "requestedFileSha256": "83838b7515261cdd946095ffc6e5a730deb8a8dacc1b2fa7c7df13d10656e1a6",
+      "userReport": "The if statement is too long(CE10205)",
+      "reportedLine": 1295,
+      "scope": "Pine rejected the case data loader; no assertions ran"
+    },
+    {
+      "date": "2026-11-04",
+      "status": "user-reported-pass",
+      "source": "tmp/chanlun/center-validation.pine",
+      "requestedFileSha256": "d6e113c784124e1fd380c0b8c587d12adb68d04a6d47fb8034f2d99a2bc07443",
+      "coreHash": "d7bb37cc9ef8bd418aeab59ddf990a5c992b5ea7d11a4c2b3448922b175b165e",
+      "fixtureHash": "a4cbcf1b539a9b6e6570ef36a6b009c6c37fa88d235154b63dc2033df18ba68f",
+      "snapshot": "tmp/chanlun/compiled/center-Z13-pass-d6e113c784124e1fd380c0b8c587d12adb68d04a6d47fb8034f2d99a2bc07443.pine",
+      "userReport": "“PASS: 13 Z cases, 91 prefixes",
+      "cases": 13,
+      "prefixes": 91,
+      "scope": "User reports Pine compilation and all 13 cases / 91 prefixes passed, including continuous centers, ownership, pair evidence, event/archive immutability, reload, duplicate, isolation and budget assertions. Uploaded bytes not independently verified. Does not cover production rendering, fixed market replay, R completion or L2 inputs."
+    },
+    {
+      "date": "2026-11-04",
+      "source": "chanlun_original.pine",
+      "status": "user-reported-pass",
+      "requestedFileSha256": "12047ea30da3a3ddb8fe73ec47ca407a2937a81bea9520ace05b32ab97200365",
+      "coreHash": "d7bb37cc9ef8bd418aeab59ddf990a5c992b5ea7d11a4c2b3448922b175b165e",
+      "snapshot": "tmp/chanlun/compiled/production-center-continuation-pass-12047ea30da3a3ddb8fe73ec47ca407a2937a81bea9520ace05b32ab97200365.pine",
+      "userReport": "连续中枢入口正常",
+      "sharedValidationPass": "d6e113c784124e1fd380c0b8c587d12adb68d04a6d47fb8034f2d99a2bc07443",
+      "scope": "User reports entry compilation/runtime, blue/orange geometry, L0 count and continuous purple L1 center display normal. Uploaded bytes and detailed market state not independently verified; no fixed feed/time-window replay, real multi-tick, stress, R completion or L2/L3 acceptance inferred."
+    },
+    {
+      "id": "Z-RETURN-LOWER-BOUNDARY",
+      "date": "2026-11-08",
+      "status": "user-reported-pass",
+      "source": "tmp/chanlun/center-return-boundary.pine",
+      "requestedFileSha256": "24ada37d76bc73cf04c31aa2c32b6d51d977d4b5a94775eefe3996bb12287d7d",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "fixtureHash": "58bad889e3c833a932641cf520166f4e0aedf0f16432047592cf10e8e3bde72b",
+      "snapshot": "tmp/chanlun/compiled/center-return-boundary-pass-24ada37d76bc73cf04c31aa2c32b6d51d977d4b5a94775eefe3996bb12287d7d.pine",
+      "userReport": "已提示 `PASS: 2 Z cases, 10 prefixes`",
+      "cases": 2,
+      "prefixes": 10,
+      "scope": "Same-core synthetic L0 test: strict return below core closes Z, exact touch retains and extends Z. Actual uploaded bytes not independently inspected. No R completion or higher-level acceptance."
+    }
+  ],
+  "pending": [],
+  "unverifiedHistoricalVersions": [
+    {
+      "source": "chanlun_original.pine",
+      "sha256": "33b263ae28df57d9c767b320740b1937f6f800ceee11b8096d4d9c169ee38710",
+      "coreHash": "5d12a261aa8cc9900559fb5d1226c8ae839807bf2dce5fd65e7438de3084b186",
+      "snapshot": "tmp/chanlun/compiled/production-center-display-current-33b263ae28df57d9c767b320740b1937f6f800ceee11b8096d4d9c169ee38710.pine",
+      "status": "latest-display-version-not-independently-bound",
+      "change": "Current workspace snapshot only: center time/price location rows and brighter border. Not a passing-version snapshot."
+    }
+  ]
+}

@@ -1,0 +1,846 @@
+{
+  "schemaVersion": 1,
+  "id": "N-OWN-RANGES",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "N-001",
+    "E-008",
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168",
+      "C71-182",
+      "C77-195",
+      "C78-198"
+    ],
+    "lesson": 78,
+    "pdfPages": [
+      169,
+      181,
+      182,
+      196,
+      198,
+      199
+    ],
+    "figure": null,
+    "note": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。 输入为合成已锁定合法笔；标准化邻接与时间锚点采用用户选择的E-008工程约定。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "normalization-strokes",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 6,
+        "lowTicks": 0,
+        "highTicks": 6,
+        "direction": "up",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 6,
+        "endTicks": 2,
+        "lowTicks": 2,
+        "highTicks": 6,
+        "direction": "down",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 2,
+        "endTicks": 10,
+        "lowTicks": 2,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 10,
+        "endTicks": 6,
+        "lowTicks": 6,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 6,
+        "endTicks": 9,
+        "lowTicks": 6,
+        "highTicks": 9,
+        "direction": "up",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 9,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 9,
+        "direction": "down",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 4,
+        "endTicks": 12,
+        "lowTicks": 4,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 12,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      },
+      {
+        "id": "p9",
+        "startTime": 1701000480000,
+        "endTime": 1701000540000,
+        "completedAt": 1701000600000,
+        "startTicks": 5,
+        "endTicks": 11,
+        "lowTicks": 5,
+        "highTicks": 11,
+        "direction": "up",
+        "dependencies": [
+          "f8",
+          "f9",
+          "proof9"
+        ]
+      },
+      {
+        "id": "p10",
+        "startTime": 1701000540000,
+        "endTime": 1701000600000,
+        "completedAt": 1701000660000,
+        "startTicks": 11,
+        "endTicks": 3,
+        "lowTicks": 3,
+        "highTicks": 11,
+        "direction": "down",
+        "dependencies": [
+          "f9",
+          "f10",
+          "proof10"
+        ]
+      },
+      {
+        "id": "p11",
+        "startTime": 1701000600000,
+        "endTime": 1701000660000,
+        "completedAt": 1701000720000,
+        "startTicks": 3,
+        "endTicks": 8,
+        "lowTicks": 3,
+        "highTicks": 8,
+        "direction": "up",
+        "dependencies": [
+          "f10",
+          "f11",
+          "proof11"
+        ]
+      },
+      {
+        "id": "p12",
+        "startTime": 1701000660000,
+        "endTime": 1701000720000,
+        "completedAt": 1701000780000,
+        "startTicks": 8,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 8,
+        "direction": "down",
+        "dependencies": [
+          "f11",
+          "f12",
+          "proof12"
+        ]
+      },
+      {
+        "id": "p13",
+        "startTime": 1701000720000,
+        "endTime": 1701000780000,
+        "completedAt": 1701000840000,
+        "startTicks": 4,
+        "endTicks": 15,
+        "lowTicks": 4,
+        "highTicks": 15,
+        "direction": "up",
+        "dependencies": [
+          "f12",
+          "f13",
+          "proof13"
+        ]
+      },
+      {
+        "id": "p14",
+        "startTime": 1701000780000,
+        "endTime": 1701000840000,
+        "completedAt": 1701000900000,
+        "startTicks": 15,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 15,
+        "direction": "down",
+        "dependencies": [
+          "f13",
+          "f14",
+          "proof14"
+        ]
+      },
+      {
+        "id": "p15",
+        "startTime": 1701000840000,
+        "endTime": 1701000900000,
+        "completedAt": 1701000960000,
+        "startTicks": 5,
+        "endTicks": 12,
+        "lowTicks": 5,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f14",
+          "f15",
+          "proof15"
+        ]
+      },
+      {
+        "id": "p16",
+        "startTime": 1701000900000,
+        "endTime": 1701000960000,
+        "completedAt": 1701001020000,
+        "startTicks": 12,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f15",
+          "f16",
+          "proof16"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "normalizedCount": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/N-OWN-RANGES/N/1/1701000000000",
+          "type": "normalized",
+          "objectId": "N-OWN-RANGES/N/1/1701000000000",
+          "occurredAt": 1701000180000,
+          "confirmedAt": 1701000420000
+        }
+      ],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 10,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 11,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 12,
+      "state": {
+        "normalizedCount": 1
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 13,
+      "state": {
+        "normalizedCount": 2
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-OWN-RANGES/N/2/1701000180000",
+          "segmentId": "N-OWN-RANGES/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": 10,
+          "realEndTicks": 3,
+          "actualLowTicks": 3,
+          "actualHighTicks": 12,
+          "actualLowTime": 1701000600000,
+          "actualHighTime": 1701000420000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": 12,
+          "analysisEndTicks": 3,
+          "direction": "down",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/N-OWN-RANGES/N/2/1701000180000",
+          "type": "normalized",
+          "objectId": "N-OWN-RANGES/N/2/1701000180000",
+          "occurredAt": 1701000600000,
+          "confirmedAt": 1701000840000
+        }
+      ],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 14,
+      "state": {
+        "normalizedCount": 2
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-OWN-RANGES/N/2/1701000180000",
+          "segmentId": "N-OWN-RANGES/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": 10,
+          "realEndTicks": 3,
+          "actualLowTicks": 3,
+          "actualHighTicks": 12,
+          "actualLowTime": 1701000600000,
+          "actualHighTime": 1701000420000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": 12,
+          "analysisEndTicks": 3,
+          "direction": "down",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 15,
+      "state": {
+        "normalizedCount": 2
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-OWN-RANGES/N/2/1701000180000",
+          "segmentId": "N-OWN-RANGES/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": 10,
+          "realEndTicks": 3,
+          "actualLowTicks": 3,
+          "actualHighTicks": 12,
+          "actualLowTime": 1701000600000,
+          "actualHighTime": 1701000420000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": 12,
+          "analysisEndTicks": 3,
+          "direction": "down",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        }
+      ],
+      "events": [],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    },
+    {
+      "prefix": 16,
+      "state": {
+        "normalizedCount": 3
+      },
+      "structures": [
+        {
+          "id": "N-OWN-RANGES/N/1/1701000000000",
+          "segmentId": "N-OWN-RANGES/S/1/1701000000000",
+          "realStartTime": 1701000000000,
+          "realEndTime": 1701000180000,
+          "realStartTicks": 0,
+          "realEndTicks": 10,
+          "actualLowTicks": 0,
+          "actualHighTicks": 10,
+          "actualLowTime": 1701000000000,
+          "actualHighTime": 1701000180000,
+          "analysisStartTime": 1701000000000,
+          "analysisEndTime": 1701000180000,
+          "analysisStartTicks": 0,
+          "analysisEndTicks": 10,
+          "direction": "up",
+          "confirmedAt": 1701000420000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/1/1701000000000"
+          ],
+          "ordinal": 1
+        },
+        {
+          "id": "N-OWN-RANGES/N/2/1701000180000",
+          "segmentId": "N-OWN-RANGES/S/2/1701000180000",
+          "realStartTime": 1701000180000,
+          "realEndTime": 1701000600000,
+          "realStartTicks": 10,
+          "realEndTicks": 3,
+          "actualLowTicks": 3,
+          "actualHighTicks": 12,
+          "actualLowTime": 1701000600000,
+          "actualHighTime": 1701000420000,
+          "analysisStartTime": 1701000180000,
+          "analysisEndTime": 1701000600000,
+          "analysisStartTicks": 12,
+          "analysisEndTicks": 3,
+          "direction": "down",
+          "confirmedAt": 1701000840000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/2/1701000180000"
+          ],
+          "ordinal": 2
+        },
+        {
+          "id": "N-OWN-RANGES/N/3/1701000600000",
+          "segmentId": "N-OWN-RANGES/S/3/1701000600000",
+          "realStartTime": 1701000600000,
+          "realEndTime": 1701000780000,
+          "realStartTicks": 3,
+          "realEndTicks": 15,
+          "actualLowTicks": 3,
+          "actualHighTicks": 15,
+          "actualLowTime": 1701000600000,
+          "actualHighTime": 1701000780000,
+          "analysisStartTime": 1701000600000,
+          "analysisEndTime": 1701000780000,
+          "analysisStartTicks": 3,
+          "analysisEndTicks": 15,
+          "direction": "up",
+          "confirmedAt": 1701001020000,
+          "ruleId": "N-001/E-008",
+          "dependencies": [
+            "N-OWN-RANGES/S/3/1701000600000"
+          ],
+          "ordinal": 3
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/N-OWN-RANGES/N/3/1701000600000",
+          "type": "normalized",
+          "objectId": "N-OWN-RANGES/N/3/1701000600000",
+          "occurredAt": 1701000780000,
+          "confirmedAt": 1701001020000
+        }
+      ],
+      "reason": "S12已核对的特殊段：A仍为[0,10]，B独立为[3,12]，C为[3,15]；B的证明价15不入其范围。分析时间用真实段边界，12的实际来源仍为t7。"
+    }
+  ]
+}

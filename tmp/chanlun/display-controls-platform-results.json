@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-05",
+  "coreUnchanged": true,
+  "results": [
+    {
+      "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\display-controls-validation.pine",
+      "productionSha256": "7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955",
+      "sha256": "15a2eee13eb731e5f661fc5bd9a79aea7a77e6d04ef3e9f5367f5118b96af046",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "rendererHash": "7d62aeb7c9f5a55e932c7184154d266581eb8f0db787b580f5447d508c9aa0ed",
+      "bytes": 102687,
+      "cases": 4,
+      "execution": "not run in Pine",
+      "snapshot": "tmp/chanlun/compiled/display-D4-pending-15a2eee13eb731e5f661fc5bd9a79aea7a77e6d04ef3e9f5367f5118b96af046.pine",
+      "productionSnapshot": "tmp/chanlun/compiled/production-display-pending-7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955.pine",
+      "status": "user-screenshot-assertions-pass-with-visual-issue",
+      "expected": "PASS: D4, 4 cases",
+      "localChecks": "71 Node checks and strict OpenSpec validation passed; not Pine execution",
+      "scope": "Evidence of compilation and four drawing assertions in requested context; exact uploaded bytes and settings not independently verified. Visual acceptance not passed.",
+      "screenshot": "tmp/chanlun/compiled/display-D4-user-overlap.png",
+      "screenshotSha256": "ec28b440ce574b47d9a5d77118df2a87c0503780d70259b69ca05a27e4b24246",
+      "userReport": "显示的是不是不对",
+      "observation": "Screenshot visibly shows PASS: D4, 4 cases, synthetic blue/orange lines off market candles, overlapping labels and duplicate L1-Z#1 labels."
+    },
+    {
+      "date": "2026-11-05",
+      "source": "tmp/chanlun/display-controls-validation.pine",
+      "requestedFileSha256": "15a2eee13eb731e5f661fc5bd9a79aea7a77e6d04ef3e9f5367f5118b96af046",
+      "status": "user-reported-pass",
+      "snapshot": "tmp/chanlun/compiled/display-D4-pass-15a2eee13eb731e5f661fc5bd9a79aea7a77e6d04ef3e9f5367f5118b96af046.pine",
+      "userReport": "D4 PASS",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "rendererHash": "7d62aeb7c9f5a55e932c7184154d266581eb8f0db787b580f5447d508c9aa0ed",
+      "cases": 4,
+      "scope": "User reply to original overlay-gallery request reports four drawing assertions and controls passed. Exact uploaded bytes not independently verified. Earlier screenshot label overlap and misunderstanding of synthetic geometry retained separately; no production market-display or full screenshot-matrix acceptance inferred."
+    },
+    {
+      "date": "2026-11-05",
+      "source": "chanlun_original.pine",
+      "requestedFileSha256": "7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "rendererHash": "7d62aeb7c9f5a55e932c7184154d266581eb8f0db787b580f5447d508c9aa0ed",
+      "status": "user-reported-pass",
+      "snapshot": "tmp/chanlun/compiled/production-display-pass-7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955.pine",
+      "userReport": "显示控件入口正常",
+      "sharedValidationPass": "15a2eee13eb731e5f661fc5bd9a79aea7a77e6d04ef3e9f5367f5118b96af046",
+      "scope": "User reports production compilation/runtime and blue/orange/purple geometry, panel, stroke label spacing, center label toggle and border width controls normal after removing synthetic indicator. Exact uploaded bytes, settings and market data not independently verified. Does not imply complete renderer screenshot matrix or higher-level morphology acceptance."
+    }
+  ],
+  "pending": [],
+  "unverifiedFixtureVariants": [
+    {
+      "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\display-controls-validation.pine",
+      "productionSha256": "7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955",
+      "sha256": "c32a73f6266d138059309117e932ba89272568710a909f226d7e07568da6be88",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "rendererHash": "7d62aeb7c9f5a55e932c7184154d266581eb8f0db787b580f5447d508c9aa0ed",
+      "bytes": 102753,
+      "cases": 4,
+      "execution": "not run in Pine",
+      "snapshot": "tmp/chanlun/compiled/display-D4-layout-unverified-c32a73f6266d138059309117e932ba89272568710a909f226d7e07568da6be88.pine",
+      "status": "layout-revised-not-platform-verified",
+      "change": "Synthetic gallery moved to independent pane with fixed display units and separated captions; degenerate center ordinal changed to 2. All four assertion/helper functions and production source unchanged."
+    }
+  ]
+}

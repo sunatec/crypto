@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "id": "S-FIRST-WAIT-END",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C71-182",
+      "C77-195"
+    ],
+    "lesson": 71,
+    "pdfPages": [
+      181,
+      182,
+      196
+    ],
+    "figure": null,
+    "note": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。 输入明确假定每项为已锁定合法笔；初始化及同刻提交约定单列于E-007。只断言确认前缀，不强制未锁定候选的展示集合。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 10,
+        "lowTicks": 0,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 10,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 5,
+        "endTicks": 12,
+        "lowTicks": 5,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 12,
+        "endTicks": 3,
+        "lowTicks": 3,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 3,
+        "endTicks": 11,
+        "lowTicks": 3,
+        "highTicks": 11,
+        "direction": "up",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 11,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 11,
+        "direction": "down",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 4,
+        "endTicks": 10,
+        "lowTicks": 4,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 10,
+        "endTicks": 2,
+        "lowTicks": 2,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 12,
+          "confirmedAt": 1701000540000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6",
+            "p7",
+            "p8"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/segment-1",
+          "type": "segment",
+          "objectId": "segment-1",
+          "occurredAt": 1701000180000,
+          "confirmedAt": 1701000540000
+        }
+      ],
+      "reason": "12→3的第三笔11→4仍在第一破坏笔范围内，前缀6不能确认；后续先破结束位置3而没有先破起点12，到前缀8的10→2才锁定旧段0→12。"
+    }
+  ]
+}

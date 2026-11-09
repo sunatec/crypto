@@ -1,0 +1,15 @@
+{
+  "caseId": "BTCUSDT-D",
+  "status": "partial load export OHLC and parameters verified",
+  "firstPrefix": 472,
+  "lastPrefix": 1008,
+  "comparedRows": 537,
+  "missingLeadingRows": 471,
+  "expectedRows": 1008,
+  "firstDateUTC": "2025-05-13",
+  "rawCsvSha256": "2471d57fc019c15f0a9907183ba42b21d2be3cc6a76ad7606d5995a60cb563f0",
+  "baselineSha256": "d312d5d8094e995ffeb9a70521d33fdfd8da0699769225c38a1bef00b3453d0b",
+  "csv": "tmp/chanlun/market-validation/BTCUSDT-D-load-range-472-1008.csv",
+  "originalDownload": "C:\\Users\\Admin\\Downloads\\BINANCE_BTCUSDT, 1D_4d460.csv",
+  "fullWindow": false
+}

@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-07",
+  "results": [
+    {
+      "caseId": "BTCUSDT-60",
+      "stage": "first-load",
+      "status": "platform chart and full load trace verified",
+      "expectedDisplay": "PASS: M-BTCUSDT-60, 1008 input bars",
+      "observedCoreTag": "f66e1055",
+      "counts": {
+        "P": 78,
+        "S": 13,
+        "L0": 13,
+        "Z": 1
+      },
+      "evidence": "tmp/chanlun/market-validation/tradingview-snipaste.png",
+      "evidenceSha256": "844a4ec0638b9b57eda300efba86110b7b5e1ba9ce4292382a61903f9ee9ea10",
+      "scope": "Observed chart PASS and validated exported trace. Replay and reload require distinct exports.",
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-60-load.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-60-4554e067364ce0be.json",
+        "rawCsvSha256": "ffcc785255a8c36ad38c17c9b71d6984eb2be0f80be8dba899e393a3b997d660",
+        "traceSha256": "ee3476342f290293bee1e4f5a4283878c05dbcaca217464574dceb2d5f520bd7",
+        "prefixes": 1008,
+        "actualObservedParameters": {
+          "audit_feed_code": 1,
+          "audit_timeframe_seconds": 3600,
+          "audit_tick_size": 0.01,
+          "audit_standard": 1,
+          "audit_core_tag": 4134408277,
+          "audit_baseline_tag": 1368176984,
+          "audit_requested_start": 1789862400000,
+          "audit_sample_limit": 1008,
+          "audit_initial_bars": 5000,
+          "audit_segment_pending_limit": 64,
+          "audit_segment_work_limit": 8192,
+          "audit_center_sources": 64
+        },
+        "lastCounts": {
+          "fractals": 359,
+          "P": 78,
+          "S": 13,
+          "L0": 13,
+          "Z": 1,
+          "events": 465
+        },
+        "eventChecksums": [
+          357914871,
+          358458190
+        ]
+      }
+    },
+    {
+      "caseId": "BTCUSDT-60",
+      "stage": "replay",
+      "status": "platform replay prefix matches first load",
+      "userReportedPanel": "506/1008",
+      "comparedPrefixes": 506,
+      "baselinePrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-60-replay.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-60-75471630d8baef20.json",
+        "rawCsvSha256": "4512674c6d6b69362012f94b04e3a4cb59a5c9094f2ed077b0dfdff71b21d2cd",
+        "traceSha256": "f65bc83cc0e6af8db03fb6b74535b25e1cec68464cd0f56c6026154c950c6015"
+      },
+      "scope": "Paused replay export through prefix 506 compared against full initial load. Reload requires a distinct export."
+    },
+    {
+      "caseId": "BTCUSDT-60",
+      "stage": "reload",
+      "status": "partial reload export matches initial load",
+      "comparedRange": [
+        867,
+        1008
+      ],
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-60-reload-tail-867-1008.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-60-reload-tail-867-1008.json",
+        "rawCsvSha256": "31cbcbe93c5d90cd95d11b9b50678cf1e812db13f63b5158de80524addd09d08"
+      }
+    },
+    {
+      "caseId": "BTCUSDT-60",
+      "stage": "reload",
+      "status": "complete reload export matches initial load",
+      "fullWindow": true,
+      "comparedPrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-60-reload.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-60-1e2199f156917d25.json",
+        "rawCsvSha256": "ffbf4ae46df101d3d7e6e2c5feda4d1786e2b29b408c508aacb862e2f208c82b",
+        "traceSha256": "ee3476342f290293bee1e4f5a4283878c05dbcaca217464574dceb2d5f520bd7"
+      }
+    },
+    {
+      "caseId": "BTCUSDT-240",
+      "stage": "first-load",
+      "status": "full load trace verified",
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-240-load.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-240-eaea8a3aa3423898.json",
+        "rawCsvSha256": "0ab4aa8d422451a2eaa597cf9a479733325da8b6432e0d7030b6831827c5aac3",
+        "traceSha256": "b809b7c84ea381ec05495a1f42de465b7fbe3ebbe32b69dcb0e7fd923a112da8",
+        "prefixes": 1008,
+        "actualObservedParameters": {
+          "audit_feed_code": 1,
+          "audit_timeframe_seconds": 14400,
+          "audit_tick_size": 0.01,
+          "audit_standard": 1,
+          "audit_core_tag": 4134408277,
+          "audit_baseline_tag": 4392541,
+          "audit_requested_start": 1778976000000,
+          "audit_sample_limit": 1008,
+          "audit_initial_bars": 5000,
+          "audit_segment_pending_limit": 64,
+          "audit_segment_work_limit": 8192,
+          "audit_center_sources": 64
+        },
+        "lastCounts": {
+          "fractals": 348,
+          "P": 66,
+          "S": 13,
+          "L0": 13,
+          "Z": 2,
+          "events": 443
+        },
+        "eventChecksums": [
+          437648117,
+          376046579
+        ]
+      }
+    },
+    {
+      "caseId": "BTCUSDT-240",
+      "stage": "replay",
+      "status": "partial replay range matches initial load",
+      "comparedRange": [
+        209,
+        507
+      ],
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-240-replay-range-209-507.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-240-replay-range-209-507.json",
+        "rawCsvSha256": "2c1dc30f7e0d81cdb5c725717aab9d0a867e7dc0476564a0fa9b65d870b92870"
+      }
+    },
+    {
+      "caseId": "BTCUSDT-240",
+      "stage": "replay",
+      "status": "platform replay prefix matches first load",
+      "comparedPrefixes": 507,
+      "baselinePrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-240-replay.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-240-fe5b40c71e2e04e0.json",
+        "rawCsvSha256": "1f72df1e56c1a52388181710a3803f5e76edf81b490fb3333ee970d38995bf6b",
+        "traceSha256": "831423f9b5d977683b55cfc24da6728d1a63a5956e6f82b38550c4776c0f21b9"
+      }
+    },
+    {
+      "caseId": "BTCUSDT-240",
+      "stage": "reload",
+      "status": "complete reload export matches initial load",
+      "fullWindow": true,
+      "comparedPrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-240-reload.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-240-08bfd344c8b38181.json",
+        "rawCsvSha256": "2cfcf631247594c2ec6fbc3b2dd3c05adcea1ede052383d981dd885195a06aaf",
+        "traceSha256": "b809b7c84ea381ec05495a1f42de465b7fbe3ebbe32b69dcb0e7fd923a112da8"
+      }
+    },
+    {
+      "caseId": "BTCUSDT-D",
+      "stage": "first-load",
+      "status": "full load trace verified",
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-D-load.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-d-0501fa0b5b8f214a.json",
+        "rawCsvSha256": "754299b4ab189ab43a66f0ea40db4efe99fe9ea2c2787aa1babe83fbf37f5d73",
+        "traceSha256": "0ee7768606f184576b5da045f564c39d74449a1838bc03687b83f4d808ef8db4",
+        "prefixes": 1008,
+        "actualObservedParameters": {
+          "audit_feed_code": 1,
+          "audit_timeframe_seconds": 86400,
+          "audit_tick_size": 0.01,
+          "audit_standard": 1,
+          "audit_core_tag": 4134408277,
+          "audit_baseline_tag": 3541226968,
+          "audit_requested_start": 1706400000000,
+          "audit_sample_limit": 1008,
+          "audit_initial_bars": 5000,
+          "audit_segment_pending_limit": 64,
+          "audit_segment_work_limit": 8192,
+          "audit_center_sources": 64
+        },
+        "lastCounts": {
+          "fractals": 332,
+          "P": 65,
+          "S": 6,
+          "L0": 6,
+          "Z": 2,
+          "events": 412
+        },
+        "eventChecksums": [
+          943726390,
+          749678574
+        ]
+      }
+    },
+    {
+      "caseId": "BTCUSDT-D",
+      "stage": "replay",
+      "status": "platform replay prefix matches first load",
+      "comparedPrefixes": 872,
+      "baselinePrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-D-replay.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-d-e6bc7f9549068af9.json",
+        "rawCsvSha256": "8d13e2e118da195eecedfc90d9a91ed18e65360fe5b3fc133cbee0cee900afb1",
+        "traceSha256": "a1741d0a9a2d3e09ac12fc4289b30e8c3ca8a55966ce8e59726862969b914a88"
+      }
+    },
+    {
+      "caseId": "BTCUSDT-D",
+      "stage": "reload",
+      "status": "complete reload export matches initial load",
+      "fullWindow": true,
+      "comparedPrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/BTCUSDT-D-reload.csv",
+        "report": "tmp/chanlun/market-validation/btcusdt-d-450f19b02ede6a5c.json",
+        "rawCsvSha256": "8772f244f4100fabaca7f5f35b316ce10fa4672a02b0d95e4b0b170a91c78c2a",
+        "traceSha256": "0ee7768606f184576b5da045f564c39d74449a1838bc03687b83f4d808ef8db4"
+      }
+    },
+    {
+      "caseId": "ETHUSDT-60",
+      "stage": "first-load",
+      "status": "full load trace verified",
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-60-load.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-60-12545158d88e3476.json",
+        "rawCsvSha256": "bfbf2357d3d286b8ad525575aac232b77b5437a1f78c9898af1e581dd598fa35",
+        "traceSha256": "d5d18ee39a87db40d5f4e517529723303d217b6ce53ffa37d623fef3361e3698",
+        "prefixes": 1008,
+        "actualObservedParameters": {
+          "audit_feed_code": 2,
+          "audit_timeframe_seconds": 3600,
+          "audit_tick_size": 0.01,
+          "audit_standard": 1,
+          "audit_core_tag": 4134408277,
+          "audit_baseline_tag": 2340620034,
+          "audit_requested_start": 1789862400000,
+          "audit_sample_limit": 1008,
+          "audit_initial_bars": 5000,
+          "audit_segment_pending_limit": 64,
+          "audit_segment_work_limit": 8192,
+          "audit_center_sources": 64
+        },
+        "lastCounts": {
+          "fractals": 344,
+          "P": 82,
+          "S": 15,
+          "L0": 15,
+          "Z": 2,
+          "events": 460
+        },
+        "eventChecksums": [
+          185200828,
+          588236205
+        ]
+      }
+    },
+    {
+      "caseId": "ETHUSDT-60",
+      "stage": "replay",
+      "status": "platform replay prefix matches first load",
+      "comparedPrefixes": 507,
+      "baselinePrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-60-replay.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-60-3f0475b2905f42c2.json",
+        "rawCsvSha256": "06b731b926f08501ea711a45e0489c7261668e9e211d7e7f6de52680e0f4709f",
+        "traceSha256": "690cbde90469546401801a5295e55d58a0be3261627c0eb67133ac189e24d3ff"
+      }
+    },
+    {
+      "caseId": "ETHUSDT-60",
+      "stage": "reload",
+      "status": "complete reload export matches initial load",
+      "fullWindow": true,
+      "comparedPrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-60-reload.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-60-cad6a5da8cec0385.json",
+        "rawCsvSha256": "647a0d4e95f5f7ac7ae592fc9456a746a9b89b54d1e76f4e834d8fac64ce4f03",
+        "traceSha256": "d5d18ee39a87db40d5f4e517529723303d217b6ce53ffa37d623fef3361e3698"
+      }
+    },
+    {
+      "caseId": "ETHUSDT-240",
+      "stage": "reload",
+      "status": "complete reload export matches initial load",
+      "fullWindow": true,
+      "context": "User reported a reload export.",
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-240-reload.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-240-ad16961398e5a4c3.json",
+        "rawCsvSha256": "7c239e767ed55c70aa173851b5bff75418eed134e98ad5ad8806ca863c15db24",
+        "traceSha256": "e982a78aa9c45b4b93e2cb162616386c04a5b047697612f6b5b0dfbc0ddc0c96",
+        "prefixes": 1008,
+        "actualObservedParameters": {
+          "audit_feed_code": 2,
+          "audit_timeframe_seconds": 14400,
+          "audit_tick_size": 0.01,
+          "audit_standard": 1,
+          "audit_core_tag": 4134408277,
+          "audit_baseline_tag": 740194453,
+          "audit_requested_start": 1778976000000,
+          "audit_sample_limit": 1008,
+          "audit_initial_bars": 5000,
+          "audit_segment_pending_limit": 64,
+          "audit_segment_work_limit": 8192,
+          "audit_center_sources": 64
+        },
+        "lastCounts": {
+          "fractals": 342,
+          "P": 72,
+          "S": 9,
+          "L0": 9,
+          "Z": 2,
+          "events": 435
+        },
+        "eventChecksums": [
+          185047572,
+          638741395
+        ]
+      },
+      "comparedPrefixes": 1008,
+      "comparisonReport": "tmp/chanlun/market-validation/ethusdt-240-08d8fa49b9cdf8c2.json"
+    },
+    {
+      "caseId": "ETHUSDT-240",
+      "stage": "first-load",
+      "status": "partial initial load range matches reload",
+      "comparedRange": [
+        657,
+        1008
+      ],
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-240-load-range-657-1008.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-240-load-range-657-1008.json",
+        "rawCsvSha256": "3fd7195923ad95071753ce7f1e0470012d16d3905a64dbb288bf07ea2dcf5547"
+      }
+    },
+    {
+      "caseId": "ETHUSDT-240",
+      "stage": "first-load",
+      "status": "full load trace verified",
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-240-load.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-240-395b767ff208ae3f.json",
+        "rawCsvSha256": "65f1af975f4d9ca85650993d894cd6ce0598f7e6b1e6bf39367c6a33b1e88ecd",
+        "traceSha256": "e982a78aa9c45b4b93e2cb162616386c04a5b047697612f6b5b0dfbc0ddc0c96",
+        "prefixes": 1008,
+        "actualObservedParameters": {
+          "audit_feed_code": 2,
+          "audit_timeframe_seconds": 14400,
+          "audit_tick_size": 0.01,
+          "audit_standard": 1,
+          "audit_core_tag": 4134408277,
+          "audit_baseline_tag": 740194453,
+          "audit_requested_start": 1778976000000,
+          "audit_sample_limit": 1008,
+          "audit_initial_bars": 5000,
+          "audit_segment_pending_limit": 64,
+          "audit_segment_work_limit": 8192,
+          "audit_center_sources": 64
+        },
+        "lastCounts": {
+          "fractals": 342,
+          "P": 72,
+          "S": 9,
+          "L0": 9,
+          "Z": 2,
+          "events": 435
+        },
+        "eventChecksums": [
+          185047572,
+          638741395
+        ]
+      }
+    },
+    {
+      "caseId": "ETHUSDT-240",
+      "stage": "replay",
+      "status": "platform replay prefix matches first load",
+      "comparedPrefixes": 506,
+      "baselinePrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-240-replay.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-240-6327421927118142.json",
+        "rawCsvSha256": "e5244321a5d77c0aebaa2db55756a94ac8ee34a5e3f3ffe44828dfc7d9f2e487",
+        "traceSha256": "4d72ee9cbd232f89f40089734c6c0cc0d84984770837ae264c75426f0345b50a"
+      }
+    },
+    {
+      "caseId": "ETHUSDT-D",
+      "stage": "first-load",
+      "status": "full load trace verified",
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-D-load.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-d-82dee002e0634bea.json",
+        "rawCsvSha256": "c98e9fd42412f4b0b81fcdb2f2e7172399f252044752f93de3e2b67d8eb108b1",
+        "traceSha256": "db9635ad8fea2e83788b78ff7b835442145105962a231b6a55db49d5a205ff54",
+        "prefixes": 1008,
+        "actualObservedParameters": {
+          "audit_feed_code": 2,
+          "audit_timeframe_seconds": 86400,
+          "audit_tick_size": 0.01,
+          "audit_standard": 1,
+          "audit_core_tag": 4134408277,
+          "audit_baseline_tag": 2878541099,
+          "audit_requested_start": 1706400000000,
+          "audit_sample_limit": 1008,
+          "audit_initial_bars": 5000,
+          "audit_segment_pending_limit": 64,
+          "audit_segment_work_limit": 8192,
+          "audit_center_sources": 64
+        },
+        "lastCounts": {
+          "fractals": 351,
+          "P": 75,
+          "S": 8,
+          "L0": 8,
+          "Z": 1,
+          "events": 443
+        },
+        "eventChecksums": [
+          102089188,
+          75778213
+        ]
+      }
+    },
+    {
+      "caseId": "ETHUSDT-D",
+      "stage": "replay",
+      "status": "platform replay prefix matches first load",
+      "comparedPrefixes": 871,
+      "baselinePrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-D-replay.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-d-e2a6d0fe90bd8e13.json",
+        "rawCsvSha256": "69ce4fbc6d023077370d338fda763744d2612cc9d60bfb613922c985159994dd",
+        "traceSha256": "ba3d89777d41fcae90f853ed7d851504b120b5db08522cb4e39f8b57a7f9f0af"
+      }
+    },
+    {
+      "caseId": "ETHUSDT-D",
+      "stage": "reload",
+      "status": "complete reload export matches initial load",
+      "fullWindow": true,
+      "comparedPrefixes": 1008,
+      "trace": {
+        "csv": "tmp/chanlun/market-validation/ETHUSDT-D-reload.csv",
+        "report": "tmp/chanlun/market-validation/ethusdt-d-820a46ae0697ee98.json",
+        "rawCsvSha256": "10e5defc42c3460143a18d40456a8efe129dcc085c8fee3d5b235d4c69a44d93",
+        "traceSha256": "db9635ad8fea2e83788b78ff7b835442145105962a231b6a55db49d5a205ff54"
+      }
+    }
+  ],
+  "pending": [],
+  "desktopCapture": {
+    "status": "failed after rebinding",
+    "firstError": "FrameArrived timed out: timed out waiting on channel",
+    "retryError": "window capture timed out: timed out waiting on channel",
+    "textOnlyObservation": {
+      "date": "2026-11-07",
+      "windowFound": true,
+      "windowTitleAndShellControlsReadable": true,
+      "pineEditorControlObserved": false,
+      "underlyingFrameTimeoutCause": "undetermined"
+    },
+    "differential": {
+      "date": "2026-11-07",
+      "api": "sky.get_window_state with screenshot only",
+      "windowsSession": {
+        "type": "console",
+        "id": 3,
+        "state": "Active"
+      },
+      "measurements": [
+        {
+          "target": "TradingView",
+          "elapsedMs": 5301
+        },
+        {
+          "target": "blank Notepad",
+          "elapsedMs": 5367
+        },
+        {
+          "target": "foreground blank Notepad after rebinding",
+          "elapsedMs": 5329
+        }
+      ],
+      "error": "window capture timed out: timed out waiting on channel",
+      "controlAccessibilityReadable": true,
+      "controlKeyboardCloseSucceeded": true,
+      "scope": "Shared screenshot path reproduced across two apps. Exact internal cause undetermined."
+    }
+  },
+  "browserAutomation": {
+    "date": "2026-11-07",
+    "status": "timed out before TradingView browser session was reached",
+    "attempts": [
+      "browser inventory timed out and reset kernel",
+      "targeted TradingView browser lookup timed out and reset kernel"
+    ]
+  },
+  "snipasteCapture": {
+    "date": "2026-11-07",
+    "application": "Snipaste 2.10.8",
+    "status": "TradingView window captured and visually verified",
+    "command": "snip --active-window -o <workspace PNG>",
+    "evidence": "tmp/chanlun/market-validation/tradingview-snipaste.png",
+    "sha256": "844a4ec0638b9b57eda300efba86110b7b5e1ba9ce4292382a61903f9ee9ea10",
+    "size": [
+      2495,
+      1440
+    ]
+  },
+  "firstLoadExportAttempt": {
+    "date": "2026-11-07",
+    "caseId": "BTCUSDT-60",
+    "chartPassObserved": true,
+    "layoutControlObserved": true,
+    "clickError": "coordinate input geometry is unavailable",
+    "alternateAppControl": "timed out",
+    "traceCsvFound": false,
+    "evidence": "tmp/chanlun/market-validation/tradingview-export-check.png"
+  }
+}

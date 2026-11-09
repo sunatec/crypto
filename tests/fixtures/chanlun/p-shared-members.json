@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "P-SHARED-MEMBERS",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "P-001"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C77-195"
+    ],
+    "lesson": 77,
+    "pdfPages": [
+      195
+    ],
+    "figure": null,
+    "note": "人工构造的合规已确认分型输入假设，仅测试成员与价格区间资格；不是完整OHLC成笔或P-002完成证明。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "fractal-pairs",
+    "items": [
+      {
+        "id": "P-SHARED-MEMBERS/pair",
+        "first": {
+          "id": "top-1",
+          "kind": "top",
+          "endpointTime": 1700000060000,
+          "priceTicks": 10,
+          "confirmedAt": 1700000240000,
+          "leftId": "k0",
+          "middleId": "k1",
+          "rightId": "k2",
+          "leftOrdinal": 0,
+          "middleOrdinal": 1,
+          "rightOrdinal": 2,
+          "middleHighTicks": 10,
+          "middleLowTicks": 4
+        },
+        "last": {
+          "id": "bottom-3",
+          "kind": "bottom",
+          "endpointTime": 1700000180000,
+          "priceTicks": 0,
+          "confirmedAt": 1700000360000,
+          "leftId": "k2",
+          "middleId": "k3",
+          "rightId": "k4",
+          "leftOrdinal": 2,
+          "middleOrdinal": 3,
+          "rightOrdinal": 4,
+          "middleHighTicks": 6,
+          "middleLowTicks": 0
+        }
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "strokeEligible": false
+      },
+      "structures": [],
+      "events": [],
+      "reason": "两分型共享k2，不能成为一笔的两端。"
+    }
+  ]
+}

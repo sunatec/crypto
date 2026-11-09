@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "note": "人工列出的窗口策略预期；价格形态不由此推导。rows为[开盘UTC毫秒,索引,收盘,符合起点,允许计算,累计接收,首输入,末输入,已截断]。小样本参数用于共享函数验证，不改变UI参数范围。",
+  "cases": [
+    {"id":"W-AUTO-ANCHOR","config":[false,0,3,4,1000,2],"missing":false,"rows":[[1000,0,true,false,false,0,null,null,false],[2000,1,true,false,false,0,null,null,false],[3000,2,false,true,true,0,null,null,false],[3000,2,true,true,true,1,3000,3000,false],[3000,2,true,true,true,1,3000,3000,false],[4000,3,true,true,true,2,3000,4000,false],[5000,4,true,true,true,3,3000,5000,false],[6000,5,true,true,true,4,3000,6000,false]]},
+    {"id":"W-FIXED-CAP","config":[true,2500,3,9,1000,2],"missing":false,"rows":[[1000,0,true,false,false,0,null,null,false],[2000,1,true,false,false,0,null,null,false],[3000,2,false,true,true,0,null,null,false],[3000,2,true,true,true,1,3000,3000,false],[4000,3,true,true,true,2,3000,4000,false],[4000,3,true,true,false,2,3000,4000,false],[5000,4,false,true,false,2,3000,4000,false],[5000,4,true,true,false,2,3000,4000,true],[6000,5,true,true,false,2,3000,4000,true]]},
+    {"id":"W-HISTORY-MISSING","config":[true,500,5,4,1000,4],"missing":true,"rows":[[1000,0,true,true,true,1,1000,1000,false],[2000,1,true,true,true,2,1000,2000,false]]},
+    {"id":"W-FUTURE","config":[true,9000,5,2,1000,4],"missing":false,"rows":[[1000,0,true,false,false,0,null,null,false],[2000,1,true,false,false,0,null,null,false],[3000,2,false,false,false,0,null,null,false]]},
+    {"id":"W-SHORT-HISTORY","config":[false,0,5,1,1000,1],"missing":false,"rows":[[1000,0,true,true,true,1,1000,1000,false],[2000,1,true,true,true,2,1000,2000,false]]},
+    {"id":"W-OPEN-ALIGNMENT","config":[true,1500,5,1,1000,5],"missing":false,"rows":[[1000,0,true,false,false,0,null,null,false],[2000,1,true,true,true,1,2000,2000,false]]},
+    {"id":"W-OPEN-CAP","config":[true,1000,5,1,1000,1],"missing":false,"rows":[[1000,0,false,true,true,0,null,null,false],[1000,0,false,true,true,0,null,null,false],[1000,0,true,true,true,1,1000,1000,false],[1000,0,true,true,false,1,1000,1000,false],[2000,1,false,true,false,1,1000,1000,false],[2000,1,true,true,false,1,1000,1000,true]]}
+  ]
+}

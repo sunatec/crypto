@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-05",
+  "results": [
+    {
+      "date": "2026-11-05",
+      "source": "tmp/chanlun/budget-validation.pine",
+      "requestedFileSha256": "e9172b134febb9e3d1ba4215c0f195246c062e4f3e165913dd0486e98545704b",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "fixtureHashes": [
+        {
+          "id": "S-FIRST-END",
+          "sha256": "ebc3eb61e645e000c7fba1418e063ec05066f1f85332544f9153be00ee3ba147"
+        },
+        {
+          "id": "S-FIRST-EQUAL-THIRD",
+          "sha256": "1c9a781716e63ea2727bb84470f70656093879541745c9e2016fe0dec8d59b5c"
+        },
+        {
+          "id": "N-OWN-RANGES",
+          "sha256": "0f2d46415c33386490c6b0750c52a7bdf4200dfc95b642d663bc9dc8e664556e"
+        }
+      ],
+      "status": "user-reported-pass",
+      "snapshot": "tmp/chanlun/compiled/budget-B5-pass-e9172b134febb9e3d1ba4215c0f195246c062e4f3e165913dd0486e98545704b.pine",
+      "userReport": "B5 PASS",
+      "cases": 5,
+      "scope": "User reports requested synthetic budget, upstream continuation, held input, no restart and status/gate assertions passed. Uploaded bytes not independently verified. Does not cover real unsupported-chart acceptance, pressure tests, R or upper-layer limit."
+    },
+    {
+      "date": "2026-11-05",
+      "source": "chanlun_original.pine",
+      "requestedFileSha256": "100ad52e4027b002d7dd526735415bf705fc14fa3605e7ff00dd633dc2482913",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "status": "user-reported-pass",
+      "snapshot": "tmp/chanlun/compiled/production-budget-pass-100ad52e4027b002d7dd526735415bf705fc14fa3605e7ff00dd633dc2482913.pine",
+      "userReport": "资源状态入口正常",
+      "sharedValidationPass": "e9172b134febb9e3d1ba4215c0f195246c062e4f3e165913dd0486e98545704b",
+      "scope": "User reports default recent-mode compilation/runtime, blue/orange/purple geometry, dashed preview, L0 count correspondence and clear status text normal. Uploaded bytes not independently verified. Fixed-start 100-bar truncation, actual unsupported charts, replay, live ticks, pressure and upper-layer limits remain separate."
+    }
+  ],
+  "pending": []
+}

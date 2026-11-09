@@ -1,0 +1,1672 @@
+//@version=6
+indicator("缠论基础共享验证 I1", overlay = false)
+// Extracted core SHA-256: 39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5
+// Generated from independent fixtures. Run in TradingView; generation is not a test pass.
+// K/F/P/S/N contract: chanlun-research-0.1. R/Z remain unimplemented.
+// All time coordinates are UTC milliseconds; prices are integer ticks.
+type ChanRaw
+    int openTime
+    int closeTime
+    int openTicks
+    int highTicks
+    int lowTicks
+    int closeTicks
+
+type ChanElement
+    string id
+    int ordinal
+    int firstTime
+    int lastTime
+    int highTicks
+    int lowTicks
+    int highTime
+    int lowTime
+    int firstRaw
+    int lastRaw
+    bool sealed
+
+type ChanFractal
+    string id
+    int kind
+    int endpointTime
+    int priceTicks
+    int confirmedAt
+    string leftId
+    string middleId
+    string rightId
+    string ruleId
+    int leftOrdinal
+    int middleOrdinal
+    int rightOrdinal
+    int middleHighTicks
+    int middleLowTicks
+
+// Shared contracts for later modules. An absent proof is represented by na,
+// never by an invented completed structure. These types do not produce signals.
+type ChanStructure
+    string id
+    string objectType
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    bool confirmed = false
+    int confirmedAt = na
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+    int memberLowTicks = na
+    int memberHighTicks = na
+    int memberLowTime = na
+    int memberHighTime = na
+
+type ChanComponent
+    string id
+    string segmentId
+    int realStartTime
+    int realEndTime
+    int realStartTicks
+    int realEndTicks
+    int actualLowTicks
+    int actualHighTicks
+    int actualLowTime
+    int actualHighTime
+    int analysisStartTime
+    int analysisEndTime
+    int analysisStartTicks
+    int analysisEndTicks
+    int direction
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+
+type ChanCenter
+    string id
+    int level
+    int coreLowTicks
+    int coreHighTicks
+    int ggTicks
+    int gTicks
+    int dTicks
+    int ddTicks
+    int startTime
+    int formedAt
+    int extentEndTime
+    int confirmedAt = na
+    bool degenerate = false
+    string lifecycle
+    string ruleId
+    array<string> dependencies
+    int ordinal = 0
+
+type ChanMovement
+    string id
+    int level
+    int direction
+    int startTime
+    int endTime
+    int startTicks
+    int endTicks
+    string morphology
+    bool completed = false
+    int confirmedAt = na
+    string completionProof
+    string ruleId
+    array<string> childIds
+    array<string> centerIds
+    int ordinal = 0
+
+type ChanConfirmation
+    string id
+    string objectId
+    string objectType
+    int level
+    int occurredAt
+    int confirmedAt
+    string ruleId
+    array<string> dependencies
+
+type ChanState
+    string contextId = ""
+    array<ChanElement> elements
+    ChanRaw seed
+    ChanRaw lastRaw
+    ChanFractal candidate
+    ChanFractal lastConfirmed
+    ChanFractal event
+    int direction = 0
+    int processedCount = 0
+    int inputCount = 0
+    int confirmedFractals = 0
+    int effectiveStart = na
+    ChanFractal strokeAnchor
+    ChanFractal strokeEnd
+    ChanFractal lastStrokeInput
+    ChanStructure strokeCandidate
+    ChanStructure strokeEvent
+    ChanStructure lastStroke
+    int strokeCount = 0
+    int ignoredStrokeFractals = 0
+
+chan_new(string contextId) =>
+    ChanState state = ChanState.new()
+    state.contextId := "chanlun-research-0.1/" + contextId
+    state.elements := array.new<ChanElement>()
+    state
+
+chan_structure_copy(ChanStructure source) =>
+    ChanStructure result = na
+    if not na(source)
+        result := source.copy()
+        if not na(source.dependencies)
+            result.dependencies := source.dependencies.copy()
+    result
+
+// UDT.copy() is shallow: copy the collection and each referenced record explicitly.
+chan_clone(ChanState source) =>
+    ChanState result = source.copy()
+    result.elements := array.new<ChanElement>()
+    if source.elements.size() > 0
+        for element in source.elements
+            result.elements.push(element.copy())
+    if not na(source.seed)
+        result.seed := source.seed.copy()
+    if not na(source.lastRaw)
+        result.lastRaw := source.lastRaw.copy()
+    if not na(source.candidate)
+        result.candidate := source.candidate.copy()
+    if not na(source.lastConfirmed)
+        result.lastConfirmed := source.lastConfirmed.copy()
+    if not na(source.event)
+        result.event := source.event.copy()
+    if not na(source.strokeAnchor)
+        result.strokeAnchor := source.strokeAnchor.copy()
+    if not na(source.strokeEnd)
+        result.strokeEnd := source.strokeEnd.copy()
+    if not na(source.lastStrokeInput)
+        result.lastStrokeInput := source.lastStrokeInput.copy()
+    result.strokeCandidate := chan_structure_copy(source.strokeCandidate)
+    result.strokeEvent := chan_structure_copy(source.strokeEvent)
+    result.lastStroke := chan_structure_copy(source.lastStroke)
+    result
+
+chan_contains(int loA, int hiA, int loB, int hiB) =>
+    (loA <= loB and hiA >= hiB) or (loB <= loA and hiB >= hiA)
+
+chan_element(ChanState state, ChanRaw raw, int ordinal, int rawOrdinal) =>
+    ChanElement.new(state.contextId + "/K/" + str.tostring(raw.openTime), ordinal, raw.openTime, raw.openTime, raw.highTicks, raw.lowTicks, raw.openTime, raw.openTime, rawOrdinal, rawOrdinal, false)
+
+chan_fractal(ChanState state, int offset, int confirmedAt) =>
+    ChanElement left = state.elements.get(offset)
+    ChanElement middle = state.elements.get(offset + 1)
+    ChanElement right = state.elements.get(offset + 2)
+    bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+    bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+    ChanFractal result = na
+    if top or bottom
+        int kind = top ? 1 : -1
+        result := ChanFractal.new(state.contextId + "/F/" + str.tostring(kind) + "/" + left.id + "/" + middle.id + "/" + right.id, kind, top ? middle.highTime : middle.lowTime, top ? middle.highTicks : middle.lowTicks, confirmedAt, left.id, middle.id, right.id, "F-001/F-002", left.ordinal, middle.ordinal, right.ordinal, middle.highTicks, middle.lowTicks)
+    result
+
+// P-001 is only a qualification predicate, not a stroke completion algorithm.
+// The processed-element ordinals and member IDs survive raw containment merges.
+chan_stroke_eligible(ChanFractal first, ChanFractal last) =>
+    bool eligible = false
+    if not na(first) and not na(last)
+        if not na(first.confirmedAt) and not na(last.confirmedAt) and first.kind != last.kind and first.endpointTime < last.endpointTime and first.rightOrdinal + 1 < last.leftOrdinal
+            ChanFractal top = first.kind == 1 ? first : last
+            ChanFractal bottom = first.kind == -1 ? first : last
+            eligible := top.middleHighTicks > bottom.middleHighTicks and top.priceTicks > bottom.priceTicks
+    eligible
+
+chan_fractal_signature(ChanFractal fractal) =>
+    string result = "none"
+    if not na(fractal)
+        result := fractal.id + "/" + str.tostring(fractal.kind) + "/" + str.tostring(fractal.endpointTime) + "/" + str.tostring(fractal.priceTicks) + "/" + str.tostring(fractal.confirmedAt) + "/" + fractal.leftId + "/" + fractal.middleId + "/" + fractal.rightId + "/" + str.tostring(fractal.leftOrdinal) + "/" + str.tostring(fractal.middleOrdinal) + "/" + str.tostring(fractal.rightOrdinal) + "/" + str.tostring(fractal.middleHighTicks) + "/" + str.tostring(fractal.middleLowTicks)
+    result
+
+chan_structure_signature(ChanStructure source) =>
+    string result = "none"
+    if not na(source)
+        result := source.id + "/" + source.objectType + "/" + str.tostring(source.level) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.endTime) + "/" + str.tostring(source.startTicks) + "/" + str.tostring(source.endTicks) + "/" + str.tostring(source.confirmed) + "/" + str.tostring(source.confirmedAt) + "/" + str.tostring(source.ordinal) + "/" + source.ruleId
+        result += "/members/" + str.tostring(source.memberLowTicks) + "/" + str.tostring(source.memberHighTicks) + "/" + str.tostring(source.memberLowTime) + "/" + str.tostring(source.memberHighTime)
+        if not na(source.dependencies)
+            for dependency in source.dependencies
+                result += "/" + dependency
+    result
+
+chan_stroke_make(ChanState state) =>
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/P/" + str.tostring(state.strokeCount + 1) + "/" + str.tostring(state.strokeAnchor.endpointTime)
+    result.objectType := "stroke"
+    result.level := 0
+    result.direction := state.strokeAnchor.kind == -1 ? 1 : -1
+    result.startTime := state.strokeAnchor.endpointTime
+    result.endTime := state.strokeEnd.endpointTime
+    result.startTicks := state.strokeAnchor.priceTicks
+    result.endTicks := state.strokeEnd.priceTicks
+    result.ruleId := "P-001/P-002"
+    result.dependencies := array.from(state.strokeAnchor.id, state.strokeEnd.id)
+    result.ordinal := state.strokeCount + 1
+    result.memberLowTicks := math.min(result.startTicks, result.endTicks)
+    result.memberHighTicks := math.max(result.startTicks, result.endTicks)
+    result.memberLowTime := result.direction == 1 ? result.startTime : result.endTime
+    result.memberHighTime := result.direction == 1 ? result.endTime : result.startTime
+    result
+
+chan_more_extreme(ChanFractal previous, ChanFractal incoming) =>
+    incoming.kind == 1 ? incoming.priceTicks > previous.priceTicks : incoming.priceTicks < previous.priceTicks
+
+// P-002: only a qualified next stroke locks the previous one. Equal extrema
+// retain the first endpoint; rejected opposite fractals never create a turn.
+chan_stroke_step(ChanState state, ChanFractal incoming) =>
+    if na(incoming) or na(incoming.confirmedAt)
+        runtime.error("成笔正式输入必须是已封口分型")
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastStrokeInput)
+        duplicate := state.lastStrokeInput.id == incoming.id
+        if duplicate and chan_fractal_signature(state.lastStrokeInput) != chan_fractal_signature(incoming)
+            runtime.error("已提交分型发生变化，需重载分析上下文")
+        if not duplicate and (incoming.endpointTime <= state.lastStrokeInput.endpointTime or incoming.confirmedAt < state.lastStrokeInput.confirmedAt)
+            runtime.error("成笔分型输入顺序无效")
+    if not duplicate
+        if na(state.strokeAnchor)
+            state.strokeAnchor := incoming.copy()
+        else if na(state.strokeEnd)
+            if incoming.kind == state.strokeAnchor.kind
+                if chan_more_extreme(state.strokeAnchor, incoming)
+                    state.strokeAnchor := incoming.copy()
+            else if chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+            else
+                state.ignoredStrokeFractals += 1
+        else if incoming.kind == state.strokeEnd.kind
+            if chan_more_extreme(state.strokeEnd, incoming) and chan_stroke_eligible(state.strokeAnchor, incoming)
+                state.strokeEnd := incoming.copy()
+                state.strokeCandidate := chan_stroke_make(state)
+        else if chan_stroke_eligible(state.strokeEnd, incoming)
+            ChanStructure locked = chan_structure_copy(state.strokeCandidate)
+            locked.confirmed := true
+            locked.confirmedAt := incoming.confirmedAt
+            locked.dependencies.push(incoming.id)
+            state.strokeCount += 1
+            state.lastStroke := locked
+            state.strokeEvent := locked
+            state.strokeAnchor := state.strokeEnd.copy()
+            state.strokeEnd := incoming.copy()
+            state.strokeCandidate := chan_stroke_make(state)
+        else
+            state.ignoredStrokeFractals += 1
+        state.lastStrokeInput := incoming.copy()
+    state
+
+// Project an unsealed fractal only on a deep copy. lastStroke survives a later
+// rejected preview input, unlike strokeEvent, which is cleared on every step.
+chan_stroke_preview(ChanState source) =>
+    ChanState result = chan_clone(source)
+    if not na(source.candidate) and not na(source.lastRaw)
+        ChanFractal tentative = source.candidate.copy()
+        tentative.confirmedAt := source.lastRaw.closeTime
+        chan_stroke_step(result, tentative)
+    result
+
+chan_stroke_pending(ChanState preview, int committedCount) =>
+    ChanStructure result = na
+    if preview.strokeCount > committedCount and not na(preview.lastStroke)
+        result := chan_structure_copy(preview.lastStroke)
+        result.confirmed := false
+        result.confirmedAt := na
+    result
+
+// Consume one closed input, or one input in an isolated preview copy.
+// At most four processed elements are needed for K/F; counts and source spans persist.
+chan_step(ChanState state, ChanRaw raw) =>
+    if na(raw.openTime) or na(raw.closeTime) or na(raw.openTicks) or na(raw.highTicks) or na(raw.lowTicks) or na(raw.closeTicks) or raw.openTime < 0 or raw.closeTime <= raw.openTime or raw.lowTicks > raw.highTicks or raw.openTicks < raw.lowTicks or raw.openTicks > raw.highTicks or raw.closeTicks < raw.lowTicks or raw.closeTicks > raw.highTicks
+        runtime.error("K/F: invalid OHLC input")
+    state.event := na
+    state.strokeEvent := na
+    bool duplicate = false
+    if not na(state.lastRaw)
+        if raw.openTime < state.lastRaw.openTime or (raw.openTime > state.lastRaw.openTime and raw.openTime < state.lastRaw.closeTime)
+            runtime.error("K/F: inputs must be chronological")
+        if raw.openTime == state.lastRaw.openTime
+            duplicate := raw.closeTime == state.lastRaw.closeTime and raw.openTicks == state.lastRaw.openTicks and raw.highTicks == state.lastRaw.highTicks and raw.lowTicks == state.lastRaw.lowTicks and raw.closeTicks == state.lastRaw.closeTicks
+            if not duplicate
+                runtime.error("K/F: committed input changed; reload the context")
+    if not duplicate
+        state.inputCount += 1
+        bool appended = false
+        if state.direction == 0
+            // E-001: compare adjacent original inputs; never invent an initial direction.
+            if not na(state.seed)
+                if not chan_contains(state.seed.lowTicks, state.seed.highTicks, raw.lowTicks, raw.highTicks)
+                    state.contextId += "/seed/" + str.tostring(state.seed.openTime)
+                    ChanElement first = chan_element(state, state.seed, 0, state.inputCount - 2)
+                    first.sealed := true
+                    state.elements.push(first)
+                    state.elements.push(chan_element(state, raw, 1, state.inputCount - 1))
+                    state.processedCount := 2
+                    state.effectiveStart := state.seed.openTime
+                    state.direction := raw.highTicks > state.seed.highTicks ? 1 : -1
+                    appended := true
+            state.seed := raw.copy()
+        else
+            ChanElement tail = state.elements.last()
+            if chan_contains(tail.lowTicks, tail.highTicks, raw.lowTicks, raw.highTicks)
+                int mergedHigh = state.direction == 1 ? math.max(tail.highTicks, raw.highTicks) : math.min(tail.highTicks, raw.highTicks)
+                int mergedLow = state.direction == 1 ? math.max(tail.lowTicks, raw.lowTicks) : math.min(tail.lowTicks, raw.lowTicks)
+                // E-002: equal extrema keep the earlier source independently.
+                if mergedHigh != tail.highTicks
+                    tail.highTime := raw.openTime
+                if mergedLow != tail.lowTicks
+                    tail.lowTime := raw.openTime
+                tail.highTicks := mergedHigh
+                tail.lowTicks := mergedLow
+                tail.lastTime := raw.openTime
+                tail.lastRaw := state.inputCount - 1
+            else
+                tail.sealed := true
+                state.direction := raw.highTicks > tail.highTicks ? 1 : -1
+                state.elements.push(chan_element(state, raw, state.processedCount, state.inputCount - 1))
+                state.processedCount += 1
+                appended := true
+                if state.elements.size() > 4
+                    state.elements.shift()
+        int count = state.elements.size()
+        if appended and count >= 4
+            ChanFractal confirmed = chan_fractal(state, count - 4, raw.closeTime)
+            if not na(confirmed)
+                state.lastConfirmed := confirmed
+                state.event := confirmed
+                state.confirmedFractals += 1
+                chan_stroke_step(state, confirmed)
+        state.candidate := count >= 3 ? chan_fractal(state, count - 3, na) : na
+        state.lastRaw := raw.copy()
+    state
+
+// Deterministic K/F snapshot for replay and clone-isolation assertions.
+chan_signature(ChanState state) =>
+    string result = state.contextId + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.processedCount) + "/" + str.tostring(state.direction) + "/" + str.tostring(state.effectiveStart) + "/" + str.tostring(state.confirmedFractals)
+    if not na(state.seed)
+        result += "/seed/" + str.tostring(state.seed.openTime) + "/" + str.tostring(state.seed.highTicks) + "/" + str.tostring(state.seed.lowTicks)
+    if not na(state.lastRaw)
+        result += "/raw/" + str.tostring(state.lastRaw.openTime) + "/" + str.tostring(state.lastRaw.closeTime) + "/" + str.tostring(state.lastRaw.openTicks) + "/" + str.tostring(state.lastRaw.highTicks) + "/" + str.tostring(state.lastRaw.lowTicks) + "/" + str.tostring(state.lastRaw.closeTicks)
+    if state.elements.size() > 0
+        for element in state.elements
+            result += "/" + element.id + "/" + str.tostring(element.ordinal) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.firstRaw) + "/" + str.tostring(element.lastRaw) + "/" + str.tostring(element.sealed)
+    if not na(state.candidate)
+        result += "/candidate/" + state.candidate.id + "/" + str.tostring(state.candidate.endpointTime) + "/" + str.tostring(state.candidate.priceTicks)
+    if not na(state.lastConfirmed)
+        result += "/confirmed/" + state.lastConfirmed.id + "/" + str.tostring(state.lastConfirmed.endpointTime) + "/" + str.tostring(state.lastConfirmed.priceTicks) + "/" + str.tostring(state.lastConfirmed.confirmedAt)
+    if not na(state.event)
+        result += "/event/" + state.event.id + "/" + str.tostring(state.event.confirmedAt)
+    result += "/P/" + str.tostring(state.strokeCount) + "/" + str.tostring(state.ignoredStrokeFractals) + "/" + chan_fractal_signature(state.strokeAnchor) + "/" + chan_fractal_signature(state.strokeEnd) + "/" + chan_fractal_signature(state.lastStrokeInput)
+    result += "/candidate/" + chan_structure_signature(state.strokeCandidate) + "/last/" + chan_structure_signature(state.lastStroke) + "/event/" + chan_structure_signature(state.strokeEvent)
+    result
+// S-001/S-002/S-003: a standard feature sequence is a context-specific view of
+// locked strokes. A sequence or feature turn alone never confirms a segment.
+chan_segment_seed(ChanStructure first, ChanStructure middle, ChanStructure third) =>
+    bool eligible = false
+    if not na(first) and not na(middle) and not na(third)
+        bool locked = first.objectType == "stroke" and middle.objectType == "stroke" and third.objectType == "stroke" and first.confirmed and middle.confirmed and third.confirmed and not na(first.confirmedAt) and not na(middle.confirmedAt) and not na(third.confirmedAt)
+        bool connected = first.endTime == middle.startTime and middle.endTime == third.startTime and first.endTicks == middle.startTicks and middle.endTicks == third.startTicks and first.ordinal + 1 == middle.ordinal and middle.ordinal + 1 == third.ordinal
+        bool alternating = (first.direction == 1 or first.direction == -1) and middle.direction == -first.direction and third.direction == first.direction
+        bool causal = first.startTime < first.endTime and middle.startTime < middle.endTime and third.startTime < third.endTime and first.confirmedAt >= first.endTime and middle.confirmedAt >= middle.endTime and third.confirmedAt >= third.endTime and first.confirmedAt <= middle.confirmedAt and middle.confirmedAt <= third.confirmedAt
+        bool prices = first.direction * (first.endTicks - first.startTicks) > 0 and middle.direction * (middle.endTicks - middle.startTicks) > 0 and third.direction * (third.endTicks - third.startTicks) > 0
+        int commonLow = math.max(math.min(first.startTicks, first.endTicks), math.max(math.min(middle.startTicks, middle.endTicks), math.min(third.startTicks, third.endTicks)))
+        int commonHigh = math.min(math.max(first.startTicks, first.endTicks), math.min(math.max(middle.startTicks, middle.endTicks), math.max(third.startTicks, third.endTicks)))
+        eligible := locked and connected and alternating and causal and prices and commonLow <= commonHigh and first.direction * (third.endTicks - first.startTicks) > 0
+    eligible
+
+type ChanFeature
+    string id
+    int lowTicks
+    int highTicks
+    int lowTime
+    int highTime
+    int firstTime
+    int lastTime
+    int firstOrdinal
+    int lastOrdinal
+    int firstSide
+    int lastSide
+    int availableAt
+    bool sealed = false
+    array<string> sourceIds
+
+type ChanFeatureSequence
+    string contextId
+    int segmentDirection
+    int mergeDirection
+    int postDirection
+    int boundaryTime
+    bool secondSequence
+    array<ChanFeature> elements
+    ChanStructure lastInput
+    ChanStructure heldInput
+    int inputCount = 0
+    int selectedCount = 0
+    int boundaryCuts = 0
+    int maxElements = 128
+    int maxSources = 512
+    bool waitingDirection = false
+    bool blocked = false
+
+type ChanFeatureTurn
+    int kind
+    int endpointTime
+    int priceTicks
+    int availableAt
+    string leftId
+    string middleId
+    string rightId
+    bool gap
+    bool rightSealed
+
+chan_feature_new(string contextId, int segmentDirection, int initialDirection, int postDirection, int boundaryTime, bool secondSequence, int maxElements, int maxSources) =>
+    if (segmentDirection != 1 and segmentDirection != -1) or initialDirection < -1 or initialDirection > 1 or postDirection < -1 or postDirection > 1 or maxElements < 1 or maxSources < 1
+        runtime.error("特征序列上下文无效")
+    ChanFeatureSequence result = ChanFeatureSequence.new()
+    result.contextId := contextId
+    result.segmentDirection := segmentDirection
+    result.mergeDirection := initialDirection
+    result.postDirection := postDirection
+    result.boundaryTime := boundaryTime
+    result.secondSequence := secondSequence
+    result.maxElements := maxElements
+    result.maxSources := maxSources
+    result.elements := array.new<ChanFeature>()
+    result
+
+chan_feature_clone(ChanFeatureSequence source) =>
+    ChanFeatureSequence result = source.copy()
+    result.elements := array.new<ChanFeature>()
+    for element in source.elements
+        ChanFeature copied = element.copy()
+        copied.sourceIds := element.sourceIds.copy()
+        result.elements.push(copied)
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result
+
+chan_feature_step(ChanFeatureSequence state, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("特征序列仅消费合法已锁定笔")
+    if not na(state.boundaryTime) and stroke.startTime < state.boundaryTime and stroke.endTime > state.boundaryTime
+        runtime.error("假设分界必须位于笔端点")
+    bool duplicate = false
+    if not na(state.lastInput)
+        duplicate := stroke.id == state.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(state.lastInput)
+            runtime.error("已消费笔发生变化")
+        if not duplicate and (stroke.startTime < state.lastInput.endTime or stroke.confirmedAt < state.lastInput.confirmedAt or stroke.ordinal <= state.lastInput.ordinal)
+            runtime.error("特征序列输入顺序无效")
+    if not duplicate and not state.blocked and not state.waitingDirection
+        bool selected = stroke.direction == -state.segmentDirection
+        if selected
+            int side = not na(state.boundaryTime) and stroke.startTime >= state.boundaryTime ? 1 : 0
+            ChanFeature incoming = ChanFeature.new()
+            incoming.id := state.contextId + "/E/" + stroke.id
+            incoming.lowTicks := math.min(stroke.startTicks, stroke.endTicks)
+            incoming.highTicks := math.max(stroke.startTicks, stroke.endTicks)
+            incoming.lowTime := stroke.direction == 1 ? stroke.startTime : stroke.endTime
+            incoming.highTime := stroke.direction == 1 ? stroke.endTime : stroke.startTime
+            incoming.firstTime := stroke.startTime
+            incoming.lastTime := stroke.endTime
+            incoming.firstOrdinal := stroke.ordinal
+            incoming.lastOrdinal := stroke.ordinal
+            incoming.firstSide := side
+            incoming.lastSide := side
+            incoming.availableAt := stroke.confirmedAt
+            incoming.sourceIds := array.from(stroke.id)
+            ChanFeature tail = state.elements.size() > 0 ? state.elements.last() : na
+            bool contained = not na(tail) and chan_contains(tail.lowTicks, tail.highTicks, incoming.lowTicks, incoming.highTicks)
+            bool crosses = not na(tail) and tail.lastSide != side
+            bool split = crosses and not state.secondSequence
+            bool merge = contained and not split
+            if state.selectedCount >= state.maxSources or (not merge and state.elements.size() >= state.maxElements)
+                state.blocked := true
+                state.heldInput := chan_structure_copy(stroke)
+            else if merge and state.mergeDirection == 0
+                // Preserve the unresolved input. A caller must supply evidenced
+                // prior direction and rebuild; never guess from this inclusion.
+                state.waitingDirection := true
+                state.heldInput := chan_structure_copy(stroke)
+                state.inputCount += 1
+                state.selectedCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+            else
+                state.selectedCount += 1
+                if merge
+                    int highTicks = state.mergeDirection == 1 ? math.max(tail.highTicks, incoming.highTicks) : math.min(tail.highTicks, incoming.highTicks)
+                    int lowTicks = state.mergeDirection == 1 ? math.max(tail.lowTicks, incoming.lowTicks) : math.min(tail.lowTicks, incoming.lowTicks)
+                    if highTicks != tail.highTicks
+                        tail.highTime := incoming.highTime
+                    if lowTicks != tail.lowTicks
+                        tail.lowTime := incoming.lowTime
+                    tail.highTicks := highTicks
+                    tail.lowTicks := lowTicks
+                    tail.lastTime := incoming.lastTime
+                    tail.lastOrdinal := incoming.lastOrdinal
+                    tail.lastSide := side
+                    tail.availableAt := math.max(tail.availableAt, incoming.availableAt)
+                    tail.sourceIds.push(stroke.id)
+                else
+                    if not na(tail)
+                        tail.sealed := true
+                        if contained and split
+                            state.boundaryCuts += 1
+                            state.mergeDirection := state.postDirection
+                        else
+                            state.mergeDirection := incoming.highTicks > tail.highTicks ? 1 : -1
+                    state.elements.push(incoming)
+                state.inputCount += 1
+                state.lastInput := chan_structure_copy(stroke)
+        else
+            state.inputCount += 1
+            state.lastInput := chan_structure_copy(stroke)
+    state
+
+// Geometry and gap diagnostics only: segment start, break proof, ownership,
+// dependency validity and a sealed right element still belong to the S machine.
+chan_feature_turn(ChanFeatureSequence state) =>
+    ChanFeatureTurn result = na
+    int count = state.elements.size()
+    if count >= 3 and not state.blocked and not state.waitingDirection
+        ChanFeature left = state.elements.get(count - 3)
+        ChanFeature middle = state.elements.get(count - 2)
+        ChanFeature right = state.elements.get(count - 1)
+        bool top = middle.highTicks > left.highTicks and middle.highTicks > right.highTicks and middle.lowTicks > left.lowTicks and middle.lowTicks > right.lowTicks
+        bool bottom = middle.highTicks < left.highTicks and middle.highTicks < right.highTicks and middle.lowTicks < left.lowTicks and middle.lowTicks < right.lowTicks
+        if (state.segmentDirection == 1 and top) or (state.segmentDirection == -1 and bottom)
+            bool gap = state.segmentDirection == 1 ? left.highTicks < middle.lowTicks : middle.highTicks < left.lowTicks
+            result := ChanFeatureTurn.new(state.segmentDirection, state.segmentDirection == 1 ? middle.highTime : middle.lowTime, state.segmentDirection == 1 ? middle.highTicks : middle.lowTicks, math.max(left.availableAt, math.max(middle.availableAt, right.availableAt)), left.id, middle.id, right.id, gap, right.sealed)
+    result
+
+chan_feature_signature(ChanFeatureSequence state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentDirection) + "/" + str.tostring(state.mergeDirection) + "/" + str.tostring(state.postDirection) + "/" + str.tostring(state.boundaryTime) + "/" + str.tostring(state.secondSequence) + "/" + str.tostring(state.maxElements) + "/" + str.tostring(state.maxSources) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.selectedCount) + "/" + str.tostring(state.boundaryCuts) + "/" + str.tostring(state.waitingDirection) + "/" + str.tostring(state.blocked)
+    for element in state.elements
+        result += "/" + element.id + "/" + str.tostring(element.lowTicks) + "/" + str.tostring(element.highTicks) + "/" + str.tostring(element.lowTime) + "/" + str.tostring(element.highTime) + "/" + str.tostring(element.firstTime) + "/" + str.tostring(element.lastTime) + "/" + str.tostring(element.firstOrdinal) + "/" + str.tostring(element.lastOrdinal) + "/" + str.tostring(element.firstSide) + "/" + str.tostring(element.lastSide) + "/" + str.tostring(element.availableAt) + "/" + str.tostring(element.sealed)
+        for sourceId in element.sourceIds
+            result += "/" + sourceId
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput)
+// S proofs operate on a bounded suffix of locked strokes. They are rebuilt from
+// those facts; neither drawings nor hypothetical child names are input facts.
+type ChanSegmentProof
+    int kind = 0
+    int endIndex = na
+    int childEndIndex = na
+    int proofIndex = na
+    bool firstBreakActive = false
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+
+type ChanSegmentHypothesis
+    string endStrokeId
+    int endTime
+    int priceTicks
+    int proofKind
+    bool gapPending
+
+type ChanSegmentState
+    string contextId
+    array<ChanStructure> strokes
+    array<ChanStructure> events
+    array<ChanSegmentHypothesis> hypotheses
+    ChanStructure lastInput
+    ChanStructure heldInput
+    ChanStructure lastSegment
+    ChanStructure candidate
+    ChanFeatureSequence firstContext
+    ChanFeatureSequence secondContext
+    int inputCount = 0
+    int segmentCount = 0
+    int skippedInputs = 0
+    int maxPending = 64
+    int maxWork = 8192
+    bool blocked = false
+    bool gapPending = false
+    string limitReason = ""
+
+chan_segment_new(string contextId, int maxPending, int maxWork) =>
+    if maxPending < 6 or maxWork < 1
+        runtime.error("线段依赖预算无效")
+    ChanSegmentState state = ChanSegmentState.new()
+    state.contextId := contextId
+    state.maxPending := maxPending
+    state.maxWork := maxWork
+    state.strokes := array.new<ChanStructure>()
+    state.events := array.new<ChanStructure>()
+    state.hypotheses := array.new<ChanSegmentHypothesis>()
+    state
+
+chan_segment_clone(ChanSegmentState source) =>
+    ChanSegmentState result = source.copy()
+    result.strokes := array.new<ChanStructure>()
+    for stroke in source.strokes
+        result.strokes.push(chan_structure_copy(stroke))
+    result.events := array.new<ChanStructure>()
+    for event in source.events
+        result.events.push(chan_structure_copy(event))
+    result.hypotheses := array.new<ChanSegmentHypothesis>()
+    for hypothesis in source.hypotheses
+        result.hypotheses.push(hypothesis.copy())
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.heldInput := chan_structure_copy(source.heldInput)
+    result.lastSegment := chan_structure_copy(source.lastSegment)
+    result.candidate := chan_structure_copy(source.candidate)
+    if not na(source.firstContext)
+        result.firstContext := chan_feature_clone(source.firstContext)
+    if not na(source.secondContext)
+        result.secondContext := chan_feature_clone(source.secondContext)
+    result
+
+chan_segment_span(array<ChanStructure> strokes, int firstIndex, int lastIndex) =>
+    bool eligible = false
+    if firstIndex >= 0 and lastIndex < strokes.size() and lastIndex - firstIndex >= 2 and (lastIndex - firstIndex) % 2 == 0
+        ChanStructure first = strokes.get(firstIndex)
+        ChanStructure last = strokes.get(lastIndex)
+        eligible := chan_segment_seed(first, strokes.get(firstIndex + 1), strokes.get(firstIndex + 2)) and last.direction == first.direction and first.direction * (last.endTicks - first.startTicks) > 0
+    eligible
+
+chan_segment_probe(array<ChanStructure> strokes, int endIndex, string contextId) =>
+    ChanSegmentProof result = ChanSegmentProof.new()
+    result.endIndex := endIndex
+    int count = strokes.size()
+    if chan_segment_span(strokes, 0, endIndex) and endIndex + 3 < count
+        ChanStructure endpoint = strokes.get(endIndex)
+        ChanStructure firstBreak = strokes.get(endIndex + 1)
+        int direction = strokes.first().direction
+        int reverse = -direction
+        // The legal three-stroke seed provides the direction of this hypothesis.
+        // E-007 makes the initial context explicit; it is not a locked segment.
+        ChanFeatureSequence first = chan_feature_new(contextId + "/first", direction, direction, reverse, endpoint.endTime, false, 128, 512)
+        ChanFeatureSequence reverseSequence = chan_feature_new(contextId + "/second", reverse, reverse, direction, endpoint.endTime, true, 128, 512)
+        for i = 0 to endIndex
+            first := chan_feature_step(first, strokes.get(i))
+        // C65 p169: d[j] <= g[i] / g[j] >= d[i], j >= i+2.
+        // The first breaking stroke is identified from the original owned
+        // pivots, not the already-compressed feature element's other extreme.
+        int breakBoundary = strokes.first().endTicks
+        for i = 0 to endIndex - 2 by 2
+            int pivot = strokes.get(i).endTicks
+            breakBoundary := direction == 1 ? math.max(breakBoundary, pivot) : math.min(breakBoundary, pivot)
+        bool directBreak = direction == 1 ? firstBreak.endTicks <= breakBoundary : firstBreak.endTicks >= breakBoundary
+        int invalidIndex = na
+        for i = endIndex + 1 to count - 1
+            ChanStructure inputStroke = strokes.get(i)
+            first := chan_feature_step(first, inputStroke)
+            reverseSequence := chan_feature_step(reverseSequence, inputStroke)
+            if na(invalidIndex) and direction * (inputStroke.endTicks - endpoint.endTicks) > 0
+                invalidIndex := i
+            bool stillEligible = na(invalidIndex) or invalidIndex == i
+            if stillEligible
+                bool reverseSpan = chan_segment_span(strokes, endIndex + 1, i)
+                bool directProof = directBreak and reverseSpan and reverse * (inputStroke.endTicks - firstBreak.endTicks) > 0
+                ChanFeatureTurn firstTurn = chan_feature_turn(first)
+                bool targetTurn = not na(firstTurn) and firstTurn.endpointTime == endpoint.endTime and firstTurn.priceTicks == endpoint.endTicks
+                // When the very first counter-stroke already breaks the old
+                // segment, an inside third stroke must wait (C71 p181-182).
+                // Later inclusion must not manufacture an earlier end proof.
+                if directProof or (not directBreak and targetTurn and not firstTurn.gap and reverseSpan)
+                    result.kind := 1
+                    result.proofIndex := i
+                else if targetTurn and firstTurn.gap
+                    ChanFeatureTurn secondTurn = chan_feature_turn(reverseSequence)
+                    if not na(secondTurn)
+                        int childEnd = na
+                        for j = endIndex + 3 to i
+                            ChanStructure child = strokes.get(j)
+                            if child.endTime == secondTurn.endpointTime and child.endTicks == secondTurn.priceTicks and child.direction == reverse
+                                childEnd := j
+                        if not na(childEnd)
+                            if chan_segment_span(strokes, endIndex + 1, childEnd) and chan_segment_span(strokes, childEnd + 1, i)
+                                result.kind := 2
+                                result.childEndIndex := childEnd
+                                result.proofIndex := i
+            if result.kind > 0
+                break
+            if not na(invalidIndex)
+                result.kind := -1
+                break
+        // An unresolved first breaking stroke governs the whole suffix, not
+        // only this endpoint's local test. A later inner turn cannot rename
+        // its own counter-stroke and bypass that outstanding direction proof.
+        // Keep the barrier on the proving input too, so a retrospectively
+        // cheaper inner proof cannot beat the governing endpoint's proof.
+        result.firstBreakActive := directBreak and result.kind >= 0
+        result.firstContext := first
+        result.secondContext := reverseSequence
+    result
+
+chan_segment_record(ChanSegmentState state, int firstIndex, int lastIndex, int proofIndex, int confirmedAt, string ruleId) =>
+    ChanStructure first = state.strokes.get(firstIndex)
+    ChanStructure last = state.strokes.get(lastIndex)
+    ChanStructure result = ChanStructure.new()
+    result.id := state.contextId + "/S/" + str.tostring(state.segmentCount + 1) + "/" + str.tostring(first.startTime)
+    result.objectType := "segment"
+    result.level := 0
+    result.direction := first.direction
+    result.startTime := first.startTime
+    result.endTime := last.endTime
+    result.startTicks := first.startTicks
+    result.endTicks := last.endTicks
+    result.confirmed := not na(confirmedAt)
+    result.confirmedAt := confirmedAt
+    result.ruleId := ruleId
+    result.ordinal := state.segmentCount + 1
+    result.dependencies := array.new<string>()
+    // Retain extrema of owned stroke endpoints before releasing those strokes.
+    // Proof-only strokes do not contribute; raw-OHLC normalization remains N.
+    result.memberLowTicks := first.startTicks
+    result.memberHighTicks := first.startTicks
+    result.memberLowTime := first.startTime
+    result.memberHighTime := first.startTime
+    for i = firstIndex to lastIndex
+        ChanStructure member = state.strokes.get(i)
+        if member.endTicks < result.memberLowTicks
+            result.memberLowTicks := member.endTicks
+            result.memberLowTime := member.endTime
+        if member.endTicks > result.memberHighTicks
+            result.memberHighTicks := member.endTicks
+            result.memberHighTime := member.endTime
+    for i = firstIndex to proofIndex
+        result.dependencies.push(state.strokes.get(i).id)
+    result
+
+chan_segment_emit(ChanSegmentState state, ChanStructure segment) =>
+    state.segmentCount += 1
+    state.lastSegment := segment
+    state.events.push(segment)
+    true
+
+// Return a new state: quota failure rolls back the entire input's proposed
+// confirmations, preserving the locked prefix and the unconsumed held input.
+chan_segment_step(ChanSegmentState source, ChanStructure stroke) =>
+    if na(stroke) or stroke.objectType != "stroke" or not stroke.confirmed or na(stroke.confirmedAt) or na(stroke.startTime) or na(stroke.endTime) or na(stroke.startTicks) or na(stroke.endTicks) or stroke.endTime <= stroke.startTime or stroke.confirmedAt < stroke.endTime or (stroke.direction != 1 and stroke.direction != -1) or stroke.direction * (stroke.endTicks - stroke.startTicks) <= 0
+        runtime.error("线段仅消费已锁定合法笔")
+    ChanSegmentState state = chan_segment_clone(source)
+    state.events := array.new<ChanStructure>()
+    bool duplicate = false
+    if not na(source.lastInput)
+        duplicate := stroke.id == source.lastInput.id
+        if duplicate and chan_structure_signature(stroke) != chan_structure_signature(source.lastInput)
+            runtime.error("线段已消费笔发生变化")
+        if not duplicate and not source.blocked and (stroke.startTime != source.lastInput.endTime or stroke.startTicks != source.lastInput.endTicks or stroke.ordinal != source.lastInput.ordinal + 1 or stroke.direction != -source.lastInput.direction or stroke.confirmedAt < source.lastInput.confirmedAt)
+            runtime.error("线段笔输入不连续")
+    if not duplicate and not source.blocked
+        if source.strokes.size() >= source.maxPending
+            state.blocked := true
+            state.limitReason := "pending-strokes"
+            state.heldInput := chan_structure_copy(stroke)
+        else
+            state.strokes.push(chan_structure_copy(stroke))
+            state.lastInput := chan_structure_copy(stroke)
+            state.inputCount += 1
+            int work = 0
+            bool advance = true
+            while advance
+                advance := false
+                state.hypotheses := array.new<ChanSegmentHypothesis>()
+                state.firstContext := na
+                state.secondContext := na
+                state.gapPending := false
+                // An impossible initial triple cannot become legal retroactively.
+                while state.strokes.size() >= 3 and not chan_segment_span(state.strokes, 0, 2)
+                    if state.segmentCount > 0
+                        runtime.error("已锁定段后的续部起始依赖不合规")
+                    state.strokes.shift()
+                    state.skippedInputs += 1
+                int count = state.strokes.size()
+                ChanSegmentProof best = na
+                if count >= 6
+                    for endIndex = 2 to count - 4 by 2
+                        if chan_segment_span(state.strokes, 0, endIndex)
+                            work += count * 2
+                            if work > state.maxWork
+                                state.blocked := true
+                                break
+                            string hypothesisId = state.contextId + "/turn/" + state.strokes.get(endIndex).id
+                            ChanSegmentProof proof = chan_segment_probe(state.strokes, endIndex, hypothesisId)
+                            if proof.kind >= 0
+                                ChanFeatureTurn turn = not na(proof.firstContext) ? chan_feature_turn(proof.firstContext) : na
+                                bool pending = not na(turn) and turn.gap
+                                state.gapPending := state.gapPending or pending
+                                ChanStructure endpoint = state.strokes.get(endIndex)
+                                state.hypotheses.push(ChanSegmentHypothesis.new(endpoint.id, endpoint.endTime, endpoint.endTicks, proof.kind, pending))
+                                if na(state.firstContext)
+                                    state.firstContext := proof.firstContext
+                                    state.secondContext := proof.secondContext
+                                if proof.kind > 0
+                                    if na(best)
+                                        best := proof
+                                    else if proof.proofIndex < best.proofIndex
+                                        best := proof
+                                if proof.firstBreakActive
+                                    break
+                if state.blocked
+                    // Keep no partial event from this input, even after a chain.
+                    state := chan_segment_clone(source)
+                    state.events := array.new<ChanStructure>()
+                    state.blocked := true
+                    state.limitReason := "probe-work"
+                    state.heldInput := chan_structure_copy(stroke)
+                else if not na(best)
+                    string ruleId = best.kind == 1 ? "S-001/S-002/E-007" : "S-001/S-003/E-007"
+                    ChanStructure completed = chan_segment_record(state, 0, best.endIndex, best.proofIndex, stroke.confirmedAt, ruleId)
+                    if best.proofIndex < count - 1 and state.segmentCount > source.segmentCount
+                        completed.dependencies.push(state.lastSegment.id)
+                    chan_segment_emit(state, completed)
+                    int lastLockedIndex = best.endIndex
+                    if best.kind == 2
+                        ChanStructure child = chan_segment_record(state, best.endIndex + 1, best.childEndIndex, best.proofIndex, stroke.confirmedAt, "S-001/S-003/E-007")
+                        chan_segment_emit(state, child)
+                        lastLockedIndex := best.childEndIndex
+                    for i = 0 to lastLockedIndex
+                        state.strokes.shift()
+                    advance := true
+                else
+                    state.candidate := na
+                    if count >= 3
+                        int selected = 2
+                        int direction = state.strokes.first().direction
+                        for i = 2 to count - 1 by 2
+                            if chan_segment_span(state.strokes, 0, i)
+                                if direction * (state.strokes.get(i).endTicks - state.strokes.get(selected).endTicks) > 0
+                                    selected := i
+                        state.candidate := chan_segment_record(state, 0, selected, selected, na, "S-001/E-007")
+    state
+
+chan_segment_signature(ChanSegmentState state) =>
+    string result = state.contextId + "/" + str.tostring(state.segmentCount) + "/" + str.tostring(state.inputCount) + "/" + str.tostring(state.skippedInputs) + "/" + str.tostring(state.maxPending) + "/" + str.tostring(state.maxWork) + "/" + str.tostring(state.blocked) + "/" + str.tostring(state.gapPending) + "/" + state.limitReason
+    for stroke in state.strokes
+        result += "/P/" + chan_structure_signature(stroke)
+    for event in state.events
+        result += "/event/" + chan_structure_signature(event)
+    for hypothesis in state.hypotheses
+        result += "/hypothesis/" + hypothesis.endStrokeId + "/" + str.tostring(hypothesis.endTime) + "/" + str.tostring(hypothesis.priceTicks) + "/" + str.tostring(hypothesis.proofKind) + "/" + str.tostring(hypothesis.gapPending)
+    if not na(state.firstContext)
+        result += "/first/" + chan_feature_signature(state.firstContext)
+    if not na(state.secondContext)
+        result += "/second/" + chan_feature_signature(state.secondContext)
+    result + "/last/" + chan_structure_signature(state.lastInput) + "/held/" + chan_structure_signature(state.heldInput) + "/locked/" + chan_structure_signature(state.lastSegment) + "/candidate/" + chan_structure_signature(state.candidate)
+// N consumes only committed segment events. Each segment owns its own range;
+// geometric time anchors and actual extreme source times are separate (E-008).
+type ChanNormalizationState
+    string contextId
+    int count = 0
+    ChanStructure lastInput
+    ChanComponent lastComponent
+    ChanComponent event
+
+chan_component_copy(ChanComponent source) =>
+    ChanComponent result = na
+    if not na(source)
+        result := source.copy()
+        result.dependencies := source.dependencies.copy()
+    result
+
+chan_component_signature(ChanComponent source) =>
+    string result = "na"
+    if not na(source)
+        result := source.id + "/" + source.segmentId + "/" + str.tostring(source.realStartTime) + "/" + str.tostring(source.realEndTime) + "/" + str.tostring(source.realStartTicks) + "/" + str.tostring(source.realEndTicks) + "/" + str.tostring(source.actualLowTicks) + "/" + str.tostring(source.actualHighTicks) + "/" + str.tostring(source.actualLowTime) + "/" + str.tostring(source.actualHighTime) + "/" + str.tostring(source.analysisStartTime) + "/" + str.tostring(source.analysisEndTime) + "/" + str.tostring(source.analysisStartTicks) + "/" + str.tostring(source.analysisEndTicks) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.confirmedAt) + "/" + source.ruleId + "/" + str.tostring(source.ordinal)
+        for dependency in source.dependencies
+            result += "/" + dependency
+    result
+
+chan_normalization_new(string contextId) =>
+    ChanNormalizationState result = ChanNormalizationState.new()
+    result.contextId := contextId
+    result
+
+chan_normalization_clone(ChanNormalizationState source) =>
+    ChanNormalizationState result = source.copy()
+    result.lastInput := chan_structure_copy(source.lastInput)
+    result.lastComponent := chan_component_copy(source.lastComponent)
+    result.event := chan_component_copy(source.event)
+    result
+
+chan_normalization_signature(ChanNormalizationState source) =>
+    source.contextId + "/" + str.tostring(source.count) + "/" + chan_structure_signature(source.lastInput) + "/" + chan_component_signature(source.lastComponent) + "/" + chan_component_signature(source.event)
+
+chan_normalization_valid(ChanStructure source) =>
+    bool valid = false
+    if not na(source)
+        valid := source.objectType == "segment" and source.level == 0 and source.confirmed and not na(source.confirmedAt) and not na(source.id) and source.id != "" and source.ordinal > 0 and (source.direction == 1 or source.direction == -1) and source.startTime < source.endTime and source.confirmedAt >= source.endTime and source.direction * (source.endTicks - source.startTicks) > 0
+        valid := valid and not na(source.memberLowTicks) and not na(source.memberHighTicks) and source.memberLowTicks < source.memberHighTicks and source.memberLowTicks <= math.min(source.startTicks, source.endTicks) and source.memberHighTicks >= math.max(source.startTicks, source.endTicks)
+        valid := valid and source.memberLowTime >= source.startTime and source.memberLowTime <= source.endTime and source.memberHighTime >= source.startTime and source.memberHighTime <= source.endTime and not na(source.dependencies)
+    valid
+
+chan_normalization_step(ChanNormalizationState source, ChanStructure segment) =>
+    if not chan_normalization_valid(segment)
+        runtime.error("标准化仅消费具备归属极值摘要的确认线段")
+    ChanNormalizationState state = chan_normalization_clone(source)
+    state.event := na
+    bool duplicate = not na(source.lastInput) and segment.id == source.lastInput.id
+    if duplicate
+        if chan_structure_signature(segment) != chan_structure_signature(source.lastInput)
+            runtime.error("已标准化线段发生变化")
+    else
+        if segment.ordinal != source.count + 1
+            runtime.error("标准化线段序号不连续")
+        if not na(source.lastInput)
+            if segment.startTime != source.lastInput.endTime or segment.startTicks != source.lastInput.endTicks or segment.direction != -source.lastInput.direction or segment.confirmedAt < source.lastInput.confirmedAt
+                runtime.error("标准化线段输入不连续")
+        ChanComponent component = ChanComponent.new()
+        component.id := source.contextId + "/N/" + str.tostring(segment.ordinal) + "/" + str.tostring(segment.startTime)
+        component.segmentId := segment.id
+        component.realStartTime := segment.startTime
+        component.realEndTime := segment.endTime
+        component.realStartTicks := segment.startTicks
+        component.realEndTicks := segment.endTicks
+        component.actualLowTicks := segment.memberLowTicks
+        component.actualHighTicks := segment.memberHighTicks
+        component.actualLowTime := segment.memberLowTime
+        component.actualHighTime := segment.memberHighTime
+        component.analysisStartTime := segment.startTime
+        component.analysisEndTime := segment.endTime
+        component.analysisStartTicks := segment.direction == 1 ? segment.memberLowTicks : segment.memberHighTicks
+        component.analysisEndTicks := segment.direction == 1 ? segment.memberHighTicks : segment.memberLowTicks
+        component.direction := segment.direction
+        component.confirmedAt := segment.confirmedAt
+        component.ruleId := "N-001/E-008"
+        component.dependencies := array.from(segment.id)
+        component.ordinal := segment.ordinal
+        state.count += 1
+        state.lastInput := chan_structure_copy(segment)
+        state.lastComponent := component
+        state.event := component
+    state
+chan_assert(bool condition, string context) =>
+    if not condition
+        runtime.error("FAIL: " + context)
+    true
+chan_case_0_prefix_1(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore1 = chan_signature(online)
+    ChanState intrabar1 = chan_step(chan_clone(online), ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    ChanState projected1 = chan_stroke_preview(intrabar1)
+    ChanStructure pending1 = chan_stroke_pending(projected1, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore1, "P-OHLC-INTEGRATION/prefix-1/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 0, "P-OHLC-INTEGRATION/prefix-1/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-1/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 0, "P-OHLC-INTEGRATION/prefix-1/strokeDirection")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime)), "P-OHLC-INTEGRATION/prefix-1/strokeCandidateStartTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime)), "P-OHLC-INTEGRATION/prefix-1/strokeCandidateEndTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks)), "P-OHLC-INTEGRATION/prefix-1/strokeCandidateStartTicks")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks)), "P-OHLC-INTEGRATION/prefix-1/strokeCandidateEndTicks")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-1/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-1/stroke-no-event")
+    ChanState replay1 = chan_new("P-OHLC-INTEGRATION")
+    replay1 := chan_step(replay1, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == chan_signature(replay1), "P-OHLC-INTEGRATION/prefix-1/prefix-reload")
+    ChanState duplicate1 = chan_clone(online)
+    duplicate1 := chan_step(duplicate1, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    chan_assert(duplicate1.inputCount == online.inputCount and duplicate1.confirmedFractals == online.confirmedFractals and na(duplicate1.event), "P-OHLC-INTEGRATION/prefix-1/duplicate-input")
+    string before1 = chan_signature(online)
+    ChanState preview1 = chan_clone(online)
+    preview1 := chan_step(preview1, ChanRaw.new(1700000060000, 1700000120000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == before1, "P-OHLC-INTEGRATION/prefix-1/deep-copy-isolation")
+    online
+chan_case_0_prefix_2(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore2 = chan_signature(online)
+    ChanState intrabar2 = chan_step(chan_clone(online), ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    ChanState projected2 = chan_stroke_preview(intrabar2)
+    ChanStructure pending2 = chan_stroke_pending(projected2, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore2, "P-OHLC-INTEGRATION/prefix-2/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 0, "P-OHLC-INTEGRATION/prefix-2/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-2/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 0, "P-OHLC-INTEGRATION/prefix-2/strokeDirection")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime)), "P-OHLC-INTEGRATION/prefix-2/strokeCandidateStartTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime)), "P-OHLC-INTEGRATION/prefix-2/strokeCandidateEndTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks)), "P-OHLC-INTEGRATION/prefix-2/strokeCandidateStartTicks")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks)), "P-OHLC-INTEGRATION/prefix-2/strokeCandidateEndTicks")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-2/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-2/stroke-no-event")
+    ChanState replay2 = chan_new("P-OHLC-INTEGRATION")
+    replay2 := chan_step(replay2, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay2 := chan_step(replay2, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    chan_assert(chan_signature(online) == chan_signature(replay2), "P-OHLC-INTEGRATION/prefix-2/prefix-reload")
+    ChanState duplicate2 = chan_clone(online)
+    duplicate2 := chan_step(duplicate2, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    chan_assert(duplicate2.inputCount == online.inputCount and duplicate2.confirmedFractals == online.confirmedFractals and na(duplicate2.event), "P-OHLC-INTEGRATION/prefix-2/duplicate-input")
+    string before2 = chan_signature(online)
+    ChanState preview2 = chan_clone(online)
+    preview2 := chan_step(preview2, ChanRaw.new(1700000120000, 1700000180000, 0, 3, 0, 3))
+    chan_assert(chan_signature(online) == before2, "P-OHLC-INTEGRATION/prefix-2/deep-copy-isolation")
+    online
+chan_case_0_prefix_3(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore3 = chan_signature(online)
+    ChanState intrabar3 = chan_step(chan_clone(online), ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    ChanState projected3 = chan_stroke_preview(intrabar3)
+    ChanStructure pending3 = chan_stroke_pending(projected3, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore3, "P-OHLC-INTEGRATION/prefix-3/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 0, "P-OHLC-INTEGRATION/prefix-3/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-3/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 0, "P-OHLC-INTEGRATION/prefix-3/strokeDirection")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime)), "P-OHLC-INTEGRATION/prefix-3/strokeCandidateStartTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime)), "P-OHLC-INTEGRATION/prefix-3/strokeCandidateEndTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks)), "P-OHLC-INTEGRATION/prefix-3/strokeCandidateStartTicks")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks)), "P-OHLC-INTEGRATION/prefix-3/strokeCandidateEndTicks")
+    chan_assert(not na(online.candidate), "P-OHLC-INTEGRATION/prefix-3/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(online.candidate.endpointTime == 1700000060000 and online.candidate.priceTicks == 0, "P-OHLC-INTEGRATION/prefix-3/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(online.candidate.kind == -1, "P-OHLC-INTEGRATION/prefix-3/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(online.candidate.leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-3/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(online.candidate.middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-3/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(online.candidate.rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-3/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(na(online.candidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-3/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-3/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-3/stroke-no-event")
+    ChanState replay3 = chan_new("P-OHLC-INTEGRATION")
+    replay3 := chan_step(replay3, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay3 := chan_step(replay3, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay3 := chan_step(replay3, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == chan_signature(replay3), "P-OHLC-INTEGRATION/prefix-3/prefix-reload")
+    ChanState duplicate3 = chan_clone(online)
+    duplicate3 := chan_step(duplicate3, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    chan_assert(duplicate3.inputCount == online.inputCount and duplicate3.confirmedFractals == online.confirmedFractals and na(duplicate3.event), "P-OHLC-INTEGRATION/prefix-3/duplicate-input")
+    string before3 = chan_signature(online)
+    ChanState preview3 = chan_clone(online)
+    preview3 := chan_step(preview3, ChanRaw.new(1700000180000, 1700000240000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == before3, "P-OHLC-INTEGRATION/prefix-3/deep-copy-isolation")
+    online
+chan_case_0_prefix_4(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore4 = chan_signature(online)
+    ChanState intrabar4 = chan_step(chan_clone(online), ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    ChanState projected4 = chan_stroke_preview(intrabar4)
+    ChanStructure pending4 = chan_stroke_pending(projected4, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore4, "P-OHLC-INTEGRATION/prefix-4/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 1, "P-OHLC-INTEGRATION/prefix-4/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-4/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 0, "P-OHLC-INTEGRATION/prefix-4/strokeDirection")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime)), "P-OHLC-INTEGRATION/prefix-4/strokeCandidateStartTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime)), "P-OHLC-INTEGRATION/prefix-4/strokeCandidateEndTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks)), "P-OHLC-INTEGRATION/prefix-4/strokeCandidateStartTicks")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks)), "P-OHLC-INTEGRATION/prefix-4/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-4/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-4/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-4/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-4/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-4/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-4/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-4/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(not na(online.event), "P-OHLC-INTEGRATION/prefix-4/fractal-event-exists")
+    chan_assert(online.event.endpointTime == 1700000060000 and online.event.confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-4/event-time")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-4/stroke-no-event")
+    ChanState replay4 = chan_new("P-OHLC-INTEGRATION")
+    replay4 := chan_step(replay4, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay4 := chan_step(replay4, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay4 := chan_step(replay4, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay4 := chan_step(replay4, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    chan_assert(chan_signature(online) == chan_signature(replay4), "P-OHLC-INTEGRATION/prefix-4/prefix-reload")
+    ChanState duplicate4 = chan_clone(online)
+    duplicate4 := chan_step(duplicate4, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    chan_assert(duplicate4.inputCount == online.inputCount and duplicate4.confirmedFractals == online.confirmedFractals and na(duplicate4.event), "P-OHLC-INTEGRATION/prefix-4/duplicate-input")
+    string before4 = chan_signature(online)
+    ChanState preview4 = chan_clone(online)
+    preview4 := chan_step(preview4, ChanRaw.new(1700000240000, 1700000300000, 4, 7, 4, 7))
+    chan_assert(chan_signature(online) == before4, "P-OHLC-INTEGRATION/prefix-4/deep-copy-isolation")
+    online
+chan_case_0_prefix_5(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore5 = chan_signature(online)
+    ChanState intrabar5 = chan_step(chan_clone(online), ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    ChanState projected5 = chan_stroke_preview(intrabar5)
+    ChanStructure pending5 = chan_stroke_pending(projected5, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore5, "P-OHLC-INTEGRATION/prefix-5/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 1, "P-OHLC-INTEGRATION/prefix-5/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-5/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 0, "P-OHLC-INTEGRATION/prefix-5/strokeDirection")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime)), "P-OHLC-INTEGRATION/prefix-5/strokeCandidateStartTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime)), "P-OHLC-INTEGRATION/prefix-5/strokeCandidateEndTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks)), "P-OHLC-INTEGRATION/prefix-5/strokeCandidateStartTicks")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks)), "P-OHLC-INTEGRATION/prefix-5/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-5/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-5/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-5/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-5/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-5/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-5/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-5/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-5/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-5/stroke-no-event")
+    ChanState replay5 = chan_new("P-OHLC-INTEGRATION")
+    replay5 := chan_step(replay5, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay5 := chan_step(replay5, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay5 := chan_step(replay5, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay5 := chan_step(replay5, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay5 := chan_step(replay5, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    chan_assert(chan_signature(online) == chan_signature(replay5), "P-OHLC-INTEGRATION/prefix-5/prefix-reload")
+    ChanState duplicate5 = chan_clone(online)
+    duplicate5 := chan_step(duplicate5, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    chan_assert(duplicate5.inputCount == online.inputCount and duplicate5.confirmedFractals == online.confirmedFractals and na(duplicate5.event), "P-OHLC-INTEGRATION/prefix-5/duplicate-input")
+    string before5 = chan_signature(online)
+    ChanState preview5 = chan_clone(online)
+    preview5 := chan_step(preview5, ChanRaw.new(1700000300000, 1700000360000, 6, 9, 6, 9))
+    chan_assert(chan_signature(online) == before5, "P-OHLC-INTEGRATION/prefix-5/deep-copy-isolation")
+    online
+chan_case_0_prefix_6(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore6 = chan_signature(online)
+    ChanState intrabar6 = chan_step(chan_clone(online), ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    ChanState projected6 = chan_stroke_preview(intrabar6)
+    ChanStructure pending6 = chan_stroke_pending(projected6, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore6, "P-OHLC-INTEGRATION/prefix-6/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 1, "P-OHLC-INTEGRATION/prefix-6/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-6/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 0, "P-OHLC-INTEGRATION/prefix-6/strokeDirection")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime)), "P-OHLC-INTEGRATION/prefix-6/strokeCandidateStartTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime)), "P-OHLC-INTEGRATION/prefix-6/strokeCandidateEndTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks)), "P-OHLC-INTEGRATION/prefix-6/strokeCandidateStartTicks")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks)), "P-OHLC-INTEGRATION/prefix-6/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-6/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-6/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-6/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-6/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-6/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-6/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-6/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-6/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-6/stroke-no-event")
+    ChanState replay6 = chan_new("P-OHLC-INTEGRATION")
+    replay6 := chan_step(replay6, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay6 := chan_step(replay6, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay6 := chan_step(replay6, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay6 := chan_step(replay6, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay6 := chan_step(replay6, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    replay6 := chan_step(replay6, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    chan_assert(chan_signature(online) == chan_signature(replay6), "P-OHLC-INTEGRATION/prefix-6/prefix-reload")
+    ChanState duplicate6 = chan_clone(online)
+    duplicate6 := chan_step(duplicate6, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    chan_assert(duplicate6.inputCount == online.inputCount and duplicate6.confirmedFractals == online.confirmedFractals and na(duplicate6.event), "P-OHLC-INTEGRATION/prefix-6/duplicate-input")
+    string before6 = chan_signature(online)
+    ChanState preview6 = chan_clone(online)
+    preview6 := chan_step(preview6, ChanRaw.new(1700000360000, 1700000420000, 8, 11, 8, 11))
+    chan_assert(chan_signature(online) == before6, "P-OHLC-INTEGRATION/prefix-6/deep-copy-isolation")
+    online
+chan_case_0_prefix_7(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore7 = chan_signature(online)
+    ChanState intrabar7 = chan_step(chan_clone(online), ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    ChanState projected7 = chan_stroke_preview(intrabar7)
+    ChanStructure pending7 = chan_stroke_pending(projected7, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore7, "P-OHLC-INTEGRATION/prefix-7/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 1, "P-OHLC-INTEGRATION/prefix-7/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-7/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 0, "P-OHLC-INTEGRATION/prefix-7/strokeDirection")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime)), "P-OHLC-INTEGRATION/prefix-7/strokeCandidateStartTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime)), "P-OHLC-INTEGRATION/prefix-7/strokeCandidateEndTime")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks)), "P-OHLC-INTEGRATION/prefix-7/strokeCandidateStartTicks")
+    chan_assert(na((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks)), "P-OHLC-INTEGRATION/prefix-7/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(not na(online.candidate), "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/exists")
+    chan_assert(online.candidate.endpointTime == 1700000300000 and online.candidate.priceTicks == 11, "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/endpoint")
+    chan_assert(online.candidate.kind == 1, "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/kind")
+    chan_assert(online.candidate.leftId == online.contextId + "/K/1700000240000", "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/leftId")
+    chan_assert(online.candidate.middleId == online.contextId + "/K/1700000300000", "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/middleId")
+    chan_assert(online.candidate.rightId == online.contextId + "/K/1700000360000", "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/rightId")
+    chan_assert(na(online.candidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-7/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/confirmation")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-7/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-7/stroke-no-event")
+    ChanState replay7 = chan_new("P-OHLC-INTEGRATION")
+    replay7 := chan_step(replay7, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay7 := chan_step(replay7, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay7 := chan_step(replay7, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay7 := chan_step(replay7, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay7 := chan_step(replay7, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    replay7 := chan_step(replay7, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    replay7 := chan_step(replay7, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    chan_assert(chan_signature(online) == chan_signature(replay7), "P-OHLC-INTEGRATION/prefix-7/prefix-reload")
+    ChanState duplicate7 = chan_clone(online)
+    duplicate7 := chan_step(duplicate7, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    chan_assert(duplicate7.inputCount == online.inputCount and duplicate7.confirmedFractals == online.confirmedFractals and na(duplicate7.event), "P-OHLC-INTEGRATION/prefix-7/duplicate-input")
+    string before7 = chan_signature(online)
+    ChanState preview7 = chan_clone(online)
+    preview7 := chan_step(preview7, ChanRaw.new(1700000420000, 1700000480000, 6, 9, 6, 9))
+    chan_assert(chan_signature(online) == before7, "P-OHLC-INTEGRATION/prefix-7/deep-copy-isolation")
+    online
+chan_case_0_prefix_8(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore8 = chan_signature(online)
+    ChanState intrabar8 = chan_step(chan_clone(online), ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    ChanState projected8 = chan_stroke_preview(intrabar8)
+    ChanStructure pending8 = chan_stroke_pending(projected8, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore8, "P-OHLC-INTEGRATION/prefix-8/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 2, "P-OHLC-INTEGRATION/prefix-8/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-8/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 1, "P-OHLC-INTEGRATION/prefix-8/strokeDirection")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime) == 1700000060000, "P-OHLC-INTEGRATION/prefix-8/strokeCandidateStartTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime) == 1700000300000, "P-OHLC-INTEGRATION/prefix-8/strokeCandidateEndTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks) == 0, "P-OHLC-INTEGRATION/prefix-8/strokeCandidateStartTicks")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks) == 11, "P-OHLC-INTEGRATION/prefix-8/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(not na(observedFractals.get(1)), "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/exists")
+    chan_assert(observedFractals.get(1).endpointTime == 1700000300000 and observedFractals.get(1).priceTicks == 11, "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/endpoint")
+    chan_assert(observedFractals.get(1).kind == 1, "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/kind")
+    chan_assert(observedFractals.get(1).leftId == online.contextId + "/K/1700000240000", "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/leftId")
+    chan_assert(observedFractals.get(1).middleId == online.contextId + "/K/1700000300000", "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/middleId")
+    chan_assert(observedFractals.get(1).rightId == online.contextId + "/K/1700000360000", "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/rightId")
+    chan_assert(observedFractals.get(1).confirmedAt == 1700000480000, "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/confirmation")
+    chan_assert(not na(online.strokeCandidate), "P-OHLC-INTEGRATION/prefix-8/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000/exists")
+    chan_assert(online.strokeCandidate.id == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000", "P-OHLC-INTEGRATION/prefix-8/stroke-id")
+    chan_assert(online.strokeCandidate.direction == 1, "P-OHLC-INTEGRATION/prefix-8/stroke-direction")
+    chan_assert(online.strokeCandidate.startTime == 1700000060000, "P-OHLC-INTEGRATION/prefix-8/stroke-startTime")
+    chan_assert(online.strokeCandidate.endTime == 1700000300000, "P-OHLC-INTEGRATION/prefix-8/stroke-endTime")
+    chan_assert(online.strokeCandidate.startTicks == 0, "P-OHLC-INTEGRATION/prefix-8/stroke-startTicks")
+    chan_assert(online.strokeCandidate.endTicks == 11, "P-OHLC-INTEGRATION/prefix-8/stroke-endTicks")
+    chan_assert(online.strokeCandidate.confirmed == false, "P-OHLC-INTEGRATION/prefix-8/stroke-state")
+    chan_assert(na(online.strokeCandidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-8/stroke-confirmed-at")
+    chan_assert(online.strokeCandidate.dependencies.size() == 2, "P-OHLC-INTEGRATION/prefix-8/stroke-dependencies")
+    chan_assert(online.strokeCandidate.dependencies.get(0) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000", "P-OHLC-INTEGRATION/prefix-8/stroke-dependency-0")
+    chan_assert(online.strokeCandidate.dependencies.get(1) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000", "P-OHLC-INTEGRATION/prefix-8/stroke-dependency-1")
+    chan_assert(not na(online.event), "P-OHLC-INTEGRATION/prefix-8/fractal-event-exists")
+    chan_assert(online.event.endpointTime == 1700000300000 and online.event.confirmedAt == 1700000480000, "P-OHLC-INTEGRATION/prefix-8/event-time")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-8/stroke-no-event")
+    ChanState replay8 = chan_new("P-OHLC-INTEGRATION")
+    replay8 := chan_step(replay8, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay8 := chan_step(replay8, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay8 := chan_step(replay8, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay8 := chan_step(replay8, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay8 := chan_step(replay8, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    replay8 := chan_step(replay8, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    replay8 := chan_step(replay8, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    replay8 := chan_step(replay8, ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    chan_assert(chan_signature(online) == chan_signature(replay8), "P-OHLC-INTEGRATION/prefix-8/prefix-reload")
+    ChanState duplicate8 = chan_clone(online)
+    duplicate8 := chan_step(duplicate8, ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    chan_assert(duplicate8.inputCount == online.inputCount and duplicate8.confirmedFractals == online.confirmedFractals and na(duplicate8.event), "P-OHLC-INTEGRATION/prefix-8/duplicate-input")
+    string before8 = chan_signature(online)
+    ChanState preview8 = chan_clone(online)
+    preview8 := chan_step(preview8, ChanRaw.new(1700000480000, 1700000540000, 4, 7, 4, 7))
+    chan_assert(chan_signature(online) == before8, "P-OHLC-INTEGRATION/prefix-8/deep-copy-isolation")
+    online
+chan_case_0_prefix_9(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore9 = chan_signature(online)
+    ChanState intrabar9 = chan_step(chan_clone(online), ChanRaw.new(1700000480000, 1700000540000, 2, 5, 2, 5))
+    ChanState projected9 = chan_stroke_preview(intrabar9)
+    ChanStructure pending9 = chan_stroke_pending(projected9, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore9, "P-OHLC-INTEGRATION/prefix-9/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000480000, 1700000540000, 2, 5, 2, 5))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 2, "P-OHLC-INTEGRATION/prefix-9/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-9/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 1, "P-OHLC-INTEGRATION/prefix-9/strokeDirection")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime) == 1700000060000, "P-OHLC-INTEGRATION/prefix-9/strokeCandidateStartTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime) == 1700000300000, "P-OHLC-INTEGRATION/prefix-9/strokeCandidateEndTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks) == 0, "P-OHLC-INTEGRATION/prefix-9/strokeCandidateStartTicks")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks) == 11, "P-OHLC-INTEGRATION/prefix-9/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(not na(observedFractals.get(1)), "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/exists")
+    chan_assert(observedFractals.get(1).endpointTime == 1700000300000 and observedFractals.get(1).priceTicks == 11, "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/endpoint")
+    chan_assert(observedFractals.get(1).kind == 1, "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/kind")
+    chan_assert(observedFractals.get(1).leftId == online.contextId + "/K/1700000240000", "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/leftId")
+    chan_assert(observedFractals.get(1).middleId == online.contextId + "/K/1700000300000", "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/middleId")
+    chan_assert(observedFractals.get(1).rightId == online.contextId + "/K/1700000360000", "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/rightId")
+    chan_assert(observedFractals.get(1).confirmedAt == 1700000480000, "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/confirmation")
+    chan_assert(not na(online.strokeCandidate), "P-OHLC-INTEGRATION/prefix-9/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000/exists")
+    chan_assert(online.strokeCandidate.id == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000", "P-OHLC-INTEGRATION/prefix-9/stroke-id")
+    chan_assert(online.strokeCandidate.direction == 1, "P-OHLC-INTEGRATION/prefix-9/stroke-direction")
+    chan_assert(online.strokeCandidate.startTime == 1700000060000, "P-OHLC-INTEGRATION/prefix-9/stroke-startTime")
+    chan_assert(online.strokeCandidate.endTime == 1700000300000, "P-OHLC-INTEGRATION/prefix-9/stroke-endTime")
+    chan_assert(online.strokeCandidate.startTicks == 0, "P-OHLC-INTEGRATION/prefix-9/stroke-startTicks")
+    chan_assert(online.strokeCandidate.endTicks == 11, "P-OHLC-INTEGRATION/prefix-9/stroke-endTicks")
+    chan_assert(online.strokeCandidate.confirmed == false, "P-OHLC-INTEGRATION/prefix-9/stroke-state")
+    chan_assert(na(online.strokeCandidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-9/stroke-confirmed-at")
+    chan_assert(online.strokeCandidate.dependencies.size() == 2, "P-OHLC-INTEGRATION/prefix-9/stroke-dependencies")
+    chan_assert(online.strokeCandidate.dependencies.get(0) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000", "P-OHLC-INTEGRATION/prefix-9/stroke-dependency-0")
+    chan_assert(online.strokeCandidate.dependencies.get(1) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000", "P-OHLC-INTEGRATION/prefix-9/stroke-dependency-1")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-9/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-9/stroke-no-event")
+    ChanState replay9 = chan_new("P-OHLC-INTEGRATION")
+    replay9 := chan_step(replay9, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    replay9 := chan_step(replay9, ChanRaw.new(1700000480000, 1700000540000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == chan_signature(replay9), "P-OHLC-INTEGRATION/prefix-9/prefix-reload")
+    ChanState duplicate9 = chan_clone(online)
+    duplicate9 := chan_step(duplicate9, ChanRaw.new(1700000480000, 1700000540000, 2, 5, 2, 5))
+    chan_assert(duplicate9.inputCount == online.inputCount and duplicate9.confirmedFractals == online.confirmedFractals and na(duplicate9.event), "P-OHLC-INTEGRATION/prefix-9/duplicate-input")
+    string before9 = chan_signature(online)
+    ChanState preview9 = chan_clone(online)
+    preview9 := chan_step(preview9, ChanRaw.new(1700000540000, 1700000600000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == before9, "P-OHLC-INTEGRATION/prefix-9/deep-copy-isolation")
+    online
+chan_case_0_prefix_10(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore10 = chan_signature(online)
+    ChanState intrabar10 = chan_step(chan_clone(online), ChanRaw.new(1700000540000, 1700000600000, 1, 4, 1, 4))
+    ChanState projected10 = chan_stroke_preview(intrabar10)
+    ChanStructure pending10 = chan_stroke_pending(projected10, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore10, "P-OHLC-INTEGRATION/prefix-10/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000540000, 1700000600000, 1, 4, 1, 4))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 2, "P-OHLC-INTEGRATION/prefix-10/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-10/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 1, "P-OHLC-INTEGRATION/prefix-10/strokeDirection")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime) == 1700000060000, "P-OHLC-INTEGRATION/prefix-10/strokeCandidateStartTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime) == 1700000300000, "P-OHLC-INTEGRATION/prefix-10/strokeCandidateEndTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks) == 0, "P-OHLC-INTEGRATION/prefix-10/strokeCandidateStartTicks")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks) == 11, "P-OHLC-INTEGRATION/prefix-10/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(not na(observedFractals.get(1)), "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/exists")
+    chan_assert(observedFractals.get(1).endpointTime == 1700000300000 and observedFractals.get(1).priceTicks == 11, "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/endpoint")
+    chan_assert(observedFractals.get(1).kind == 1, "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/kind")
+    chan_assert(observedFractals.get(1).leftId == online.contextId + "/K/1700000240000", "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/leftId")
+    chan_assert(observedFractals.get(1).middleId == online.contextId + "/K/1700000300000", "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/middleId")
+    chan_assert(observedFractals.get(1).rightId == online.contextId + "/K/1700000360000", "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/rightId")
+    chan_assert(observedFractals.get(1).confirmedAt == 1700000480000, "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/confirmation")
+    chan_assert(not na(online.strokeCandidate), "P-OHLC-INTEGRATION/prefix-10/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000/exists")
+    chan_assert(online.strokeCandidate.id == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000", "P-OHLC-INTEGRATION/prefix-10/stroke-id")
+    chan_assert(online.strokeCandidate.direction == 1, "P-OHLC-INTEGRATION/prefix-10/stroke-direction")
+    chan_assert(online.strokeCandidate.startTime == 1700000060000, "P-OHLC-INTEGRATION/prefix-10/stroke-startTime")
+    chan_assert(online.strokeCandidate.endTime == 1700000300000, "P-OHLC-INTEGRATION/prefix-10/stroke-endTime")
+    chan_assert(online.strokeCandidate.startTicks == 0, "P-OHLC-INTEGRATION/prefix-10/stroke-startTicks")
+    chan_assert(online.strokeCandidate.endTicks == 11, "P-OHLC-INTEGRATION/prefix-10/stroke-endTicks")
+    chan_assert(online.strokeCandidate.confirmed == false, "P-OHLC-INTEGRATION/prefix-10/stroke-state")
+    chan_assert(na(online.strokeCandidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-10/stroke-confirmed-at")
+    chan_assert(online.strokeCandidate.dependencies.size() == 2, "P-OHLC-INTEGRATION/prefix-10/stroke-dependencies")
+    chan_assert(online.strokeCandidate.dependencies.get(0) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000", "P-OHLC-INTEGRATION/prefix-10/stroke-dependency-0")
+    chan_assert(online.strokeCandidate.dependencies.get(1) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000", "P-OHLC-INTEGRATION/prefix-10/stroke-dependency-1")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-10/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-10/stroke-no-event")
+    ChanState replay10 = chan_new("P-OHLC-INTEGRATION")
+    replay10 := chan_step(replay10, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000480000, 1700000540000, 2, 5, 2, 5))
+    replay10 := chan_step(replay10, ChanRaw.new(1700000540000, 1700000600000, 1, 4, 1, 4))
+    chan_assert(chan_signature(online) == chan_signature(replay10), "P-OHLC-INTEGRATION/prefix-10/prefix-reload")
+    ChanState duplicate10 = chan_clone(online)
+    duplicate10 := chan_step(duplicate10, ChanRaw.new(1700000540000, 1700000600000, 1, 4, 1, 4))
+    chan_assert(duplicate10.inputCount == online.inputCount and duplicate10.confirmedFractals == online.confirmedFractals and na(duplicate10.event), "P-OHLC-INTEGRATION/prefix-10/duplicate-input")
+    string before10 = chan_signature(online)
+    ChanState preview10 = chan_clone(online)
+    preview10 := chan_step(preview10, ChanRaw.new(1700000600000, 1700000660000, 1, 4, 1, 4))
+    chan_assert(chan_signature(online) == before10, "P-OHLC-INTEGRATION/prefix-10/deep-copy-isolation")
+    online
+chan_case_0_prefix_11(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore11 = chan_signature(online)
+    ChanState intrabar11 = chan_step(chan_clone(online), ChanRaw.new(1700000600000, 1700000660000, 3, 6, 3, 6))
+    ChanState projected11 = chan_stroke_preview(intrabar11)
+    ChanStructure pending11 = chan_stroke_pending(projected11, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore11, "P-OHLC-INTEGRATION/prefix-11/intrabar-isolation")
+    online := chan_step(online, ChanRaw.new(1700000600000, 1700000660000, 3, 6, 3, 6))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 2, "P-OHLC-INTEGRATION/prefix-11/confirmedFractals")
+    chan_assert(online.strokeCount == 0, "P-OHLC-INTEGRATION/prefix-11/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == 1, "P-OHLC-INTEGRATION/prefix-11/strokeDirection")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime) == 1700000060000, "P-OHLC-INTEGRATION/prefix-11/strokeCandidateStartTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime) == 1700000300000, "P-OHLC-INTEGRATION/prefix-11/strokeCandidateEndTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks) == 0, "P-OHLC-INTEGRATION/prefix-11/strokeCandidateStartTicks")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks) == 11, "P-OHLC-INTEGRATION/prefix-11/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(not na(observedFractals.get(1)), "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/exists")
+    chan_assert(observedFractals.get(1).endpointTime == 1700000300000 and observedFractals.get(1).priceTicks == 11, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/endpoint")
+    chan_assert(observedFractals.get(1).kind == 1, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/kind")
+    chan_assert(observedFractals.get(1).leftId == online.contextId + "/K/1700000240000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/leftId")
+    chan_assert(observedFractals.get(1).middleId == online.contextId + "/K/1700000300000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/middleId")
+    chan_assert(observedFractals.get(1).rightId == online.contextId + "/K/1700000360000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/rightId")
+    chan_assert(observedFractals.get(1).confirmedAt == 1700000480000, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/confirmation")
+    chan_assert(not na(online.candidate), "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/exists")
+    chan_assert(online.candidate.endpointTime == 1700000540000 and online.candidate.priceTicks == 1, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/endpoint")
+    chan_assert(online.candidate.kind == -1, "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/kind")
+    chan_assert(online.candidate.leftId == online.contextId + "/K/1700000480000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/leftId")
+    chan_assert(online.candidate.middleId == online.contextId + "/K/1700000540000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/middleId")
+    chan_assert(online.candidate.rightId == online.contextId + "/K/1700000600000", "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/rightId")
+    chan_assert(na(online.candidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/confirmation")
+    chan_assert(not na(online.strokeCandidate), "P-OHLC-INTEGRATION/prefix-11/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000/exists")
+    chan_assert(online.strokeCandidate.id == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000", "P-OHLC-INTEGRATION/prefix-11/stroke-id")
+    chan_assert(online.strokeCandidate.direction == 1, "P-OHLC-INTEGRATION/prefix-11/stroke-direction")
+    chan_assert(online.strokeCandidate.startTime == 1700000060000, "P-OHLC-INTEGRATION/prefix-11/stroke-startTime")
+    chan_assert(online.strokeCandidate.endTime == 1700000300000, "P-OHLC-INTEGRATION/prefix-11/stroke-endTime")
+    chan_assert(online.strokeCandidate.startTicks == 0, "P-OHLC-INTEGRATION/prefix-11/stroke-startTicks")
+    chan_assert(online.strokeCandidate.endTicks == 11, "P-OHLC-INTEGRATION/prefix-11/stroke-endTicks")
+    chan_assert(online.strokeCandidate.confirmed == false, "P-OHLC-INTEGRATION/prefix-11/stroke-state")
+    chan_assert(na(online.strokeCandidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-11/stroke-confirmed-at")
+    chan_assert(online.strokeCandidate.dependencies.size() == 2, "P-OHLC-INTEGRATION/prefix-11/stroke-dependencies")
+    chan_assert(online.strokeCandidate.dependencies.get(0) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000", "P-OHLC-INTEGRATION/prefix-11/stroke-dependency-0")
+    chan_assert(online.strokeCandidate.dependencies.get(1) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000", "P-OHLC-INTEGRATION/prefix-11/stroke-dependency-1")
+    chan_assert(na(online.event), "P-OHLC-INTEGRATION/prefix-11/fractal-no-event")
+    chan_assert(na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-11/stroke-no-event")
+    ChanState replay11 = chan_new("P-OHLC-INTEGRATION")
+    replay11 := chan_step(replay11, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000480000, 1700000540000, 2, 5, 2, 5))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000540000, 1700000600000, 1, 4, 1, 4))
+    replay11 := chan_step(replay11, ChanRaw.new(1700000600000, 1700000660000, 3, 6, 3, 6))
+    chan_assert(chan_signature(online) == chan_signature(replay11), "P-OHLC-INTEGRATION/prefix-11/prefix-reload")
+    ChanState duplicate11 = chan_clone(online)
+    duplicate11 := chan_step(duplicate11, ChanRaw.new(1700000600000, 1700000660000, 3, 6, 3, 6))
+    chan_assert(duplicate11.inputCount == online.inputCount and duplicate11.confirmedFractals == online.confirmedFractals and na(duplicate11.event), "P-OHLC-INTEGRATION/prefix-11/duplicate-input")
+    string before11 = chan_signature(online)
+    ChanState preview11 = chan_clone(online)
+    preview11 := chan_step(preview11, ChanRaw.new(1700000660000, 1700000720000, 3, 6, 3, 6))
+    chan_assert(chan_signature(online) == before11, "P-OHLC-INTEGRATION/prefix-11/deep-copy-isolation")
+    online
+chan_case_0_prefix_12(ChanState source, array<ChanFractal> observedFractals, array<ChanStructure> observedStrokes) =>
+    ChanState online = source
+    string committedBefore12 = chan_signature(online)
+    ChanState intrabar12 = chan_step(chan_clone(online), ChanRaw.new(1700000660000, 1700000720000, 2, 5, 2, 5))
+    ChanState projected12 = chan_stroke_preview(intrabar12)
+    ChanStructure pending12 = chan_stroke_pending(projected12, online.strokeCount)
+    chan_assert(chan_signature(online) == committedBefore12, "P-OHLC-INTEGRATION/prefix-12/intrabar-isolation")
+    chan_assert(not na(pending12) and not pending12.confirmed and na(pending12.confirmedAt), "P-OHLC-INTEGRATION/prefix-12/pending-lock-state")
+    chan_assert(pending12.id == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000" and pending12.endTime == 1700000300000 and pending12.endTicks == 11, "P-OHLC-INTEGRATION/prefix-12/pending-lock-retained")
+    online := chan_step(online, ChanRaw.new(1700000660000, 1700000720000, 2, 5, 2, 5))
+    if not na(online.event)
+        observedFractals.push(online.event)
+    if not na(online.strokeEvent)
+        observedStrokes.push(online.strokeEvent)
+    chan_assert(online.confirmedFractals == 3, "P-OHLC-INTEGRATION/prefix-12/confirmedFractals")
+    chan_assert(online.strokeCount == 1, "P-OHLC-INTEGRATION/prefix-12/confirmedStrokes")
+    chan_assert((na(online.strokeCandidate) ? 0 : online.strokeCandidate.direction) == -1, "P-OHLC-INTEGRATION/prefix-12/strokeDirection")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTime) == 1700000300000, "P-OHLC-INTEGRATION/prefix-12/strokeCandidateStartTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTime) == 1700000540000, "P-OHLC-INTEGRATION/prefix-12/strokeCandidateEndTime")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.startTicks) == 11, "P-OHLC-INTEGRATION/prefix-12/strokeCandidateStartTicks")
+    chan_assert((na(online.strokeCandidate) ? na : online.strokeCandidate.endTicks) == 1, "P-OHLC-INTEGRATION/prefix-12/strokeCandidateEndTicks")
+    chan_assert(not na(observedFractals.get(0)), "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/exists")
+    chan_assert(observedFractals.get(0).endpointTime == 1700000060000 and observedFractals.get(0).priceTicks == 0, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/endpoint")
+    chan_assert(observedFractals.get(0).kind == -1, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/kind")
+    chan_assert(observedFractals.get(0).leftId == online.contextId + "/K/1700000000000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/leftId")
+    chan_assert(observedFractals.get(0).middleId == online.contextId + "/K/1700000060000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/middleId")
+    chan_assert(observedFractals.get(0).rightId == online.contextId + "/K/1700000120000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/rightId")
+    chan_assert(observedFractals.get(0).confirmedAt == 1700000240000, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000/confirmation")
+    chan_assert(not na(observedFractals.get(1)), "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/exists")
+    chan_assert(observedFractals.get(1).endpointTime == 1700000300000 and observedFractals.get(1).priceTicks == 11, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/endpoint")
+    chan_assert(observedFractals.get(1).kind == 1, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/kind")
+    chan_assert(observedFractals.get(1).leftId == online.contextId + "/K/1700000240000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/leftId")
+    chan_assert(observedFractals.get(1).middleId == online.contextId + "/K/1700000300000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/middleId")
+    chan_assert(observedFractals.get(1).rightId == online.contextId + "/K/1700000360000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/rightId")
+    chan_assert(observedFractals.get(1).confirmedAt == 1700000480000, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000/confirmation")
+    chan_assert(not na(observedFractals.get(2)), "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/exists")
+    chan_assert(observedFractals.get(2).endpointTime == 1700000540000 and observedFractals.get(2).priceTicks == 1, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/endpoint")
+    chan_assert(observedFractals.get(2).kind == -1, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/kind")
+    chan_assert(observedFractals.get(2).leftId == online.contextId + "/K/1700000480000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/leftId")
+    chan_assert(observedFractals.get(2).middleId == online.contextId + "/K/1700000540000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/middleId")
+    chan_assert(observedFractals.get(2).rightId == online.contextId + "/K/1700000600000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/rightId")
+    chan_assert(observedFractals.get(2).confirmedAt == 1700000720000, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/confirmation")
+    chan_assert(not na(observedStrokes.get(0)), "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000/exists")
+    chan_assert(observedStrokes.get(0).id == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000", "P-OHLC-INTEGRATION/prefix-12/stroke-id")
+    chan_assert(observedStrokes.get(0).direction == 1, "P-OHLC-INTEGRATION/prefix-12/stroke-direction")
+    chan_assert(observedStrokes.get(0).startTime == 1700000060000, "P-OHLC-INTEGRATION/prefix-12/stroke-startTime")
+    chan_assert(observedStrokes.get(0).endTime == 1700000300000, "P-OHLC-INTEGRATION/prefix-12/stroke-endTime")
+    chan_assert(observedStrokes.get(0).startTicks == 0, "P-OHLC-INTEGRATION/prefix-12/stroke-startTicks")
+    chan_assert(observedStrokes.get(0).endTicks == 11, "P-OHLC-INTEGRATION/prefix-12/stroke-endTicks")
+    chan_assert(observedStrokes.get(0).confirmed == true, "P-OHLC-INTEGRATION/prefix-12/stroke-state")
+    chan_assert(observedStrokes.get(0).confirmedAt == 1700000720000, "P-OHLC-INTEGRATION/prefix-12/stroke-confirmed-at")
+    chan_assert(observedStrokes.get(0).dependencies.size() == 3, "P-OHLC-INTEGRATION/prefix-12/stroke-dependencies")
+    chan_assert(observedStrokes.get(0).dependencies.get(0) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000", "P-OHLC-INTEGRATION/prefix-12/stroke-dependency-0")
+    chan_assert(observedStrokes.get(0).dependencies.get(1) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000", "P-OHLC-INTEGRATION/prefix-12/stroke-dependency-1")
+    chan_assert(observedStrokes.get(0).dependencies.get(2) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000", "P-OHLC-INTEGRATION/prefix-12/stroke-dependency-2")
+    chan_assert(not na(online.strokeCandidate), "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/2/1700000300000/exists")
+    chan_assert(online.strokeCandidate.id == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/2/1700000300000", "P-OHLC-INTEGRATION/prefix-12/stroke-id")
+    chan_assert(online.strokeCandidate.direction == -1, "P-OHLC-INTEGRATION/prefix-12/stroke-direction")
+    chan_assert(online.strokeCandidate.startTime == 1700000300000, "P-OHLC-INTEGRATION/prefix-12/stroke-startTime")
+    chan_assert(online.strokeCandidate.endTime == 1700000540000, "P-OHLC-INTEGRATION/prefix-12/stroke-endTime")
+    chan_assert(online.strokeCandidate.startTicks == 11, "P-OHLC-INTEGRATION/prefix-12/stroke-startTicks")
+    chan_assert(online.strokeCandidate.endTicks == 1, "P-OHLC-INTEGRATION/prefix-12/stroke-endTicks")
+    chan_assert(online.strokeCandidate.confirmed == false, "P-OHLC-INTEGRATION/prefix-12/stroke-state")
+    chan_assert(na(online.strokeCandidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-12/stroke-confirmed-at")
+    chan_assert(online.strokeCandidate.dependencies.size() == 2, "P-OHLC-INTEGRATION/prefix-12/stroke-dependencies")
+    chan_assert(online.strokeCandidate.dependencies.get(0) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000", "P-OHLC-INTEGRATION/prefix-12/stroke-dependency-0")
+    chan_assert(online.strokeCandidate.dependencies.get(1) == "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000", "P-OHLC-INTEGRATION/prefix-12/stroke-dependency-1")
+    chan_assert(not na(online.candidate), "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000/exists")
+    chan_assert(online.candidate.endpointTime == 1700000600000 and online.candidate.priceTicks == 6, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000/endpoint")
+    chan_assert(online.candidate.kind == 1, "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000/kind")
+    chan_assert(online.candidate.leftId == online.contextId + "/K/1700000540000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000/leftId")
+    chan_assert(online.candidate.middleId == online.contextId + "/K/1700000600000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000/middleId")
+    chan_assert(online.candidate.rightId == online.contextId + "/K/1700000660000", "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000/rightId")
+    chan_assert(na(online.candidate.confirmedAt), "P-OHLC-INTEGRATION/prefix-12/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000/confirmation")
+    chan_assert(not na(online.event), "P-OHLC-INTEGRATION/prefix-12/fractal-event-exists")
+    chan_assert(online.event.endpointTime == 1700000540000 and online.event.confirmedAt == 1700000720000, "P-OHLC-INTEGRATION/prefix-12/event-time")
+    chan_assert(not na(online.strokeEvent), "P-OHLC-INTEGRATION/prefix-12/stroke-event-exists")
+    chan_assert(online.strokeEvent.endTime == 1700000300000 and online.strokeEvent.confirmedAt == 1700000720000, "P-OHLC-INTEGRATION/prefix-12/event-time")
+    ChanState replay12 = chan_new("P-OHLC-INTEGRATION")
+    replay12 := chan_step(replay12, ChanRaw.new(1700000000000, 1700000060000, 2, 5, 2, 5))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000060000, 1700000120000, 0, 3, 0, 3))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000120000, 1700000180000, 2, 5, 2, 5))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000180000, 1700000240000, 4, 7, 4, 7))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000240000, 1700000300000, 6, 9, 6, 9))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000300000, 1700000360000, 8, 11, 8, 11))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000360000, 1700000420000, 6, 9, 6, 9))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000420000, 1700000480000, 4, 7, 4, 7))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000480000, 1700000540000, 2, 5, 2, 5))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000540000, 1700000600000, 1, 4, 1, 4))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000600000, 1700000660000, 3, 6, 3, 6))
+    replay12 := chan_step(replay12, ChanRaw.new(1700000660000, 1700000720000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == chan_signature(replay12), "P-OHLC-INTEGRATION/prefix-12/prefix-reload")
+    ChanState duplicate12 = chan_clone(online)
+    duplicate12 := chan_step(duplicate12, ChanRaw.new(1700000660000, 1700000720000, 2, 5, 2, 5))
+    chan_assert(duplicate12.inputCount == online.inputCount and duplicate12.confirmedFractals == online.confirmedFractals and na(duplicate12.event), "P-OHLC-INTEGRATION/prefix-12/duplicate-input")
+    string before12 = chan_signature(online)
+    ChanState preview12 = chan_clone(online)
+    preview12 := chan_step(preview12, ChanRaw.new(1700000720000, 1700000780000, 2, 5, 2, 5))
+    chan_assert(chan_signature(online) == before12, "P-OHLC-INTEGRATION/prefix-12/deep-copy-isolation")
+    online
+chan_case_0() =>
+    ChanState online = chan_new("P-OHLC-INTEGRATION")
+    array<ChanFractal> observedFractals = array.new<ChanFractal>()
+    array<ChanStructure> observedStrokes = array.new<ChanStructure>()
+    online := chan_case_0_prefix_1(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_2(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_3(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_4(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_5(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_6(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_7(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_8(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_9(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_10(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_11(online, observedFractals, observedStrokes)
+    online := chan_case_0_prefix_12(online, observedFractals, observedStrokes)
+    true
+var table result = table.new(position.top_right, 1, 1)
+if barstate.isfirst
+    chan_case_0()
+    table.cell(result, 0, 0, "PASS: I1, 1 cases", text_color = color.green)
+plot(na)

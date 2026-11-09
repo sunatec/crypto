@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "id": "K-INIT-WAIT",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "K-001",
+    "E-001"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168"
+    ],
+    "lesson": 65,
+    "pdfPages": [
+      168
+    ],
+    "figure": null,
+    "note": "根据所列正文规则人工构造整数tick样例，非原文行情。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "ohlc",
+    "items": [
+      {
+        "id": "raw-0",
+        "time": 1700000000000,
+        "closeTime": 1700000060000,
+        "openTicks": 0,
+        "highTicks": 10,
+        "lowTicks": 0,
+        "closeTicks": 10
+      },
+      {
+        "id": "raw-1",
+        "time": 1700000060000,
+        "closeTime": 1700000120000,
+        "openTicks": 2,
+        "highTicks": 8,
+        "lowTicks": 2,
+        "closeTicks": 8
+      },
+      {
+        "id": "raw-2",
+        "time": 1700000120000,
+        "closeTime": 1700000180000,
+        "openTicks": 1,
+        "highTicks": 9,
+        "lowTicks": 1,
+        "closeTicks": 9
+      },
+      {
+        "id": "raw-3",
+        "time": 1700000180000,
+        "closeTime": 1700000240000,
+        "openTicks": 3,
+        "highTicks": 11,
+        "lowTicks": 3,
+        "closeTicks": 11
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "processedCount": 0,
+        "direction": "waiting",
+        "effectiveStart": null
+      },
+      "structures": [],
+      "events": [],
+      "reason": "没有前序非包含方向。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "processedCount": 0,
+        "direction": "waiting",
+        "effectiveStart": null
+      },
+      "structures": [],
+      "events": [],
+      "reason": "包含不建立种子。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "processedCount": 0,
+        "direction": "waiting",
+        "effectiveStart": null
+      },
+      "structures": [],
+      "events": [],
+      "reason": "仍包含，不能默认向上。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "processedCount": 2,
+        "direction": "up",
+        "tailLowTicks": 3,
+        "tailHighTicks": 11,
+        "effectiveStart": 1700000120000
+      },
+      "structures": [],
+      "events": [],
+      "reason": "raw-2、raw-3是第一对相邻非包含输入，实际起点raw-2。"
+    }
+  ]
+}

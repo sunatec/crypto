@@ -1,0 +1,791 @@
+{
+  "schemaVersion": 1,
+  "id": "P-OHLC-INTEGRATION",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "K-001",
+    "K-002",
+    "F-001",
+    "F-002",
+    "P-001",
+    "P-002",
+    "E-001",
+    "E-003",
+    "E-005"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "engineering",
+    "sourceIds": [
+      "C62-162",
+      "C65-168",
+      "C77-195"
+    ],
+    "lesson": 77,
+    "pdfPages": [
+      162,
+      168,
+      195
+    ],
+    "figure": null,
+    "note": "人工构造无包含的12根OHLC：底在1、顶在5、底在9；每个分型右侧封口后确认。用于真实OHLC到笔的端到端注入。 最后一根回落至[2,5]，增加顶10未封口候选，覆盖预览消费无效分型后事件清空但待确认图形仍须保留的情况。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "ohlc",
+    "items": [
+      {
+        "id": "raw-0",
+        "time": 1700000000000,
+        "closeTime": 1700000060000,
+        "openTicks": 2,
+        "highTicks": 5,
+        "lowTicks": 2,
+        "closeTicks": 5
+      },
+      {
+        "id": "raw-1",
+        "time": 1700000060000,
+        "closeTime": 1700000120000,
+        "openTicks": 0,
+        "highTicks": 3,
+        "lowTicks": 0,
+        "closeTicks": 3
+      },
+      {
+        "id": "raw-2",
+        "time": 1700000120000,
+        "closeTime": 1700000180000,
+        "openTicks": 2,
+        "highTicks": 5,
+        "lowTicks": 2,
+        "closeTicks": 5
+      },
+      {
+        "id": "raw-3",
+        "time": 1700000180000,
+        "closeTime": 1700000240000,
+        "openTicks": 4,
+        "highTicks": 7,
+        "lowTicks": 4,
+        "closeTicks": 7
+      },
+      {
+        "id": "raw-4",
+        "time": 1700000240000,
+        "closeTime": 1700000300000,
+        "openTicks": 6,
+        "highTicks": 9,
+        "lowTicks": 6,
+        "closeTicks": 9
+      },
+      {
+        "id": "raw-5",
+        "time": 1700000300000,
+        "closeTime": 1700000360000,
+        "openTicks": 8,
+        "highTicks": 11,
+        "lowTicks": 8,
+        "closeTicks": 11
+      },
+      {
+        "id": "raw-6",
+        "time": 1700000360000,
+        "closeTime": 1700000420000,
+        "openTicks": 6,
+        "highTicks": 9,
+        "lowTicks": 6,
+        "closeTicks": 9
+      },
+      {
+        "id": "raw-7",
+        "time": 1700000420000,
+        "closeTime": 1700000480000,
+        "openTicks": 4,
+        "highTicks": 7,
+        "lowTicks": 4,
+        "closeTicks": 7
+      },
+      {
+        "id": "raw-8",
+        "time": 1700000480000,
+        "closeTime": 1700000540000,
+        "openTicks": 2,
+        "highTicks": 5,
+        "lowTicks": 2,
+        "closeTicks": 5
+      },
+      {
+        "id": "raw-9",
+        "time": 1700000540000,
+        "closeTime": 1700000600000,
+        "openTicks": 1,
+        "highTicks": 4,
+        "lowTicks": 1,
+        "closeTicks": 4
+      },
+      {
+        "id": "raw-10",
+        "time": 1700000600000,
+        "closeTime": 1700000660000,
+        "openTicks": 3,
+        "highTicks": 6,
+        "lowTicks": 3,
+        "closeTicks": 6
+      },
+      {
+        "id": "raw-11",
+        "time": 1700000660000,
+        "closeTime": 1700000720000,
+        "openTicks": 2,
+        "highTicks": 5,
+        "lowTicks": 2,
+        "closeTicks": 5
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedFractals": 0,
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedFractals": 0,
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedFractals": 0,
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "candidate",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": null,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedFractals": 1,
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "objectId": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "occurredAt": 1700000060000,
+          "confirmedAt": 1700000240000
+        }
+      ],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedFractals": 1,
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedFractals": 1,
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "confirmedFractals": 1,
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "type": "fractal",
+          "level": 0,
+          "status": "candidate",
+          "direction": "top",
+          "startTime": 1700000300000,
+          "endTime": 1700000300000,
+          "startTicks": 11,
+          "endTicks": 11,
+          "confirmedAt": null,
+          "dependencies": [
+            "raw-4",
+            "raw-5",
+            "raw-6"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "confirmedFractals": 2,
+        "confirmedStrokes": 0,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000060000,
+        "strokeCandidateEndTime": 1700000300000,
+        "strokeCandidateStartTicks": 0,
+        "strokeCandidateEndTicks": 11
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "top",
+          "startTime": 1700000300000,
+          "endTime": 1700000300000,
+          "startTicks": 11,
+          "endTicks": 11,
+          "confirmedAt": 1700000480000,
+          "dependencies": [
+            "raw-4",
+            "raw-5",
+            "raw-6"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 0,
+          "endTicks": 11,
+          "confirmedAt": null,
+          "dependencies": [
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "type": "fractal",
+          "objectId": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "occurredAt": 1700000300000,
+          "confirmedAt": 1700000480000
+        }
+      ],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "confirmedFractals": 2,
+        "confirmedStrokes": 0,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000060000,
+        "strokeCandidateEndTime": 1700000300000,
+        "strokeCandidateStartTicks": 0,
+        "strokeCandidateEndTicks": 11
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "top",
+          "startTime": 1700000300000,
+          "endTime": 1700000300000,
+          "startTicks": 11,
+          "endTicks": 11,
+          "confirmedAt": 1700000480000,
+          "dependencies": [
+            "raw-4",
+            "raw-5",
+            "raw-6"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 0,
+          "endTicks": 11,
+          "confirmedAt": null,
+          "dependencies": [
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 10,
+      "state": {
+        "confirmedFractals": 2,
+        "confirmedStrokes": 0,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000060000,
+        "strokeCandidateEndTime": 1700000300000,
+        "strokeCandidateStartTicks": 0,
+        "strokeCandidateEndTicks": 11
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "top",
+          "startTime": 1700000300000,
+          "endTime": 1700000300000,
+          "startTicks": 11,
+          "endTicks": 11,
+          "confirmedAt": 1700000480000,
+          "dependencies": [
+            "raw-4",
+            "raw-5",
+            "raw-6"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 0,
+          "endTicks": 11,
+          "confirmedAt": null,
+          "dependencies": [
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 11,
+      "state": {
+        "confirmedFractals": 2,
+        "confirmedStrokes": 0,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000060000,
+        "strokeCandidateEndTime": 1700000300000,
+        "strokeCandidateStartTicks": 0,
+        "strokeCandidateEndTicks": 11
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "top",
+          "startTime": 1700000300000,
+          "endTime": 1700000300000,
+          "startTicks": 11,
+          "endTicks": 11,
+          "confirmedAt": 1700000480000,
+          "dependencies": [
+            "raw-4",
+            "raw-5",
+            "raw-6"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000",
+          "type": "fractal",
+          "level": 0,
+          "status": "candidate",
+          "direction": "bottom",
+          "startTime": 1700000540000,
+          "endTime": 1700000540000,
+          "startTicks": 1,
+          "endTicks": 1,
+          "confirmedAt": null,
+          "dependencies": [
+            "raw-8",
+            "raw-9",
+            "raw-10"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 0,
+          "endTicks": 11,
+          "confirmedAt": null,
+          "dependencies": [
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。"
+    },
+    {
+      "prefix": 12,
+      "state": {
+        "confirmedFractals": 3,
+        "confirmedStrokes": 1,
+        "strokeDirection": "down",
+        "strokeCandidateStartTime": 1700000300000,
+        "strokeCandidateEndTime": 1700000540000,
+        "strokeCandidateStartTicks": 11,
+        "strokeCandidateEndTicks": 1
+      },
+      "structures": [
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000060000,
+          "endTime": 1700000060000,
+          "startTicks": 0,
+          "endTicks": 0,
+          "confirmedAt": 1700000240000,
+          "dependencies": [
+            "raw-0",
+            "raw-1",
+            "raw-2"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "top",
+          "startTime": 1700000300000,
+          "endTime": 1700000300000,
+          "startTicks": 11,
+          "endTicks": 11,
+          "confirmedAt": 1700000480000,
+          "dependencies": [
+            "raw-4",
+            "raw-5",
+            "raw-6"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000",
+          "type": "fractal",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "bottom",
+          "startTime": 1700000540000,
+          "endTime": 1700000540000,
+          "startTicks": 1,
+          "endTicks": 1,
+          "confirmedAt": 1700000720000,
+          "dependencies": [
+            "raw-8",
+            "raw-9",
+            "raw-10"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 0,
+          "endTicks": 11,
+          "confirmedAt": 1700000720000,
+          "dependencies": [
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000000000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000060000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000120000",
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/2/1700000300000",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "down",
+          "startTime": 1700000300000,
+          "endTime": 1700000540000,
+          "startTicks": 11,
+          "endTicks": 1,
+          "confirmedAt": null,
+          "dependencies": [
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000240000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000300000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000360000",
+            "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000"
+          ]
+        },
+        {
+          "id": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000660000",
+          "type": "fractal",
+          "level": 0,
+          "status": "candidate",
+          "direction": "top",
+          "startTime": 1700000600000,
+          "endTime": 1700000600000,
+          "startTicks": 6,
+          "endTicks": 6,
+          "confirmedAt": null,
+          "dependencies": [
+            "raw-9",
+            "raw-10",
+            "raw-11"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000",
+          "type": "fractal",
+          "objectId": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/F/-1/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000480000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000540000/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/K/1700000600000",
+          "occurredAt": 1700000540000,
+          "confirmedAt": 1700000720000
+        },
+        {
+          "id": "confirm/chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000",
+          "type": "stroke",
+          "objectId": "chanlun-research-0.1/P-OHLC-INTEGRATION/seed/1700000000000/P/1/1700000060000",
+          "occurredAt": 1700000300000,
+          "confirmedAt": 1700000720000
+        }
+      ],
+      "reason": "底1、顶5、底9分别在前缀4/8/12封口确认；前缀8只有候选笔，前缀12下一合法笔成立才锁定第一笔。 同时出现顶10候选，距底9太近不能成笔；其预览过滤不得清除刚锁定笔的临时虚线投影。"
+    }
+  ]
+}

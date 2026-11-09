@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "id": "R-NO-EARLY-COMPLETION",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "R-001",
+    "Z-001"
+  ],
+  "expectationStatus": "draft",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C18-39",
+      "C18-40"
+    ],
+    "lesson": 18,
+    "pdfPages": [
+      39,
+      40
+    ],
+    "figure": null,
+    "note": "只核对几何交集及禁止提前完成约束；尚未冻结N/R/Z，不能作为正式递归通过证据。输入为合成的预先完成低层部件，非从OHLC推导。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "L0-0",
+        "startTime": 1700000000000,
+        "endTime": 1700000060000,
+        "completedAt": 1700000060000,
+        "startTicks": 5,
+        "endTicks": 10,
+        "lowTicks": 5,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "segment-0"
+        ]
+      },
+      {
+        "id": "L0-1",
+        "startTime": 1700000060000,
+        "endTime": 1700000120000,
+        "completedAt": 1700000120000,
+        "startTicks": 10,
+        "endTicks": 8,
+        "lowTicks": 8,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "segment-1"
+        ]
+      },
+      {
+        "id": "L0-2",
+        "startTime": 1700000120000,
+        "endTime": 1700000180000,
+        "completedAt": 1700000180000,
+        "startTicks": 8,
+        "endTicks": 11,
+        "lowTicks": 8,
+        "highTicks": 11,
+        "direction": "up",
+        "dependencies": [
+          "segment-2"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true
+      },
+      "structures": [],
+      "events": [],
+      "reason": "不足三个部件；没有完成事件。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true
+      },
+      "structures": [],
+      "events": [],
+      "reason": "不足三个部件；没有完成事件。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "movementComplete": false,
+        "completionEvents": 0,
+        "ruleBlocked": true,
+        "coreLowTicks": 8,
+        "coreHighTicks": 10
+      },
+      "structures": [],
+      "events": [],
+      "reason": "禁止为填充上层强制完成；第三个输入时几何交集[8,10]不等于已得到走势完成证明。"
+    }
+  ]
+}

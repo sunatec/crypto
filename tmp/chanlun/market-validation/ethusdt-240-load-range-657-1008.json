@@ -1,0 +1,18 @@
+{
+  "caseId": "ETHUSDT-240",
+  "status": "partial initial load range matches reload",
+  "comparedRange": [
+    657,
+    1008
+  ],
+  "comparedPrefixes": 352,
+  "source": "C:/Users/Admin/Downloads/BINANCE_ETHUSDT, 240_c2501.csv",
+  "reloadPath": "tmp/chanlun/market-validation/ETHUSDT-240-reload.csv",
+  "rawCsvSha256": "3fd7195923ad95071753ce7f1e0470012d16d3905a64dbb288bf07ea2dcf5547",
+  "reloadRawCsvSha256": "7c239e767ed55c70aa173851b5bff75418eed134e98ad5ad8806ca863c15db24",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "baselineSha256": "2c1e7895245eb2753ede9f57ff8dd978cd087f79fd456c9ba0e35f0c34897f2d",
+  "comparedTraceFields": 44,
+  "firstOpenUTC": "2026-09-03T08:00:00.000Z",
+  "lastOpenUTC": "2026-10-31T20:00:00.000Z"
+}

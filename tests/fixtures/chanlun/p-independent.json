@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "P-INDEPENDENT",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "P-001"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C77-195"
+    ],
+    "lesson": 77,
+    "pdfPages": [
+      195
+    ],
+    "figure": null,
+    "note": "人工构造的合规已确认分型输入假设，仅测试成员与价格区间资格；不是完整OHLC成笔或P-002完成证明。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "fractal-pairs",
+    "items": [
+      {
+        "id": "P-INDEPENDENT/pair",
+        "first": {
+          "id": "top-1",
+          "kind": "top",
+          "endpointTime": 1700000060000,
+          "priceTicks": 10,
+          "confirmedAt": 1700000240000,
+          "leftId": "k0",
+          "middleId": "k1",
+          "rightId": "k2",
+          "leftOrdinal": 0,
+          "middleOrdinal": 1,
+          "rightOrdinal": 2,
+          "middleHighTicks": 10,
+          "middleLowTicks": 4
+        },
+        "last": {
+          "id": "bottom-5",
+          "kind": "bottom",
+          "endpointTime": 1700000300000,
+          "priceTicks": 0,
+          "confirmedAt": 1700000480000,
+          "leftId": "k4",
+          "middleId": "k5",
+          "rightId": "k6",
+          "leftOrdinal": 4,
+          "middleOrdinal": 5,
+          "rightOrdinal": 6,
+          "middleHighTicks": 6,
+          "middleLowTicks": 0
+        }
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "strokeEligible": true
+      },
+      "structures": [],
+      "events": [],
+      "reason": "顶成员k0/k1/k2，底成员k4/k5/k6，中间k3独立；顶高10超过底区间高6。区间部分重叠不妨碍资格。"
+    }
+  ]
+}

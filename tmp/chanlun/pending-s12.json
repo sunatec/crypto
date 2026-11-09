@@ -1,0 +1,13 @@
+{
+  "status": "user-reported-compilation-timeout",
+  "source": "tmp/chanlun/segment-validation.pine",
+  "snapshot": "tmp/chanlun/compiled/pending-S12-9ee8337191d0a8473d016719ffe040da6a5b656d82d46621598aa139fbc58441.pine",
+  "sha256": "9ee8337191d0a8473d016719ffe040da6a5b656d82d46621598aa139fbc58441",
+  "core": "fbd7e2ec4e04e388b954b918503001738b18f5860a3b2a2fb0a75d0b07efacd4",
+  "cases": 12,
+  "fix": "bind returned UDT before field assignment; remove second shadowing; first-break guard regression",
+  "userReport": "Pine compilation was timed out. Attempts before blocking: 4",
+  "assertions": "not reached; no S12 PASS result",
+  "nextValidation": "tmp/chanlun/segment-compact/smoke.pine",
+  "nextManifest": "tmp/chanlun/segment-compact/manifest.json"
+}

@@ -1,0 +1,7 @@
+{
+  "schemaVersion":1,
+  "note":"工程合成长输入，不代表真实feed。单向OHLC每根整体上移1tick，无分型；中枢循环由六个真实端点[0,10,4,12,6,30,20]平移20tick组成，首尾相接。预期末状态人工核对，不由生产代码求答案。S组复用N-OWN-RANGES的16笔及独立计数。",
+  "monotonic":{"bars":200,"expectedInputs":200,"expectedProcessed":200,"retainedElements":4,"expectedFractals":0,"expectedStrokes":0},
+  "centers":{"cycles":20,"points":[0,10,4,12,6,30,20],"translation":20,"expectedCount":20,"archiveSize":15,"oldestOrdinal":6,"latestOrdinal":20,"lastCore":[384,390],"lastStats":[392,390,386,380],"continuationInputs":2,"nextCount":21,"nextCore":[404,410],"nextRelation":"up-continuation"},
+  "strokes":{"fixtureId":"N-OWN-RANGES","prefixes":16,"expectedSegments":3,"maxRetained":9}
+}

@@ -1,0 +1,87 @@
+{
+  "directory": "D:\\Workspace\\crypto\\tmp\\chanlun\\test-baseline\\",
+  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "fixtureCount": 18,
+  "files": [
+    {
+      "id": "KF6",
+      "file": "kf.pine",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "sha256": "225bf32f19778a96dd87a243a0b961cf3326b6aca6c796a276dd00db0b76c268",
+      "bytes": 131341,
+      "expectedDisplay": "PASS: KF6, 6 cases",
+      "fixtureIds": [
+        "F-TOP-SEAL",
+        "K-DOWN-CHAIN",
+        "K-EQUAL-ORIGIN",
+        "K-INIT-WAIT",
+        "K-NONTRANSITIVE",
+        "K-UP-CHAIN"
+      ],
+      "prefixes": 24,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "id": "P5",
+      "file": "p-qualification.pine",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "sha256": "17fc91383ea3e88287ba2815f3c7a802190acad5e1641655d0029bd3c865c2bb",
+      "bytes": 78512,
+      "expectedDisplay": "PASS: P5, 5 cases",
+      "fixtureIds": [
+        "P-INDEPENDENT",
+        "P-MERGED-DISTANCE",
+        "P-SAME-KIND",
+        "P-SHARED-MEMBERS",
+        "P-TOP-IN-BOTTOM"
+      ],
+      "prefixes": 5,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "id": "P3A",
+      "file": "p-lifecycle-a.pine",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "sha256": "b156e4253b93725adfb72cb9ba582edffdc61d697907c248be6585d5ce192ce9",
+      "bytes": 124856,
+      "expectedDisplay": "PASS: P3A, 3 cases",
+      "fixtureIds": [
+        "P-ANCHOR-EXTREME",
+        "P-EQUAL-FIRST",
+        "P-EXTEND"
+      ],
+      "prefixes": 12,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "id": "P3B",
+      "file": "p-lifecycle-b.pine",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "sha256": "a59e9f714f4bb2d98654fb57b7c6387930c149d14985f6ab7079d0b370a890c9",
+      "bytes": 151215,
+      "expectedDisplay": "PASS: P3B, 3 cases",
+      "fixtureIds": [
+        "P-INVALID-OPPOSITE",
+        "P-LOCKED-PREFIX",
+        "P-UP-EXTEND"
+      ],
+      "prefixes": 15,
+      "execution": "not run; compile and execute in TradingView"
+    },
+    {
+      "id": "I1",
+      "file": "ohlc-integration.pine",
+      "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+      "sha256": "9de25aad0d837910ed810c3efc7e655e3c3a4da4de1f4dc706334dc901ea2807",
+      "bytes": 178044,
+      "expectedDisplay": "PASS: I1, 1 cases",
+      "fixtureIds": [
+        "P-OHLC-INTEGRATION"
+      ],
+      "prefixes": 12,
+      "execution": "not run; compile and execute in TradingView"
+    }
+  ],
+  "status": "awaiting-platform-results"
+}

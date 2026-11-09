@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "R-C88-COMPLETION-CLOCK",
+  "construction": "synthetic-conditional",
+  "sourceIds": ["C88-223"],
+  "ruleVersion": "chanlun-research-0.1",
+  "scope": "C88 仅提供转折早于确立的顺序。时价为合成，证明是有条件给定的已核对输入，未从行情推导。此文件只记录事件时钟和上层消费预期，假定上层可接收且未触及资源上限。",
+  "epochUTCms": 1700000000000,
+  "tickSize": "1",
+  "componentColumns": ["id", "startOffsetMs", "endOffsetMs", "availableOffsetMs", "startTicks", "endTicks"],
+  "components": [
+    ["a", 0, 60000, 90000, 5, 10],
+    ["b", 60000, 120000, 150000, 10, 8],
+    ["c", 120000, 180000, 210000, 8, 14],
+    ["d", 180000, 240000, 270000, 14, 3],
+    ["e", 240000, 300000, 330000, 3, 6],
+    ["f", 300000, 360000, 390000, 6, 2],
+    ["g", 360000, 420000, 450000, 2, 5],
+    ["h", 420000, 480000, 540000, 5, 1]
+  ],
+  "sharedPrefixes": [
+    {"atOffsetMs": 90000, "input": "a", "rEvents": [], "parentInputTotal": 0},
+    {"atOffsetMs": 150000, "input": "b", "rEvents": [], "parentInputTotal": 0},
+    {"atOffsetMs": 210000, "input": "c", "zEvent": "formed", "core": [8, 10], "rEvents": [], "parentInputTotal": 0},
+    {"atOffsetMs": 270000, "input": "d", "zState": "departure-pending", "rEvents": [], "parentInputTotal": 0},
+    {"atOffsetMs": 330000, "input": "e", "zEvent": "closed", "core": [8, 10], "rEvents": [], "parentInputTotal": 0},
+    {"atOffsetMs": 390000, "input": "f", "rEvents": [], "parentInputTotal": 0},
+    {"atOffsetMs": 450000, "input": "g", "zEvent": "formed", "core": [3, 5], "rEvents": [], "parentInputTotal": 0}
+  ],
+  "scenarios": [
+    {
+      "id": "window-ends-without-proof",
+      "steps": [
+        {"atOffsetMs": 480000, "input": "window-end", "rEvents": [], "parentInputTotal": 0}
+      ]
+    },
+    {
+      "id": "assumed-independent-proof-arrives",
+      "proof": {
+        "id": "assumed-r-proof",
+        "availableOffsetMs": 480000,
+        "certifiedMembers": ["a", "b", "c"],
+        "evidenceMembers": ["d", "e", "f", "g"],
+        "certifiedEndpointMember": "c"
+      },
+      "steps": [
+        {"atOffsetMs": 480000, "input": "assumed-r-proof", "rEvents": ["R1"], "parentInputTotal": 1},
+        {"atOffsetMs": 510000, "input": "assumed-r-proof", "rEvents": [], "parentInputTotal": 1},
+        {"atOffsetMs": 540000, "input": "h", "rEvents": [], "parentInputTotal": 1}
+      ],
+      "confirmedSnapshot": {
+        "id": "R1",
+        "level": 1,
+        "startOffsetMs": 0,
+        "occurredOffsetMs": 180000,
+        "confirmedOffsetMs": 480000,
+        "startTicks": 5,
+        "endTicks": 14,
+        "members": ["a", "b", "c"],
+        "proofId": "assumed-r-proof"
+      }
+    }
+  ]
+}

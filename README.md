@@ -6,6 +6,14 @@
 - 波浪分析 Markdown 报告
 - 可交互查看的 HTML 报告
 
+## TradingView 缠论形态预览
+
+将 [chanlun_original.pine](chanlun_original.pine) 粘贴到 TradingView 的 Pine 编辑器，在普通 K 线图上点击「添加到图表」。图表中的指标简称为「缠论原文·预览」。普通视图显示蓝色笔、橙色线段和紫色 L1 中枢，研究视图可查看 L0 映射与确认依据。走势完成和 L2／L3 递归仍待验收所需的规则与证据。
+
+[安装与复核](docs/chanlun/installation.md) · [使用说明](docs/chanlun/user-guide.md) · [验收记录](docs/chanlun/validation.md)
+
+历史原型 [ChanLun](chanlun_czsc.pine) 和 [ChanLun-Strict](chanlun_czsc_strict.pine) 目前位于仓库根目录。完整验收通过后按[迁移与恢复说明](docs/chanlun/README.md#历史原型的迁移与恢复)归档。
+
 ## 快速使用
 
 ```bash

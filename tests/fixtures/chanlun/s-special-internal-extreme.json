@@ -1,0 +1,812 @@
+{
+  "schemaVersion": 1,
+  "id": "S-SPECIAL-INTERNAL-EXTREME",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-007"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C65-168",
+      "C71-182",
+      "C77-195",
+      "C78-198"
+    ],
+    "lesson": 78,
+    "pdfPages": [
+      169,
+      181,
+      182,
+      196,
+      198,
+      199
+    ],
+    "figure": null,
+    "note": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。 输入明确假定每项为已锁定合法笔；初始化及同刻提交约定单列于E-007。只断言确认前缀，不强制未锁定候选的展示集合。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "completed-components",
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 0,
+        "endTicks": 6,
+        "lowTicks": 0,
+        "highTicks": 6,
+        "direction": "up",
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 6,
+        "endTicks": 2,
+        "lowTicks": 2,
+        "highTicks": 6,
+        "direction": "down",
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 2,
+        "endTicks": 10,
+        "lowTicks": 2,
+        "highTicks": 10,
+        "direction": "up",
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 10,
+        "endTicks": 6,
+        "lowTicks": 6,
+        "highTicks": 10,
+        "direction": "down",
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 6,
+        "endTicks": 9,
+        "lowTicks": 6,
+        "highTicks": 9,
+        "direction": "up",
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 9,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 9,
+        "direction": "down",
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      },
+      {
+        "id": "p7",
+        "startTime": 1701000360000,
+        "endTime": 1701000420000,
+        "completedAt": 1701000480000,
+        "startTicks": 4,
+        "endTicks": 12,
+        "lowTicks": 4,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f6",
+          "f7",
+          "proof7"
+        ]
+      },
+      {
+        "id": "p8",
+        "startTime": 1701000420000,
+        "endTime": 1701000480000,
+        "completedAt": 1701000540000,
+        "startTicks": 12,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f7",
+          "f8",
+          "proof8"
+        ]
+      },
+      {
+        "id": "p9",
+        "startTime": 1701000480000,
+        "endTime": 1701000540000,
+        "completedAt": 1701000600000,
+        "startTicks": 5,
+        "endTicks": 11,
+        "lowTicks": 5,
+        "highTicks": 11,
+        "direction": "up",
+        "dependencies": [
+          "f8",
+          "f9",
+          "proof9"
+        ]
+      },
+      {
+        "id": "p10",
+        "startTime": 1701000540000,
+        "endTime": 1701000600000,
+        "completedAt": 1701000660000,
+        "startTicks": 11,
+        "endTicks": 3,
+        "lowTicks": 3,
+        "highTicks": 11,
+        "direction": "down",
+        "dependencies": [
+          "f9",
+          "f10",
+          "proof10"
+        ]
+      },
+      {
+        "id": "p11",
+        "startTime": 1701000600000,
+        "endTime": 1701000660000,
+        "completedAt": 1701000720000,
+        "startTicks": 3,
+        "endTicks": 8,
+        "lowTicks": 3,
+        "highTicks": 8,
+        "direction": "up",
+        "dependencies": [
+          "f10",
+          "f11",
+          "proof11"
+        ]
+      },
+      {
+        "id": "p12",
+        "startTime": 1701000660000,
+        "endTime": 1701000720000,
+        "completedAt": 1701000780000,
+        "startTicks": 8,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 8,
+        "direction": "down",
+        "dependencies": [
+          "f11",
+          "f12",
+          "proof12"
+        ]
+      },
+      {
+        "id": "p13",
+        "startTime": 1701000720000,
+        "endTime": 1701000780000,
+        "completedAt": 1701000840000,
+        "startTicks": 4,
+        "endTicks": 15,
+        "lowTicks": 4,
+        "highTicks": 15,
+        "direction": "up",
+        "dependencies": [
+          "f12",
+          "f13",
+          "proof13"
+        ]
+      },
+      {
+        "id": "p14",
+        "startTime": 1701000780000,
+        "endTime": 1701000840000,
+        "completedAt": 1701000900000,
+        "startTicks": 15,
+        "endTicks": 5,
+        "lowTicks": 5,
+        "highTicks": 15,
+        "direction": "down",
+        "dependencies": [
+          "f13",
+          "f14",
+          "proof14"
+        ]
+      },
+      {
+        "id": "p15",
+        "startTime": 1701000840000,
+        "endTime": 1701000900000,
+        "completedAt": 1701000960000,
+        "startTicks": 5,
+        "endTicks": 12,
+        "lowTicks": 5,
+        "highTicks": 12,
+        "direction": "up",
+        "dependencies": [
+          "f14",
+          "f15",
+          "proof15"
+        ]
+      },
+      {
+        "id": "p16",
+        "startTime": 1701000900000,
+        "endTime": 1701000960000,
+        "completedAt": 1701001020000,
+        "startTicks": 12,
+        "endTicks": 4,
+        "lowTicks": 4,
+        "highTicks": 12,
+        "direction": "down",
+        "dependencies": [
+          "f15",
+          "f16",
+          "proof16"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedSegments": 0
+      },
+      "structures": [],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/segment-1",
+          "type": "segment",
+          "objectId": "segment-1",
+          "occurredAt": 1701000180000,
+          "confirmedAt": 1701000420000
+        }
+      ],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 7,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 8,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 9,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 10,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 11,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 12,
+      "state": {
+        "confirmedSegments": 1
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 13,
+      "state": {
+        "confirmedSegments": 2
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        },
+        {
+          "id": "segment-2",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1701000180000,
+          "endTime": 1701000600000,
+          "startTicks": 10,
+          "endTicks": 3,
+          "confirmedAt": 1701000840000,
+          "dependencies": [
+            "p4",
+            "p5",
+            "p6",
+            "p7",
+            "p8",
+            "p9",
+            "p10",
+            "p11",
+            "p12",
+            "p13"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/segment-2",
+          "type": "segment",
+          "objectId": "segment-2",
+          "occurredAt": 1701000600000,
+          "confirmedAt": 1701000840000
+        }
+      ],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 14,
+      "state": {
+        "confirmedSegments": 2
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        },
+        {
+          "id": "segment-2",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1701000180000,
+          "endTime": 1701000600000,
+          "startTicks": 10,
+          "endTicks": 3,
+          "confirmedAt": 1701000840000,
+          "dependencies": [
+            "p4",
+            "p5",
+            "p6",
+            "p7",
+            "p8",
+            "p9",
+            "p10",
+            "p11",
+            "p12",
+            "p13"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 15,
+      "state": {
+        "confirmedSegments": 2
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        },
+        {
+          "id": "segment-2",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1701000180000,
+          "endTime": 1701000600000,
+          "startTicks": 10,
+          "endTicks": 3,
+          "confirmedAt": 1701000840000,
+          "dependencies": [
+            "p4",
+            "p5",
+            "p6",
+            "p7",
+            "p8",
+            "p9",
+            "p10",
+            "p11",
+            "p12",
+            "p13"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    },
+    {
+      "prefix": 16,
+      "state": {
+        "confirmedSegments": 3
+      },
+      "structures": [
+        {
+          "id": "segment-1",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000000000,
+          "endTime": 1701000180000,
+          "startTicks": 0,
+          "endTicks": 10,
+          "confirmedAt": 1701000420000,
+          "dependencies": [
+            "p1",
+            "p2",
+            "p3",
+            "p4",
+            "p5",
+            "p6"
+          ]
+        },
+        {
+          "id": "segment-2",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1701000180000,
+          "endTime": 1701000600000,
+          "startTicks": 10,
+          "endTicks": 3,
+          "confirmedAt": 1701000840000,
+          "dependencies": [
+            "p4",
+            "p5",
+            "p6",
+            "p7",
+            "p8",
+            "p9",
+            "p10",
+            "p11",
+            "p12",
+            "p13"
+          ]
+        },
+        {
+          "id": "segment-3",
+          "type": "segment",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1701000600000,
+          "endTime": 1701000780000,
+          "startTicks": 3,
+          "endTicks": 15,
+          "confirmedAt": 1701001020000,
+          "dependencies": [
+            "p11",
+            "p12",
+            "p13",
+            "p14",
+            "p15",
+            "p16"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "confirm/segment-3",
+          "type": "segment",
+          "objectId": "segment-3",
+          "occurredAt": 1701000780000,
+          "confirmedAt": 1701001020000
+        }
+      ],
+      "reason": "按第78课前提构造：A上涨0→10已于前缀6被B证明破坏。B下降从10开始，第一反向破坏笔4→12虽创新高12，但第三反向笔5→11仍在4→12内部，随后11→3先破起点4，B继续。B最终几何端点10→3，成员最高12发生于前缀7、最低3于前缀10，前缀13才确认。C上涨3→15于前缀16确认；证明笔中的15不得并入B实际成员最高12。真实几何端点、内部极值和后续证明分别保留；该例不把未定三笔当作合法已完成特殊段。"
+    }
+  ]
+}

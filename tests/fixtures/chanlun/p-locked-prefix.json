@@ -1,0 +1,451 @@
+{
+  "schemaVersion": 1,
+  "id": "P-LOCKED-PREFIX",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "P-001",
+    "P-002",
+    "E-005"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C77-195"
+    ],
+    "lesson": 77,
+    "pdfPages": [
+      195
+    ],
+    "figure": null,
+    "note": "人工给定已封口分型，逐前缀预期独立推导；不从待测实现回填。用于P状态机，不声称精确复原原文行情。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "confirmed-fractals",
+    "items": [
+      {
+        "id": "b1",
+        "kind": "bottom",
+        "endpointTime": 1700000060000,
+        "priceTicks": 1,
+        "confirmedAt": 1700000240000,
+        "leftId": "k0",
+        "middleId": "k1",
+        "rightId": "k2",
+        "leftOrdinal": 0,
+        "middleOrdinal": 1,
+        "rightOrdinal": 2,
+        "middleHighTicks": 2,
+        "middleLowTicks": 1
+      },
+      {
+        "id": "t5",
+        "kind": "top",
+        "endpointTime": 1700000300000,
+        "priceTicks": 8,
+        "confirmedAt": 1700000480000,
+        "leftId": "k4",
+        "middleId": "k5",
+        "rightId": "k6",
+        "leftOrdinal": 4,
+        "middleOrdinal": 5,
+        "rightOrdinal": 6,
+        "middleHighTicks": 8,
+        "middleLowTicks": 6
+      },
+      {
+        "id": "b9",
+        "kind": "bottom",
+        "endpointTime": 1700000540000,
+        "priceTicks": 3,
+        "confirmedAt": 1700000720000,
+        "leftId": "k8",
+        "middleId": "k9",
+        "rightId": "k10",
+        "leftOrdinal": 8,
+        "middleOrdinal": 9,
+        "rightOrdinal": 10,
+        "middleHighTicks": 4,
+        "middleLowTicks": 3
+      },
+      {
+        "id": "t13",
+        "kind": "top",
+        "endpointTime": 1700000780000,
+        "priceTicks": 10,
+        "confirmedAt": 1700000960000,
+        "leftId": "k12",
+        "middleId": "k13",
+        "rightId": "k14",
+        "leftOrdinal": 12,
+        "middleOrdinal": 13,
+        "rightOrdinal": 14,
+        "middleHighTicks": 10,
+        "middleLowTicks": 8
+      },
+      {
+        "id": "t17",
+        "kind": "top",
+        "endpointTime": 1700001020000,
+        "priceTicks": 12,
+        "confirmedAt": 1700001200000,
+        "leftId": "k16",
+        "middleId": "k17",
+        "rightId": "k18",
+        "leftOrdinal": 16,
+        "middleOrdinal": 17,
+        "rightOrdinal": 18,
+        "middleHighTicks": 12,
+        "middleLowTicks": 10
+      },
+      {
+        "id": "b21",
+        "kind": "bottom",
+        "endpointTime": 1700001260000,
+        "priceTicks": 6,
+        "confirmedAt": 1700001440000,
+        "leftId": "k20",
+        "middleId": "k21",
+        "rightId": "k22",
+        "leftOrdinal": 20,
+        "middleOrdinal": 21,
+        "rightOrdinal": 22,
+        "middleHighTicks": 7,
+        "middleLowTicks": 6
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [],
+      "events": [],
+      "reason": "等待。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedStrokes": 0,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000060000,
+        "strokeCandidateEndTime": 1700000300000,
+        "strokeCandidateStartTicks": 1,
+        "strokeCandidateEndTicks": 8
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 1,
+          "endTicks": 8,
+          "confirmedAt": null,
+          "dependencies": [
+            "b1",
+            "t5"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "上笔候选。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedStrokes": 1,
+        "strokeDirection": "down",
+        "strokeCandidateStartTime": 1700000300000,
+        "strokeCandidateEndTime": 1700000540000,
+        "strokeCandidateStartTicks": 8,
+        "strokeCandidateEndTicks": 3
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 1,
+          "endTicks": 8,
+          "confirmedAt": 1700000720000,
+          "dependencies": [
+            "b1",
+            "t5",
+            "b9"
+          ]
+        },
+        {
+          "id": "stroke-2",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "down",
+          "startTime": 1700000300000,
+          "endTime": 1700000540000,
+          "startTicks": 8,
+          "endTicks": 3,
+          "confirmedAt": null,
+          "dependencies": [
+            "t5",
+            "b9"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "P-LOCKED-PREFIX/confirm/1",
+          "type": "stroke",
+          "objectId": "stroke-1",
+          "occurredAt": 1700000300000,
+          "confirmedAt": 1700000720000
+        }
+      ],
+      "reason": "P1锁定，P2候选。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedStrokes": 2,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000540000,
+        "strokeCandidateEndTime": 1700000780000,
+        "strokeCandidateStartTicks": 3,
+        "strokeCandidateEndTicks": 10
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 1,
+          "endTicks": 8,
+          "confirmedAt": 1700000720000,
+          "dependencies": [
+            "b1",
+            "t5",
+            "b9"
+          ]
+        },
+        {
+          "id": "stroke-2",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1700000300000,
+          "endTime": 1700000540000,
+          "startTicks": 8,
+          "endTicks": 3,
+          "confirmedAt": 1700000960000,
+          "dependencies": [
+            "t5",
+            "b9",
+            "t13"
+          ]
+        },
+        {
+          "id": "stroke-3",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000540000,
+          "endTime": 1700000780000,
+          "startTicks": 3,
+          "endTicks": 10,
+          "confirmedAt": null,
+          "dependencies": [
+            "b9",
+            "t13"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "P-LOCKED-PREFIX/confirm/2",
+          "type": "stroke",
+          "objectId": "stroke-2",
+          "occurredAt": 1700000540000,
+          "confirmedAt": 1700000960000
+        }
+      ],
+      "reason": "P2锁定，P3候选。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "confirmedStrokes": 2,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000540000,
+        "strokeCandidateEndTime": 1700001020000,
+        "strokeCandidateStartTicks": 3,
+        "strokeCandidateEndTicks": 12
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 1,
+          "endTicks": 8,
+          "confirmedAt": 1700000720000,
+          "dependencies": [
+            "b1",
+            "t5",
+            "b9"
+          ]
+        },
+        {
+          "id": "stroke-2",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1700000300000,
+          "endTime": 1700000540000,
+          "startTicks": 8,
+          "endTicks": 3,
+          "confirmedAt": 1700000960000,
+          "dependencies": [
+            "t5",
+            "b9",
+            "t13"
+          ]
+        },
+        {
+          "id": "stroke-3",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000540000,
+          "endTime": 1700001020000,
+          "startTicks": 3,
+          "endTicks": 12,
+          "confirmedAt": null,
+          "dependencies": [
+            "b9",
+            "t17"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "新高只延伸P3，不修改P1/P2。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "confirmedStrokes": 3,
+        "strokeDirection": "down",
+        "strokeCandidateStartTime": 1700001020000,
+        "strokeCandidateEndTime": 1700001260000,
+        "strokeCandidateStartTicks": 12,
+        "strokeCandidateEndTicks": 6
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 1,
+          "endTicks": 8,
+          "confirmedAt": 1700000720000,
+          "dependencies": [
+            "b1",
+            "t5",
+            "b9"
+          ]
+        },
+        {
+          "id": "stroke-2",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1700000300000,
+          "endTime": 1700000540000,
+          "startTicks": 8,
+          "endTicks": 3,
+          "confirmedAt": 1700000960000,
+          "dependencies": [
+            "t5",
+            "b9",
+            "t13"
+          ]
+        },
+        {
+          "id": "stroke-3",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "up",
+          "startTime": 1700000540000,
+          "endTime": 1700001020000,
+          "startTicks": 3,
+          "endTicks": 12,
+          "confirmedAt": 1700001440000,
+          "dependencies": [
+            "b9",
+            "t17",
+            "b21"
+          ]
+        },
+        {
+          "id": "stroke-4",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "down",
+          "startTime": 1700001020000,
+          "endTime": 1700001260000,
+          "startTicks": 12,
+          "endTicks": 6,
+          "confirmedAt": null,
+          "dependencies": [
+            "t17",
+            "b21"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "P-LOCKED-PREFIX/confirm/3",
+          "type": "stroke",
+          "objectId": "stroke-3",
+          "occurredAt": 1700001020000,
+          "confirmedAt": 1700001440000
+        }
+      ],
+      "reason": "P3锁定，P1/P2的端点、依赖与确认时间保持不变。"
+    }
+  ]
+}

@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "id": "P-EQUAL-FIRST",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "P-001",
+    "P-002",
+    "E-005"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-body",
+    "sourceIds": [
+      "C77-195"
+    ],
+    "lesson": 77,
+    "pdfPages": [
+      195
+    ],
+    "figure": null,
+    "note": "人工给定已封口分型，逐前缀预期独立推导；不从待测实现回填。用于P状态机，不声称精确复原原文行情。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "confirmed-fractals",
+    "items": [
+      {
+        "id": "t1",
+        "kind": "top",
+        "endpointTime": 1700000060000,
+        "priceTicks": 10,
+        "confirmedAt": 1700000240000,
+        "leftId": "k0",
+        "middleId": "k1",
+        "rightId": "k2",
+        "leftOrdinal": 0,
+        "middleOrdinal": 1,
+        "rightOrdinal": 2,
+        "middleHighTicks": 10,
+        "middleLowTicks": 8
+      },
+      {
+        "id": "b5",
+        "kind": "bottom",
+        "endpointTime": 1700000300000,
+        "priceTicks": 4,
+        "confirmedAt": 1700000480000,
+        "leftId": "k4",
+        "middleId": "k5",
+        "rightId": "k6",
+        "leftOrdinal": 4,
+        "middleOrdinal": 5,
+        "rightOrdinal": 6,
+        "middleHighTicks": 5,
+        "middleLowTicks": 4
+      },
+      {
+        "id": "b9",
+        "kind": "bottom",
+        "endpointTime": 1700000540000,
+        "priceTicks": 4,
+        "confirmedAt": 1700000720000,
+        "leftId": "k8",
+        "middleId": "k9",
+        "rightId": "k10",
+        "leftOrdinal": 8,
+        "middleOrdinal": 9,
+        "rightOrdinal": 10,
+        "middleHighTicks": 5,
+        "middleLowTicks": 4
+      },
+      {
+        "id": "t13",
+        "kind": "top",
+        "endpointTime": 1700000780000,
+        "priceTicks": 9,
+        "confirmedAt": 1700000960000,
+        "leftId": "k12",
+        "middleId": "k13",
+        "rightId": "k14",
+        "leftOrdinal": 12,
+        "middleOrdinal": 13,
+        "rightOrdinal": 14,
+        "middleHighTicks": 9,
+        "middleLowTicks": 7
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "confirmedStrokes": 0,
+        "strokeDirection": "none",
+        "strokeCandidateStartTime": null,
+        "strokeCandidateEndTime": null,
+        "strokeCandidateStartTicks": null,
+        "strokeCandidateEndTicks": null
+      },
+      "structures": [],
+      "events": [],
+      "reason": "等待。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "confirmedStrokes": 0,
+        "strokeDirection": "down",
+        "strokeCandidateStartTime": 1700000060000,
+        "strokeCandidateEndTime": 1700000300000,
+        "strokeCandidateStartTicks": 10,
+        "strokeCandidateEndTicks": 4
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "down",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 10,
+          "endTicks": 4,
+          "confirmedAt": null,
+          "dependencies": [
+            "t1",
+            "b5"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "下降候选。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "confirmedStrokes": 0,
+        "strokeDirection": "down",
+        "strokeCandidateStartTime": 1700000060000,
+        "strokeCandidateEndTime": 1700000300000,
+        "strokeCandidateStartTicks": 10,
+        "strokeCandidateEndTicks": 4
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "down",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 10,
+          "endTicks": 4,
+          "confirmedAt": null,
+          "dependencies": [
+            "t1",
+            "b5"
+          ]
+        }
+      ],
+      "events": [],
+      "reason": "相等底保留先出现的b5。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "confirmedStrokes": 1,
+        "strokeDirection": "up",
+        "strokeCandidateStartTime": 1700000300000,
+        "strokeCandidateEndTime": 1700000780000,
+        "strokeCandidateStartTicks": 4,
+        "strokeCandidateEndTicks": 9
+      },
+      "structures": [
+        {
+          "id": "stroke-1",
+          "type": "stroke",
+          "level": 0,
+          "status": "confirmed",
+          "direction": "down",
+          "startTime": 1700000060000,
+          "endTime": 1700000300000,
+          "startTicks": 10,
+          "endTicks": 4,
+          "confirmedAt": 1700000960000,
+          "dependencies": [
+            "t1",
+            "b5",
+            "t13"
+          ]
+        },
+        {
+          "id": "stroke-2",
+          "type": "stroke",
+          "level": 0,
+          "status": "candidate",
+          "direction": "up",
+          "startTime": 1700000300000,
+          "endTime": 1700000780000,
+          "startTicks": 4,
+          "endTicks": 9,
+          "confirmedAt": null,
+          "dependencies": [
+            "b5",
+            "t13"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "id": "P-EQUAL-FIRST/confirm/1",
+          "type": "stroke",
+          "objectId": "stroke-1",
+          "occurredAt": 1700000300000,
+          "confirmedAt": 1700000960000
+        }
+      ],
+      "reason": "下一合法笔锁定旧笔，端点仍在b5，不跳到b9。"
+    }
+  ]
+}

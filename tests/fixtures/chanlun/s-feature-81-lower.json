@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "id": "S-FEATURE-81-LOWER",
+  "ruleVersion": "chanlun-research-0.1",
+  "ruleIds": [
+    "S-001",
+    "S-002",
+    "S-003",
+    "E-002",
+    "E-006"
+  ],
+  "expectationStatus": "reviewed",
+  "construction": "synthetic",
+  "source": {
+    "category": "author-correction",
+    "sourceIds": [
+      "C81-209",
+      "C81-210",
+      "C78-198"
+    ],
+    "lesson": 81,
+    "pdfPages": [
+      199,
+      209,
+      210
+    ],
+    "figure": "第209页图一／图二的5、7关系；第210页更正",
+    "note": "只截取从原高点开始的反向候选B，图中5、7对应两次上行笔高点，本构造为16与15/16/17。数值为合成，非原图精确价格。第二序列必须处理包含：7低于5时出现底分型，相等／更高时先包含合并而不形成该底分型。本驱动只断言第二序列，不独自断言完整A/B/C段数。"
+  },
+  "tickSize": "1",
+  "input": {
+    "kind": "feature-strokes",
+    "context": {
+      "segmentDirection": "down",
+      "initialDirection": "down",
+      "postDirection": "waiting",
+      "boundaryTime": null,
+      "secondSequence": false,
+      "maxElements": 128,
+      "maxSources": 512
+    },
+    "items": [
+      {
+        "id": "p1",
+        "startTime": 1701000000000,
+        "endTime": 1701000060000,
+        "completedAt": 1701000120000,
+        "startTicks": 18,
+        "endTicks": 12,
+        "direction": "down",
+        "ordinal": 1,
+        "dependencies": [
+          "f0",
+          "f1",
+          "proof1"
+        ]
+      },
+      {
+        "id": "p2",
+        "startTime": 1701000060000,
+        "endTime": 1701000120000,
+        "completedAt": 1701000180000,
+        "startTicks": 12,
+        "endTicks": 16,
+        "direction": "up",
+        "ordinal": 2,
+        "dependencies": [
+          "f1",
+          "f2",
+          "proof2"
+        ]
+      },
+      {
+        "id": "p3",
+        "startTime": 1701000120000,
+        "endTime": 1701000180000,
+        "completedAt": 1701000240000,
+        "startTicks": 16,
+        "endTicks": 10,
+        "direction": "down",
+        "ordinal": 3,
+        "dependencies": [
+          "f2",
+          "f3",
+          "proof3"
+        ]
+      },
+      {
+        "id": "p4",
+        "startTime": 1701000180000,
+        "endTime": 1701000240000,
+        "completedAt": 1701000300000,
+        "startTicks": 10,
+        "endTicks": 15,
+        "direction": "up",
+        "ordinal": 4,
+        "dependencies": [
+          "f3",
+          "f4",
+          "proof4"
+        ]
+      },
+      {
+        "id": "p5",
+        "startTime": 1701000240000,
+        "endTime": 1701000300000,
+        "completedAt": 1701000360000,
+        "startTicks": 15,
+        "endTicks": 12,
+        "direction": "down",
+        "ordinal": 5,
+        "dependencies": [
+          "f4",
+          "f5",
+          "proof5"
+        ]
+      },
+      {
+        "id": "p6",
+        "startTime": 1701000300000,
+        "endTime": 1701000360000,
+        "completedAt": 1701000420000,
+        "startTicks": 12,
+        "endTicks": 20,
+        "direction": "up",
+        "ordinal": 6,
+        "dependencies": [
+          "f5",
+          "f6",
+          "proof6"
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "prefix": 1,
+      "state": {
+        "inputCount": 1,
+        "selectedCount": 0,
+        "mergeDirection": "down",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": false,
+        "features": []
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 2,
+      "state": {
+        "inputCount": 2,
+        "selectedCount": 1,
+        "mergeDirection": "down",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": false,
+        "features": [
+          {
+            "id": "S-FEATURE-81-LOWER/E/p2",
+            "lowTicks": 12,
+            "highTicks": 16,
+            "lowTime": 1701000060000,
+            "highTime": 1701000120000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": false,
+            "sourceIds": [
+              "p2"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 3,
+      "state": {
+        "inputCount": 3,
+        "selectedCount": 1,
+        "mergeDirection": "down",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-81-LOWER/E/p2",
+            "lowTicks": 12,
+            "highTicks": 16,
+            "lowTime": 1701000060000,
+            "highTime": 1701000120000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": false,
+            "sourceIds": [
+              "p2"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 4,
+      "state": {
+        "inputCount": 4,
+        "selectedCount": 2,
+        "mergeDirection": "down",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-81-LOWER/E/p2",
+            "lowTicks": 12,
+            "highTicks": 16,
+            "lowTime": 1701000060000,
+            "highTime": 1701000120000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-81-LOWER/E/p4",
+            "lowTicks": 10,
+            "highTicks": 15,
+            "lowTime": 1701000180000,
+            "highTime": 1701000240000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000240000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 4,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000300000,
+            "sealed": false,
+            "sourceIds": [
+              "p4"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 5,
+      "state": {
+        "inputCount": 5,
+        "selectedCount": 2,
+        "mergeDirection": "down",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "none",
+        "gap": null,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-81-LOWER/E/p2",
+            "lowTicks": 12,
+            "highTicks": 16,
+            "lowTime": 1701000060000,
+            "highTime": 1701000120000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-81-LOWER/E/p4",
+            "lowTicks": 10,
+            "highTicks": 15,
+            "lowTime": 1701000180000,
+            "highTime": 1701000240000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000240000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 4,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000300000,
+            "sealed": false,
+            "sourceIds": [
+              "p4"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    },
+    {
+      "prefix": 6,
+      "state": {
+        "inputCount": 6,
+        "selectedCount": 3,
+        "mergeDirection": "up",
+        "boundaryCuts": 0,
+        "waitingDirection": false,
+        "blocked": false,
+        "heldId": null,
+        "turnKind": "bottom",
+        "gap": false,
+        "seedEligible": true,
+        "features": [
+          {
+            "id": "S-FEATURE-81-LOWER/E/p2",
+            "lowTicks": 12,
+            "highTicks": 16,
+            "lowTime": 1701000060000,
+            "highTime": 1701000120000,
+            "firstTime": 1701000060000,
+            "lastTime": 1701000120000,
+            "firstOrdinal": 2,
+            "lastOrdinal": 2,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000180000,
+            "sealed": true,
+            "sourceIds": [
+              "p2"
+            ]
+          },
+          {
+            "id": "S-FEATURE-81-LOWER/E/p4",
+            "lowTicks": 10,
+            "highTicks": 15,
+            "lowTime": 1701000180000,
+            "highTime": 1701000240000,
+            "firstTime": 1701000180000,
+            "lastTime": 1701000240000,
+            "firstOrdinal": 4,
+            "lastOrdinal": 4,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000300000,
+            "sealed": true,
+            "sourceIds": [
+              "p4"
+            ]
+          },
+          {
+            "id": "S-FEATURE-81-LOWER/E/p6",
+            "lowTicks": 12,
+            "highTicks": 20,
+            "lowTime": 1701000300000,
+            "highTime": 1701000360000,
+            "firstTime": 1701000300000,
+            "lastTime": 1701000360000,
+            "firstOrdinal": 6,
+            "lastOrdinal": 6,
+            "firstSide": 0,
+            "lastSide": 0,
+            "availableAt": 1701000420000,
+            "sealed": false,
+            "sourceIds": [
+              "p6"
+            ]
+          }
+        ]
+      },
+      "structures": [],
+      "events": [],
+      "reason": "手工给出本前缀标准元素、来源及极值；前三笔资格按人工预期单列，只有特征序列诊断，不产生线段确认。"
+    }
+  ]
+}

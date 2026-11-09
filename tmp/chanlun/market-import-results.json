@@ -1,0 +1,78 @@
+{
+  "date": "2026-11-06",
+  "classification": "CSV metadata; filenames are descriptive only",
+  "results": [
+    {
+      "file": "BINANCE_BTCUSDT, 1D_f2154.csv",
+      "caseId": "BTCUSDT-D",
+      "status": "newly-frozen",
+      "bars": 1008,
+      "tick": "0.01",
+      "exportedFirst": "2023-06-25T00:00:00.000Z",
+      "exportedLast": "2026-11-06T00:00:00.000Z",
+      "dateOnlyRows": 1231,
+      "canonicalSha256": "d312d5d8094e995ffeb9a70521d33fdfd8da0699769225c38a1bef00b3453d0b"
+    },
+    {
+      "file": "BINANCE_BTCUSDT, 240_8585a.csv",
+      "caseId": "BTCUSDT-240",
+      "status": "already-frozen",
+      "bars": 1008,
+      "tick": "0.01",
+      "exportedFirst": "2026-04-03T20:00:00.000Z",
+      "exportedLast": "2026-11-06T12:00:00.000Z",
+      "canonicalSha256": "0043065dabfe11e30058824ffb5d138f1fbb9d540d4c41723dd692bc3b21d44c"
+    },
+    {
+      "file": "BINANCE_BTCUSDT, 60_0d9c1.csv",
+      "caseId": "BTCUSDT-60",
+      "status": "already-frozen",
+      "bars": 1008,
+      "tick": "0.01",
+      "exportedFirst": "2026-09-02T05:00:00.000Z",
+      "exportedLast": "2026-11-06T15:00:00.000Z",
+      "canonicalSha256": "518cb958675ebe1dea5c34b9a18a8d808dbb9e029fad126d83c37945955d9bb9"
+    },
+    {
+      "file": "BINANCE_ETHUSDT, 1D_d50b3.csv",
+      "caseId": "ETHUSDT-D",
+      "status": "newly-frozen",
+      "bars": 1008,
+      "tick": "0.01",
+      "exportedFirst": "2023-01-04T00:00:00.000Z",
+      "exportedLast": "2026-11-06T00:00:00.000Z",
+      "dateOnlyRows": 1403,
+      "canonicalSha256": "ab930d2b13bc35716fdf45e80b666b553b725392416a90c1c6e790a8364a2365"
+    },
+    {
+      "file": "BINANCE_ETHUSDT, 240_cca8f.csv",
+      "caseId": "ETHUSDT-240",
+      "status": "already-frozen",
+      "bars": 1008,
+      "tick": "0.01",
+      "exportedFirst": "2026-04-05T00:00:00.000Z",
+      "exportedLast": "2026-11-06T12:00:00.000Z",
+      "canonicalSha256": "2c1e7895245eb2753ede9f57ff8dd978cd087f79fd456c9ba0e35f0c34897f2d"
+    },
+    {
+      "file": "BINANCE_ETHUSDT, 60_daa7d.csv",
+      "caseId": "ETHUSDT-60",
+      "status": "already-frozen",
+      "bars": 1008,
+      "tick": "0.01",
+      "exportedFirst": "2026-08-18T17:00:00.000Z",
+      "exportedLast": "2026-11-06T15:00:00.000Z",
+      "canonicalSha256": "8b830702186fe2f39abb6b36bb4c94082a6060721737c01a179012cbfe153604"
+    },
+    {
+      "file": "BTCUSDT-60.csv",
+      "caseId": "BTCUSDT-60",
+      "status": "already-frozen",
+      "bars": 1008,
+      "tick": "0.01",
+      "exportedFirst": "2026-09-02T05:00:00.000Z",
+      "exportedLast": "2026-11-06T15:00:00.000Z",
+      "canonicalSha256": "518cb958675ebe1dea5c34b9a18a8d808dbb9e029fad126d83c37945955d9bb9"
+    }
+  ]
+}

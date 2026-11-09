@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-05",
+  "priorKernelBodiesUnchanged": true,
+  "results": [
+    {
+      "date": "2026-11-05",
+      "source": "tmp/chanlun/window-validation.pine",
+      "requestedFileSha256": "a567e8c3c2e8b4a7a43042a80c7473e036dd144ea21e37a1db9fd33d91fad9f4",
+      "coreHash": "b3f957e12cf98db1567e55b0384239d574518fc0b0b040b90628da55dd99f460",
+      "fixtureHash": "530dde27be1161f1d166de6af3b6b7bbd317a91ccd79b9461e03907c8e98d465",
+      "snapshot": "tmp/chanlun/compiled/window-W8-pass-a567e8c3c2e8b4a7a43042a80c7473e036dd144ea21e37a1db9fd33d91fad9f4.pine",
+      "status": "user-reported-pass",
+      "userReport": "W8 PASS",
+      "cases": 8,
+      "prefixes": 44,
+      "scope": "User reports requested synthetic window policy and OHLC integration assertions passed. Uploaded bytes not independently verified. No production rendering or six-feed market replay acceptance inferred."
+    },
+    {
+      "date": "2026-11-05",
+      "source": "chanlun_original.pine",
+      "status": "user-reported-pass",
+      "userReport": "固定起点100根的截断已经验证了",
+      "requestContextSha256": "e026d2f1964fc1847d2442556ade47f41bcd4e664cf7dcf5f3193505c265425c",
+      "observedWorkspaceSha256": "100ad52e4027b002d7dd526735415bf705fc14fa3605e7ff00dd633dc2482913",
+      "sharedWindowPolicySha256": "5cc636c520324fbf108171ada093e029d665eb4f6b33ba34a3a6103ec5233cd8",
+      "versionBinding": "Exact uploaded whole-file version was not specified. Original requested window version and current workspace have identical normalized ChanWindow code; bind this report to the fixed-start 100-bar truncation behavior, not a new full-file compilation claim.",
+      "scope": "User explicitly confirms fixed-start sample limit 100 and truncation behavior. Feed/time window/settings/screenshot and exact uploaded bytes not independently verified. Does not imply six-feed replay, live multi-tick or stress acceptance."
+    }
+  ],
+  "pending": [],
+  "resolvedRequests": [
+    {
+      "date": "2026-11-05",
+      "source": "chanlun_original.pine",
+      "sha256": "e026d2f1964fc1847d2442556ade47f41bcd4e664cf7dcf5f3193505c265425c",
+      "coreHash": "b3f957e12cf98db1567e55b0384239d574518fc0b0b040b90628da55dd99f460",
+      "sharedValidationPass": "a567e8c3c2e8b4a7a43042a80c7473e036dd144ea21e37a1db9fd33d91fad9f4",
+      "status": "resolved-by-explicit-user-report",
+      "snapshot": "tmp/chanlun/compiled/production-window-pending-e026d2f1964fc1847d2442556ade47f41bcd4e664cf7dcf5f3193505c265425c.pine",
+      "userReport": "固定起点100根的截断已经验证了"
+    }
+  ]
+}

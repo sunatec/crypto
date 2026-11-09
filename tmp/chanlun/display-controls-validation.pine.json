@@ -1,0 +1,10 @@
+{
+  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\display-controls-validation.pine",
+  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
+  "sha256": "3e71bf47723900f4c812a44889bed3e0b9cd2bf6827e1b3f7a2adfbedf46ae66",
+  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "rendererHash": "c712b7bc6262f2517b27078783246d21427b68bbcd192ecb6c469a71d5e86c2d",
+  "bytes": 103897,
+  "cases": 4,
+  "execution": "not run in Pine"
+}
