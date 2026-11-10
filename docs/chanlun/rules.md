@@ -309,7 +309,7 @@ E-001/002/003 为当前工作表明确的工程选择。闭区间的适用范围
 | 待定离开后的回试 | 回试实际区间恰触核心上界或下界仍相交，继续原中枢；完全在外时才执行 E-010 的关闭分支 | Z-RETURN-TOUCHES-LOWER-EDGE 与 Z-RETURN-STRICTLY-BELOW |
 | 两个核心严格分离的相邻中枢 | `后 DD == 前 GG` 或 `后 GG == 前 DD` 属波动包络接触，记录扩展证据 | Z-EQUAL-ENVELOPE；第20课中心定理二明确含等号 |
 
-第20课随后对第三类买卖点另用回试低点不跌破、回抽高点不升破的表述。那是带次级别离开与回试前提的信号判据。当前的触边约定用于 Z 的形成、归属和关系，不能据此生成信号、R 完成或直接提交上层。未来各层的同类区间相等判断沿用此约定，完成输入与递归归属另有前置条件。[递归规格](../../openspec/changes/rebuild-chanlun-tradingview-indicator/specs/chanlun-recursion/spec.md)
+第20课随后对第三类买卖点另用回试低点不跌破、回抽高点不升破的表述。那是带次级别离开与回试前提的信号判据。当前的触边约定用于 Z 的形成、归属和关系，不能据此生成信号、R 完成或直接提交上层。未来各层的同类区间相等判断沿用此约定，完成输入与递归归属另有前置条件。[递归规格](../../openspec/changes/archive/2026-11-10-rebuild-chanlun-tradingview-indicator/specs/chanlun-recursion/spec.md)
 
 ### E-005 P模块的消费与提交约定
 
