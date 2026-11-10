@@ -12,7 +12,7 @@
   "R-005",
   "R-006"
  ],
- "note": "结构确立路径（engineering，用户 2026-11-09 选择）的合成 L0 输入。逐前缀预期由 docs/chanlun/rules.md 的 R-002～R-006 人工推导，未经过待测实现。只验证 L1 走势完成及其端点、成员、类型、一次性，不验证 L2/L3 提交或背驰。",
+ "note": "结构确立路径（engineering，用户 2026-11-09 选择）的合成 L0 输入。逐前缀预期由 docs/chanlun/rules.md 的 R-002～R-006 人工推导，未经过待测实现。R-L2/L3 用例直接以上层部件为输入，验证层级标识、上层只要求时间相接、层数上限不上送且标记 capped；不验证背驰。",
  "cases": [
   {
    "id": "R-STRUCT-POSITIVE",
@@ -139,7 +139,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -153,7 +154,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -167,7 +169,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -181,7 +184,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -195,7 +199,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -209,7 +214,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -223,7 +229,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -237,7 +244,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -251,7 +259,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -265,7 +274,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -299,7 +309,8 @@
       "confirmed": 11,
       "upper": false,
       "startTicks": 20
-     }
+     },
+     "capped": false
     },
     {
      "active": true,
@@ -313,7 +324,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -327,7 +339,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -341,7 +354,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -355,7 +369,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -369,7 +384,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -383,7 +399,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -417,7 +434,8 @@
       "confirmed": 18,
       "upper": true,
       "startTicks": 4
-     }
+     },
+     "capped": false
     }
    ]
   },
@@ -546,7 +564,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -560,7 +579,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -574,7 +594,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -588,7 +609,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -602,7 +624,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -616,7 +639,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -630,7 +654,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -644,7 +669,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -658,7 +684,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -672,7 +699,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -706,7 +734,8 @@
       "confirmed": 11,
       "upper": false,
       "startTicks": 20
-     }
+     },
+     "capped": false
     },
     {
      "active": true,
@@ -720,7 +749,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -734,7 +764,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -748,7 +779,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -762,7 +794,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -776,7 +809,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -790,7 +824,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -804,7 +839,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     }
    ]
   },
@@ -939,7 +975,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -953,7 +990,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -967,7 +1005,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -981,7 +1020,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -995,7 +1035,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1009,7 +1050,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1023,7 +1065,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1037,7 +1080,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1051,7 +1095,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1065,7 +1110,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1099,7 +1145,8 @@
       "confirmed": 11,
       "upper": false,
       "startTicks": 20
-     }
+     },
+     "capped": false
     },
     {
      "active": true,
@@ -1113,7 +1160,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1127,7 +1175,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1141,7 +1190,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1155,7 +1205,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1169,7 +1220,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1183,7 +1235,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1197,7 +1250,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1211,7 +1265,8 @@
      "start": 4,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     }
    ]
   },
@@ -1280,7 +1335,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1294,7 +1350,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1308,7 +1365,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1322,7 +1380,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1336,7 +1395,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1350,7 +1410,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1364,7 +1425,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1378,7 +1440,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     }
    ]
   },
@@ -1447,7 +1510,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1461,7 +1525,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1475,7 +1540,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1489,7 +1555,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1503,7 +1570,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1517,7 +1585,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1531,7 +1600,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": true,
@@ -1545,7 +1615,8 @@
      "start": 0,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     }
    ]
   },
@@ -1615,7 +1686,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1629,7 +1701,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1643,7 +1716,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1657,7 +1731,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1671,7 +1746,8 @@
      "start": 20,
      "blocked": false,
      "kind": "",
-     "held": 0
+     "held": 0,
+     "capped": false
     },
     {
      "active": false,
@@ -1685,7 +1761,8 @@
      "start": 20,
      "blocked": true,
      "kind": "budget",
-     "held": 6
+     "held": 6,
+     "capped": false
     },
     {
      "active": false,
@@ -1699,7 +1776,8 @@
      "start": 20,
      "blocked": true,
      "kind": "budget",
-     "held": 6
+     "held": 6,
+     "capped": false
     },
     {
      "active": false,
@@ -1713,7 +1791,1287 @@
      "start": 20,
      "blocked": true,
      "kind": "budget",
-     "held": 6
+     "held": 6,
+     "capped": false
+    }
+   ]
+  },
+  {
+   "id": "R-L2-POSITIVE",
+   "level": 2,
+   "inputs": [
+    [
+     20,
+     10,
+     10,
+     20
+    ],
+    [
+     10,
+     16,
+     10,
+     16
+    ],
+    [
+     16,
+     12,
+     12,
+     16
+    ],
+    [
+     12,
+     15,
+     12,
+     15
+    ],
+    [
+     15,
+     6,
+     6,
+     15
+    ],
+    [
+     6,
+     9,
+     6,
+     9
+    ],
+    [
+     9,
+     4,
+     4,
+     9
+    ],
+    [
+     4,
+     8,
+     4,
+     8
+    ],
+    [
+     8,
+     7,
+     7,
+     8
+    ],
+    [
+     7,
+     14,
+     7,
+     14
+    ],
+    [
+     14,
+     10,
+     10,
+     14
+    ],
+    [
+     10,
+     13,
+     10,
+     13
+    ],
+    [
+     13,
+     11,
+     11,
+     13
+    ],
+    [
+     11,
+     18,
+     11,
+     18
+    ],
+    [
+     18,
+     12,
+     12,
+     18
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ],
+    [
+     13,
+     8,
+     8,
+     13
+    ],
+    [
+     8,
+     10,
+     8,
+     10
+    ]
+   ],
+   "expected": [
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 1,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 2,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 3,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 4,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 5,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 6,
+     "first": 1,
+     "centers": 1,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 7,
+     "first": 1,
+     "centers": 1,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 8,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 9,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 10,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 4,
+     "first": 8,
+     "centers": 0,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "event": {
+      "end": [
+       7,
+       4
+      ],
+      "range": [
+       4,
+       20
+      ],
+      "members": [
+       1,
+       7
+      ],
+      "centers": 2,
+      "type": "trend",
+      "truncated": true,
+      "confirmed": 11,
+      "upper": false,
+      "startTicks": 20
+     },
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 5,
+     "first": 8,
+     "centers": 0,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 6,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 7,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 8,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 9,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 10,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": false,
+     "members": 4,
+     "first": 15,
+     "centers": 0,
+     "done": 2,
+     "submitted": 1,
+     "start": 18,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "event": {
+      "end": [
+       14,
+       18
+      ],
+      "range": [
+       4,
+       18
+      ],
+      "members": [
+       8,
+       14
+      ],
+      "centers": 1,
+      "type": "consolidation",
+      "truncated": false,
+      "confirmed": 18,
+      "upper": true,
+      "startTicks": 4
+     },
+     "capped": false
+    }
+   ]
+  },
+  {
+   "id": "R-L2-GAP-ADJACENCY",
+   "level": 2,
+   "inputs": [
+    [
+     20,
+     10,
+     10,
+     20
+    ],
+    [
+     10,
+     16,
+     10,
+     16
+    ],
+    [
+     16,
+     12,
+     12,
+     16
+    ],
+    [
+     12,
+     15,
+     12,
+     15
+    ],
+    [
+     15,
+     6,
+     6,
+     15
+    ],
+    [
+     6,
+     9,
+     6,
+     9
+    ],
+    [
+     9,
+     4,
+     4,
+     9
+    ],
+    [
+     4,
+     8,
+     4,
+     8
+    ],
+    [
+     9,
+     7,
+     7,
+     9
+    ],
+    [
+     7,
+     14,
+     7,
+     14
+    ],
+    [
+     14,
+     10,
+     10,
+     14
+    ],
+    [
+     10,
+     13,
+     10,
+     13
+    ],
+    [
+     13,
+     11,
+     11,
+     13
+    ],
+    [
+     11,
+     18,
+     11,
+     18
+    ],
+    [
+     18,
+     12,
+     12,
+     18
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ],
+    [
+     13,
+     8,
+     8,
+     13
+    ],
+    [
+     8,
+     10,
+     8,
+     10
+    ]
+   ],
+   "expected": [
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 1,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 2,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 3,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 4,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 5,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 6,
+     "first": 1,
+     "centers": 1,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 7,
+     "first": 1,
+     "centers": 1,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 8,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 9,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 10,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 4,
+     "first": 8,
+     "centers": 0,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "event": {
+      "end": [
+       7,
+       4
+      ],
+      "range": [
+       4,
+       20
+      ],
+      "members": [
+       1,
+       7
+      ],
+      "centers": 2,
+      "type": "trend",
+      "truncated": true,
+      "confirmed": 11,
+      "upper": false,
+      "startTicks": 20
+     },
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 5,
+     "first": 8,
+     "centers": 0,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 6,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 7,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 8,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 9,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 10,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": false,
+     "members": 4,
+     "first": 15,
+     "centers": 0,
+     "done": 2,
+     "submitted": 1,
+     "start": 18,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "event": {
+      "end": [
+       14,
+       18
+      ],
+      "range": [
+       4,
+       18
+      ],
+      "members": [
+       8,
+       14
+      ],
+      "centers": 1,
+      "type": "consolidation",
+      "truncated": false,
+      "confirmed": 18,
+      "upper": true,
+      "startTicks": 4
+     },
+     "capped": false
+    }
+   ]
+  },
+  {
+   "id": "R-L3-CAP",
+   "level": 3,
+   "submit": false,
+   "inputs": [
+    [
+     20,
+     10,
+     10,
+     20
+    ],
+    [
+     10,
+     16,
+     10,
+     16
+    ],
+    [
+     16,
+     12,
+     12,
+     16
+    ],
+    [
+     12,
+     15,
+     12,
+     15
+    ],
+    [
+     15,
+     6,
+     6,
+     15
+    ],
+    [
+     6,
+     9,
+     6,
+     9
+    ],
+    [
+     9,
+     4,
+     4,
+     9
+    ],
+    [
+     4,
+     8,
+     4,
+     8
+    ],
+    [
+     8,
+     7,
+     7,
+     8
+    ],
+    [
+     7,
+     14,
+     7,
+     14
+    ],
+    [
+     14,
+     10,
+     10,
+     14
+    ],
+    [
+     10,
+     13,
+     10,
+     13
+    ],
+    [
+     13,
+     11,
+     11,
+     13
+    ],
+    [
+     11,
+     18,
+     11,
+     18
+    ],
+    [
+     18,
+     12,
+     12,
+     18
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ],
+    [
+     13,
+     8,
+     8,
+     13
+    ],
+    [
+     8,
+     10,
+     8,
+     10
+    ]
+   ],
+   "expected": [
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 1,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 2,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 3,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 4,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": false,
+     "dir": 0,
+     "trunc": false,
+     "members": 5,
+     "first": 1,
+     "centers": 0,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 6,
+     "first": 1,
+     "centers": 1,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 7,
+     "first": 1,
+     "centers": 1,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 8,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 9,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": true,
+     "members": 10,
+     "first": 1,
+     "centers": 2,
+     "done": 0,
+     "submitted": 0,
+     "start": 20,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 4,
+     "first": 8,
+     "centers": 0,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "event": {
+      "end": [
+       7,
+       4
+      ],
+      "range": [
+       4,
+       20
+      ],
+      "members": [
+       1,
+       7
+      ],
+      "centers": 2,
+      "type": "trend",
+      "truncated": true,
+      "confirmed": 11,
+      "upper": false,
+      "startTicks": 20
+     },
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 5,
+     "first": 8,
+     "centers": 0,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 6,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 7,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 8,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 9,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": 1,
+     "trunc": false,
+     "members": 10,
+     "first": 8,
+     "centers": 1,
+     "done": 1,
+     "submitted": 0,
+     "start": 4,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "capped": false
+    },
+    {
+     "active": true,
+     "dir": -1,
+     "trunc": false,
+     "members": 4,
+     "first": 15,
+     "centers": 0,
+     "done": 2,
+     "submitted": 0,
+     "start": 18,
+     "blocked": false,
+     "kind": "",
+     "held": 0,
+     "event": {
+      "end": [
+       14,
+       18
+      ],
+      "range": [
+       4,
+       18
+      ],
+      "members": [
+       8,
+       14
+      ],
+      "centers": 1,
+      "type": "consolidation",
+      "truncated": false,
+      "confirmed": 18,
+      "upper": false,
+      "startTicks": 4
+     },
+     "capped": true
     }
    ]
   }

@@ -20,7 +20,7 @@ test('retention driver embeds unchanged production core and checks behavior afte
   const result=generateRetentionValidation(source,read('retention/cases.json'),read('n-own-ranges.json'));
   assert(result.source.includes(extractCore(source)));assert.equal(result.coreHash,sha(extractCore(source)));
   for(const label of ['cumulative-counts','bounded-tail','retained-ordinals','reclaimed-prefix-boundary','bounded-dependency-tail','closed-record-survives-reclaim','previous-independent-of-archive','independent-clipped-archive','continued-after-reclaim','reload-after-reclaim'])assert(result.source.includes(label),label);
-  assert(result.source.includes('PASS: G3, 338 prefixes'));assert(result.bytes<100000);
+  assert(result.source.includes('PASS: G3, 338 prefixes'));assert(result.bytes<115000);
   assert(!/\(\)\.\w+\s*(?:\+=|:=|-=)/.test(result.source));
 });
 test('retention artifact records exact bytes and remains pending platform execution',()=>{

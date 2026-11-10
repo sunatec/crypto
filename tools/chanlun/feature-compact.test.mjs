@@ -68,7 +68,7 @@ test('compact driver uses exact CORE and retains state, turn, provenance and lif
   assert.equal(result.coreHash,sha(extractCore(production)));
   assert.equal(result.sha256,sha(source));
   assert.deepEqual([result.cases,result.prefixes,result.expectedDisplay],[16,101,'PASS: F16, 101 prefixes']);
-  assert(result.bytes<150000);
+  assert(result.bytes<165000);
   for(const check of ['inputCount','selectedCount','mergeDirection','boundaryCuts','waitingDirection','blocked','held-input','feature-count','source-count','source-','segment-seed-eligibility','no-turn','turn-exists','turn-kind-gap','turn-endpoint','turn-leftId','turn-middleId','turn-rightId','turn-availability','prefix-reload','duplicate-input','deep-copy-isolation','initial-isolation'])assert(source.includes('"/'+check+'"'),check);
   for(const field of ['id','lowTicks','highTicks','lowTime','highTime','firstTime','lastTime','firstOrdinal','lastOrdinal','firstSide','lastSide','availableAt','sealed'])assert(source.includes(`actual.${field} == expected.${field}`));
   assert(source.includes('for i = 0 to index'));

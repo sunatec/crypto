@@ -10,13 +10,13 @@ test('display controls validate real renderer lifecycle with exact production co
   const result=generateDisplayControlsValidation(source);
   assert(result.source.includes(extractCore(source)));assert(result.source.includes(extractSection(source,'RENDERER')));
   assert.equal(result.coreHash,sha(extractCore(source)));assert.equal(result.rendererHash,sha(extractSection(source,'RENDERER')));
-  for(const label of ['global-quota','group-quota','degenerate-and-hide-label','stride-does-not-hide-line','selected-ordinal','candidate-always-labelled','candidate-sweep','remove-existing-caption','segment-stride','real-core-isolation'])assert(result.source.includes(label),label);
-  assert(result.source.includes('PASS: D4, 4 cases'));assert(result.source.includes('合成展示 · 非行情识别'));
-  assert(result.bytes<120000);assert(!/\(\)\.\w+\s*(?:\+=|:=|-=)/.test(result.source));
+  for(const label of ['global-quota','group-quota','degenerate-and-hide-label','stride-does-not-hide-line','selected-ordinal','candidate-always-labelled','candidate-sweep','remove-existing-caption','segment-stride','real-core-isolation','D5/movement-type-consolidation','D5/movement-type-up','D5/movement-type-down','D5/movement-type-expansion-truncated','D5/movement-type-open','D5/type-ignores-slope','D5/completion-redraws-open-movement-in-place'])assert(result.source.includes(label),label);
+  assert(result.source.includes('PASS: D5, 5 cases'));assert(result.source.includes('合成展示 · 非行情识别'));
+  assert(result.bytes<135000);assert(!/\(\)\.\w+\s*(?:\+=|:=|-=)/.test(result.source));
 });
 test('production visual controls affect renderer projections without entering calculation core',()=>{
   const renderer=extractSection(source,'RENDERER'),core=extractCore(source);
-  assert.equal(sha(core),'7846cec62c0a5f1cad0eaeb936c50bda31d5556de27d5ea04d46c7cd24bc7fe3');
+  assert.equal(sha(core),'7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0');
   assert(renderer.includes('style.centerWidth, confirmed'));
   assert(renderer.includes('stroke ? style.strokeLabelStride : style.segmentLabelStride'));
   assert(renderer.includes('chan_draw_remove_id(registry, source.id + "/caption")'));

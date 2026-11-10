@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-10",
+  "task": "5.5 L1-L3 recursion: layer chain, layer ceiling, upper parts",
+  "coreHash": "3c53bc97d92a739e727b93e8cb3cbdbe21ff4d7f8d44079e6cf15855e349d170",
+  "platform": {"site": "TradingView web (built-in browser pane)", "account": "sunvy (Premium)", "layout": "chanlun-validation", "symbol": "BINANCE:BTCUSDT", "interval": "4h",
+    "method": "Script copied with pbcopy and SHA-256 read back; pasted by the user (cmd+A, cmd+V); Add/Update on chart done by Claude. Runtime errors were read from the legend error message in the page; results from the table, with other validation studies hidden through the chart API."},
+  "fixtures": {"levels": "tests/fixtures/chanlun/recursion/structure-completion.json", "chain": "tests/fixtures/chanlun/recursion/level-chain.json"},
+  "results": [
+    {"id": "LEVELS", "snapshot": "tmp/chanlun/compiled/core3c53bc97-LEVELS-a5f4affa988d476f9028ba5c8661c199695aa279015570c39dbf68993378cd95.pine", "sha256": "a5f4affa988d476f9028ba5c8661c199695aa279015570c39dbf68993378cd95", "expected": "PASS: 9 R cases, 133 prefixes", "observed": "PASS: 9 R cases, 133 prefixes", "status": "pass",
+     "note": "first run of the pre-fix script (a different hash, not kept) passed cases 1-8 and failed R-L3-CAP/prefix-11 capped expected=false actual=true; cause: capped was decided after the movement state was reset to the next movement; fixed to read the completed record"},
+    {"id": "CHAIN", "snapshot": "tmp/chanlun/compiled/core3c53bc97-CHAIN-545dbc9c0eb3e617c62c5f0a274def0c40b516aa76e66aeeb0a9ed54337d9f28.pine", "sha256": "545dbc9c0eb3e617c62c5f0a274def0c40b516aa76e66aeeb0a9ed54337d9f28", "expected": "PASS: 3 chain cases, 84 prefixes", "observed": "PASS: 3 chain cases, 84 prefixes", "status": "pass", "note": "first run"},
+    {"id": "PRODUCTION", "snapshot": "tmp/chanlun/compiled/core3c53bc97-PRODUCTION-109cba779fbbfbc64c7d245b3e8921b0d4bfa67fe3e985c762c20ccb85c4af7f.pine", "sha256": "109cba779fbbfbc64c7d245b3e8921b0d4bfa67fe3e985c762c20ccb85c4af7f", "expected": "compiles and loads; counts equal the earlier run; panel shows the new movement row",
+     "observed": "compiled and loaded. Panel: confirmed fractals 1670, strokes 364, segments 53, L0 53, L1 centers 9, latest center #9 2026-09-15 16:00 -> 2026-10-21 16:00 price 82563.00-87220.00; movement completions L1/L2/L3 = 4/0/0. Effective start 2024-07-29 20:00 UTC, 4999 bars.", "status": "compile-and-load", "note": "not an assertion run; first view of L1 completion on real data"}
+  ],
+  "tests": {"command": "node --test tools/chanlun/recursion-validation.test.mjs", "result": "7 passed, 0 failed (contract, driver and core-boundary checks only; no Pine execution)"},
+  "limits": [
+    "Level 3 consuming a part submitted by level 2 is not exercised end to end: the synthetic chain reaches the first L2 center only. Level 3 is covered by the direct-level case R-L3-CAP and by identity checks.",
+    "The 16 shared-core scripts from 2026-11-09 are bound to CORE 7846cec6 and were not re-run on this CORE.",
+    "On BTCUSDT 4h the production panel shows 4 L1 completions and no L2 or L3 completion; whether that is the expected market behaviour was not independently audited.",
+    "Screenshots were not archived into the repository."
+  ]
+}

@@ -1,0 +1,2492 @@
+{
+ "schemaVersion": 1,
+ "sourceIds": [
+  "C18-39",
+  "C18-40",
+  "C88-223"
+ ],
+ "ruleIds": [
+  "R-002",
+  "R-003",
+  "R-004",
+  "R-005",
+  "R-006"
+ ],
+ "note": "L0→L1→L2 链：前 18 个部件同 R-STRUCT-POSITIVE，c19..c28 使 L1 在第 23、28 个前缀再完成两次（W2 下行范围 [8,18]、W3 上行范围 [9,17]）。上层部件 U1[4,18]、U2[8,18]、U3[9,17] 依次到 L2，第 28 个前缀 L2 形成核心 [9,17] 的首个中枢。逐前缀预期由规则表人工推导，未经过待测实现。层数上限 1 时 L1 不上送并标记 capped；上限 2 与 3 在这 28 个前缀内行为相同。",
+ "cases": [
+  {
+   "id": "R-CHAIN-LEVELS-3",
+   "levelLimit": 3,
+   "inputs": [
+    [
+     20,
+     10,
+     10,
+     20
+    ],
+    [
+     10,
+     16,
+     10,
+     16
+    ],
+    [
+     16,
+     12,
+     12,
+     16
+    ],
+    [
+     12,
+     15,
+     12,
+     15
+    ],
+    [
+     15,
+     6,
+     6,
+     15
+    ],
+    [
+     6,
+     9,
+     6,
+     9
+    ],
+    [
+     9,
+     4,
+     4,
+     9
+    ],
+    [
+     4,
+     8,
+     4,
+     8
+    ],
+    [
+     8,
+     7,
+     7,
+     8
+    ],
+    [
+     7,
+     14,
+     7,
+     14
+    ],
+    [
+     14,
+     10,
+     10,
+     14
+    ],
+    [
+     10,
+     13,
+     10,
+     13
+    ],
+    [
+     13,
+     11,
+     11,
+     13
+    ],
+    [
+     11,
+     18,
+     11,
+     18
+    ],
+    [
+     18,
+     12,
+     12,
+     18
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ],
+    [
+     13,
+     8,
+     8,
+     13
+    ],
+    [
+     8,
+     10,
+     8,
+     10
+    ],
+    [
+     10,
+     9,
+     9,
+     10
+    ],
+    [
+     9,
+     11,
+     9,
+     11
+    ],
+    [
+     11,
+     9,
+     9,
+     11
+    ],
+    [
+     9,
+     16,
+     9,
+     16
+    ],
+    [
+     16,
+     14,
+     14,
+     16
+    ],
+    [
+     14,
+     15,
+     14,
+     15
+    ],
+    [
+     15,
+     14,
+     14,
+     15
+    ],
+    [
+     14,
+     17,
+     14,
+     17
+    ],
+    [
+     17,
+     12,
+     12,
+     17
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ]
+   ],
+   "expected": [
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 1,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 2,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 3,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 4,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 5,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 6,
+      "first": 1,
+      "centers": 1,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 7,
+      "first": 1,
+      "centers": 1,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 8,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 9,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 10,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 4,
+      "first": 8,
+      "centers": 0,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "event": {
+       "end": [
+        7,
+        4
+       ],
+       "range": [
+        4,
+        20
+       ],
+       "members": [
+        1,
+        7
+       ],
+       "centers": 2,
+       "type": "trend",
+       "truncated": true,
+       "confirmed": 11,
+       "upper": false,
+       "startTicks": 20
+      },
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 5,
+      "first": 8,
+      "centers": 0,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 6,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 7,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 8,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 9,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 10,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 4,
+      "first": 15,
+      "centers": 0,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "event": {
+       "end": [
+        14,
+        18
+       ],
+       "range": [
+        4,
+        18
+       ],
+       "members": [
+        8,
+        14
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 18,
+       "upper": true,
+       "startTicks": 4
+      },
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 5,
+      "first": 15,
+      "centers": 0,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 6,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 7,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 8,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 4,
+      "first": 20,
+      "centers": 0,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false,
+      "event": {
+       "end": [
+        19,
+        9
+       ],
+       "range": [
+        8,
+        18
+       ],
+       "members": [
+        15,
+        19
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 23,
+       "upper": true,
+       "startTicks": 18
+      }
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 5,
+      "first": 20,
+      "centers": 0,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 6,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 7,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 8,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 2,
+      "first": 27,
+      "centers": 0,
+      "done": 4,
+      "submitted": 3,
+      "start": 17,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false,
+      "event": {
+       "end": [
+        26,
+        17
+       ],
+       "range": [
+        9,
+        17
+       ],
+       "members": [
+        20,
+        26
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 28,
+       "upper": true,
+       "startTicks": 9
+      }
+     },
+     "l2in": 3,
+     "l2centers": 1,
+     "l3in": 0,
+     "l2": {
+      "core": [
+       9,
+       17
+      ],
+      "stats": [
+       18,
+       17,
+       9,
+       4
+      ],
+      "from": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "R-CHAIN-LEVELS-2",
+   "levelLimit": 2,
+   "inputs": [
+    [
+     20,
+     10,
+     10,
+     20
+    ],
+    [
+     10,
+     16,
+     10,
+     16
+    ],
+    [
+     16,
+     12,
+     12,
+     16
+    ],
+    [
+     12,
+     15,
+     12,
+     15
+    ],
+    [
+     15,
+     6,
+     6,
+     15
+    ],
+    [
+     6,
+     9,
+     6,
+     9
+    ],
+    [
+     9,
+     4,
+     4,
+     9
+    ],
+    [
+     4,
+     8,
+     4,
+     8
+    ],
+    [
+     8,
+     7,
+     7,
+     8
+    ],
+    [
+     7,
+     14,
+     7,
+     14
+    ],
+    [
+     14,
+     10,
+     10,
+     14
+    ],
+    [
+     10,
+     13,
+     10,
+     13
+    ],
+    [
+     13,
+     11,
+     11,
+     13
+    ],
+    [
+     11,
+     18,
+     11,
+     18
+    ],
+    [
+     18,
+     12,
+     12,
+     18
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ],
+    [
+     13,
+     8,
+     8,
+     13
+    ],
+    [
+     8,
+     10,
+     8,
+     10
+    ],
+    [
+     10,
+     9,
+     9,
+     10
+    ],
+    [
+     9,
+     11,
+     9,
+     11
+    ],
+    [
+     11,
+     9,
+     9,
+     11
+    ],
+    [
+     9,
+     16,
+     9,
+     16
+    ],
+    [
+     16,
+     14,
+     14,
+     16
+    ],
+    [
+     14,
+     15,
+     14,
+     15
+    ],
+    [
+     15,
+     14,
+     14,
+     15
+    ],
+    [
+     14,
+     17,
+     14,
+     17
+    ],
+    [
+     17,
+     12,
+     12,
+     17
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ]
+   ],
+   "expected": [
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 1,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 2,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 3,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 4,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 5,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 6,
+      "first": 1,
+      "centers": 1,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 7,
+      "first": 1,
+      "centers": 1,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 8,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 9,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 10,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 4,
+      "first": 8,
+      "centers": 0,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "event": {
+       "end": [
+        7,
+        4
+       ],
+       "range": [
+        4,
+        20
+       ],
+       "members": [
+        1,
+        7
+       ],
+       "centers": 2,
+       "type": "trend",
+       "truncated": true,
+       "confirmed": 11,
+       "upper": false,
+       "startTicks": 20
+      },
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 5,
+      "first": 8,
+      "centers": 0,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 6,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 7,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 8,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 9,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 10,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 4,
+      "first": 15,
+      "centers": 0,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "event": {
+       "end": [
+        14,
+        18
+       ],
+       "range": [
+        4,
+        18
+       ],
+       "members": [
+        8,
+        14
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 18,
+       "upper": true,
+       "startTicks": 4
+      },
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 5,
+      "first": 15,
+      "centers": 0,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 6,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 7,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 8,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 1,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 1,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 4,
+      "first": 20,
+      "centers": 0,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false,
+      "event": {
+       "end": [
+        19,
+        9
+       ],
+       "range": [
+        8,
+        18
+       ],
+       "members": [
+        15,
+        19
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 23,
+       "upper": true,
+       "startTicks": 18
+      }
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 5,
+      "first": 20,
+      "centers": 0,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 6,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 7,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 8,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 2,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 2,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 2,
+      "first": 27,
+      "centers": 0,
+      "done": 4,
+      "submitted": 3,
+      "start": 17,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false,
+      "event": {
+       "end": [
+        26,
+        17
+       ],
+       "range": [
+        9,
+        17
+       ],
+       "members": [
+        20,
+        26
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 28,
+       "upper": true,
+       "startTicks": 9
+      }
+     },
+     "l2in": 3,
+     "l2centers": 1,
+     "l3in": 0,
+     "l2": {
+      "core": [
+       9,
+       17
+      ],
+      "stats": [
+       18,
+       17,
+       9,
+       4
+      ],
+      "from": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "R-CHAIN-LEVELS-1",
+   "levelLimit": 1,
+   "inputs": [
+    [
+     20,
+     10,
+     10,
+     20
+    ],
+    [
+     10,
+     16,
+     10,
+     16
+    ],
+    [
+     16,
+     12,
+     12,
+     16
+    ],
+    [
+     12,
+     15,
+     12,
+     15
+    ],
+    [
+     15,
+     6,
+     6,
+     15
+    ],
+    [
+     6,
+     9,
+     6,
+     9
+    ],
+    [
+     9,
+     4,
+     4,
+     9
+    ],
+    [
+     4,
+     8,
+     4,
+     8
+    ],
+    [
+     8,
+     7,
+     7,
+     8
+    ],
+    [
+     7,
+     14,
+     7,
+     14
+    ],
+    [
+     14,
+     10,
+     10,
+     14
+    ],
+    [
+     10,
+     13,
+     10,
+     13
+    ],
+    [
+     13,
+     11,
+     11,
+     13
+    ],
+    [
+     11,
+     18,
+     11,
+     18
+    ],
+    [
+     18,
+     12,
+     12,
+     18
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ],
+    [
+     13,
+     8,
+     8,
+     13
+    ],
+    [
+     8,
+     10,
+     8,
+     10
+    ],
+    [
+     10,
+     9,
+     9,
+     10
+    ],
+    [
+     9,
+     11,
+     9,
+     11
+    ],
+    [
+     11,
+     9,
+     9,
+     11
+    ],
+    [
+     9,
+     16,
+     9,
+     16
+    ],
+    [
+     16,
+     14,
+     14,
+     16
+    ],
+    [
+     14,
+     15,
+     14,
+     15
+    ],
+    [
+     15,
+     14,
+     14,
+     15
+    ],
+    [
+     14,
+     17,
+     14,
+     17
+    ],
+    [
+     17,
+     12,
+     12,
+     17
+    ],
+    [
+     12,
+     13,
+     12,
+     13
+    ]
+   ],
+   "expected": [
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 1,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 2,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 3,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 4,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": false,
+      "dir": 0,
+      "trunc": false,
+      "members": 5,
+      "first": 1,
+      "centers": 0,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 6,
+      "first": 1,
+      "centers": 1,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 7,
+      "first": 1,
+      "centers": 1,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 8,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 9,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": true,
+      "members": 10,
+      "first": 1,
+      "centers": 2,
+      "done": 0,
+      "submitted": 0,
+      "start": 20,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 4,
+      "first": 8,
+      "centers": 0,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "event": {
+       "end": [
+        7,
+        4
+       ],
+       "range": [
+        4,
+        20
+       ],
+       "members": [
+        1,
+        7
+       ],
+       "centers": 2,
+       "type": "trend",
+       "truncated": true,
+       "confirmed": 11,
+       "upper": false,
+       "startTicks": 20
+      },
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 5,
+      "first": 8,
+      "centers": 0,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 6,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 7,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 8,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 9,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 10,
+      "first": 8,
+      "centers": 1,
+      "done": 1,
+      "submitted": 0,
+      "start": 4,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": false
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 4,
+      "first": 15,
+      "centers": 0,
+      "done": 2,
+      "submitted": 0,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "event": {
+       "end": [
+        14,
+        18
+       ],
+       "range": [
+        4,
+        18
+       ],
+       "members": [
+        8,
+        14
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 18,
+       "upper": false,
+       "startTicks": 4
+      },
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 5,
+      "first": 15,
+      "centers": 0,
+      "done": 2,
+      "submitted": 0,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 6,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 0,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 7,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 0,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 8,
+      "first": 15,
+      "centers": 1,
+      "done": 2,
+      "submitted": 0,
+      "start": 18,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 4,
+      "first": 20,
+      "centers": 0,
+      "done": 3,
+      "submitted": 0,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true,
+      "event": {
+       "end": [
+        19,
+        9
+       ],
+       "range": [
+        8,
+        18
+       ],
+       "members": [
+        15,
+        19
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 23,
+       "upper": false,
+       "startTicks": 18
+      }
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 5,
+      "first": 20,
+      "centers": 0,
+      "done": 3,
+      "submitted": 0,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 6,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 0,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 7,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 0,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": 1,
+      "trunc": false,
+      "members": 8,
+      "first": 20,
+      "centers": 1,
+      "done": 3,
+      "submitted": 0,
+      "start": 9,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    },
+    {
+     "l1": {
+      "active": true,
+      "dir": -1,
+      "trunc": false,
+      "members": 2,
+      "first": 27,
+      "centers": 0,
+      "done": 4,
+      "submitted": 0,
+      "start": 17,
+      "blocked": false,
+      "kind": "",
+      "held": 0,
+      "capped": true,
+      "event": {
+       "end": [
+        26,
+        17
+       ],
+       "range": [
+        9,
+        17
+       ],
+       "members": [
+        20,
+        26
+       ],
+       "centers": 1,
+       "type": "consolidation",
+       "truncated": false,
+       "confirmed": 28,
+       "upper": false,
+       "startTicks": 9
+      }
+     },
+     "l2in": 0,
+     "l2centers": 0,
+     "l3in": 0
+    }
+   ]
+  }
+ ]
+}

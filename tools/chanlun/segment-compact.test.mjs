@@ -72,7 +72,7 @@ test('source size and transition call sites shrink without claiming Pine compile
   assert.equal(result.segmentCallSites,10); // Two shared runtime/preview call sites.
   const smoke=generateCompactValidation(source,[load('s-first-wait-inclusion')]);
   // Source-size guard grows with the shared N/Z/runtime core; no compiler limit implied.
-  assert(smoke.bytes<90000);
+  assert(smoke.bytes<115000);
   assert.equal(smoke.segmentCallSites,6);
   assert.equal(smoke.fixtures.length,1);
   assert.equal(smoke.prefixes,10);

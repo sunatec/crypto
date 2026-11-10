@@ -10,10 +10,10 @@ const fixtures=()=>['s-first-end','s-first-equal-third','n-own-ranges'].map(read
 const sha=s=>crypto.createHash('sha256').update(s).digest('hex');
 test('budget driver uses production stop paths and preserves independent inputs',()=>{
   const f=fixtures(),before=JSON.stringify(f),result=generateBudgetValidation(source,...f);
-  assert.equal(JSON.stringify(f),before);assert.equal(result.cases,5);
+  assert.equal(JSON.stringify(f),before);assert.equal(result.cases,6);
   assert(result.source.includes(extractCore(source)));assert.equal(result.coreHash,sha(extractCore(source)));
   for(const label of ['no-partial-delivery','atomic-stop','held-input','upstream-continues','future-does-not-restart','atomic-stop-N-continues','blocked-future-keeps-first-held','KFP-continues','no-consumption','resource-over-wait','lowest-blocked-layer'])assert(result.source.includes(label),label);
-  assert(result.source.includes('PASS: B5, 5 cases'));assert(result.bytes<105000);
+  assert(result.source.includes('PASS: B6, 6 cases'));assert(result.bytes<125000);
 });
 test('chart gate and displayed status use the same tested functions',()=>{
   const chart=source.slice(source.indexOf('// ==================== Chart scheduling'));
@@ -21,10 +21,10 @@ test('chart gate and displayed status use the same tested functions',()=>{
   assert(chart.includes('chan_status_text(chan_status_code(engine, analysisWindow, supported))'));
   const core=extractCore(source),status=core.slice(core.indexOf('chan_status_code('));
   assert(status.indexOf('S_PENDING_LIMIT')<status.indexOf('HISTORY_SHORT'));
-  for(const code of ['UNSUPPORTED','TRUNCATED','SAMPLE_LIMIT','S_PENDING_LIMIT','S_WORK_LIMIT','Z_SOURCE_LIMIT','HISTORY_SHORT','WAIT_START','INITIALIZING','S_PROOF_PENDING','Z_RETURN_PENDING','Z_NEW_PENDING'])assert(status.includes(code),code);
+  for(const code of ['UNSUPPORTED','TRUNCATED','SAMPLE_LIMIT','S_PENDING_LIMIT','S_WORK_LIMIT','Z_SOURCE_LIMIT','HISTORY_SHORT','WAIT_START','INITIALIZING','S_PROOF_PENDING','Z_RETURN_PENDING','Z_NEW_PENDING','R1_MEMBER_LIMIT','R1_RULE_ERROR','Z2_SOURCE_LIMIT','R2_MEMBER_LIMIT','R2_RULE_ERROR','Z3_SOURCE_LIMIT','R3_MEMBER_LIMIT','R3_RULE_ERROR','LEVEL_CAP'])assert(status.includes(code),code);
   const delivery=core.slice(core.indexOf('chan_runtime_component('),core.indexOf('chan_runtime_update('));
   assert(delivery.includes('chan_normalization_step(source.normalized, segment)'));
-  assert(delivery.includes('chan_center_step(source.centers, state.normalized.event)'));
+  assert(delivery.includes('chan_stack_step(stack, state.normalized.event)'));
   assert(delivery.includes('result.committed := state'));
 });
 test('budget manifest binds pending artifact without assuming platform success',()=>{

@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-10",
+  "task": "6.5 status codes and layer ceiling hint; 7.1/7.4 level display code (rendering evidence partial); D5 movement type label text assertion",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
+  "platform": {
+    "site": "TradingView web (built-in browser pane)",
+    "account": "sunvy (Premium)",
+    "layout": "chanlun-validation",
+    "symbol": "BINANCE:BTCUSDT",
+    "interval": "4h (daily used only for a visual look)",
+    "method": "Script copied with pbcopy and SHA-256 read back; pasted by the user (cmd+A, cmd+V); Add/Update on chart and result reading by Claude; other validation studies hidden through the chart API so tables do not overlap."
+  },
+  "fixtures": {
+    "levels": "tests/fixtures/chanlun/recursion/structure-completion.json",
+    "chain": "tests/fixtures/chanlun/recursion/level-chain.json"
+  },
+  "results": [
+    {
+      "id": "PRODUCTION",
+      "snapshot": "tmp/chanlun/compiled/core7bea4f3a-PRODUCTION-8d3b7e4ec761e49c91bbacad93a4e826f96da835d047710f58578eaa4bba0975.pine",
+      "sha256": "8d3b7e4ec761e49c91bbacad93a4e826f96da835d047710f58578eaa4bba0975",
+      "bytes": 134504,
+      "expected": "compiles and loads; counts unchanged; panel shows movement and upper-center rows",
+      "observed": "compiled and loaded on BTCUSDT 4h: fractals 1670, strokes 364, segments 53, L0 53, L1 centers 9; completions L1/L2/L3 = 4/0/0; upper centers L2/L3 = 1/0; legend shows the new levelLimit input 3. Label 'L1-M#5 · 待定' (open fifth L1 movement) seen on the chart. On daily bars (3372 bars from 2017-08-17): fractals 1102, strokes 243, segments 32, L0 32, L1 centers 4, completions 2/0/0, upper centers 0/0; an open-movement label with '进行中' seen.",
+      "status": "compile-and-load",
+      "note": "L2/L3 center boxes, completed-movement type text and the per-layer switches were not visually confirmed"
+    },
+    {
+      "id": "B6",
+      "snapshot": "tmp/chanlun/compiled/core7bea4f3a-B6-09cb714461ee6c8e52a8e92558cd02268765ba0a6d35e2d4dcbd921e055494cb.pine",
+      "sha256": "09cb714461ee6c8e52a8e92558cd02268765ba0a6d35e2d4dcbd921e055494cb",
+      "bytes": 106643,
+      "expected": "PASS: B6, 6 cases",
+      "observed": "PASS: B6, 6 cases",
+      "status": "pass",
+      "note": "first run; covers R/Z stop codes for L1-L3, LEVEL_CAP and their priorities"
+    },
+    {
+      "id": "LEVELS",
+      "snapshot": "tmp/chanlun/compiled/core7bea4f3a-LEVELS-d4a337c7364833e524ac640f6139025a5b1ef79e9a5dfdeef0d13ba7a752fe4b.pine",
+      "sha256": "d4a337c7364833e524ac640f6139025a5b1ef79e9a5dfdeef0d13ba7a752fe4b",
+      "bytes": 163214,
+      "expected": "PASS: 9 R cases, 133 prefixes",
+      "observed": "PASS: 9 R cases, 133 prefixes",
+      "status": "pass",
+      "note": "rerun after the ChanLevels field rename"
+    },
+    {
+      "id": "CHAIN",
+      "snapshot": "tmp/chanlun/compiled/core7bea4f3a-CHAIN-b96032474704b8477e06679ba6d4845f4d7bf6d0ff2d87c366b69d82e0298d8b.pine",
+      "sha256": "b96032474704b8477e06679ba6d4845f4d7bf6d0ff2d87c366b69d82e0298d8b",
+      "bytes": 150070,
+      "expected": "PASS: 3 chain cases, 84 prefixes",
+      "observed": "PASS: 3 chain cases, 84 prefixes",
+      "status": "pass",
+      "note": "rerun after the ChanLevels field rename"
+    },
+    {
+      "id": "D4",
+      "snapshot": "tmp/chanlun/compiled/core7bea4f3a-D4-f77efbbcd867af420ab586a9f4db801218a3ff40a03392ec809ff6cdbec03706.pine",
+      "sha256": "f77efbbcd867af420ab586a9f4db801218a3ff40a03392ec809ff6cdbec03706",
+      "bytes": 122080,
+      "expected": "PASS: D4, 4 cases",
+      "observed": "PASS: D4, 4 cases (orange text, as written in the script)",
+      "status": "pass",
+      "note": "renderer changed (kernel movement types, per-layer movement drawing)"
+    },
+    {
+      "id": "I1",
+      "snapshot": "tmp/chanlun/compiled/core7bea4f3a-I1-0a828f8d1b42fd3257e87937cd60aea815deff682ddfa166b3a1218c5e4ce421.pine",
+      "sha256": "0a828f8d1b42fd3257e87937cd60aea815deff682ddfa166b3a1218c5e4ce421",
+      "bytes": 195331,
+      "expected": "PASS: I1, 1 cases; no compile-limit error",
+      "observed": "PASS: I1, 1 cases; compiled at 195331 bytes without CE10296 or a token-limit error",
+      "status": "pass",
+      "note": "largest validation script; the earlier limit failures were at smaller sizes with an older structure"
+    },
+    {
+      "id": "D5",
+      "snapshot": "tmp/chanlun/compiled/core7bea4f3a-D5-04e36a2ee0345455e9758694110ba1b047a0f8ce6ff0d104a527a83c47b6c04a.pine",
+      "sha256": "04e36a2ee0345455e9758694110ba1b047a0f8ce6ff0d104a527a83c47b6c04a",
+      "bytes": 126430,
+      "expected": "PASS: D5, 5 cases",
+      "observed": "PASS: D5, 5 cases (orange text, as written in the script); compiled and ran on BTCUSDT 4h, no error icon. Script is the former D4 renamed to D5 with a new movement-type label assertion case (read back through label.get_text): 盘整、上涨、下跌、含扩展证据 · 起点截断、待定 · 进行中、L2/L3 前缀、斜率不影响类型、旧 uptrend/downtrend、进行中走势完成后原地重绘。",
+      "status": "pass"
+    }
+  ],
+  "tests": {
+    "command": "node --test tools/chanlun/*.test.mjs (run in a scratch copy of the repository)",
+    "result": "97 passed, 0 failed; size caps and the CORE pin were updated to the new CORE; ChanLevels.limit was renamed levelLimit so it no longer matches a loader-digest regex"
+  },
+  "limits": [
+    "Of the 16 shared-core scripts run on 2026-11-09, I1 and D4 were re-run on this CORE and B5 is superseded by B6. The other 13 (F16, Z13, shared-tail, return-boundary, KF6, P5, P3A, P3B, S12, N5, T4, W8, G3) are bound to CORE 7846cec6 and were not re-run.",
+    "Level 2 and 3 center boxes, completed-movement type text and the per-layer display switches were not visually confirmed.",
+    "Screenshots were not archived into the repository."
+  ]
+}

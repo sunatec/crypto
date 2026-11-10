@@ -74,6 +74,54 @@ chan_dv_caption() =>
     chan_draw_structure(registry, stroke, 1, style, true)
     chan_dv_assert(chan_draw_index(registry, "stride/caption") >= 0, "D3/segment-selected")
     chan_dv_clear(registry)
+chan_dv_movement(string id, int level, int direction, string morphology, bool completed, bool truncated, int ordinal, int startTicks, int endTicks) =>
+    ChanMovement result = ChanMovement.new(id, level, direction, 1700000000000, 1700000060000, startTicks, endTicks, morphology, completed, completed ? 1700000060000 : na, completed ? "SYNTHETIC-DISPLAY-ONLY/close" : "", "SYNTHETIC-DISPLAY-ONLY", array.new<string>(), array.new<string>(), ordinal)
+    result.truncated := truncated
+    result
+chan_dv_caption_text(ChanDrawRegistry registry, string id) =>
+    int index = chan_draw_index(registry, id + "/caption")
+    string found = "<missing>"
+    if index >= 0
+        found := label.get_text(registry.records.get(index).labelId)
+    found
+chan_dv_movement_types() =>
+    ChanDrawRegistry registry = chan_draw_new(40)
+    ChanVisualStyle style = ChanVisualStyle.new()
+    chan_draw_movement(registry, chan_dv_movement("t1", 1, 1, "consolidation", true, false, 1, 1, 2), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t1") == "L1-M#1 · 盘整", "D5/movement-type-consolidation")
+    chan_draw_movement(registry, chan_dv_movement("t2", 2, 1, "trend", true, false, 2, 1, 2), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t2") == "L2-M#2 · 上涨", "D5/movement-type-up")
+    chan_draw_movement(registry, chan_dv_movement("t3", 3, -1, "trend", true, false, 3, 2, 1), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t3") == "L3-M#3 · 下跌", "D5/movement-type-down")
+    chan_draw_movement(registry, chan_dv_movement("t4", 1, -1, "expansion-evidence", true, true, 4, 2, 1), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t4") == "L1-M#4 · 含扩展证据 · 起点截断", "D5/movement-type-expansion-truncated")
+    chan_draw_movement(registry, chan_dv_movement("t5", 1, 1, "", false, false, 5, 1, 2), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t5") == "L1-M#5 · 待定 · 进行中", "D5/movement-type-open")
+    chan_draw_movement(registry, chan_dv_movement("t6", 2, -1, "", false, true, 6, 2, 1), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t6") == "L2-M#6 · 待定 · 进行中 · 起点截断", "D5/movement-type-open-truncated")
+    // The type comes from the kernel, never from the line slope: this "trend" is
+    // labelled up although its drawn end price is below its start price.
+    chan_draw_movement(registry, chan_dv_movement("t7", 1, 1, "trend", true, false, 7, 2, 1), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t7") == "L1-M#7 · 上涨", "D5/type-ignores-slope")
+    chan_draw_movement(registry, chan_dv_movement("t8", 1, -1, "uptrend", true, false, 8, 2, 1), 1, style, true)
+    chan_draw_movement(registry, chan_dv_movement("t9", 1, 1, "downtrend", true, false, 9, 1, 2), 1, style, true)
+    chan_dv_assert(chan_dv_caption_text(registry, "t8") == "L1-M#8 · 上涨" and chan_dv_caption_text(registry, "t9") == "L1-M#9 · 下跌", "D5/legacy-synthetic-types")
+    chan_dv_assert(chan_draw_count(registry, "line", "") == 9 and chan_draw_count(registry, "label", "") == 9, "D5/one-line-and-one-label-each")
+    chan_dv_clear(registry)
+    ChanMovementState layer = chan_movement_new_level("D5", 8, 1, true)
+    layer.active := true
+    layer.direction := 1
+    layer.startTime := 1700000000000
+    layer.startTicks := 1
+    layer.members.push(ChanComponent.new("m1", "s1", 1700000000000, 1700000060000, 1, 2, 1, 2, 1700000000000, 1700000060000, 1700000000000, 1700000060000, 1, 2, 1, 1700000060000, "SYNTHETIC-DISPLAY-ONLY", array.from("synthetic"), 1))
+    chan_draw_movement_layer(registry, layer, 1, style, true)
+    chan_dv_assert(chan_draw_count(registry, "line", "") == 1 and chan_dv_caption_text(registry, "D5/L1/R/1/1700000000000") == "L1-M#1 · 待定 · 进行中", "D5/open-movement-layer")
+    layer.history.push(chan_dv_movement("D5/L1/R/1/1700000000000", 1, 1, "consolidation", true, false, 1, 1, 2))
+    layer.count := 1
+    layer.active := false
+    chan_draw_movement_layer(registry, layer, 1, style, true)
+    chan_dv_assert(chan_draw_count(registry, "line", "") == 1 and chan_dv_caption_text(registry, "D5/L1/R/1/1700000000000") == "L1-M#1 · 盘整", "D5/completion-redraws-open-movement-in-place")
+    chan_dv_clear(registry)
 chan_dv_isolation() =>
     ChanState model = chan_new("D4")
     model := chan_step(model, ChanRaw.new(1700000000000, 1700000060000, 0, 5, 0, 5))
@@ -100,6 +148,7 @@ if barstate.isfirst
     chan_dv_degenerate()
     chan_dv_caption()
     chan_dv_isolation()
+    chan_dv_movement_types()
     passed := true
 if barstate.islast and bar_index >= 20
     ChanVisualStyle style = ChanVisualStyle.new()
@@ -125,12 +174,12 @@ if barstate.islast and bar_index >= 20
     degenerate.ordinal := 2
     chan_draw_center(gallery, degenerate, sceneTick, style, centerIds)
     chan_draw_sweep(gallery)
-table.cell(result, 0, 0, passed ? "PASS: D4, 4 cases" : "RUNNING", text_color=color.orange, text_size=fontSize)
+table.cell(result, 0, 0, passed ? "PASS: D5, 5 cases" : "RUNNING", text_color=color.orange, text_size=fontSize)
 table.cell(result, 0, 1, "合成展示 · 非行情识别 · 独立窗格数值无行情价格含义", text_color=color.white, bgcolor=color.rgb(22,27,34), text_size=fontSize)
 plot(na)
 `;
   const pine=['//@version=6','indicator("缠论显示控制验证（合成图例）",overlay=false,max_lines_count=500,max_boxes_count=500,max_labels_count=500,max_bars_back=30)',core,renderer,driver].join('\n')+'\n';
-  return {source:pine,sha256:sha(pine),coreHash:sha(core),rendererHash:sha(renderer),bytes:Buffer.byteLength(pine),cases:4,execution:'not run in Pine'};
+  return {source:pine,sha256:sha(pine),coreHash:sha(core),rendererHash:sha(renderer),bytes:Buffer.byteLength(pine),cases:5,execution:'not run in Pine'};
 }
 export function buildDisplayControlsValidation(){
   const source=fs.readFileSync(new URL('chanlun_original.pine',root),'utf8');

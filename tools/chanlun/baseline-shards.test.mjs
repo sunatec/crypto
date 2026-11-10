@@ -26,7 +26,7 @@ test('each shard embeds exact core and reports only its own coverage',()=>{
     assert.equal(group.sha256,sha(group.source));
     assert(group.source.includes(JSON.stringify(group.expectedDisplay)));
     for(const id of group.fixtureIds)assert(group.source.includes(id));
-    assert(group.bytes<180000);
+    assert(group.bytes<215000);
     assert(!group.source.includes('PASS: 18'));
     assert.equal(group.execution,'not run; compile and execute in TradingView');
   }

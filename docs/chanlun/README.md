@@ -13,7 +13,7 @@
 - [来源与更正索引](sources.md)
 - [看盘与研究使用说明](user-guide.md)
 - [六组固定行情基准采集](market-baselines.md)：六组均已校验冻结，共6048根；实际图表参数及回放／重载仍待核验。
-- [规则工作表](rules.md)：K/F/P/S及N价格区间已核对，N的工程映射由用户选择E-008；Z已核对，R完成于2026-11-09按结构确立路径冻结为工程约定R-002～R-006，2026-11-10已实现L1走势完成并通过平台验证（`PASS: 6 R cases, 79 prefixes`，见[验证记录](validation.md#l1走势完成复验2026-11-10)），L2/L3消费属5.5。
+- [规则工作表](rules.md)：K/F/P/S及N价格区间已核对，N的工程映射由用户选择E-008；Z已核对，R完成于2026-11-09按结构确立路径冻结为工程约定R-002～R-006，2026-11-10已实现L1走势完成并通过平台验证（`PASS: 6 R cases, 79 prefixes`，见[验证记录](validation.md#l1走势完成复验2026-11-10)），L1～L3递归（5.5）于2026-11-10实现并通过平台验证（`PASS: 9 R cases, 133 prefixes`、`PASS: 3 chain cases, 84 prefixes`，见[验证记录](validation.md#l1l3-层级链复验2026-11-10)）。
 - [特殊段与标准化映射](normalization-case.md)
 - [连续L1中枢与关系证据](center-engine.md)
 - [收盘提交与预览共享验证](runtime-validation.md)：新调度版T4及正式入口均已由用户报告通过，旧Z13及正式入口通过记录保留原版本。

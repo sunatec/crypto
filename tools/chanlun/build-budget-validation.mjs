@@ -113,9 +113,56 @@ chan_bv_statuses() =>
     engine.segments.limitReason := "pending-strokes"
     chan_bv_assert(chan_status_code(engine, window, true) == "S_PENDING_LIMIT", "B-STATUS/lowest-blocked-layer")
     true
+chan_bv_level_statuses() =>
+    ChanWindow window = chan_bv_window()
+    ChanRuntime two = chan_runtime_new_levels("B-LEVEL-2", 64, 8192, 64, 2)
+    two.morphology.direction := 1
+    chan_bv_assert(chan_status_code(two, window, true) == "RUNNING", "B-LEVEL/running")
+    two.movements.capped := true
+    chan_bv_assert(chan_status_code(two, window, true) == "RUNNING", "B-LEVEL/below-the-ceiling-is-not-capped")
+    two.levels.movements2.capped := true
+    chan_bv_assert(chan_status_code(two, window, true) == "LEVEL_CAP", "B-LEVEL/ceiling-2")
+    window.fixed := true
+    window.requestedStart := 0
+    window.firstAvailable := 1000
+    chan_bv_assert(chan_status_code(two, window, true) == "HISTORY_SHORT", "B-LEVEL/data-shortage-over-cap")
+    window.fixed := false
+    window.truncated := true
+    chan_bv_assert(chan_status_code(two, window, true) == "TRUNCATED", "B-LEVEL/truncation-over-cap")
+    window.truncated := false
+    two.levels.movements2.blocked := true
+    two.levels.movements2.blockKind := "budget"
+    chan_bv_assert(chan_status_code(two, window, true) == "R2_MEMBER_LIMIT", "B-LEVEL/stop-over-cap")
+    two.levels.movements2.blockKind := "rule"
+    chan_bv_assert(chan_status_code(two, window, true) == "R2_RULE_ERROR", "B-LEVEL/rule-error")
+    two.levels.centers2.blocked := true
+    chan_bv_assert(chan_status_code(two, window, true) == "Z2_SOURCE_LIMIT", "B-LEVEL/lower-layer-first")
+    two.movements.blocked := true
+    two.movements.blockKind := "budget"
+    chan_bv_assert(chan_status_code(two, window, true) == "R1_MEMBER_LIMIT", "B-LEVEL/L1-before-L2")
+    two.centers.blocked := true
+    chan_bv_assert(chan_status_code(two, window, true) == "Z_SOURCE_LIMIT", "B-LEVEL/Z1-before-R1")
+    ChanRuntime one = chan_runtime_new_levels("B-LEVEL-1", 64, 8192, 64, 1)
+    one.morphology.direction := 1
+    one.movements.capped := true
+    chan_bv_assert(chan_status_code(one, window, true) == "LEVEL_CAP", "B-LEVEL/ceiling-1")
+    ChanRuntime three = chan_runtime_new_levels("B-LEVEL-3", 64, 8192, 64, 3)
+    three.morphology.direction := 1
+    three.levels.movements2.capped := true
+    chan_bv_assert(chan_status_code(three, window, true) == "RUNNING", "B-LEVEL/L2-cap-is-not-the-ceiling-3")
+    three.levels.movements3.capped := true
+    chan_bv_assert(chan_status_code(three, window, true) == "LEVEL_CAP", "B-LEVEL/ceiling-3")
+    three.levels.centers3.blocked := true
+    chan_bv_assert(chan_status_code(three, window, true) == "Z3_SOURCE_LIMIT", "B-LEVEL/Z3")
+    three.levels.centers3.blocked := false
+    three.levels.movements3.blocked := true
+    three.levels.movements3.blockKind := "budget"
+    chan_bv_assert(chan_status_code(three, window, true) == "R3_MEMBER_LIMIT", "B-LEVEL/R3")
+    chan_bv_assert(chan_status_text("LEVEL_CAP") == "已达层数上限：更高层未计算" and chan_status_text("R1_MEMBER_LIMIT") != chan_status_text("R1_RULE_ERROR"), "B-LEVEL/text")
+    true
 var int phase = 0
 var table result = table.new(position.top_right, 1, 2)
-if barstate.isconfirmed and phase < 5
+if barstate.isconfirmed and phase < 6
     if phase == 0
         chan_bv_s_budget(true)
     else if phase == 1
@@ -124,15 +171,17 @@ if barstate.isconfirmed and phase < 5
         chan_bv_z_budget()
     else if phase == 3
         chan_bv_unsupported()
-    else
+    else if phase == 4
         chan_bv_statuses()
+    else
+        chan_bv_level_statuses()
     phase += 1
-table.cell(result, 0, 0, phase == 5 ? "PASS: B5, 5 cases" : "RUNNING", text_color = phase == 5 ? color.green : color.orange)
-table.cell(result, 0, 1, "合成预算与状态接口 · 不验证R或上层上限")
+table.cell(result, 0, 0, phase == 6 ? "PASS: B6, 6 cases" : "RUNNING", text_color = phase == 6 ? color.green : color.orange)
+table.cell(result, 0, 1, "合成预算与状态接口 · 含走势层受限与层数上限提示")
 plot(na)
 `;
   const pine=['//@version=6','indicator("缠论资源停止与状态共享验证", overlay=false)',core,...loaders,harness].join('\n')+'\n';
-  return {source:pine,sha256:sha(pine),coreHash:sha(core),bytes:Buffer.byteLength(pine),cases:5,fixtureHashes:[first,plateau,own].map(f=>({id:f.id,sha256:sha(JSON.stringify(f))})),execution:'not run in Pine'};
+  return {source:pine,sha256:sha(pine),coreHash:sha(core),bytes:Buffer.byteLength(pine),cases:6,fixtureHashes:[first,plateau,own].map(f=>({id:f.id,sha256:sha(JSON.stringify(f))})),execution:'not run in Pine'};
 }
 export function buildBudgetValidation(){
   const source=fs.readFileSync(new URL('chanlun_original.pine',root),'utf8');

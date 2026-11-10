@@ -34,7 +34,7 @@ test('center driver uses verbatim production core and only bounded prefix replay
   for(const check of ['fixed-core','Z-statistics','formation-time','source-order','atomic-consumption','unique-formation','confirmed-event-immutable','prefix-reload','duplicate-state','copy-isolation','held-input','pending-ownership','closure-proof','closed-event-immutable','archive-order','relation-evidence'])assert(result.source.includes(check));
   assert(result.source.includes('for i = 0 to prefix\n        replay := chan_center_step'));
   assert(result.source.includes('PASS: 13 Z cases, 91 prefixes'));
-  assert(result.bytes<130000);assert(!/\(\)\.\w+\s*(?:\+=|:=|-=)/.test(result.source));
+  assert(result.bytes<160000);assert(!/\(\)\.\w+\s*(?:\+=|:=|-=)/.test(result.source));
   assert(!/ChanComponent input\s*=/.test(result.source));
 });
 
