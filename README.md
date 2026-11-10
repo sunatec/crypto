@@ -12,7 +12,7 @@
 
 [安装与复核](docs/chanlun/installation.md) · [使用说明](docs/chanlun/user-guide.md) · [验收记录](docs/chanlun/validation.md)
 
-历史原型 [ChanLun](chanlun_czsc.pine) 和 [ChanLun-Strict](chanlun_czsc_strict.pine) 目前位于仓库根目录。完整验收通过后按[迁移与恢复说明](docs/chanlun/README.md#历史原型的迁移与恢复)归档。
+历史原型 ChanLun 和 ChanLun-Strict 已于 2026-11-10 原样归档到 [archive/chanlun/](archive/chanlun/README.md)，仅供对照；恢复方法与哈希见[历史原型的迁移与恢复](docs/chanlun/README.md#历史原型的迁移与恢复)。
 
 ## 快速使用
 

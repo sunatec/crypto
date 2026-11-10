@@ -1,9 +1,36 @@
 {
-  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\pressure-validation.pine",
-  "sha256": "25291da4728d452d135071bc08db75a9ff3adc0fd89183346316942702e600f7",
-  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
-  "productionSha256": "7727651b86df1f1e57ee6b6f378c6faa7fa255e9695addfc947fc67975f68955",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
+  "productionSha256": "8d3b7e4ec761e49c91bbacad93a4e826f96da835d047710f58578eaa4bba0975",
   "samples": 5000,
-  "scope": "K/F/P/S, L0 and L1 centers",
-  "execution": "awaiting TradingView run"
+  "scope": "K/F/P/S, L0, L1 centers, L1-L3 movements and L2/L3 centers",
+  "execution": "awaiting TradingView run",
+  "variants": {
+    "-default": {
+      "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation.pine",
+      "sha256": "d537d0beae53eba1332368fd0a733a7306b4b7d207626e82ce1dbca136b7a21b",
+      "bytes": 145795
+    },
+    "-fixed": {
+      "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed.pine",
+      "sha256": "c7788bfe9835b00623e27b1212d2de2a402ed962a0a451d4f6bafac17fac312f",
+      "bytes": 145794
+    },
+    "-fixed-research": {
+      "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed-research.pine",
+      "sha256": "c83016e13ae69d87aba9af0660efd670cf2874173e8c355d9b04b9ebf5d2ae14",
+      "bytes": 145790
+    },
+    "-fixed-level1": {
+      "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed-level1.pine",
+      "sha256": "ddcf6246b6b57e20e56a9a0ec000f3005f88f7808008f99ea9a1a9cd7060047b",
+      "bytes": 145794
+    },
+    "-fixed-pending16": {
+      "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed-pending16.pine",
+      "sha256": "853a5cd66284e6a9a60520ae8aa9ab3c989c083123240fef44e02b228ce3dfa6",
+      "bytes": 145794
+    }
+  },
+  "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation.pine",
+  "sha256": "d537d0beae53eba1332368fd0a733a7306b4b7d207626e82ce1dbca136b7a21b"
 }

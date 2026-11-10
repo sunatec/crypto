@@ -1,7 +1,7 @@
 {
-  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\test-normalization.pine",
-  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
-  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/test-normalization.pine",
+  "productionSha256": "8d3b7e4ec761e49c91bbacad93a4e826f96da835d047710f58578eaa4bba0975",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
   "fixtures": [
     {
       "id": "N-INTERNAL-LOW",
@@ -36,7 +36,7 @@
   ],
   "prefixes": 59,
   "requiredClosedBars": 59,
-  "bytes": 96915,
-  "sha256": "6a1e4690397efadaeed9f757a36b833ab8075ad482b0d9f38e4001483dd1cd78",
+  "bytes": 114202,
+  "sha256": "27dc37827e60ec27d7fe971383f10be658ef5ab3efb6dcb11fe0e8308fefc3d2",
   "execution": "not run; compile and execute in TradingView"
 }

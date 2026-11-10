@@ -29,6 +29,16 @@ type ChanPressureAudit
     int centers = 0
     string segmentStop = ""
     bool centerStopped = false
+    int l1 = 0
+    int l2 = 0
+    int l3 = 0
+    int z2 = 0
+    int z3 = 0
+    int peakMembers = 0
+    int peakUpperHistory = 0
+    int peakUpperSources = 0
+    int levelHash = 0
+    int capped = 0
 
 // Numeric checksums for comparing the same prefix across display settings.
 chan_pressure_mix(int checksum, int value) =>
@@ -55,6 +65,57 @@ chan_pressure_center(int checksum, int kind, ChanCenter center) =>
         result := chan_pressure_mix(result, center.ddTicks)
         result := chan_pressure_mix(result, center.ggTicks)
     result
+
+// Upper layers: counts, retained-array peaks and a checksum over the movement and
+// center events each layer emitted, so display settings can be compared by value.
+chan_pressure_movement(int checksum, int kind, ChanMovement movement) =>
+    int result = chan_pressure_mix(checksum, kind)
+    if not na(movement)
+        result := chan_pressure_mix(result, movement.level)
+        result := chan_pressure_mix(result, movement.direction)
+        result := chan_pressure_mix(result, movement.startTime)
+        result := chan_pressure_mix(result, movement.endTime)
+        result := chan_pressure_mix(result, movement.startTicks)
+        result := chan_pressure_mix(result, movement.endTicks)
+        result := chan_pressure_mix(result, movement.confirmedAt)
+        result := chan_pressure_mix(result, movement.ordinal)
+        result := chan_pressure_mix(result, movement.truncated ? 1 : 0)
+    result
+
+chan_pressure_levels(ChanPressureAudit audit, ChanRuntime state) =>
+    ChanLevels upper = state.levels
+    ChanMovementState m1 = state.movements
+    ChanMovementState m2 = upper.movements2
+    ChanMovementState m3 = upper.movements3
+    ChanCenterState c2 = upper.centers2
+    ChanCenterState c3 = upper.centers3
+    if m1.members.size() > m1.maxMembers or m2.members.size() > m2.maxMembers or m3.members.size() > m3.maxMembers
+        runtime.error("P5000: movement members exceed their budget")
+    if c2.history.size() > 15 or c3.history.size() > 15 or c2.seed.size() > 2 or c3.seed.size() > 2
+        runtime.error("P5000: upper center state exceeds its budget")
+    int sources2 = na(c2.center) ? 0 : c2.center.dependencies.size()
+    int sources3 = na(c3.center) ? 0 : c3.center.dependencies.size()
+    if sources2 > c2.maxSources or sources3 > c3.maxSources
+        runtime.error("P5000: upper center sources exceed their budget")
+    audit.l1 := m1.count
+    audit.l2 := m2.count
+    audit.l3 := m3.count
+    audit.z2 := c2.count
+    audit.z3 := c3.count
+    audit.capped := (m1.capped ? 1 : 0) + (m2.capped ? 1 : 0) + (m3.capped ? 1 : 0)
+    audit.peakMembers := math.max(audit.peakMembers, math.max(m1.members.size(), math.max(m2.members.size(), m3.members.size())))
+    audit.peakUpperHistory := math.max(audit.peakUpperHistory, math.max(c2.history.size(), c3.history.size()))
+    audit.peakUpperSources := math.max(audit.peakUpperSources, math.max(sources2, sources3))
+    int hash = audit.levelHash
+    hash := chan_pressure_movement(hash, 11, m1.event)
+    hash := chan_pressure_movement(hash, 12, m2.event)
+    hash := chan_pressure_movement(hash, 13, m3.event)
+    hash := chan_pressure_center(hash, 14, c2.event)
+    hash := chan_pressure_center(hash, 15, c2.closedEvent)
+    hash := chan_pressure_center(hash, 16, c3.event)
+    hash := chan_pressure_center(hash, 17, c3.closedEvent)
+    audit.levelHash := hash
+    true
 
 chan_pressure_record(ChanPressureAudit audit, ChanRaw raw, ChanRuntimeFrame frame) =>
     ChanRuntime state = frame.committed
@@ -108,13 +169,14 @@ chan_pressure_record(ChanPressureAudit audit, ChanRaw raw, ChanRuntimeFrame fram
         eventHash := chan_pressure_center(eventHash, 4, centers.previous)
         eventHash := chan_pressure_center(eventHash, 5, centers.center)
     audit.structures := eventHash
+    chan_pressure_levels(audit, state)
     true
 
 var ChanPressureAudit pressure = ChanPressureAudit.new()
 `;
 
 const panel = String.raw`
-var table pressurePanel = table.new(position.bottom_right, 1, 6, bgcolor=color.rgb(22, 27, 34))
+var table pressurePanel = table.new(position.bottom_right, 1, 10, bgcolor=color.rgb(22, 27, 34))
 if barstate.islast
     int visibleLines = array.size(line.all)
     int visibleBoxes = array.size(box.all)
@@ -131,6 +193,11 @@ if barstate.islast
     table.cell(pressurePanel, 0, 2, "OHLC " + str.tostring(pressure.ohlc) + " · 结构 " + str.tostring(pressure.structures) + " · CORE __CORE_TAG__", text_color=color.white)
     table.cell(pressurePanel, 0, 3, "F " + str.tostring(pressure.fractals) + " / P " + str.tostring(pressure.strokes) + " / S " + str.tostring(pressure.segments) + " / L0 " + str.tostring(pressure.components) + " / Z " + str.tostring(pressure.centers), text_color=color.white)
     table.cell(pressurePanel, 0, 4, "峰值 K/S待定/Z历史/Z来源 " + str.tostring(pressure.peakElements) + "/" + str.tostring(pressure.peakStrokes) + "/" + str.tostring(pressure.peakCenters) + "/" + str.tostring(pressure.peakSources) + stopText, text_color=color.white)
+    string levelStatus = chan_status_text(chan_status_code(engine, analysisWindow, supported))
+    table.cell(pressurePanel, 0, 6, "走势 L1/L2/L3 " + str.tostring(pressure.l1) + "/" + str.tostring(pressure.l2) + "/" + str.tostring(pressure.l3) + " · 上层中枢 Z2/Z3 " + str.tostring(pressure.z2) + "/" + str.tostring(pressure.z3) + " · 层数上限 " + str.tostring(levelLimit) + " · capped " + str.tostring(pressure.capped), text_color=color.white)
+    table.cell(pressurePanel, 0, 9, "层校验 " + str.tostring(pressure.levelHash), text_color=color.white)
+    table.cell(pressurePanel, 0, 7, "层峰值 走势成员/上层中枢历史/上层来源 " + str.tostring(pressure.peakMembers) + "/" + str.tostring(pressure.peakUpperHistory) + "/" + str.tostring(pressure.peakUpperSources), text_color=color.white)
+    table.cell(pressurePanel, 0, 8, "状态 " + levelStatus, text_color=color.white)
     table.cell(pressurePanel, 0, 5, "图形 线/框/标签 " + str.tostring(visibleLines) + "/" + str.tostring(visibleBoxes) + "/" + str.tostring(visibleLabels) + " · 标签上限 " + str.tostring(drawings.maxLabels), text_color=color.white)
 `;
 
@@ -146,12 +213,37 @@ pine += panel.replace('__CORE_TAG__', coreHash.slice(0, 8));
 if (production.includes('\r\n')) pine = pine.replaceAll('\n', '\r\n');
 assert.equal(extractCore(pine), extractCore(production));
 
-const output = new URL('tmp/chanlun/pressure-validation.pine', root);
-fs.mkdirSync(new URL('.', output), {recursive:true});
-fs.writeFileSync(output, pine);
-const manifest = {
-    output:fileURLToPath(output), sha256:sha(pine), coreHash, productionSha256:sha(production),
-    samples:5000, scope:'K/F/P/S, L0 and L1 centers', execution:'awaiting TradingView run'
+// The fixed-start variants pin the window to the default run's effective start
+// (2024-07-30 00:00 UTC on BTCUSDT 4h) so display and limit variants are compared
+// on the same first 5,000 bars even after a new bar opens.
+const fixedWindow = [
+    ['bool fixedStart = input.bool(false,', 'bool fixedStart = input.bool(true,'],
+    ['int requestedStart = input.time(1700000000000,', 'int requestedStart = input.time(1722297600000,']
+];
+const researchEdits = [
+    ['input.string("普通", "视图"', 'input.string("研究", "视图"'],
+    ['showFractals = input.bool(false,', 'showFractals = input.bool(true,'],
+    ['showFeatures = input.bool(false,', 'showFeatures = input.bool(true,'],
+    ['showNormalized = input.bool(false,', 'showNormalized = input.bool(true,'],
+    ['labelBudget = input.int(120,', 'labelBudget = input.int(12,']
+];
+const variants = {
+    '': [],
+    '-fixed': fixedWindow,
+    '-fixed-research': [...fixedWindow, ...researchEdits],
+    '-fixed-level1': [...fixedWindow, ['levelLimit = input.int(3,', 'levelLimit = input.int(1,']],
+    '-fixed-pending16': [...fixedWindow, ['segmentPendingLimit = input.int(64,', 'segmentPendingLimit = input.int(16,']]
 };
-fs.writeFileSync(new URL(output.href + '.json'), JSON.stringify(manifest, null, 2) + '\n');
+const manifest = {coreHash, productionSha256:sha(production), samples:5000, scope:'K/F/P/S, L0, L1 centers, L1-L3 movements and L2/L3 centers', execution:'awaiting TradingView run', variants:{}};
+for (const [suffix, edits] of Object.entries(variants)) {
+    let variant = pine;
+    for (const [from, to] of edits) variant = replaceOnce(variant, from, to);
+    assert.equal(extractCore(variant), extractCore(production));
+    const output = new URL('tmp/chanlun/pressure-validation' + suffix + '.pine', root);
+    fs.mkdirSync(new URL('.', output), {recursive:true});
+    fs.writeFileSync(output, variant);
+    manifest.variants[suffix || '-default'] = {output:fileURLToPath(output), sha256:sha(variant), bytes:Buffer.byteLength(variant)};
+    if (suffix === '') {manifest.output = fileURLToPath(output); manifest.sha256 = sha(variant);}
+}
+fs.writeFileSync(new URL('tmp/chanlun/pressure-validation.pine.json', root), JSON.stringify(manifest, null, 2) + '\n');
 console.log(JSON.stringify(manifest, null, 2));

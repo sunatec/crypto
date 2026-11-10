@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "productionSha256": "363e1e50618a6770efa7540aef6b4fd65451cb1c5dc5865d448bfff83c368dd0",
-  "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+  "productionSha256": "8d3b7e4ec761e49c91bbacad93a4e826f96da835d047710f58578eaa4bba0975",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
   "smoke": "smoke.pine",
   "suite": "all-cases.pine",
   "status": "awaiting-cloud-compilation",
   "files": [
     {
       "file": "all-cases.pine",
-      "sha256": "76ff67445538ee3fb5c55ea38d77bca4d2c5ad762c14182908eba46680fdb6a7",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "sha256": "368ca55922f5f87c51114ea30f96037616d76fe2a08ef1c2c3d67df37a4b572c",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-CONTINUE",
@@ -87,15 +87,15 @@
       "prefixes": 110,
       "requiredClosedBars": 111,
       "resourceChecks": true,
-      "bytes": 89295,
-      "lines": 1244,
-      "segmentCallSites": 8,
+      "bytes": 127490,
+      "lines": 1983,
+      "segmentCallSites": 10,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-first-continue.pine",
-      "sha256": "b948987173608edc2bf1674a025e11fb99b32865ba3e185c7ab3685474e75f59",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-first-continue.pine",
+      "sha256": "4d40e6a41aa914770fe945f65a4db78cd554a7ab1b6611f6542c45d90a4f4777",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-CONTINUE",
@@ -107,15 +107,15 @@
       "prefixes": 6,
       "requiredClosedBars": 6,
       "resourceChecks": false,
-      "bytes": 64390,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 102585,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-first-end.pine",
-      "sha256": "ff5d2ea275b0351297d907707625336f74a8e2ad243eab62239a0bca638f6762",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-first-end.pine",
+      "sha256": "f2055d745f68a1f9d70730da427e4369341ddc92c07b5942112ba56857703013",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-END",
@@ -127,15 +127,15 @@
       "prefixes": 6,
       "requiredClosedBars": 6,
       "resourceChecks": false,
-      "bytes": 64560,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 102755,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-first-equal-third.pine",
-      "sha256": "718e7a860c81fe7bd314fa93f4a3fc6694a437ef4cf20683bb45d27bf15c8832",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-first-equal-third.pine",
+      "sha256": "101664e4b543769492e7c7beaa1a530bd47c30edf477d43917269830c54e1e57",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-EQUAL-THIRD",
@@ -147,15 +147,15 @@
       "prefixes": 6,
       "requiredClosedBars": 6,
       "resourceChecks": false,
-      "bytes": 64394,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 102589,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-first-locked-prefix.pine",
-      "sha256": "dcf5ee954a776992200eaa31bc26ced31acf4065966c1ec707202e13c323d296",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-first-locked-prefix.pine",
+      "sha256": "91f4c8349770a69b8bc0d47744bc987af5f042d0591f40cf932d970e80931c98",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-LOCKED-PREFIX",
@@ -167,15 +167,15 @@
       "prefixes": 12,
       "requiredClosedBars": 12,
       "resourceChecks": false,
-      "bytes": 65984,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 104179,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-first-wait-end.pine",
-      "sha256": "197765f6d45fd8e55d62a2b685acdeff0a4cab85b515c3b579b8b135d75c595c",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-first-wait-end.pine",
+      "sha256": "730aeaf1e88358abedac1c18613bb2415ce88d4b9760f9ba2c79dc84df77e9cf",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-WAIT-END",
@@ -187,15 +187,15 @@
       "prefixes": 8,
       "requiredClosedBars": 8,
       "resourceChecks": false,
-      "bytes": 64904,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 103099,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-first-wait-inclusion.pine",
-      "sha256": "1a776af6f95cc50be09cd9c995ffec4c07c454dc2714d1ab73a4fd8b15b08dce",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-first-wait-inclusion.pine",
+      "sha256": "4382df063e4ce4da738ddc966b1bb7b0578033af399eff9aec5f5952f620a54c",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-WAIT-INCLUSION",
@@ -207,15 +207,15 @@
       "prefixes": 10,
       "requiredClosedBars": 10,
       "resourceChecks": false,
-      "bytes": 65266,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 103461,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-special-internal-extreme.pine",
-      "sha256": "4fad1a24deddc8d7b5ab8acea71608c7eb2cbeb2348d68d132cac2c2cff4c6e7",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-special-internal-extreme.pine",
+      "sha256": "99136b137838c3dbebb8b7cc55880ee971f298231b59762a625071be9f1651cc",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-SPECIAL-INTERNAL-EXTREME",
@@ -227,15 +227,15 @@
       "prefixes": 16,
       "requiredClosedBars": 16,
       "resourceChecks": false,
-      "bytes": 66686,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 104881,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-start-after-invalid.pine",
-      "sha256": "7a46a15dc83a9f356341639d621df81c04419d5c3f625f5811f3a8ec948c3135",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-start-after-invalid.pine",
+      "sha256": "009a29a1f20fd0c997961d6fdaec5eeff0407ae0a9990786431078a620a4aaa2",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-START-AFTER-INVALID",
@@ -247,15 +247,15 @@
       "prefixes": 7,
       "requiredClosedBars": 7,
       "resourceChecks": false,
-      "bytes": 64751,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 102946,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s-wait-direction-inside.pine",
-      "sha256": "8d262c6dc71def74f48c45ae13cf68f6226151cf9107dcb10fefbaff046ee8e9",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s-wait-direction-inside.pine",
+      "sha256": "93ae688a8546b70ef4645ee879d5b83afe8ba48c1928d3470bff62319fbfc654",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-WAIT-DIRECTION-INSIDE",
@@ -267,15 +267,15 @@
       "prefixes": 12,
       "requiredClosedBars": 12,
       "resourceChecks": false,
-      "bytes": 65360,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 103555,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s81-equal.pine",
-      "sha256": "7a5f0cf4d4f43bdc3eef3073017af30cd7934e319cc50993f7d90a004944d48d",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s81-equal.pine",
+      "sha256": "8165a2c45eabc22c4c52f48297950e6f660912eed174e3a6a19a21aa52286fd9",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S81-EQUAL",
@@ -287,15 +287,15 @@
       "prefixes": 9,
       "requiredClosedBars": 9,
       "resourceChecks": false,
-      "bytes": 64852,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 103047,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s81-higher.pine",
-      "sha256": "1195c41be5f67fa25ae8f5b597f7252eae678a5b48f5682785ad704664fc92bf",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s81-higher.pine",
+      "sha256": "323770cd4b37fab6dff6ad39040a29a4b472e52add7f0b06ae7f1a41f2c416b9",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S81-HIGHER",
@@ -307,15 +307,15 @@
       "prefixes": 9,
       "requiredClosedBars": 9,
       "resourceChecks": false,
-      "bytes": 64854,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 103049,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
-      "file": "cases\\s81-lower.pine",
-      "sha256": "d01b97f1d28b839713060a0e7db2fa9958cfa9db50dc6491b9557c341bd29d2e",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "file": "cases/s81-lower.pine",
+      "sha256": "ed705ca469c27e5a7a334e039b60bb311db7544a21272df02c3a5180cdfaf7bd",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S81-LOWER",
@@ -327,15 +327,15 @@
       "prefixes": 9,
       "requiredClosedBars": 9,
       "resourceChecks": false,
-      "bytes": 65254,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 103449,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     },
     {
       "file": "smoke.pine",
-      "sha256": "1a776af6f95cc50be09cd9c995ffec4c07c454dc2714d1ab73a4fd8b15b08dce",
-      "coreHash": "39aa90ef10d2ae877fea59a27d1d733ac4a74c9bc18427eaada3d8d29f6795d5",
+      "sha256": "4382df063e4ce4da738ddc966b1bb7b0578033af399eff9aec5f5952f620a54c",
+      "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
       "fixtures": [
         {
           "id": "S-FIRST-WAIT-INCLUSION",
@@ -347,9 +347,9 @@
       "prefixes": 10,
       "requiredClosedBars": 10,
       "resourceChecks": false,
-      "bytes": 65266,
-      "lines": 1136,
-      "segmentCallSites": 4,
+      "bytes": 103461,
+      "lines": 1875,
+      "segmentCallSites": 6,
       "execution": "not run; compile and execute in TradingView"
     }
   ]

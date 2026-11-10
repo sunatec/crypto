@@ -1,6 +1,6 @@
 //@version=6
 indicator("缠论 S 精简共享验证", overlay = false)
-// Extracted core SHA-256: f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f
+// Extracted core SHA-256: 7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0
 // One closed chart bar advances one fixture prefix; chart OHLC is not input.
 // Fixture S-WAIT-DIRECTION-INSIDE SHA-256: e3770e9fe73f4d4fea8c654eecc526e7c064c70e5b940d36b1d141adae35bbee
 // K/F/P/S/N and continuous L1 centers: chanlun-research-0.1.
@@ -124,6 +124,13 @@ type ChanMovement
     array<string> childIds
     array<string> centerIds
     int ordinal = 0
+    int lowTicks = na
+    int highTicks = na
+    int lowTime = na
+    int highTime = na
+    int occurredAt = na
+    bool truncated = false
+    ChanComponent upper
 
 type ChanConfirmation
     string id
@@ -1001,6 +1008,7 @@ type ChanCenterState
     int direction = 0
     int waves = 0
     int maxSources = 64
+    int level = 1
     bool waitingRelation = false
     bool blocked = false
 
@@ -1019,15 +1027,21 @@ chan_center_copy(ChanCenter source) =>
         result.dependencies := source.dependencies.copy()
     result
 
-chan_center_new(string contextId, int maxSources) =>
+chan_center_new_level(string contextId, int maxSources, int level) =>
     if maxSources < 3
         runtime.error("中枢来源预算至少为3")
+    if level < 1 or level > 3
+        runtime.error("中枢层级只支持1到3")
     ChanCenterState result = ChanCenterState.new()
     result.contextId := contextId
     result.maxSources := maxSources
+    result.level := level
     result.seed := array.new<ChanComponent>()
     result.history := array.new<ChanCenter>()
     result
+
+chan_center_new(string contextId, int maxSources) =>
+    chan_center_new_level(contextId, maxSources, 1)
 
 chan_center_clone(ChanCenterState source) =>
     ChanCenterState result = source.copy()
@@ -1057,7 +1071,7 @@ chan_center_record_signature(ChanCenter source) =>
     result
 
 chan_center_signature(ChanCenterState source) =>
-    string result = source.contextId + "/" + str.tostring(source.inputCount) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.waves) + "/" + str.tostring(source.maxSources) + "/" + str.tostring(source.waitingRelation) + "/" + str.tostring(source.blocked)
+    string result = source.contextId + "/" + str.tostring(source.inputCount) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.waves) + "/" + str.tostring(source.maxSources) + "/L" + str.tostring(source.level) + "/" + str.tostring(source.waitingRelation) + "/" + str.tostring(source.blocked)
     for member in source.seed
         result += "/seed/" + chan_component_signature(member)
     result += "/chain/" + str.tostring(source.count) + "/" + source.relationKind + "/" + str.tostring(source.relationAt) + "/" + chan_component_signature(source.pendingLeave) + "/" + chan_center_record_signature(source.previous) + "/" + chan_center_record_signature(source.closedEvent)
@@ -1126,8 +1140,10 @@ chan_center_step(ChanCenterState source, ChanComponent component) =>
         if component.ordinal != source.inputCount + 1
             runtime.error("中枢L0序号不连续")
         if not na(source.lastInput)
-            if component.realStartTime != source.lastInput.realEndTime or component.realStartTicks != source.lastInput.realEndTicks or component.direction != -source.lastInput.direction or component.confirmedAt < source.lastInput.confirmedAt
-                runtime.error("中枢L0输入不连续")
+            // L0 parts share real endpoints. A submitted upper part keeps its own range,
+            // so above L1 only the time seam, alternation and clock are required.
+            if component.realStartTime != source.lastInput.realEndTime or (source.level == 1 and component.realStartTicks != source.lastInput.realEndTicks) or component.direction != -source.lastInput.direction or component.confirmedAt < source.lastInput.confirmedAt
+                runtime.error("中枢输入不连续")
         if na(state.center) or state.center.lifecycle == "closed"
             state.seed.push(chan_component_copy(component))
             if state.seed.size() == 3
@@ -1140,7 +1156,7 @@ chan_center_step(ChanCenterState source, ChanComponent component) =>
                     state.direction := first.direction
                     state.waves := 2
                     state.count += 1
-                    state.center := ChanCenter.new(state.contextId + "/L1/Z/" + str.tostring(state.count) + "/" + str.tostring(first.realStartTime), 1, coreLow, coreHigh, math.max(first.actualHighTicks, last.actualHighTicks), math.min(first.actualHighTicks, last.actualHighTicks), math.max(first.actualLowTicks, last.actualLowTicks), math.min(first.actualLowTicks, last.actualLowTicks), first.realStartTime, component.confirmedAt, component.realEndTime, component.confirmedAt, coreLow == coreHigh, "extending", "Z-001/Z-002/Z-003/E-010", array.from(first.id, middle.id, last.id), state.count)
+                    state.center := ChanCenter.new(state.contextId + "/L" + str.tostring(state.level) + "/Z/" + str.tostring(state.count) + "/" + str.tostring(first.realStartTime), state.level, coreLow, coreHigh, math.max(first.actualHighTicks, last.actualHighTicks), math.min(first.actualHighTicks, last.actualHighTicks), math.max(first.actualLowTicks, last.actualLowTicks), math.min(first.actualLowTicks, last.actualLowTicks), first.realStartTime, component.confirmedAt, component.realEndTime, component.confirmedAt, coreLow == coreHigh, "extending", "Z-001/Z-002/Z-003/E-010", array.from(first.id, middle.id, last.id), state.count)
                     state.center.zWaves := 2
                     if component.realEndTicks > coreHigh or component.realEndTicks < coreLow
                         state.pendingLeave := chan_component_copy(component)
@@ -1174,6 +1190,310 @@ chan_center_step(ChanCenterState source, ChanComponent component) =>
             state.lastInput := chan_component_copy(component)
             state.inputCount += 1
     state
+// L1 movement completion on the structure-confirmation path (R-002..R-006).
+// It reads the same confirmed L0 stream as the center chain plus that chain's
+// formation and closure events. Window end, formation, extension, pending departure
+// and touching returns never complete a movement.
+type ChanMovementState
+    string contextId
+    int level = 1
+    bool submit = true
+    bool capped = false
+    int maxMembers = 128
+    int inputCount = 0
+    bool active = false
+    int direction = 0
+    bool truncated = false
+    int startTime = na
+    int startTicks = na
+    array<ChanComponent> members
+    array<ChanCenter> centers
+    ChanMovement event
+    array<ChanMovement> history
+    int count = 0
+    int submitted = 0
+    bool blocked = false
+    string blockKind = ""
+    ChanComponent heldInput
+
+// submit is false on the top configured layer: a completed movement there is
+// kept and marked capped, but nothing is sent upward.
+chan_movement_new_level(string contextId, int maxMembers, int level, bool submit) =>
+    if maxMembers < 4
+        runtime.error("走势成员预算至少为4")
+    if level < 1 or level > 3
+        runtime.error("走势层级只支持1到3")
+    ChanMovementState result = ChanMovementState.new()
+    result.contextId := contextId
+    result.level := level
+    result.submit := submit
+    result.maxMembers := maxMembers
+    result.members := array.new<ChanComponent>()
+    result.centers := array.new<ChanCenter>()
+    result.history := array.new<ChanMovement>()
+    result
+
+chan_movement_new(string contextId, int maxMembers) =>
+    chan_movement_new_level(contextId, maxMembers, 1, true)
+
+chan_movement_copy(ChanMovement source) =>
+    ChanMovement result = na
+    if not na(source)
+        result := source.copy()
+        result.childIds := source.childIds.copy()
+        result.centerIds := source.centerIds.copy()
+        result.upper := chan_component_copy(source.upper)
+    result
+
+chan_movement_clone(ChanMovementState source) =>
+    ChanMovementState result = source.copy()
+    result.members := array.new<ChanComponent>()
+    for member in source.members
+        result.members.push(chan_component_copy(member))
+    result.centers := array.new<ChanCenter>()
+    for center in source.centers
+        result.centers.push(chan_center_copy(center))
+    result.event := chan_movement_copy(source.event)
+    result.history := array.new<ChanMovement>()
+    for item in source.history
+        result.history.push(chan_movement_copy(item))
+    result.heldInput := chan_component_copy(source.heldInput)
+    result
+
+chan_movement_record_signature(ChanMovement source) =>
+    string result = "na"
+    if not na(source)
+        result := source.id + "/" + str.tostring(source.level) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.endTime) + "/" + str.tostring(source.startTicks) + "/" + str.tostring(source.endTicks) + "/" + source.morphology + "/" + str.tostring(source.completed) + "/" + str.tostring(source.confirmedAt) + "/" + source.completionProof + "/" + source.ruleId + "/" + str.tostring(source.ordinal) + "/" + str.tostring(source.lowTicks) + "/" + str.tostring(source.highTicks) + "/" + str.tostring(source.lowTime) + "/" + str.tostring(source.highTime) + "/" + str.tostring(source.occurredAt) + "/" + str.tostring(source.truncated) + "/upper/" + chan_component_signature(source.upper)
+        for id in source.childIds
+            result += "/child/" + id
+        for id in source.centerIds
+            result += "/center/" + id
+    result
+
+chan_movement_signature(ChanMovementState source) =>
+    string result = source.contextId + "/L" + str.tostring(source.level) + "/" + str.tostring(source.submit) + "/" + str.tostring(source.capped) + "/" + str.tostring(source.maxMembers) + "/" + str.tostring(source.inputCount) + "/" + str.tostring(source.active) + "/" + str.tostring(source.direction) + "/" + str.tostring(source.truncated) + "/" + str.tostring(source.startTime) + "/" + str.tostring(source.startTicks) + "/" + str.tostring(source.count) + "/" + str.tostring(source.submitted) + "/" + str.tostring(source.blocked) + "/" + source.blockKind
+    for member in source.members
+        result += "/member/" + chan_component_signature(member)
+    for center in source.centers
+        result += "/center/" + chan_center_record_signature(center)
+    for item in source.history
+        result += "/history/" + chan_movement_record_signature(item)
+    result + "/event/" + chan_movement_record_signature(source.event) + "/held/" + chan_component_signature(source.heldInput)
+
+// A stopped layer keeps its last committed state and the unconsumed input. The
+// kind separates the member budget from a violated R guard.
+chan_movement_block(ChanMovementState source, ChanComponent component, string kind) =>
+    ChanMovementState result = chan_movement_clone(source)
+    result.event := na
+    result.blocked := true
+    result.blockKind := kind
+    result.heldInput := chan_component_copy(component)
+    result
+
+// Reverse closure of the newest center: fixes endpoint, members and type once.
+chan_movement_complete(ChanMovementState source, ChanMovementState working, ChanComponent returning, ChanCenter closed) =>
+    ChanMovementState state = working
+    int d = state.direction
+    bool ok = state.centers.size() > 0
+    ChanComponent middle = na
+    ChanComponent departure = na
+    if ok
+        ChanCenter firstCenter = state.centers.first()
+        for member in state.members
+            if member.id == firstCenter.dependencies.get(1)
+                middle := member
+            if member.id == closed.leaveId
+                departure := member
+        ok := not na(middle) and not na(departure)
+    int endIndex = -1
+    if ok
+        for i = 0 to state.members.size() - 1
+            ChanComponent member = state.members.get(i)
+            if member.direction == d and member.realEndTime >= middle.realEndTime and member.realEndTime <= departure.realStartTime
+                if endIndex < 0 or d * member.analysisEndTicks > d * state.members.get(endIndex).analysisEndTicks
+                    endIndex := i
+        ok := endIndex >= 0 and endIndex < state.members.size() - 1
+    ChanComponent endMember = na
+    if ok
+        endMember := state.members.get(endIndex)
+        if not state.truncated
+            ok := d * (endMember.analysisEndTicks - state.startTicks) > 0
+    int lowTicks = na
+    int highTicks = na
+    int lowTime = na
+    int highTime = na
+    array<string> childIds = array.new<string>()
+    if ok
+        for i = 0 to endIndex
+            ChanComponent member = state.members.get(i)
+            childIds.push(member.id)
+            if na(lowTicks) or member.actualLowTicks < lowTicks
+                lowTicks := member.actualLowTicks
+                lowTime := member.actualLowTime
+            if na(highTicks) or member.actualHighTicks > highTicks
+                highTicks := member.actualHighTicks
+                highTime := member.actualHighTime
+    string morphology = "consolidation"
+    array<string> centerIds = array.new<string>()
+    for center in state.centers
+        centerIds.push(center.id)
+    if state.centers.size() > 1
+        morphology := "trend"
+        for i = 1 to state.centers.size() - 1
+            ChanCenter older = state.centers.get(i - 1)
+            ChanCenter newer = state.centers.get(i)
+            bool separated = d == 1 ? newer.ddTicks > older.ggTicks : newer.ggTicks < older.ddTicks
+            if not separated
+                morphology := "expansion-evidence"
+    ChanMovement movement = na
+    if ok
+        string movementId = state.contextId + "/L" + str.tostring(state.level) + "/R/" + str.tostring(source.count + 1) + "/" + str.tostring(state.startTime)
+        movement := ChanMovement.new(movementId, state.level, d, state.startTime, endMember.realEndTime, state.startTicks, endMember.analysisEndTicks, morphology, true, returning.confirmedAt, closed.id + "/close/" + returning.id, "R-002/R-003/R-004/R-006", childIds, centerIds, source.count + 1)
+        movement.lowTicks := lowTicks
+        movement.highTicks := highTicks
+        movement.lowTime := lowTime
+        movement.highTime := highTime
+        movement.occurredAt := endMember.realEndTime
+        movement.truncated := state.truncated
+        if not state.truncated and state.submit
+            array<string> upperDependencies = childIds.copy()
+            upperDependencies.push(closed.id + "/close/" + returning.id)
+            ChanComponent upper = ChanComponent.new(movementId, movementId, state.startTime, endMember.realEndTime, state.startTicks, endMember.analysisEndTicks, lowTicks, highTicks, lowTime, highTime, state.startTime, endMember.realEndTime, d == 1 ? lowTicks : highTicks, d == 1 ? highTicks : lowTicks, d, returning.confirmedAt, "R-005", upperDependencies, source.submitted + 1)
+            ok := chan_center_valid(upper)
+            if ok
+                movement.upper := upper
+    ChanMovementState result = na
+    if ok
+        array<ChanComponent> carried = array.new<ChanComponent>()
+        for i = endIndex + 1 to state.members.size() - 1
+            carried.push(state.members.get(i))
+        state.members := carried
+        state.direction := -d
+        state.truncated := false
+        state.startTime := carried.first().realStartTime
+        state.startTicks := carried.first().analysisStartTicks
+        state.centers := array.new<ChanCenter>()
+        state.count := source.count + 1
+        if not na(movement.upper)
+            state.submitted := source.submitted + 1
+        // state.truncated already describes the next movement here; the completed
+        // one is on the record.
+        if not movement.truncated and not state.submit
+            state.capped := true
+        state.event := movement
+        state.history.push(chan_movement_copy(movement))
+        if state.history.size() > 15
+            state.history.shift()
+        result := state
+    else
+        result := chan_movement_block(source, returning, "rule")
+    result
+
+chan_movement_step(ChanMovementState source, ChanComponent component, ChanCenterState centers) =>
+    ChanMovementState state = chan_movement_clone(source)
+    state.event := na
+    if not source.blocked and component.ordinal > source.inputCount and centers.inputCount >= component.ordinal
+        if component.ordinal != source.inputCount + 1
+            runtime.error("走势L0序号不连续")
+        if state.members.size() >= state.maxMembers
+            state := chan_movement_block(source, component, "budget")
+        else
+            if source.inputCount == 0
+                state.startTime := component.realStartTime
+                state.startTicks := component.analysisStartTicks
+            state.members.push(chan_component_copy(component))
+            if not na(centers.event) and state.active and centers.event.startTime >= state.startTime
+                state.centers.push(chan_center_copy(centers.event))
+            if not na(centers.closedEvent)
+                ChanCenter closed = centers.closedEvent
+                int closeDirection = component.actualLowTicks > closed.coreHighTicks ? 1 : -1
+                if not state.active
+                    state.active := true
+                    state.direction := closeDirection
+                    state.truncated := true
+                    state.centers := array.from(chan_center_copy(closed))
+                else
+                    int lastIndex = state.centers.size() - 1
+                    bool tracked = lastIndex >= 0 and state.centers.get(lastIndex).id == closed.id
+                    if tracked
+                        state.centers.set(lastIndex, chan_center_copy(closed))
+                    if closeDirection != state.direction
+                        if tracked
+                            state := chan_movement_complete(source, state, component, closed)
+                        else
+                            state := chan_movement_block(source, component, "rule")
+            if not state.blocked
+                state.inputCount := source.inputCount + 1
+    state
+// Layers above L1 consume only the parts submitted by the layer below, in the
+// order L1 -> Z2 -> R2 -> Z3 -> R3. A layer never reads or rewrites a lower one:
+// an extension or expansion above only adds to its own state, and the layer
+// below keeps its confirmed history. limit is the configured layer ceiling.
+type ChanLevels
+    int levelLimit = 3
+    ChanCenterState centers2
+    ChanMovementState movements2
+    ChanCenterState centers3
+    ChanMovementState movements3
+
+chan_levels_new(string contextId, int centerSources, int limit) =>
+    if limit < 1 or limit > 3
+        runtime.error("走势层数上限只支持1到3")
+    ChanLevels result = ChanLevels.new()
+    result.levelLimit := limit
+    result.centers2 := chan_center_new_level(contextId, centerSources, 2)
+    result.movements2 := chan_movement_new_level(contextId, centerSources * 2, 2, limit >= 3)
+    result.centers3 := chan_center_new_level(contextId, centerSources, 3)
+    result.movements3 := chan_movement_new_level(contextId, centerSources * 2, 3, false)
+    result
+
+chan_levels_clone(ChanLevels source) =>
+    ChanLevels result = source.copy()
+    result.centers2 := chan_center_clone(source.centers2)
+    result.movements2 := chan_movement_clone(source.movements2)
+    result.centers3 := chan_center_clone(source.centers3)
+    result.movements3 := chan_movement_clone(source.movements3)
+    result
+
+chan_levels_signature(ChanLevels source) =>
+    str.tostring(source.levelLimit) + "/Z2/" + chan_center_signature(source.centers2) + "/R2/" + chan_movement_signature(source.movements2) + "/Z3/" + chan_center_signature(source.centers3) + "/R3/" + chan_movement_signature(source.movements3)
+
+// upper is the part just submitted by L1, or na. Events live for one call only.
+chan_levels_step(ChanLevels source, ChanComponent upper) =>
+    ChanLevels state = chan_levels_clone(source)
+    state.centers2.event := na
+    state.centers2.closedEvent := na
+    state.movements2.event := na
+    state.centers3.event := na
+    state.centers3.closedEvent := na
+    state.movements3.event := na
+    if state.levelLimit >= 2 and not na(upper)
+        state.centers2 := chan_center_step(state.centers2, upper)
+        state.movements2 := chan_movement_step(state.movements2, upper, state.centers2)
+        ChanComponent upper2 = na
+        if not na(state.movements2.event)
+            upper2 := state.movements2.event.upper
+        if state.levelLimit >= 3 and not na(upper2)
+            state.centers3 := chan_center_step(state.centers3, upper2)
+            state.movements3 := chan_movement_step(state.movements3, upper2, state.centers3)
+    state
+
+// One confirmed L0 part through every layer. The runtime and the shared
+// validation both call this, so the batch order is a single definition.
+type ChanStack
+    ChanCenterState centers
+    ChanMovementState movements
+    ChanLevels levels
+
+chan_stack_step(ChanStack source, ChanComponent part) =>
+    ChanStack result = ChanStack.new()
+    result.centers := chan_center_step(source.centers, part)
+    result.movements := chan_movement_step(source.movements, part, result.centers)
+    ChanComponent submitted = na
+    if not na(result.movements.event)
+        submitted := result.movements.event.upper
+    result.levels := chan_levels_step(source.levels, submitted)
+    result
 // The same close gate is used by the chart and synthetic tick validation.
 // Persistent states own no drawing objects; frame events exist only for this call.
 type ChanRuntime
@@ -1181,6 +1501,8 @@ type ChanRuntime
     ChanSegmentState segments
     ChanNormalizationState normalized
     ChanCenterState centers
+    ChanMovementState movements
+    ChanLevels levels
     int pendingLimit = 64
     int workLimit = 8192
     int centerSources = 64
@@ -1196,15 +1518,20 @@ type ChanSegmentPreview
     ChanSegmentState state
     array<ChanStructure> events
 
-chan_runtime_new(string contextId, int pendingLimit, int workLimit, int centerSources) =>
+chan_runtime_new_levels(string contextId, int pendingLimit, int workLimit, int centerSources, int levelLimit) =>
     ChanRuntime state = ChanRuntime.new()
     state.morphology := chan_new(contextId)
     state.normalized := chan_normalization_new(state.morphology.contextId)
     state.centers := chan_center_new(state.morphology.contextId, centerSources)
+    state.movements := chan_movement_new_level(state.morphology.contextId, centerSources * 2, 1, levelLimit >= 2)
+    state.levels := chan_levels_new(state.morphology.contextId, centerSources, levelLimit)
     state.pendingLimit := pendingLimit
     state.workLimit := workLimit
     state.centerSources := centerSources
     state
+
+chan_runtime_new(string contextId, int pendingLimit, int workLimit, int centerSources) =>
+    chan_runtime_new_levels(contextId, pendingLimit, workLimit, centerSources, 3)
 
 chan_runtime_clone(ChanRuntime source) =>
     ChanRuntime result = source.copy()
@@ -1212,10 +1539,12 @@ chan_runtime_clone(ChanRuntime source) =>
     result.segments := na(source.segments) ? na : chan_segment_clone(source.segments)
     result.normalized := chan_normalization_clone(source.normalized)
     result.centers := chan_center_clone(source.centers)
+    result.movements := chan_movement_clone(source.movements)
+    result.levels := chan_levels_clone(source.levels)
     result
 
 chan_runtime_signature(ChanRuntime source) =>
-    chan_signature(source.morphology) + "/S/" + (na(source.segments) ? "na" : chan_segment_signature(source.segments)) + "/N/" + chan_normalization_signature(source.normalized) + "/Z/" + chan_center_signature(source.centers) + "/limits/" + str.tostring(source.pendingLimit) + "/" + str.tostring(source.workLimit) + "/" + str.tostring(source.centerSources)
+    chan_signature(source.morphology) + "/S/" + (na(source.segments) ? "na" : chan_segment_signature(source.segments)) + "/N/" + chan_normalization_signature(source.normalized) + "/Z/" + chan_center_signature(source.centers) + "/R/" + chan_movement_signature(source.movements) + "/levels/" + chan_levels_signature(source.levels) + "/limits/" + str.tostring(source.pendingLimit) + "/" + str.tostring(source.workLimit) + "/" + str.tostring(source.centerSources)
 
 chan_runtime_frame(ChanRuntime source) =>
     ChanRuntimeFrame result = ChanRuntimeFrame.new()
@@ -1230,7 +1559,14 @@ chan_runtime_frame(ChanRuntime source) =>
 chan_runtime_component(ChanRuntime source, ChanStructure segment) =>
     ChanRuntime state = source.copy()
     state.normalized := chan_normalization_step(source.normalized, segment)
-    state.centers := chan_center_step(source.centers, state.normalized.event)
+    ChanStack stack = ChanStack.new()
+    stack.centers := source.centers
+    stack.movements := source.movements
+    stack.levels := source.levels
+    stack := chan_stack_step(stack, state.normalized.event)
+    state.centers := stack.centers
+    state.movements := stack.movements
+    state.levels := stack.levels
     state
 
 chan_runtime_stroke(ChanRuntime source, ChanStructure stroke) =>
@@ -1334,6 +1670,16 @@ chan_status_code(ChanRuntime engine, ChanWindow window, bool supported) =>
         code := engine.segments.limitReason == "pending-strokes" ? "S_PENDING_LIMIT" : "S_WORK_LIMIT"
     else if engine.centers.blocked
         code := "Z_SOURCE_LIMIT"
+    else if engine.movements.blocked
+        code := engine.movements.blockKind == "budget" ? "R1_MEMBER_LIMIT" : "R1_RULE_ERROR"
+    else if engine.levels.centers2.blocked
+        code := "Z2_SOURCE_LIMIT"
+    else if engine.levels.movements2.blocked
+        code := engine.levels.movements2.blockKind == "budget" ? "R2_MEMBER_LIMIT" : "R2_RULE_ERROR"
+    else if engine.levels.centers3.blocked
+        code := "Z3_SOURCE_LIMIT"
+    else if engine.levels.movements3.blocked
+        code := engine.levels.movements3.blockKind == "budget" ? "R3_MEMBER_LIMIT" : "R3_RULE_ERROR"
     else if window.fixed and window.requestedStart < window.firstAvailable
         code := "HISTORY_SHORT"
     else if window.count == 0
@@ -1346,6 +1692,10 @@ chan_status_code(ChanRuntime engine, ChanWindow window, bool supported) =>
         code := "Z_RETURN_PENDING"
     else if engine.centers.relationKind == "new-center-pending"
         code := "Z_NEW_PENDING"
+    // The ceiling is information, not a stop: it ranks below every resource stop
+    // and below data insufficiency and sample truncation.
+    else if (engine.levels.levelLimit == 1 and engine.movements.capped) or (engine.levels.levelLimit == 2 and engine.levels.movements2.capped) or (engine.levels.levelLimit == 3 and engine.levels.movements3.capped)
+        code := "LEVEL_CAP"
     code
 
 chan_status_text(string code) =>
@@ -1356,6 +1706,15 @@ chan_status_text(string code) =>
         "S_PENDING_LIMIT" => "线段受限：未完成笔依赖上限"
         "S_WORK_LIMIT" => "线段受限：计算预算"
         "Z_SOURCE_LIMIT" => "L1中枢受限：来源预算"
+        "R1_MEMBER_LIMIT" => "L1走势受限：成员预算，停止确认与上报"
+        "R1_RULE_ERROR" => "L1走势受限：完成守卫未通过，停止确认与上报"
+        "Z2_SOURCE_LIMIT" => "L2中枢受限：来源预算"
+        "R2_MEMBER_LIMIT" => "L2走势受限：成员预算，停止确认与上报"
+        "R2_RULE_ERROR" => "L2走势受限：完成守卫未通过，停止确认与上报"
+        "Z3_SOURCE_LIMIT" => "L3中枢受限：来源预算"
+        "R3_MEMBER_LIMIT" => "L3走势受限：成员预算，停止确认"
+        "R3_RULE_ERROR" => "L3走势受限：完成守卫未通过，停止确认"
+        "LEVEL_CAP" => "已达层数上限：更高层未计算"
         "HISTORY_SHORT" => "历史不足：实际可用起点晚于请求"
         "WAIT_START" => "等待分析起点后的K线"
         "INITIALIZING" => "初始化：等待非包含输入"
@@ -1510,6 +1869,6 @@ if barstate.isconfirmed and (na(lastProcessedBar) or bar_index != lastProcessedB
 bool passed = caseIndex == 1 and budgetsDone
 table.cell(result, 0, 0, passed ? "PASS: 1 S case(s), 12 prefixes" : "RUNNING: " + str.tostring(checkedPrefixes) + "/12 prefixes", text_color = passed ? color.green : color.orange)
 table.cell(result, 0, 1, "合成验证 · 非行情分析 · 需要12根已收盘图表K线")
-table.cell(result, 0, 2, "CORE f66e1055bf34")
+table.cell(result, 0, 2, "CORE 7bea4f3a789c")
 plot(na)
 

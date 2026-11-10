@@ -1,10 +1,10 @@
 {
-  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\budget-validation.pine",
-  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
-  "sha256": "e9172b134febb9e3d1ba4215c0f195246c062e4f3e165913dd0486e98545704b",
-  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
-  "bytes": 86366,
-  "cases": 5,
+  "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/budget-validation.pine",
+  "productionSha256": "8d3b7e4ec761e49c91bbacad93a4e826f96da835d047710f58578eaa4bba0975",
+  "sha256": "09cb714461ee6c8e52a8e92558cd02268765ba0a6d35e2d4dcbd921e055494cb",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
+  "bytes": 106643,
+  "cases": 6,
   "fixtureHashes": [
     {
       "id": "S-FIRST-END",

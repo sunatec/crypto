@@ -8,7 +8,7 @@
 
 2026-11-05当前工作区已接入新的共享收盘／预览调度，T4共享验证及新正式入口均已由用户报告通过；此前“连续中枢入口正常”绑定旧版本，不自动覆盖当前文件。
 
-当前处于分模块建设阶段。`chanlun_original.pine`已接入K/F、蓝色笔、橙色段、独立区间L0，以及连续L1中枢的离开／回试、新生和关系证据。基础5组、S12、N5和旧Z7均有用户报告PASS，首个中枢入口收到“Z入口正常”。2026-11-04连续中枢Z13（13组91前缀）已由用户报告PASS，正式入口也由用户报告“连续中枢入口正常”。当前25/43，5.3、6.1～6.3及7.3完成、R完成规则仍待证据，不是完整首版。两份旧Pine继续原位保留，未归档。
+当前处于分模块建设阶段。`chanlun_original.pine`已接入K/F、蓝色笔、橙色段、独立区间L0，以及连续L1中枢的离开／回试、新生和关系证据。基础5组、S12、N5和旧Z7均有用户报告PASS，首个中枢入口收到“Z入口正常”。2026-11-04连续中枢Z13（13组91前缀）已由用户报告PASS，正式入口也由用户报告“连续中枢入口正常”。当前25/43，5.3、6.1～6.3及7.3完成、R完成规则仍待证据，不是完整首版。两份旧Pine已于2026-11-10原样迁入`archive/chanlun/`。
 
 - [来源与更正索引](sources.md)
 - [看盘与研究使用说明](user-guide.md)
@@ -68,11 +68,13 @@ S12及F16精简全套均已有用户PASS记录，无需重跑。F16通过版本4
 
 ## 历史原型的迁移与恢复
 
-`ChanLun` 和 `ChanLun-Strict` 是重建前的两个 Pine 原型，前者是原始实现，后者是按第 62、65、67 课调整的版本。当前均从仓库根目录打开。下表记录本次核对的文件内容和待验收通过后的目标路径。
+`ChanLun` 和 `ChanLun-Strict` 是重建前的两个 Pine 原型，前者是原始实现，后者是按第 62、65、67 课调整的版本。全部必需验收通过后，两份文件已于 2026-11-10 用 `git mv` 原样迁入 [archive/chanlun/](../../archive/chanlun/README.md)，迁移前后 SHA-256 逐一比对一致。
 
-| 当前路径 | 归档目标 | 当前 SHA-256 |
+| 归档位置 | 迁移前后 SHA-256（LF） | 同内容 CRLF 哈希 |
 | --- | --- | --- |
-| [chanlun_czsc.pine](../../chanlun_czsc.pine) | `archive/chanlun/chanlun_czsc.pine` | `8be803bf2503a35e566850580982c5f5ff763c65c46df66533aedf61075fc115` |
-| [chanlun_czsc_strict.pine](../../chanlun_czsc_strict.pine) | `archive/chanlun/chanlun_czsc_strict.pine` | `8135ee85271e74e1c86f4f0d3011e557a756354fef576782cd6ffe54235392ad` |
+| [chanlun_czsc.pine](../../archive/chanlun/chanlun_czsc.pine) | `17ff2265b069eb06634afc8fcd38758232045c38c28b8af925d8d6bde12c0372` | `8be803bf2503a35e566850580982c5f5ff763c65c46df66533aedf61075fc115` |
+| [chanlun_czsc_strict.pine](../../archive/chanlun/chanlun_czsc_strict.pine) | `d72bd1fe7317b1c7b055ab090bae647e240277b562700025ece17cdbe9e1c311` | `8135ee85271e74e1c86f4f0d3011e557a756354fef576782cd6ffe54235392ad` |
 
-待必需验收通过后，迁移前重新读取源文件 SHA-256，迁移后逐一比对归档文件并更新入口链接。迁移后需要恢复时，将归档文件按同名原样复制回仓库根目录，核对哈希并标注其历史原型身份。
+此前本节记录的是 CRLF 版本的哈希，仓库中存放的是 LF 版本，两者内容相同、哈希不同；上表同时列出两种。
+
+恢复：在仓库根目录执行 `git mv archive/chanlun/chanlun_czsc.pine chanlun_czsc.pine` 和 `git mv archive/chanlun/chanlun_czsc_strict.pine chanlun_czsc_strict.pine`，再核对上表哈希。归档文件不改内容，仅作对照；正式入口是根目录的 `chanlun_original.pine`。

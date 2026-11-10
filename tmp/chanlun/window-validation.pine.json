@@ -1,10 +1,10 @@
 {
-  "output": "D:\\Workspace\\crypto\\tmp\\chanlun\\window-validation.pine",
-  "productionSha256": "9efcd25c9a4d4f989b049f628d85cc25cda2b6b3251c272706813d720fa2f2ea",
-  "sha256": "932514fe210ec2d96c0ea9aef5c0444deb418485841a191c41838832beedb47e",
-  "coreHash": "f66e1055bf34300751ca977114e5ea6f0819d2b29594d0a80b87348ed7ef8e1f",
+  "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/window-validation.pine",
+  "productionSha256": "8d3b7e4ec761e49c91bbacad93a4e826f96da835d047710f58578eaa4bba0975",
+  "sha256": "414cfaad730cb68b99e6a14f9a01e2db2aeeb880a8ac72b16b94f6dcf56d94f8",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
   "fixtureHash": "530dde27be1161f1d166de6af3b6b7bbd317a91ccd79b9461e03907c8e98d465",
-  "bytes": 85836,
+  "bytes": 103123,
   "cases": 8,
   "prefixes": 44,
   "execution": "not run in Pine"
