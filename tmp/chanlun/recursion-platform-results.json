@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-10",
+  "task": "5.4 L1 movement completion (R-002..R-006, structure-confirmation path)",
+  "coreHash": "124c4ec45c7fe97863a56790421a36ca1496162363f76a4ed80fd6c6c90204a6",
+  "platform": {
+    "site": "TradingView web (built-in browser pane)",
+    "account": "sunvy (Premium)",
+    "layout": "chanlun-validation",
+    "symbol": "BINANCE:BTCUSDT",
+    "interval": "4h",
+    "method": "Script copied with pbcopy and SHA-256 read back; pasted by the user (cmd+A, cmd+V); Add/Update on chart and result reading done by Claude."
+  },
+  "fixture": "tests/fixtures/chanlun/recursion/structure-completion.json",
+  "fixtureHash": "8b069ae154ae6dc260363944b5b156e239a1888cefa14bbcfb134e88b23fc08e",
+  "results": [
+    {
+      "id": "R6",
+      "snapshot": "tmp/chanlun/compiled/core124c4ec4-R6-764acaaab316008688f15b7e98421a51bd1aef7fac2bf05115e403658dc2c3cd.pine",
+      "sha256": "764acaaab316008688f15b7e98421a51bd1aef7fac2bf05115e403658dc2c3cd",
+      "bytes": 131494,
+      "expected": "PASS: 6 R cases, 79 prefixes",
+      "observed": "PASS: 6 R cases, 79 prefixes (green; first letters were hidden by the chart header until the viewport was widened, then read in full)",
+      "status": "pass",
+      "note": "first paste of the pre-fix script (bd10e63d...) failed with CE10093, a harness variable named input; renamed to step, CORE unchanged"
+    },
+    {
+      "id": "PRODUCTION",
+      "snapshot": "tmp/chanlun/compiled/core124c4ec4-PRODUCTION-b46041a25699ae2def2bce94170e94197b3d13933dc6b4ddd71ec91dec6a73e8.pine",
+      "sha256": "b46041a25699ae2def2bce94170e94197b3d13933dc6b4ddd71ec91dec6a73e8",
+      "bytes": 123549,
+      "expected": "compiles and loads; panel counts equal the CORE 7846cec6 run",
+      "observed": "compiled and loaded. Panel: confirmed fractals 1670, strokes 364, segments 53, L0 53, L1 centers 9, latest center #9 2026-09-15 16:00 -> 2026-10-21 16:00 price 82563.00-87220.00. Effective start moved to 2024-07-29 20:00 UTC (4999 bars) because the automatic 5000-bar window slid with new bars.",
+      "status": "compile-and-load",
+      "note": "not an assertion run; R results are not shown by the production panel yet"
+    }
+  ],
+  "tests": {
+    "command": "node --test tools/chanlun/recursion-validation.test.mjs",
+    "result": "4 passed, 0 failed (contract, driver and core-boundary checks only; no Pine execution)"
+  },
+  "limits": [
+    "The 16 shared-core scripts re-run on 2026-11-09 are bound to CORE 7846cec6 and were not re-run on CORE 124c4ec4.",
+    "Level 2/3 consumption of the submitted movement component (task 5.5) is not implemented; only its format and validity are checked.",
+    "The member budget (2 x center sources = 128) has not been exercised on market data.",
+    "Screenshots were not archived into the repository."
+  ]
+}

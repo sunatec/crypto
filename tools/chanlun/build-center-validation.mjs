@@ -41,7 +41,7 @@ export function validateCenterCases(data){
   }
   return data;
 }
-function component(c,p,i){
+export function component(c,p,i){
   const [a,b,lo,hi]=p,d=a<b?1:-1,start=t(i),end=t(i+1),sid=`${c.id}/S/${i+1}/${start}`;
   const lowTime=lo===a?start:lo===b?end:start+30000,highTime=hi===a?start:hi===b?end:start+30000;
   return `ChanComponent.new(${q(c.id+'/N/'+(i+1)+'/'+start)}, ${q(sid)}, ${start}, ${end}, ${a}, ${b}, ${lo}, ${hi}, ${lowTime}, ${highTime}, ${start}, ${end}, ${d===1?lo:hi}, ${d===1?hi:lo}, ${d}, ${t(i+2)}, "N-001/E-008", array.from(${q(sid)}), ${i+1})`;
