@@ -1,0 +1,74 @@
+[
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-4h-panel-1000x700.jpg",
+    "sha256": "48a169acebc954997d01c80351f05c94d096f0acca060fed5e1f818b7ab28fee",
+    "bytes": 60602,
+    "what": "BTCUSDT 4h, P-deep, 20220 bars, L1/L2/L3 14/0/0"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-1h-panel-first-1000x700.jpg",
+    "sha256": "b2358c5d439a1ac5a039050c53933dffaaf30411e7146efe564ac5f220822e5f",
+    "bytes": 62924,
+    "what": "BTCUSDT 1h, 25081 bars, L1/L2/L3 23/1/0"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-15m-panel-1to1.jpg",
+    "sha256": "0f48c48064a05e3d7e7a5500ad7408a60e8876a67cc4e468e8e57e45f083b3fd",
+    "bytes": 83288,
+    "what": "BTCUSDT 15m, 21509 bars, L1/L2/L3 11/0/0, Z2/Z3 1/0"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-1h-panel-1to1.png",
+    "sha256": "c2a4a59b484c71a64e903b2a6ba349e53e90304b1d9deb01c3121728e6bcd204",
+    "bytes": 117090,
+    "what": "BTCUSDT 1h panel at 1:1"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-4h-panel-1to1.png",
+    "sha256": "6696b9ca85489998034420787c52d628701dbfc918348e19000a4429b5f25b97",
+    "bytes": 129550,
+    "what": "BTCUSDT 4h panel at 1:1"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-5m-panel-pending-strokes-stop.jpg",
+    "sha256": "b7d0b208404b10fee0fba370ff956aa0148fc9b2ab8bbba31279494b1f016da9",
+    "bytes": 83868,
+    "what": "BTCUSDT 5m, S pending-strokes stop at default limit 64"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-1m-panel.jpg",
+    "sha256": "f2dec3e8268b94974074e7a2cb3cf725f1da2fa979f71c246ba09cdb584400c6",
+    "bytes": 83887,
+    "what": "BTCUSDT 1m, 23127 bars, L1/L2/L3 20/0/0"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-30m-panel-pending-strokes-stop.png",
+    "sha256": "973c78902398a4f6643332043f28661794f64dfb35cd3379c50fd17e8e071f8a",
+    "bytes": 118651,
+    "what": "BTCUSDT 30m, 32594 bars, S pending-strokes stop"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/eth-1h-panel.png",
+    "sha256": "566aba6efd3f75b721e0fce6b43f460ab251ac25084f84d9b17572d81917a3e2",
+    "bytes": 139934,
+    "what": "ETHUSDT 1h, 25081 bars, L1/L2/L3 21/2/0"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/eth-2h-panel.png",
+    "sha256": "b2126e2f9dc16108ea48a3a5e0fe123bf5ae9eb6d035664ae9739365e0204cff",
+    "bytes": 130125,
+    "what": "ETHUSDT 2h, 21295 bars, L1/L2/L3 18/0/0"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/eth-1h-caption-types.jpg",
+    "sha256": "765f4b003c503deab295e9146a0def37107df577a5a986cd7ff02f9933457bd0",
+    "bytes": 93753,
+    "what": "ETHUSDT 1h, drawn captions 19: 9/1/0/7/2"
+  },
+  {
+    "file": "tmp/chanlun/p-deep-evidence/btc-1h-caption-types.png",
+    "sha256": "deaeafd45b1e50d4afd32f63210f7d88b09b39a1aef3156762e47b9ecdc7e272",
+    "bytes": 159855,
+    "what": "BTCUSDT 1h, drawn captions 18: 6/1/2/7/2"
+  }
+]

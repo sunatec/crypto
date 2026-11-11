@@ -2416,7 +2416,7 @@ if barstate.islast
     string rangeRequest = analysisWindow.fixed ? "请求：" + str.format_time(analysisWindow.requestedStart, "yyyy-MM-dd HH:mm", "UTC") : "近期窗口：加载时固定"
     table.cell(status, 0, 12, rangeRequest + "\n接收起点：" + rangeStart + " UTC · " + str.tostring(analysisWindow.count) + "根" + (insufficientHistory ? "\n请求起点早于可用历史" : ""), text_color = statusMuted, bgcolor = statusBackground, text_size = statusFontSize)
 
-var table pressurePanel = table.new(position.bottom_right, 1, 10, bgcolor=color.rgb(22, 27, 34))
+var table pressurePanel = table.new(position.bottom_right, 1, 11, bgcolor=color.rgb(22, 27, 34))
 if barstate.islast
     int visibleLines = array.size(line.all)
     int visibleBoxes = array.size(box.all)
@@ -2433,6 +2433,23 @@ if barstate.islast
     table.cell(pressurePanel, 0, 2, "OHLC " + str.tostring(pressure.ohlc) + " · 结构 " + str.tostring(pressure.structures) + " · CORE 7bea4f3a", text_color=color.white)
     table.cell(pressurePanel, 0, 3, "F " + str.tostring(pressure.fractals) + " / P " + str.tostring(pressure.strokes) + " / S " + str.tostring(pressure.segments) + " / L0 " + str.tostring(pressure.components) + " / Z " + str.tostring(pressure.centers), text_color=color.white)
     table.cell(pressurePanel, 0, 4, "峰值 K/S待定/Z历史/Z来源 " + str.tostring(pressure.peakElements) + "/" + str.tostring(pressure.peakStrokes) + "/" + str.tostring(pressure.peakCenters) + "/" + str.tostring(pressure.peakSources) + stopText, text_color=color.white)
+    // Direct count of the movement captions actually drawn on the chart, by displayed type.
+    int capAll = 0
+    int capConsolidation = 0
+    int capUp = 0
+    int capDown = 0
+    int capExpansion = 0
+    int capPending = 0
+    for drawn in label.all
+        string captionText = label.get_text(drawn)
+        if str.contains(captionText, "-M#")
+            capAll += 1
+            capConsolidation += str.contains(captionText, "盘整") ? 1 : 0
+            capUp += str.contains(captionText, "上涨") ? 1 : 0
+            capDown += str.contains(captionText, "下跌") ? 1 : 0
+            capExpansion += str.contains(captionText, "含扩展证据") ? 1 : 0
+            capPending += str.contains(captionText, "待定") ? 1 : 0
+    table.cell(pressurePanel, 0, 10, "已画走势标签 " + str.tostring(capAll) + " · 盘整/上涨/下跌/含扩展证据/待定 " + str.tostring(capConsolidation) + "/" + str.tostring(capUp) + "/" + str.tostring(capDown) + "/" + str.tostring(capExpansion) + "/" + str.tostring(capPending), text_color=color.white)
     string levelStatus = chan_status_text(chan_status_code(engine, analysisWindow, supported))
     table.cell(pressurePanel, 0, 6, "走势 L1/L2/L3 " + str.tostring(pressure.l1) + "/" + str.tostring(pressure.l2) + "/" + str.tostring(pressure.l3) + " · 上层中枢 Z2/Z3 " + str.tostring(pressure.z2) + "/" + str.tostring(pressure.z3) + " · 层数上限 " + str.tostring(levelLimit) + " · capped " + str.tostring(pressure.capped), text_color=color.white)
     table.cell(pressurePanel, 0, 9, "层校验 " + str.tostring(pressure.levelHash), text_color=color.white)

@@ -176,7 +176,7 @@ var ChanPressureAudit pressure = ChanPressureAudit.new()
 `;
 
 const panel = String.raw`
-var table pressurePanel = table.new(position.bottom_right, 1, 10, bgcolor=color.rgb(22, 27, 34))
+var table pressurePanel = table.new(position.bottom_right, 1, 11, bgcolor=color.rgb(22, 27, 34))
 if barstate.islast
     int visibleLines = array.size(line.all)
     int visibleBoxes = array.size(box.all)
@@ -193,6 +193,23 @@ if barstate.islast
     table.cell(pressurePanel, 0, 2, "OHLC " + str.tostring(pressure.ohlc) + " · 结构 " + str.tostring(pressure.structures) + " · CORE __CORE_TAG__", text_color=color.white)
     table.cell(pressurePanel, 0, 3, "F " + str.tostring(pressure.fractals) + " / P " + str.tostring(pressure.strokes) + " / S " + str.tostring(pressure.segments) + " / L0 " + str.tostring(pressure.components) + " / Z " + str.tostring(pressure.centers), text_color=color.white)
     table.cell(pressurePanel, 0, 4, "峰值 K/S待定/Z历史/Z来源 " + str.tostring(pressure.peakElements) + "/" + str.tostring(pressure.peakStrokes) + "/" + str.tostring(pressure.peakCenters) + "/" + str.tostring(pressure.peakSources) + stopText, text_color=color.white)
+    // Direct count of the movement captions actually drawn on the chart, by displayed type.
+    int capAll = 0
+    int capConsolidation = 0
+    int capUp = 0
+    int capDown = 0
+    int capExpansion = 0
+    int capPending = 0
+    for drawn in label.all
+        string captionText = label.get_text(drawn)
+        if str.contains(captionText, "-M#")
+            capAll += 1
+            capConsolidation += str.contains(captionText, "盘整") ? 1 : 0
+            capUp += str.contains(captionText, "上涨") ? 1 : 0
+            capDown += str.contains(captionText, "下跌") ? 1 : 0
+            capExpansion += str.contains(captionText, "含扩展证据") ? 1 : 0
+            capPending += str.contains(captionText, "待定") ? 1 : 0
+    table.cell(pressurePanel, 0, 10, "已画走势标签 " + str.tostring(capAll) + " · 盘整/上涨/下跌/含扩展证据/待定 " + str.tostring(capConsolidation) + "/" + str.tostring(capUp) + "/" + str.tostring(capDown) + "/" + str.tostring(capExpansion) + "/" + str.tostring(capPending), text_color=color.white)
     string levelStatus = chan_status_text(chan_status_code(engine, analysisWindow, supported))
     table.cell(pressurePanel, 0, 6, "走势 L1/L2/L3 " + str.tostring(pressure.l1) + "/" + str.tostring(pressure.l2) + "/" + str.tostring(pressure.l3) + " · 上层中枢 Z2/Z3 " + str.tostring(pressure.z2) + "/" + str.tostring(pressure.z3) + " · 层数上限 " + str.tostring(levelLimit) + " · capped " + str.tostring(pressure.capped), text_color=color.white)
     table.cell(pressurePanel, 0, 9, "层校验 " + str.tostring(pressure.levelHash), text_color=color.white)
@@ -234,6 +251,15 @@ const variants = {
     '-fixed-level1': [...fixedWindow, ['levelLimit = input.int(3,', 'levelLimit = input.int(1,']],
     '-fixed-pending16': [...fixedWindow, ['segmentPendingLimit = input.int(64,', 'segmentPendingLimit = input.int(16,']]
 };
+// Whole-history variant: lifts the 5,000-bar recording cap so higher layers can form on real data.
+const deepEdits = [
+    ['bool fixedStart = input.bool(false,', 'bool fixedStart = input.bool(true,'],
+    ['int requestedStart = input.time(1700000000000,', 'int requestedStart = input.time(1500000000000,'],
+    ['int sampleLimit = input.int(20000,', 'int sampleLimit = input.int(100000,'],
+    ['if pressure.count < 5000', 'if pressure.count < 100000'],
+    ['pressure.count == 5000 ? "已记录 5000 根" : "接收 " + str.tostring(pressure.count) + "/5000"', '"接收 " + str.tostring(pressure.count) + " 根"']
+];
+variants['-deep'] = deepEdits;
 const manifest = {coreHash, productionSha256:sha(production), samples:5000, scope:'K/F/P/S, L0, L1 centers, L1-L3 movements and L2/L3 centers', execution:'awaiting TradingView run', variants:{}};
 for (const [suffix, edits] of Object.entries(variants)) {
     let variant = pine;

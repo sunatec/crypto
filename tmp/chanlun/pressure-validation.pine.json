@@ -7,30 +7,35 @@
   "variants": {
     "-default": {
       "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation.pine",
-      "sha256": "d537d0beae53eba1332368fd0a733a7306b4b7d207626e82ce1dbca136b7a21b",
-      "bytes": 145795
+      "sha256": "7a9bb79fe2bbf59054db57f09a186128b99b557fef921fe0c0afa66e529d23bd",
+      "bytes": 146846
     },
     "-fixed": {
       "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed.pine",
-      "sha256": "c7788bfe9835b00623e27b1212d2de2a402ed962a0a451d4f6bafac17fac312f",
-      "bytes": 145794
+      "sha256": "3de61a8f62b1ce8f14d9497a33de83f8163345b7450cacf5bfeb229e0da56966",
+      "bytes": 146845
     },
     "-fixed-research": {
       "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed-research.pine",
-      "sha256": "c83016e13ae69d87aba9af0660efd670cf2874173e8c355d9b04b9ebf5d2ae14",
-      "bytes": 145790
+      "sha256": "0425a544735dcc3d5b9612a5c8a2ab9f466edc9b48d78bc06da7dc2ab0505853",
+      "bytes": 146841
     },
     "-fixed-level1": {
       "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed-level1.pine",
-      "sha256": "ddcf6246b6b57e20e56a9a0ec000f3005f88f7808008f99ea9a1a9cd7060047b",
-      "bytes": 145794
+      "sha256": "d893a896fce23550577454247582105e6cae50c99b58b8eb1c852db5ff15b49c",
+      "bytes": 146845
     },
     "-fixed-pending16": {
       "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-fixed-pending16.pine",
-      "sha256": "853a5cd66284e6a9a60520ae8aa9ab3c989c083123240fef44e02b228ce3dfa6",
-      "bytes": 145794
+      "sha256": "b882be625cd557a74cf67712e6910e28b5172f121c02fd5c9ff18765c2fe3df8",
+      "bytes": 146845
+    },
+    "-deep": {
+      "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation-deep.pine",
+      "sha256": "9b7f61aeb9b6e204922dbd7dab9d0bec1ad2ca868d7f21c4379d0b6daf662bdf",
+      "bytes": 146799
     }
   },
   "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/pressure-validation.pine",
-  "sha256": "d537d0beae53eba1332368fd0a733a7306b4b7d207626e82ce1dbca136b7a21b"
+  "sha256": "7a9bb79fe2bbf59054db57f09a186128b99b557fef921fe0c0afa66e529d23bd"
 }
