@@ -1,7 +1,7 @@
 # higher-degree-background Specification
 
 ## Purpose
-TBD - created by archiving change add-higher-degree-background. Update Purpose after archive.
+定义报告中高一级别背景的披露方式：数浪范围声明、全部历史周线与月线、月线概览、级别阶梯判断，并规定背景只作证据、不改变排名，父级身份标为暂定。
 ## Requirements
 ### Requirement: 报告声明数浪范围
 每份 Markdown 报告开头与 `_tree.json` 的 `scope` 字段 MUST 说明本次数浪的起点日期、周期、起点价格，以及是否按书 §3.10（自月线向下）/§3.12（自价格 0）验证。未做自上而下数浪时 MUST 明说父级身份为推断。

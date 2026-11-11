@@ -1,7 +1,7 @@
 # spike-detection Specification
 
 ## Purpose
-TBD - created by archiving change detect-price-spikes. Update Purpose after archive.
+定义扎针（异常长影线）候选的检测、按成交量放大程度分类，以及主分析默认只披露、可选截取疑似乌龙针的处理方式。
 ## Requirements
 ### Requirement: 扎针候选检测
 系统 SHALL 在主周期 K 线上检测扎针候选，满足任一条件即为候选：

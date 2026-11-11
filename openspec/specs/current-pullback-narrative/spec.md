@@ -1,7 +1,7 @@
 # current-pullback-narrative Specification
 
 ## Purpose
-TBD - created by archiving change narrate-current-pullback. Update Purpose after archive.
+定义"现状研判"中对进行中回撤的自然语言叙述：回撤级别与内部竞争形态、续涨条件、联合形浪位读法、Z 浪目标、高一级读法和失效线，且全部数值由本次 K 线计算。
 
 ## Requirements
 

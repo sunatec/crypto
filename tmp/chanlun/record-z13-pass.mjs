@@ -20,7 +20,7 @@ for(const pending of records.pending)if(pending.source==='chanlun_original.pine'
 }
 fs.writeFileSync(file,JSON.stringify(records,null,2)+'\n');
 const edit=(file,from,to)=>{const s=fs.readFileSync(file,'utf8');if(s.includes(to))return;if(!s.includes(from))throw Error('missing text in '+file);fs.writeFileSync(file,s.replace(from,to));};
-edit('openspec/changes/rebuild-chanlun-tradingview-indicator/tasks.md','- [ ] 5.3 实现离开/回试、新中枢、同向趋势延续和波动范围重叠扩展的独立状态，保留各分支证据。','- [x] 5.3 实现离开/回试、新中枢、同向趋势延续和波动范围重叠扩展的独立状态，保留各分支证据。');
+edit('openspec/changes/archive/2026-11-10-rebuild-chanlun-tradingview-indicator/tasks.md','- [ ] 5.3 实现离开/回试、新中枢、同向趋势延续和波动范围重叠扩展的独立状态，保留各分支证据。','- [x] 5.3 实现离开/回试、新中枢、同向趋势延续和波动范围重叠扩展的独立状态，保留各分支证据。');
 edit('docs/chanlun/README.md','2026-11-04新增连续中枢版仍待Pine实测，不能继承旧版通过结果。当前20/43，5.3待验、R完成规则仍待证据','2026-11-04连续中枢Z13（13组91前缀）已由用户报告PASS，正式入口显示仍待复核。当前21/43，5.3完成、R完成规则仍待证据');
 edit('docs/chanlun/README.md','旧Z7结果保留原版本范围；V2平台结果待回传。','旧Z7结果保留原版本范围；V2已收到Z13全套PASS，正式入口仍待复核。');
 edit('docs/chanlun/center-engine.md','本轮5.3实现连续中枢，新增部分仍待Pine验证。','本轮5.3连续中枢Z13已由用户报告13组91前缀全套PASS；正式入口显示仍待复核。');

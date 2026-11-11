@@ -1,7 +1,7 @@
 # candle-cache Specification
 
 ## Purpose
-TBD - created by archiving change cache-candle-history. Update Purpose after archive.
+定义 Coinbase 已收盘 K 线的本地持久化缓存：按产品与粒度存放、记录覆盖段只补拉缺口、不缓存未收盘数据、失败不污染缓存，并让所有取数路径共用该缓存。
 ## Requirements
 ### Requirement: Coinbase K 线持久化到项目 .cache
 系统 SHALL 把从 Coinbase 拉取的已收盘 K 线按「产品 × 粒度」持久化到项目根目录 `.cache/` 下，`.cache/` MUST 被 git 忽略。股票数据源（Twelve Data、东方财富）MUST NOT 读写该缓存。

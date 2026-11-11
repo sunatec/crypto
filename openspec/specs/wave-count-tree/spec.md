@@ -1,7 +1,7 @@
 # wave-count-tree Specification
 
 ## Purpose
-TBD - created by archiving change macro-endpoint-span-extreme. Update Purpose after archive.
+定义浪型计数树的候选约束与输出：宏观腿端点必须是其跨度内的真极值、两可末腿须标出被压掉的读法、Markdown 报告按主题轴单一权威呈现，以及 currentPullback 的序列化字段。
 ## Requirements
 ### Requirement: 宏观腿端点必须是其跨度内的真极值
 候选的每个内部宏观点 MUST 是「其左右相邻宏观点之间那一段内所有细枢轴」里的真极值：去 H 的
