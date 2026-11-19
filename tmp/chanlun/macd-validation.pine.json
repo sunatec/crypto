@@ -1,0 +1,14 @@
+{
+  "output": "/Users/mac/Fan/Dev/crypto/tmp/chanlun/macd-validation.pine",
+  "productionSha256": "52471ba8cf259eafa52c3608fb791d24d2f5ffa93cd96fb3c4f9e1112742400d",
+  "sha256": "b9d8583cc1ee89833500d96c2b5d65814573a8f8aa85b444f5161b8665c29da5",
+  "sectionHash": "f5869e11d7ccf2784cf9c66019167facfe4bf15c261020f22db3a422a8f0b178",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
+  "fixtureHash": "b63d6e1fd22c3f52fdfd004d184908f0880dc559d824c63df051f1cc619190dd",
+  "bytes": 31546,
+  "cases": 18,
+  "staticQueries": 22,
+  "fixtureQueries": 26,
+  "fixtureBars": 385,
+  "execution": "not run in Pine"
+}

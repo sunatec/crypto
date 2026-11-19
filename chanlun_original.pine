@@ -1723,6 +1723,590 @@ chan_status_text(string code) =>
         => "形态预览运行中"
 // END CHANLUN CORE
 
+// BEGIN CHANLUN SIGNALS
+// Signal layer (change add-chanlun-divergence-signals, rules M/D/B). It is read-only with
+// respect to the pattern CORE: nothing below writes into a CORE state.
+//
+// M-001/M-002: MACD over closed bars only, kept as prefix sums keyed by bar open time.
+// One entry per usable closed bar: (time, cumPos, cumNeg, dif, dea). The first `warmup`
+// bars advance the EMAs but are not stored. A segment (ts, te] is a difference of two
+// prefix entries found by binary search on time, never by bar_index offsets.
+// The arrays are bounded by `capacity`; the oldest entry is recycled when it is full,
+// and any segment that starts before the oldest kept entry is "area unavailable".
+type ChanMacd
+    int fast
+    int slow
+    int signal
+    int warmup
+    int capacity
+    int seen = 0
+    int dropped = 0
+    int lastTime = na
+    float emaFast = na
+    float emaSlow = na
+    float emaSignal = na
+    float sumFast = 0.0
+    float sumSlow = 0.0
+    float sumSignal = 0.0
+    int difCount = 0
+    float sumPos = 0.0
+    float sumNeg = 0.0
+    array<int> times
+    array<float> cumPos
+    array<float> cumNeg
+    array<float> difs
+    array<float> deas
+
+type ChanMacdBar
+    float emaFast
+    float emaSlow
+    float emaSignal
+    float sumFast
+    float sumSlow
+    float sumSignal
+    int difCount
+    float dif
+    float dea
+    float hist
+
+// direction: 1 = up (red bars), -1 = down (green bars).
+type ChanMacdArea
+    bool available = false
+    string reason = "no-data"
+    float area = na
+    float difExtreme = na
+    float deaExtreme = na
+    int bars = 0
+    int fast
+    int slow
+    int signal
+
+chan_macd_new(int fast, int slow, int signal, int capacity) =>
+    if fast < 1 or slow <= fast or signal < 1
+        runtime.error("MACD参数无效：需要 快线 < 慢线 且信号线 ≥ 1")
+    if capacity < 1 or capacity > 100000
+        runtime.error("MACD前缀容量须在1到100000之间")
+    ChanMacd state = ChanMacd.new()
+    state.fast := fast
+    state.slow := slow
+    state.signal := signal
+    state.warmup := slow + signal
+    state.capacity := capacity
+    state.times := array.new<int>()
+    state.cumPos := array.new<float>()
+    state.cumNeg := array.new<float>()
+    state.difs := array.new<float>()
+    state.deas := array.new<float>()
+    state
+
+// Same definition as ta.ema/ta.macd (checked against the platform, see signal-validation.md):
+// an EMA is na for its first length-1 inputs, its first value is the simple average of the first
+// length inputs, and every later value is alpha * src + (1 - alpha) * previous. The signal line
+// applies the same rule to the dif values, so dif is valid from input slow, and dea and hist from
+// input slow + signal - 1 (1-based). Pure: it never changes `source`, so a not-yet-closed bar can be
+// previewed without entering the confirmed series.
+chan_macd_peek(ChanMacd source, float price) =>
+    ChanMacdBar bar = ChanMacdBar.new()
+    int count = source.seen + 1
+    float alphaFast = 2.0 / (source.fast + 1)
+    float alphaSlow = 2.0 / (source.slow + 1)
+    float alphaSignal = 2.0 / (source.signal + 1)
+    bar.sumFast := count <= source.fast ? source.sumFast + price : source.sumFast
+    bar.sumSlow := count <= source.slow ? source.sumSlow + price : source.sumSlow
+    bar.emaFast := count < source.fast ? na : (count == source.fast ? bar.sumFast / source.fast : alphaFast * price + (1.0 - alphaFast) * source.emaFast)
+    bar.emaSlow := count < source.slow ? na : (count == source.slow ? bar.sumSlow / source.slow : alphaSlow * price + (1.0 - alphaSlow) * source.emaSlow)
+    bar.dif := (na(bar.emaFast) or na(bar.emaSlow)) ? na : bar.emaFast - bar.emaSlow
+    bar.difCount := source.difCount + (na(bar.dif) ? 0 : 1)
+    bar.sumSignal := (not na(bar.dif) and bar.difCount <= source.signal) ? source.sumSignal + bar.dif : source.sumSignal
+    bar.emaSignal := na(bar.dif) ? na : (bar.difCount < source.signal ? na : (bar.difCount == source.signal ? bar.sumSignal / source.signal : alphaSignal * bar.dif + (1.0 - alphaSignal) * source.emaSignal))
+    bar.dea := bar.emaSignal
+    bar.hist := (na(bar.dif) or na(bar.dea)) ? na : bar.dif - bar.dea
+    bar
+
+// Shared storage path for the chart and for validation fixtures that supply dif/dea
+// directly. Mutates in place, so callers use it only for closed bars.
+chan_macd_store(ChanMacd state, int openTime, float dif, float dea) =>
+    float hist = dif - dea
+    state.seen += 1
+    if state.seen > state.warmup and not na(hist)
+        if hist > 0.0
+            state.sumPos += hist
+        if hist < 0.0
+            state.sumNeg -= hist
+        if state.times.size() >= state.capacity
+            state.times.shift()
+            state.cumPos.shift()
+            state.cumNeg.shift()
+            state.difs.shift()
+            state.deas.shift()
+            state.dropped += 1
+        state.times.push(openTime)
+        state.cumPos.push(state.sumPos)
+        state.cumNeg.push(state.sumNeg)
+        state.difs.push(dif)
+        state.deas.push(dea)
+    state.lastTime := openTime
+    true
+
+// One closed bar. A repeated or older open time is ignored, so re-running the same
+// bar (redraw, reload of the same data) cannot append twice. Returns whether it was taken.
+chan_macd_push(ChanMacd state, int openTime, float price) =>
+    bool accepted = na(state.lastTime) or openTime > state.lastTime
+    if accepted
+        ChanMacdBar bar = chan_macd_peek(state, price)
+        state.emaFast := bar.emaFast
+        state.emaSlow := bar.emaSlow
+        state.emaSignal := bar.emaSignal
+        state.sumFast := bar.sumFast
+        state.sumSlow := bar.sumSlow
+        state.sumSignal := bar.sumSignal
+        state.difCount := bar.difCount
+        chan_macd_store(state, openTime, bar.dif, bar.dea)
+    accepted
+
+// Index of the last kept entry whose open time is not later than target, or -1.
+chan_macd_index(ChanMacd state, int target) =>
+    int low = 0
+    int high = state.times.size() - 1
+    int found = -1
+    while low <= high
+        int mid = int(math.floor((low + high) / 2.0))
+        if state.times.get(mid) <= target
+            found := mid
+            low := mid + 1
+        else
+            high := mid - 1
+    found
+
+// M-002: same-sign area over the half-open interval (startTime, endTime].
+// Unavailable (never degraded to another definition) when the start precedes the
+// first kept entry (warm-up, before the window, or recycled), the interval is
+// reversed, or its end lies beyond the last closed bar.
+chan_macd_area(ChanMacd state, int startTime, int endTime, int direction) =>
+    if direction != 1 and direction != -1
+        runtime.error("MACD面积方向只能是1或-1")
+    ChanMacdArea result = ChanMacdArea.new()
+    result.fast := state.fast
+    result.slow := state.slow
+    result.signal := state.signal
+    if endTime < startTime
+        result.reason := "bad-range"
+    else if state.times.size() == 0
+        result.reason := "warmup"
+    else if startTime < state.times.first()
+        result.reason := state.dropped > 0 ? "recycled" : "before-start"
+    else if endTime > state.lastTime
+        result.reason := "not-closed"
+    else
+        int startIndex = chan_macd_index(state, startTime)
+        int endIndex = chan_macd_index(state, endTime)
+        array<float> cumulative = direction == 1 ? state.cumPos : state.cumNeg
+        result.available := true
+        result.reason := "ok"
+        result.area := cumulative.get(endIndex) - cumulative.get(startIndex)
+        result.bars := endIndex - startIndex
+        if endIndex > startIndex
+            float difValue = state.difs.get(startIndex + 1)
+            float deaValue = state.deas.get(startIndex + 1)
+            // A Pine for loop counts downward when start > end, so guard the range.
+            if endIndex > startIndex + 1
+                for i = startIndex + 2 to endIndex
+                    difValue := direction == 1 ? math.max(difValue, state.difs.get(i)) : math.min(difValue, state.difs.get(i))
+                    deaValue := direction == 1 ? math.max(deaValue, state.deas.get(i)) : math.min(deaValue, state.deas.get(i))
+            result.difExtreme := difValue
+            result.deaExtreme := deaValue
+    result
+
+chan_macd_signature(ChanMacd state) =>
+    int size = state.times.size()
+    str.tostring(state.fast) + "/" + str.tostring(state.slow) + "/" + str.tostring(state.signal) + "/" + str.tostring(state.warmup) + "/" + str.tostring(state.capacity) + "/" + str.tostring(state.seen) + "/" + str.tostring(state.dropped) + "/" + str.tostring(state.lastTime) + "/" + str.tostring(size) + "/" + (size > 0 ? str.tostring(state.times.first()) + "/" + str.tostring(state.times.last()) + "/" + str.tostring(state.cumPos.last(), "#.##########") + "/" + str.tostring(state.cumNeg.last(), "#.##########") : "empty") + "/" + str.tostring(state.emaFast, "#.##########") + "/" + str.tostring(state.emaSlow, "#.##########") + "/" + str.tostring(state.emaSignal, "#.##########")
+// END CHANLUN SIGNALS
+
+// BEGIN CHANLUN DIVERGENCE
+// Divergence signals (rules D-001..D-004; B-001 first class and B-004 consolidation divergence point).
+// Read-only: this section calls CORE step functions on its own mirror of the layer stack and reads
+// their Z/R states. It never assigns into a CORE state, so the pattern engine is untouched.
+// Order inside one confirmed part: L0 -> Z1 -> R1 -> D1 -> Z2 -> R2 -> D2 -> Z3 -> R3 -> D3.
+type ChanSegmentArea
+    int startTime
+    int endTime
+    int direction
+    float area = na
+    int extremeTicks
+
+type ChanComparison
+    string kind
+    array<string> aIds
+    string cId
+    ChanSegmentArea a
+    ChanSegmentArea c
+
+// side: 1 = buy, -1 = sell.
+type ChanSignal
+    string id
+    string type
+    int layer
+    int side
+    int priceTicks
+    int occurredAt
+    int confirmedAt
+    array<string> dependencies
+    ChanComparison comparison
+    string ruleId
+
+type ChanSignalNote
+    string type
+    string reason
+    ChanComparison comparison
+    array<string> dependencies
+
+type ChanSignalMemo
+    string centerId
+    ChanComponent entry
+    bool firstDone = false
+    bool consolidationDone = false
+
+// A first-class signal waiting for its second-class point: r1 is the next part, r2 the one after.
+type ChanSignalWait
+    string firstId
+    string componentId
+    int direction
+    int priceTicks
+    int count = 0
+    string r1Id = ""
+
+type ChanSignalLayer
+    string contextId
+    int layer
+    int lastOrdinal = 0
+    int count = 0
+    int dropped = 0
+    int signalLimit = 128
+    array<ChanComponent> recent
+    array<ChanSignalMemo> memos
+    array<ChanSignalWait> waits
+    ChanComponent pending
+    array<ChanSignal> signals
+    array<ChanSignal> events
+    array<ChanSignalNote> notes
+
+type ChanSignalRuntime
+    int levelLimit = 3
+    ChanStack stack
+    ChanSignalLayer d1
+    ChanSignalLayer d2
+    ChanSignalLayer d3
+    array<ChanSignal> events
+    array<ChanSignalNote> notes
+
+chan_signal_layer_new(string contextId, int layer) =>
+    ChanSignalLayer state = ChanSignalLayer.new()
+    state.contextId := contextId
+    state.layer := layer
+    state.recent := array.new<ChanComponent>()
+    state.memos := array.new<ChanSignalMemo>()
+    state.waits := array.new<ChanSignalWait>()
+    state.signals := array.new<ChanSignal>()
+    state.events := array.new<ChanSignal>()
+    state.notes := array.new<ChanSignalNote>()
+    state
+
+// Signals and notes are immutable once built, so the arrays are copied shallowly.
+chan_signal_layer_clone(ChanSignalLayer source) =>
+    ChanSignalLayer state = source.copy()
+    state.recent := source.recent.copy()
+    state.memos := array.new<ChanSignalMemo>()
+    for memo in source.memos
+        state.memos.push(memo.copy())
+    state.waits := array.new<ChanSignalWait>()
+    for wait in source.waits
+        state.waits.push(wait.copy())
+    state.signals := source.signals.copy()
+    state.events := array.new<ChanSignal>()
+    state.notes := array.new<ChanSignalNote>()
+    state
+
+chan_signal_memo(ChanSignalLayer state, string centerId) =>
+    ChanSignalMemo found = na
+    for memo in state.memos
+        if memo.centerId == centerId
+            found := memo
+    if na(found)
+        found := ChanSignalMemo.new(centerId)
+        state.memos.push(found)
+        if state.memos.size() > 8
+            state.memos.shift()
+    found
+
+// Index of the component with this id, or -1. A Pine for loop counts downward on an empty range.
+chan_signal_find(array<ChanComponent> members, string id) =>
+    int found = -1
+    if members.size() > 0
+        for i = 0 to members.size() - 1
+            if members.get(i).id == id
+                found := i
+    found
+
+chan_signal_segment(ChanMacd macd, int startTime, int endTime, int direction, int extremeTicks) =>
+    ChanSegmentArea segment = ChanSegmentArea.new(startTime, endTime, direction, na, extremeTicks)
+    ChanMacdArea measured = chan_macd_area(macd, startTime, endTime, direction)
+    if measured.available
+        segment.area := measured.area
+    segment
+
+// The centers of the current walk W: the tracked ones plus the live center when R has not tracked it yet.
+chan_signal_wset(ChanCenterState centers, ChanMovementState movements) =>
+    array<ChanCenter> result = array.new<ChanCenter>()
+    for center in movements.centers
+        result.push(center)
+    ChanCenter live = centers.center
+    if not na(live) and live.lifecycle != "closed"
+        if result.size() > 0 and result.last().id == live.id
+            result.set(result.size() - 1, live)
+        else
+            result.push(live)
+    result
+
+// Appends a confirmed signal: only ever added to, never changed afterwards.
+chan_signal_emit(ChanSignalLayer state, ChanSignal signal) =>
+    state.signals.push(signal)
+    if state.signals.size() > state.signalLimit
+        state.signals.shift()
+        state.dropped += 1
+    state.events.push(signal)
+    state.count += 1
+    true
+
+// D-001/M-003 hard conditions in a fixed order: new extreme, then areas available, then C smaller than A.
+chan_signal_decide(ChanSignalLayer state, ChanSignalMemo memo, string type, string ruleId, ChanComparison comparison, array<string> dependencies, ChanComponent c, int d) =>
+    string reason = ""
+    if d * (comparison.c.extremeTicks - comparison.a.extremeTicks) <= 0
+        reason := "not-new-extreme"
+    else if na(comparison.a.area) or na(comparison.c.area)
+        reason := "area-unavailable"
+    else if not (comparison.c.area < comparison.a.area)
+        reason := "area-not-smaller"
+    if reason == ""
+        ChanSignal signal = ChanSignal.new(state.contextId + "/L" + str.tostring(state.layer) + "/" + type + "/" + c.id, type, state.layer, d == 1 ? -1 : 1, c.realEndTicks, c.realEndTime, c.confirmedAt, dependencies, comparison, ruleId)
+        chan_signal_emit(state, signal)
+        if type == "first"
+            memo.firstDone := true
+            state.waits.push(ChanSignalWait.new(signal.id, c.id, d, c.realEndTicks))
+        else
+            memo.consolidationDone := true
+    else
+        state.notes.push(ChanSignalNote.new(type, reason, comparison, dependencies))
+    true
+
+// D-002. C is the departure of the newest center Zk, A runs from the previous center's departure
+// up to the part before Zk's first formation part.
+chan_signal_trend(ChanSignalLayer state, ChanSignalMemo memo, array<ChanCenter> wset, ChanMovementState movements, ChanCenter zk, ChanComponent c, ChanMacd macd) =>
+    ChanCenter zp = wset.get(wset.size() - 2)
+    int d = zk.ddTicks > zp.ggTicks ? 1 : (zk.ggTicks < zp.ddTicks ? -1 : 0)
+    int depIndex = zp.lifecycle == "closed" ? chan_signal_find(movements.members, zp.leaveId) : -1
+    int firstIndex = chan_signal_find(movements.members, zk.dependencies.get(0))
+    if d != 0 and c.direction == d and depIndex >= 0 and firstIndex > depIndex
+        ChanComponent dep = movements.members.get(depIndex)
+        int closeDirection = dep.realEndTicks > zp.coreHighTicks ? 1 : -1
+        if closeDirection == d
+            ChanComponent aFirst = movements.members.get(depIndex)
+            ChanComponent aLast = movements.members.get(firstIndex - 1)
+            array<string> aIds = array.new<string>()
+            array<string> dependencies = array.from(zk.id, zp.id)
+            int aExtreme = na
+            for i = depIndex to firstIndex - 1
+                ChanComponent member = movements.members.get(i)
+                aIds.push(member.id)
+                dependencies.push(member.id)
+                if member.direction == d
+                    int value = d == 1 ? member.actualHighTicks : member.actualLowTicks
+                    aExtreme := na(aExtreme) ? value : (d == 1 ? math.max(aExtreme, value) : math.min(aExtreme, value))
+            dependencies.push(c.id)
+            ChanSegmentArea a = chan_signal_segment(macd, aFirst.realStartTime, aLast.realEndTime, d, aExtreme)
+            ChanSegmentArea cs = chan_signal_segment(macd, c.realStartTime, c.realEndTime, d, d == 1 ? c.actualHighTicks : c.actualLowTicks)
+            chan_signal_decide(state, memo, "first", "D-001/D-002/M-002/M-003/B-001", ChanComparison.new("trend", aIds, c.id, a, cs), dependencies, c, d)
+    true
+
+// D-003. a is the part just before Zk's first formation part and must run the same way as C.
+chan_signal_consolidation(ChanSignalLayer state, ChanSignalMemo memo, ChanCenter zk, ChanComponent c, ChanMacd macd) =>
+    ChanComparison none = na
+    ChanComponent entry = memo.entry
+    if na(entry)
+        state.notes.push(ChanSignalNote.new("consolidation-divergence-point", "no-entry-segment", none, array.from(zk.id, c.id)))
+    else if entry.direction != c.direction
+        state.notes.push(ChanSignalNote.new("consolidation-divergence-point", "no-same-direction-entry", none, array.from(zk.id, entry.id, c.id)))
+    else
+        int d = c.direction
+        ChanSegmentArea a = chan_signal_segment(macd, entry.realStartTime, entry.realEndTime, d, d == 1 ? entry.actualHighTicks : entry.actualLowTicks)
+        ChanSegmentArea cs = chan_signal_segment(macd, c.realStartTime, c.realEndTime, d, d == 1 ? c.actualHighTicks : c.actualLowTicks)
+        chan_signal_decide(state, memo, "consolidation-divergence-point", "D-001/D-003/M-002/M-003/B-004", ChanComparison.new("consolidation", array.from(entry.id), c.id, a, cs), array.from(zk.id, entry.id, c.id), c, d)
+    true
+
+// B-002. r2 is the second part after the first-class point. It counts unless it passes the
+// first-class price (equal does not pass); when it does pass, no second-class point ever follows.
+chan_signal_second(ChanSignalLayer state, ChanSignalWait wait, ChanComponent r2) =>
+    ChanComparison none = na
+    array<string> dependencies = array.from(wait.firstId, wait.r1Id, r2.id)
+    if wait.direction * (r2.realEndTicks - wait.priceTicks) <= 0
+        chan_signal_emit(state, ChanSignal.new(state.contextId + "/L" + str.tostring(state.layer) + "/second/" + r2.id, "second", state.layer, wait.direction == 1 ? -1 : 1, r2.realEndTicks, r2.realEndTime, r2.confirmedAt, dependencies, none, "B-002"))
+    else
+        state.notes.push(ChanSignalNote.new("second", "breaks-first-class-price", none, dependencies))
+    true
+
+// B-003. A closing return part is the third-class point: above the core is a buy, below a sell.
+chan_signal_third(ChanSignalLayer state, ChanCenter closed, ChanComponent ret) =>
+    ChanComparison none = na
+    int side = ret.actualLowTicks > closed.coreHighTicks ? 1 : -1
+    chan_signal_emit(state, ChanSignal.new(state.contextId + "/L" + str.tostring(state.layer) + "/third/" + ret.id, "third", state.layer, side, ret.realEndTicks, ret.realEndTime, ret.confirmedAt, array.from(closed.id, closed.leaveId, ret.id), none, "B-003/E-010"))
+    true
+
+// One confirmed part of this layer, after the layer's Z and R have consumed it.
+chan_signal_layer_step(ChanSignalLayer source, ChanCenterState centers, ChanMovementState movements, ChanComponent component, ChanMacd macd) =>
+    ChanSignalLayer state = chan_signal_layer_clone(source)
+    if component.ordinal > source.lastOrdinal
+        state.lastOrdinal := component.ordinal
+        state.recent.push(component)
+        if state.recent.size() > 6
+            state.recent.shift()
+        // The entry segment is remembered when the center forms, while it is still in the short history.
+        if not na(centers.event)
+            ChanCenter formed = centers.event
+            ChanSignalMemo memo = chan_signal_memo(state, formed.id)
+            int at = chan_signal_find(state.recent, formed.dependencies.get(0))
+            if at > 0
+                memo.entry := state.recent.get(at - 1)
+        // A newly held departure part is a candidate C. It is judged once, when it is confirmed.
+        if not centers.blocked and not movements.blocked and not na(centers.pendingLeave) and not na(centers.center)
+            if centers.center.lifecycle != "closed" and centers.pendingLeave.id == component.id
+                ChanSignalMemo memo = chan_signal_memo(state, centers.center.id)
+                array<ChanCenter> wset = chan_signal_wset(centers, movements)
+                if wset.size() >= 2
+                    if not memo.firstDone
+                        chan_signal_trend(state, memo, wset, movements, centers.center, component, macd)
+                else if not memo.consolidationDone
+                    chan_signal_consolidation(state, memo, centers.center, component, macd)
+        // Same-batch order (B-005): first/consolidation point above, then second, then third.
+        if state.waits.size() > 0
+            array<ChanSignalWait> kept = array.new<ChanSignalWait>()
+            for wait in state.waits
+                if wait.componentId == component.id
+                    kept.push(wait)
+                else
+                    wait.count += 1
+                    if wait.count == 1
+                        wait.r1Id := component.id
+                        kept.push(wait)
+                    else
+                        chan_signal_second(state, wait, component)
+            state.waits := kept
+        if not centers.blocked
+            if not na(centers.closedEvent)
+                if component.id == centers.closedEvent.returnId
+                    chan_signal_third(state, centers.closedEvent, component)
+            else if not na(source.pending) and not na(centers.center)
+                if centers.center.lifecycle != "closed" and source.pending.id != component.id
+                    // The return touches the core edge exactly: it is the middle of the center, not a third-class point.
+                    ChanComparison none = na
+                    bool upward = source.pending.realEndTicks > centers.center.coreHighTicks
+                    bool onEdge = upward ? component.actualLowTicks == centers.center.coreHighTicks : component.actualHighTicks == centers.center.coreLowTicks
+                    if onEdge
+                        state.notes.push(ChanSignalNote.new("third", "touch-edge", none, array.from(centers.center.id, source.pending.id, component.id)))
+        state.pending := centers.pendingLeave
+    state
+
+chan_signal_runtime_new(string contextId, int levelLimit) =>
+    ChanSignalRuntime result = ChanSignalRuntime.new()
+    result.levelLimit := levelLimit
+    result.stack := ChanStack.new()
+    result.stack.centers := chan_center_new(contextId, 64)
+    result.stack.movements := chan_movement_new_level(contextId, 128, 1, levelLimit >= 2)
+    result.stack.levels := chan_levels_new(contextId, 64, levelLimit)
+    result.d1 := chan_signal_layer_new(contextId, 1)
+    result.d2 := chan_signal_layer_new(contextId, 2)
+    result.d3 := chan_signal_layer_new(contextId, 3)
+    result.events := array.new<ChanSignal>()
+    result.notes := array.new<ChanSignalNote>()
+    result
+
+// One confirmed L0 part through the mirror stack, then through D1..D3 in the CORE batch order.
+// chan_stack_step is the same function the engine uses, so the mirror cannot disagree with it.
+// Only a layer that was stepped contributes events and notes; an idle layer keeps its older ones.
+chan_signal_part(ChanSignalRuntime source, ChanComponent part, ChanMacd macd) =>
+    ChanSignalRuntime result = source.copy()
+    result.events := array.new<ChanSignal>()
+    result.notes := array.new<ChanSignalNote>()
+    result.stack := chan_stack_step(source.stack, part)
+    result.d1 := chan_signal_layer_step(source.d1, result.stack.centers, result.stack.movements, part, macd)
+    for event in result.d1.events
+        result.events.push(event)
+    for note in result.d1.notes
+        result.notes.push(note)
+    ChanComponent upper1 = na
+    if not na(result.stack.movements.event)
+        upper1 := result.stack.movements.event.upper
+    ChanComponent upper2 = na
+    if result.levelLimit >= 2 and not na(upper1)
+        result.d2 := chan_signal_layer_step(source.d2, result.stack.levels.centers2, result.stack.levels.movements2, upper1, macd)
+        for event in result.d2.events
+            result.events.push(event)
+        for note in result.d2.notes
+            result.notes.push(note)
+        if not na(result.stack.levels.movements2.event)
+            upper2 := result.stack.levels.movements2.event.upper
+    if result.levelLimit >= 3 and not na(upper2)
+        result.d3 := chan_signal_layer_step(source.d3, result.stack.levels.centers3, result.stack.levels.movements3, upper2, macd)
+        for event in result.d3.events
+            result.events.push(event)
+        for note in result.d3.notes
+            result.notes.push(note)
+    result
+// 5.2 isolated preview. Both functions are pure: the committed runtime and the committed MACD are only read,
+// so a candidate that disappears leaves no trace, and a candidate that is confirmed is submitted by the
+// normal path exactly once.
+type ChanSignalCandidates
+    array<ChanSignal> events
+    array<ChanSignalNote> notes
+
+// The hypothetical (unconfirmed) segments of the open bar as parts, on a copy of the normalisation state.
+// The hypothetical segments themselves are copied before they are marked confirmed, and the engine's
+// normalisation state is never touched.
+chan_signal_preview_parts(ChanNormalizationState normalized, array<ChanStructure> hypothetical, int previewTime) =>
+    array<ChanComponent> parts = array.new<ChanComponent>()
+    ChanNormalizationState working = normalized
+    for pendingSegment in hypothetical
+        ChanStructure segment = chan_structure_copy(pendingSegment)
+        segment.confirmed := true
+        segment.confirmedAt := previewTime
+        working := chan_normalization_step(working, segment)
+        parts.push(chan_component_copy(working.event))
+    parts
+
+// A copy of the MACD with the open bar pushed. The confirmed series never sees this bar.
+chan_macd_preview(ChanMacd source, int openTime, float price) =>
+    ChanMacd result = source.copy()
+    result.times := source.times.copy()
+    result.cumPos := source.cumPos.copy()
+    result.cumNeg := source.cumNeg.copy()
+    result.difs := source.difs.copy()
+    result.deas := source.deas.copy()
+    chan_macd_push(result, openTime, price)
+    result
+
+// What the hypothetical parts of the open bar would submit, in order. The committed runtime is not changed.
+chan_signal_candidates(ChanSignalRuntime committed, array<ChanComponent> parts, ChanMacd macd) =>
+    ChanSignalCandidates result = ChanSignalCandidates.new()
+    result.events := array.new<ChanSignal>()
+    result.notes := array.new<ChanSignalNote>()
+    ChanSignalRuntime working = committed
+    for part in parts
+        working := chan_signal_part(working, part, macd)
+        for event in working.events
+            result.events.push(event)
+        for note in working.notes
+            result.notes.push(note)
+    result
+// END CHANLUN DIVERGENCE
+
 // BEGIN CHANLUN RENDERER
 // One registry owns every line, box and label, including previews and diagnostics.
 // Drawing descriptors are projections of core records; the registry never owns core state.
@@ -1813,15 +2397,21 @@ chan_draw_delete(ChanDrawRegistry registry, int index) =>
         label.delete(record.labelId)
     true
 
+// Confirmed signal marks are never the first victim of the global label budget; they only go when nothing else is left.
 chan_draw_oldest(ChanDrawRegistry registry, string primitive, string category) =>
     int found = -1
+    int protectedFound = -1
     if registry.records.size() > 0
         for index = 0 to registry.records.size() - 1
             ChanDrawing record = registry.records.get(index)
             if (primitive == "" or record.primitive == primitive) and (category == "" or record.category == category)
-                found := index
-                break
-    found
+                if category == "" and str.startswith(record.category, "D-signal")
+                    if protectedFound < 0
+                        protectedFound := index
+                else
+                    found := index
+                    break
+    found >= 0 ? found : protectedFound
 
 chan_draw_put(ChanDrawRegistry registry, ChanDrawSpec spec) =>
     if na(spec.x1) or na(spec.x2) or na(spec.y1) or na(spec.y2) or spec.x2 < spec.x1 or spec.width < 1 or spec.fontSize < 1 or spec.fillTransparency < 0 or spec.fillTransparency > 100
@@ -1884,10 +2474,18 @@ chan_draw_put(ChanDrawRegistry registry, ChanDrawSpec spec) =>
                 "N-caption" => label.style_label_up
                 "F" => label.style_label_right
                 "K-caption" => label.style_label_up
+                "D-signal-buy" => label.style_label_up
+                "D-signal-sell" => label.style_label_down
+                "D-candidate-buy" => label.style_label_up
+                "D-candidate-sell" => label.style_label_down
+                "D-diag-top" => label.style_label_down
+                "D-diag-bottom" => label.style_label_up
                 => label.style_none
             label.set_style(record.labelId, captionStyle)
-            label.set_color(record.labelId, color.new(spec.hue, 100))
-            label.set_textcolor(record.labelId, spec.hue)
+            // Confirmed signals are solid; candidates and structure captions are hollow text.
+            bool solidMark = str.startswith(spec.category, "D-signal")
+            label.set_color(record.labelId, solidMark ? spec.hue : color.new(spec.hue, 100))
+            label.set_textcolor(record.labelId, solidMark ? color.white : spec.hue)
             bool diagnosticCaption = spec.category == "F" or spec.category == "F-confirmation" or spec.category == "S-confirmation" or spec.category == "K-caption" or str.startswith(spec.category, "S-feature-")
             label.set_size(record.labelId, diagnosticCaption ? math.min(12, spec.fontSize) : spec.fontSize)
     true
@@ -2044,6 +2642,9 @@ bool fixedStart = input.bool(false, "使用固定起点", group = groupContext)
 int requestedStart = input.time(1700000000000, "固定起点", group = groupContext)
 int sampleLimit = input.int(20000, "固定起点样本上限", minval = 100, maxval = 100000, group = groupContext)
 int levelLimit = input.int(3, "走势层数上限（L1～L3）", minval = 1, maxval = 3, group = groupContext)
+int macdFast = input.int(12, "MACD快线", minval = 1, maxval = 200, group = "MACD（信号阶段）")
+int macdSlow = input.int(26, "MACD慢线", minval = 2, maxval = 400, group = "MACD（信号阶段）")
+int macdSignal = input.int(9, "MACD信号线", minval = 1, maxval = 200, group = "MACD（信号阶段）")
 string viewMode = input.string("普通", "视图", options = ["普通", "研究"], group = "显示")
 bool showFractals = input.bool(false, "显示分型结构编号", group = "显示")
 bool showStrokes = input.bool(true, "显示蓝色笔", group = "笔")
@@ -2063,6 +2664,7 @@ color topColor = input.color(color.orange, "顶分型颜色", group = "显示")
 color bottomColor = input.color(color.blue, "底分型颜色", group = "显示")
 int labelBudget = input.int(120, "全局研究标签上限", minval = 12, maxval = 120, group = "显示")
 bool showMerged = input.bool(true, "研究：显示近期包含处理范围", group = "研究视图")
+bool showCandidates = input.bool(false, "研究：显示候选信号（实时预览，未收盘K线）", group = "研究视图")
 bool showConfirmations = input.bool(true, "研究：显示确认时刻", group = "研究视图")
 bool showFeatures = input.bool(false, "研究：显示线段特征与缺口", group = "研究视图")
 bool showNormalized = input.bool(false, "研究：显示L0标准化映射", group = "研究视图")
@@ -2083,11 +2685,145 @@ bool showMovementIds = input.bool(true, "显示走势类型与编号", group = "
 color mergedColor = input.color(color.gray, "合并K线边界颜色", group = "研究视图")
 int mergedWidth = input.int(1, "合并K线边界线宽", minval = 1, maxval = 3, group = "研究视图")
 int mergedTransparency = input.int(92, "合并K线填充透明度", minval = 75, maxval = 100, group = "研究视图")
+bool showComparison = input.bool(true, "研究：显示面积对比与比较段", group = "研究视图")
+bool showNotes = input.bool(false, "研究：显示未成立原因", group = "研究视图")
+bool showDiagnostic = input.bool(true, "研究：显示R端点诊断", group = "研究视图")
+string groupSignals = "买卖点（信号阶段）"
+bool signalsOn = input.bool(true, "启用背驰与买卖点（关闭则不计算）", group = groupSignals)
+bool showSignals = input.bool(true, "显示确认买卖点", group = groupSignals)
+bool showSignalL1 = input.bool(true, "显示L1买卖点", group = groupSignals)
+bool showSignalL2 = input.bool(true, "显示L2买卖点", group = groupSignals)
+bool showSignalL3 = input.bool(true, "显示L3买卖点", group = groupSignals)
+bool showFirst = input.bool(true, "显示第一类买卖点", group = groupSignals)
+bool showConsolidation = input.bool(true, "显示盘整背驰点", group = groupSignals)
+bool showSecond = input.bool(true, "显示第二类买卖点", group = groupSignals)
+bool showThird = input.bool(true, "显示第三类买卖点", group = groupSignals)
+color buyColor = input.color(color.rgb(8, 153, 129), "买点颜色", group = groupSignals)
+color sellColor = input.color(color.rgb(242, 54, 69), "卖点颜色", group = groupSignals)
+string groupAlerts = "提醒（信号阶段）"
+bool alertsOn = input.bool(false, "启用提醒（确认K线收盘时每个信号一条）", group = groupAlerts)
+bool alertL1 = input.bool(true, "提醒L1", group = groupAlerts)
+bool alertL2 = input.bool(true, "提醒L2", group = groupAlerts)
+bool alertL3 = input.bool(true, "提醒L3", group = groupAlerts)
+bool alertFirst = input.bool(true, "提醒第一类", group = groupAlerts)
+bool alertConsolidation = input.bool(true, "提醒盘整背驰点", group = groupAlerts)
+bool alertSecond = input.bool(true, "提醒第二类", group = groupAlerts)
+bool alertThird = input.bool(true, "提醒第三类", group = groupAlerts)
 bool research = viewMode == "研究"
+
+// ==================== Signal display and alerts: projections of committed signals, nothing flows back ====================
+chan_signal_type_text(string type) =>
+    type == "first" ? "一" : type == "second" ? "二" : type == "third" ? "三" : "盘背"
+
+chan_signal_caption(ChanSignal signal) =>
+    "L" + str.tostring(signal.layer) + " " + chan_signal_type_text(signal.type) + (signal.side == 1 ? "买" : "卖")
+
+// One filter for marks and for alerts: the layer switch and the type switch must both be on.
+chan_signal_allowed(ChanSignal signal, bool l1, bool l2, bool l3, bool first, bool consolidation, bool second, bool third) =>
+    bool layerOn = signal.layer == 1 ? l1 : signal.layer == 2 ? l2 : l3
+    bool typeOn = signal.type == "first" ? first : signal.type == "second" ? second : signal.type == "third" ? third : consolidation
+    layerOn and typeOn
+
+chan_signal_reason_text(string reason) =>
+    switch reason
+        "not-new-extreme" => "终点没有严格创新高（低）"
+        "area-unavailable" => "面积不可用（已回收或预热）"
+        "area-not-smaller" => "面积不小于比较段"
+        "no-entry-segment" => "没有进入段"
+        "no-same-direction-entry" => "进入段方向不同"
+        "breaks-first-class-price" => "越过第一类价格"
+        "touch-edge" => "回抽触及中枢边界，算回到中枢"
+        => reason
+
+chan_signal_area_text(ChanSegmentArea segment) =>
+    na(segment.area) ? "不可用" : str.tostring(segment.area, "#.##")
+
+chan_signal_draw(ChanDrawRegistry registry, ChanSignal signal, float tickSize, color buyHue, color sellHue, int fontSize, bool detailed, bool withComparison, int labelBudget) =>
+    color hue = signal.side == 1 ? buyHue : sellHue
+    string tooltip = "买卖点，不是结构编号\n" + signal.id + "\n规则：" + signal.ruleId + "\n发生：" + str.format_time(signal.occurredAt, "yyyy-MM-dd HH:mm", "UTC") + " UTC\n确认：" + str.format_time(signal.confirmedAt, "yyyy-MM-dd HH:mm", "UTC") + " UTC"
+    if detailed
+        tooltip += "\n依赖：" + array.join(signal.dependencies, "\n")
+        tooltip += "\n可用低级别区间套细化"
+    chan_draw_put(registry, ChanDrawSpec.new(signal.id + "/mark", signal.side == 1 ? "D-signal-buy" : "D-signal-sell", "label", signal.occurredAt, signal.occurredAt, signal.priceTicks * tickSize, signal.priceTicks * tickSize, hue, 1, true, chan_signal_caption(signal), tooltip, math.max(8, fontSize - 1), 100, false, math.max(1, math.min(30, labelBudget))))
+    if withComparison and not na(signal.comparison)
+        ChanComparison comparison = signal.comparison
+        float aPrice = comparison.a.extremeTicks * tickSize
+        float cPrice = comparison.c.extremeTicks * tickSize
+        // The drawing registry rejects a backwards line, so the two ends are put in time order.
+        bool ordered = comparison.a.endTime <= comparison.c.endTime
+        chan_draw_put(registry, ChanDrawSpec.new(signal.id + "/compare-line", "D-compare-line", "line", ordered ? comparison.a.endTime : comparison.c.endTime, ordered ? comparison.c.endTime : comparison.a.endTime, ordered ? aPrice : cPrice, ordered ? cPrice : aPrice, hue, 1, false, "", "", fontSize, 100, false, 30))
+        string compareText = (comparison.kind == "trend" ? "趋势" : "盘整") + " A面积 " + chan_signal_area_text(comparison.a) + " / C面积 " + chan_signal_area_text(comparison.c)
+        int middleTime = comparison.a.endTime + (comparison.c.endTime - comparison.a.endTime) / 2
+        chan_draw_put(registry, ChanDrawSpec.new(signal.id + "/compare-text", "D-compare", "label", middleTime, middleTime, (aPrice + cPrice) / 2, (aPrice + cPrice) / 2, hue, 1, false, compareText, "A与C的端点极值连线；面积越小越背驰\n" + signal.id, math.max(8, fontSize - 2), 100, false, 30))
+    true
+
+chan_signal_note_draw(ChanDrawRegistry registry, ChanSignalNote note, ChanComponent anchor, float tickSize, int fontSize) =>
+    int at = anchor.realEndTime
+    float price = anchor.realEndTicks * tickSize
+    if not na(note.comparison)
+        at := note.comparison.c.endTime
+        price := note.comparison.c.extremeTicks * tickSize
+    string id = array.join(note.dependencies, ">") + "/" + note.type + "/" + note.reason
+    string typeName = note.type == "first" ? "第一类" : note.type == "second" ? "第二类" : note.type == "third" ? "第三类" : "盘整背驰"
+    chan_draw_put(registry, ChanDrawSpec.new(id, "D-note", "label", at, at, price, price, color.gray, 1, false, typeName + "未成立：" + chan_signal_reason_text(note.reason), "未成立记录，不是信号，不触发提醒\n" + id, math.max(8, fontSize - 2), 100, false, 16))
+    true
+
+chan_signal_alert_text(ChanSignal signal, float tickSize) =>
+    "缠论买卖点 " + syminfo.tickerid + " " + timeframe.period + " L" + str.tostring(signal.layer) + " " + chan_signal_type_text(signal.type) + (signal.side == 1 ? "买点" : "卖点") + " 价格 " + str.tostring(signal.priceTicks * tickSize, format.mintick) + " 发生 " + str.format_time(signal.occurredAt, "yyyy-MM-dd HH:mm", "UTC") + " UTC 确认 " + str.format_time(signal.confirmedAt, "yyyy-MM-dd HH:mm", "UTC") + " UTC ID " + signal.id
+
+// R endpoint diagnostic (7.1). A completed movement is only read: the diagnostic asks whether a first-class signal of the same
+// layer sits on its endpoint. Nothing here feeds back into the engine, the signal runtime or the movement record.
+// The first-class signal of the movement's last centre (the one whose close completed it), or na.
+chan_r_linked_signal(ChanMovement movement, ChanSignalLayer owner) =>
+    ChanSignal linked = na
+    string lastCenter = movement.centerIds.size() > 0 ? movement.centerIds.last() : ""
+    if lastCenter != "" and owner.signals.size() > 0
+        for candidate in owner.signals
+            if candidate.type == "first" and candidate.dependencies.size() > 0 and candidate.dependencies.get(0) == lastCenter and candidate.side == -movement.direction
+                linked := candidate
+                break
+    linked
+
+// matched: same time and price; offset: the last centre has a first-class signal elsewhere; none: it has none;
+// unknown: none was found but older signals of the layer were recycled.
+chan_r_endpoint_verdict(ChanMovement movement, ChanSignal linked, ChanSignalLayer owner) =>
+    string verdict = "none"
+    if not na(linked)
+        verdict := linked.occurredAt == movement.endTime and linked.priceTicks == movement.endTicks ? "matched" : "offset"
+    else if owner.dropped > 0
+        verdict := "unknown"
+    verdict
+
+chan_r_verdict_index(string verdict) =>
+    verdict == "matched" ? 0 : verdict == "offset" ? 1 : verdict == "none" ? 2 : 3
+
+chan_r_verdict_text(string verdict) =>
+    switch verdict
+        "matched" => "端点已背驰确认"
+        "offset" => "端点未经背驰确认·末中枢一类点偏移"
+        "none" => "端点未经背驰确认·末中枢无一类点"
+        => "端点未经背驰确认·信号已回收，无法比对"
+
+chan_r_diagnostic_draw(ChanDrawRegistry registry, ChanMovement movement, ChanSignal linked, string verdict, float tickSize, int fontSize) =>
+    color hue = verdict == "matched" ? color.teal : verdict == "offset" ? color.orange : color.gray
+    string tooltip = "走势完成诊断，不是买卖点；不改变走势完成记录\n" + movement.id + "\n规则：" + movement.ruleId + "\n类型：" + movement.morphology + "\n端点：" + str.format_time(movement.endTime, "yyyy-MM-dd HH:mm", "UTC") + " UTC @ " + str.tostring(movement.endTicks * tickSize, format.mintick) + "\n完成确认：" + str.format_time(movement.confirmedAt, "yyyy-MM-dd HH:mm", "UTC") + " UTC"
+    if not na(linked)
+        tooltip += "\n同层一类点：" + linked.id + "\n其端点：" + str.format_time(linked.occurredAt, "yyyy-MM-dd HH:mm", "UTC") + " UTC @ " + str.tostring(linked.priceTicks * tickSize, format.mintick)
+    tooltip += "\nR-003 取离开部件起点之前的同向极值，第一类点取离开部件终点"
+    chan_draw_put(registry, ChanDrawSpec.new(movement.id + "/diagnostic", movement.direction == 1 ? "D-diag-top" : "D-diag-bottom", "label", movement.endTime, movement.endTime, movement.endTicks * tickSize, movement.endTicks * tickSize, hue, 1, true, "L" + str.tostring(movement.level) + " R" + str.tostring(movement.ordinal) + " " + chan_r_verdict_text(verdict), tooltip, math.max(8, fontSize - 2), 100, false, 16))
+    true
 
 // ==================== Chart scheduling: no drawing decisions enter the core ====================
 var ChanRuntime engine = chan_runtime_new_levels(syminfo.tickerid + "/" + timeframe.period + "/" + str.tostring(syminfo.mintick), segmentPendingLimit, 8192, 64, levelLimit)
 var ChanWindow analysisWindow = chan_window_new(fixedStart, requestedStart, initialBars, last_bar_index, time, sampleLimit)
+// The fixed window stops at sampleLimit, so its prefixes are never recycled. The recent
+// window keeps growing with live bars, so it keeps twice the initial bars and recycles the oldest.
+var ChanMacd macd = chan_macd_new(macdFast, macdSlow, macdSignal, fixedStart ? sampleLimit : 2 * initialBars)
+// The divergence layer keeps its own mirror of the Z/R stack, fed the same confirmed L0 parts in the same order.
+var ChanSignalRuntime signals = chan_signal_runtime_new(syminfo.tickerid + "/" + timeframe.period + "/" + str.tostring(syminfo.mintick), levelLimit)
+// R endpoint diagnostic tallies: index = layer * 4 + (0 matched, 1 offset, 2 none, 3 unknown). Display only, written on confirmed frames.
+var array<int> diagCounts = array.new<int>(16, 0)
+var array<string> diagMisses = array.new<string>()
 ChanState committed = engine.morphology
 ChanSegmentState segments = engine.segments
 ChanNormalizationState normalized = engine.normalized
@@ -2138,11 +2874,51 @@ if supported and inRange
     normalized := engine.normalized
     centers := engine.centers
     visible := frame.visible
+    // MACD shares the window gate and the close gate with the engine; nothing reads it back yet.
+    if signalsOn and barstate.isconfirmed
+        chan_macd_push(macd, time, close)
     if frame.submitted
         if frame.segmentEvents.size() > 0
             for eventIndex = 0 to frame.segmentEvents.size() - 1
                 ChanStructure segment = frame.segmentEvents.get(eventIndex)
                 ChanComponent component = frame.componentEvents.get(eventIndex)
+                // D1..D3 read the Z/R states after this part; MACD already holds this bar.
+                if signalsOn
+                    signals := chan_signal_part(signals, component, macd)
+                    // Committed signals are only read here: marks, comparison labels and alerts are projections.
+                    for signal in signals.events
+                        if showSignals and chan_signal_allowed(signal, showSignalL1, showSignalL2, showSignalL3, showFirst, showConsolidation, showSecond, showThird)
+                            chan_signal_draw(drawings, signal, syminfo.mintick, buyColor, sellColor, fontSize, research, research and showComparison, labelBudget)
+                        // alert() fires on the closing execution of a live bar only; historical bars and open-bar candidates never alert.
+                        if alertsOn and barstate.isrealtime and chan_signal_allowed(signal, alertL1, alertL2, alertL3, alertFirst, alertConsolidation, alertSecond, alertThird)
+                            alert(chan_signal_alert_text(signal, syminfo.mintick), alert.freq_all)
+                    if research and showNotes
+                        for note in signals.notes
+                            chan_signal_note_draw(drawings, note, component, syminfo.mintick, fontSize)
+                    // R completions of this part, read from the mirror stack; the engine's own movement records are untouched.
+                    for layerIndex = 1 to levelLimit
+                        ChanMovement completed = na
+                        ChanSignalLayer owner = na
+                        if layerIndex == 1
+                            completed := signals.stack.movements.event
+                            owner := signals.d1
+                        else if layerIndex == 2
+                            completed := signals.stack.levels.movements2.event
+                            owner := signals.d2
+                        else
+                            completed := signals.stack.levels.movements3.event
+                            owner := signals.d3
+                        if not na(completed) and completed.completed
+                            ChanSignal linked = chan_r_linked_signal(completed, owner)
+                            string verdict = chan_r_endpoint_verdict(completed, linked, owner)
+                            int tally = layerIndex * 4 + chan_r_verdict_index(verdict)
+                            diagCounts.set(tally, diagCounts.get(tally) + 1)
+                            if verdict != "matched"
+                                diagMisses.push("L" + str.tostring(layerIndex) + " " + str.format_time(completed.endTime, "yyyy-MM-dd HH:mm", "UTC") + (verdict == "offset" ? "偏" : verdict == "none" ? "无" : "?"))
+                                if diagMisses.size() > 4
+                                    diagMisses.shift()
+                            if research and showDiagnostic
+                                chan_r_diagnostic_draw(drawings, completed, linked, verdict, syminfo.mintick, fontSize)
                 if research and showNormalized
                     chan_draw_component(drawings, component, syminfo.mintick, strokeStyle)
                 if showSegments
@@ -2188,6 +2964,16 @@ if barstate.islast
                     chan_draw_features(drawings, segmentPreview.firstContext, syminfo.mintick, strokeStyle)
                 if not na(segmentPreview.secondContext)
                     chan_draw_features(drawings, segmentPreview.secondContext, syminfo.mintick, strokeStyle)
+    // Candidate signals of the open bar (5.2). The hypothetical segments are normalised into parts on copies,
+    // judged on a copy of the signal runtime, and drawn hollow; nothing here is written back to engine, MACD or signals.
+    if supported and inRange and signalsOn and showCandidates and not barstate.isconfirmed
+        ChanSegmentPreview candidateProjection = chan_runtime_segment_preview(engine, visible, strokePreview)
+        array<ChanComponent> candidateParts = chan_signal_preview_parts(engine.normalized, candidateProjection.events, time_close)
+        ChanSignalCandidates candidates = chan_signal_candidates(signals, candidateParts, chan_macd_preview(macd, time, close))
+        for candidate in candidates.events
+            // Hollow, side-coloured, only if the same layer/type switches would show the confirmed mark.
+            if chan_signal_allowed(candidate, showSignalL1, showSignalL2, showSignalL3, showFirst, showConsolidation, showSecond, showThird)
+                chan_draw_put(drawings, ChanDrawSpec.new(candidate.id + "/candidate", candidate.side == 1 ? "D-candidate-buy" : "D-candidate-sell", "label", candidate.occurredAt, candidate.occurredAt, candidate.priceTicks * syminfo.mintick, candidate.priceTicks * syminfo.mintick, candidate.side == 1 ? buyColor : sellColor, 1, false, "候选" + chan_signal_caption(candidate), "未收盘预览，收盘时条件不再成立则消失；不触发提醒\n" + candidate.id, math.max(8, fontSize - 2), 100, true, 8))
     if showFractals and supported
         if not na(visible.candidate)
             chan_draw_put(drawings, chan_fractal_spec(visible.candidate, syminfo.mintick, false, topColor, bottomColor, fontSize, research, true, labelBudget))
@@ -2246,7 +3032,7 @@ if barstate.islast
     table.cell(status, 0, 9, centerPrices + (showCenters ? "" : " · 显示已关闭"), text_color = color.rgb(216, 180, 254), bgcolor = statusBackground, text_size = statusFontSize)
     string movementNote = "走势完成 L1/L2/L3：" + str.tostring(engine.movements.count) + "/" + str.tostring(engine.levels.movements2.count) + "/" + str.tostring(engine.levels.movements3.count) + "\n上层中枢 L2/L3：" + str.tostring(engine.levels.centers2.count) + "/" + str.tostring(engine.levels.centers3.count) + (engine.levels.levelLimit < 3 ? "\n层数上限 " + str.tostring(engine.levels.levelLimit) + "，更高层未计算" : "") + (engine.movements.blocked ? "\n走势层受限：" + engine.movements.blockKind : "")
     table.cell(status, 0, 10, centerRelation + "\n" + movementNote, text_color = statusMuted, bgcolor = statusBackground, text_size = statusFontSize)
-    table.cell(status, 0, 11, research ? "绘图：线 " + str.tostring(chan_draw_count(drawings, "line", "")) + " / 框 " + str.tostring(chan_draw_count(drawings, "box", "")) + " / 标签 " + str.tostring(chan_draw_count(drawings, "label", "")) : "结构编号不是买卖点", text_color = statusMuted, bgcolor = statusBackground, text_size = statusFontSize)
+    table.cell(status, 0, 11, research ? "绘图：线 " + str.tostring(chan_draw_count(drawings, "line", "")) + " / 框 " + str.tostring(chan_draw_count(drawings, "box", "")) + " / 标签 " + str.tostring(chan_draw_count(drawings, "label", "")) + "\nMACD前缀 " + str.tostring(macd.times.size()) + "/" + str.tostring(macd.capacity) + (macd.dropped > 0 ? " · 已回收 " + str.tostring(macd.dropped) : "") + "\n背驰信号 D1/D2/D3" + (signalsOn ? "：" : "（未启用）：") + str.tostring(signals.d1.count) + "/" + str.tostring(signals.d2.count) + "/" + str.tostring(signals.d3.count) + "\n买卖点标记 买" + str.tostring(chan_draw_count(drawings, "label", "D-signal-buy")) + " / 卖" + str.tostring(chan_draw_count(drawings, "label", "D-signal-sell")) + "\nR端点 确认/偏移/无/?  L1 " + str.tostring(diagCounts.get(4)) + "/" + str.tostring(diagCounts.get(5)) + "/" + str.tostring(diagCounts.get(6)) + "/" + str.tostring(diagCounts.get(7)) + "  L2 " + str.tostring(diagCounts.get(8)) + "/" + str.tostring(diagCounts.get(9)) + "/" + str.tostring(diagCounts.get(10)) + "/" + str.tostring(diagCounts.get(11)) + "  L3 " + str.tostring(diagCounts.get(12)) + "/" + str.tostring(diagCounts.get(13)) + "/" + str.tostring(diagCounts.get(14)) + "/" + str.tostring(diagCounts.get(15)) + (diagMisses.size() > 0 ? "\n未确认端点：" + array.join(diagMisses, "；") : "") : "结构编号不是买卖点", text_color = statusMuted, bgcolor = statusBackground, text_size = statusFontSize)
     string rangeStart = na(analysisWindow.firstInput) ? "等待输入" : str.format_time(analysisWindow.firstInput, "yyyy-MM-dd HH:mm", "UTC")
     string rangeRequest = analysisWindow.fixed ? "请求：" + str.format_time(analysisWindow.requestedStart, "yyyy-MM-dd HH:mm", "UTC") : "近期窗口：加载时固定"
     table.cell(status, 0, 12, rangeRequest + "\n接收起点：" + rangeStart + " UTC · " + str.tostring(analysisWindow.count) + "根" + (insufficientHistory ? "\n请求起点早于可用历史" : ""), text_color = statusMuted, bgcolor = statusBackground, text_size = statusFontSize)

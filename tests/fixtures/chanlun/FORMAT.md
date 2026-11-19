@@ -88,3 +88,29 @@ windows/cases.json使用单独schemaVersion=1，不计入主目录52例。config
 ## 保留量工程预期
 
 retention/cases.json是独立工程schemaVersion=1，记录长输入构造及人工终态约束，不计入主目录52例。monotonic给出OHLC数量与最终处理／保留数；centers给出连接端点、平移步长、重复轮数及裁剪后历史序号与下一中枢核心；strokes引用已有独立锁定笔样例和最大后缀保留量。生成器只将预期编码为Pine断言，不运行JS形态算法生成答案。生产CORE与预期哈希分别绑定，平台执行单独记录。
+
+## 信号样例（signals/，kind=signal-components）
+
+`tests/fixtures/chanlun/signals/` 存放背驰与买卖点的独立预期（规则见 rules.md 的 M／D／B 组，规则版本 `chanlun-signals-0.1`），由 `check-fixtures.mjs` 的 `checkSignalDirectory` 单独计数，不计入主目录的 54 例。`ruleVersion` 固定为 `chanlun-signals-0.1`，`source` 等顶层字段同上。
+
+### 输入
+
+`input` 固定为 `{kind, macd, layer, bars, items}`：
+
+- `macd`：`{fast, slow, signal, warmupBars}`，只记录参数，**不参与计算**——样例与 MACD 计算解耦。前 `warmupBars` 根 `bars` 视为预热（或已回收的前缀），涉及这些柱的段面积不可用（M-002）。
+- `layer`：1～3，信号所属层级。
+- `bars`：逐根已收盘 K 线的柱值 `{time, closeTime, hist, dif, dea}`，均为整数，时间严格递增。`hist` 是 M-001 的柱值（样例直接给出，不由 `dif－dea` 校验）。
+- `items`：本层已完成部件（同 completed-components 的字段，首尾相连）。每个部件的终点时间必须有一根对应的 K 线，且该 K 线在 `completedAt` 前已收盘。
+
+### 预期
+
+每个输入前缀恰好一项 `{prefix, state, signals, suppressed, events, reason}`：
+
+- `state`：`{processedCount, centers}`。`centers` 是该前缀全部 Z 的快照 `{id, status, coreLowTicks, coreHighTicks, ggTicks, ddTicks, formationIds, closeDirection, departureId, returnId}`，ID 为 `<fixture.id>/Z/<序号>`；`status` 为 open／closed；`departureId` 在 open 时是待定离开部件，在 closed 时是已确认离开部件。核心必须等于三个形成部件区间的交集，由检查器重算。Z 的归属与关闭是人工按 Z-001／Z-002／E-010 推导的中间事实，检查器只核对算术与引用，不判断推导是否正确。
+- `signals`：该前缀全部已确认信号（累计）。每个信号 `{id, type, layer, side, priceTicks, occurredAt, confirmedAt, dependencies, comparison}`；`type` 为 `first`（第一类）、`second`、`third`、`consolidation-divergence-point`；`id` 为 `<fixture.id>/L<层>/<type>/<触发部件ID>`。触发部件：第一类与盘整背驰点是离开部件，第二类是第一类之后的第二个部件，第三类是回试部件。`occurredAt` 等于触发部件终点时间，`confirmedAt` 等于其 `completedAt`，且必须在恰好那一个前缀首次出现。已确认信号在后续前缀必须逐字段不变。
+- `comparison`：第一类与盘整背驰点为 `{kind, aIds, cId, a, c}`，`a`／`c` 为 `{startTime, endTime, direction, areaUnits, extremeTicks}`；其余类型为 null。`areaUnits` 由检查器按 M-002 用 `bars` 重算并比对（左开右闭 `(ts,te]`，只计同号柱，不可用时为 null）。检查器断言已确认信号满足 C 面积严格小于 A、C 极值严格越过 A、A 的取法（第一类：自前一中枢离开部件到最后中枢首个形成部件之前；盘整背驰点：紧邻首个形成部件之前的同向部件）、依赖列表及类型与买卖侧。
+- `suppressed`：该前缀被评估后**未**产生的信号及原因 `{type, reason, comparison, dependencies}`，不累计。`reason` 为 `area-unavailable`、`area-not-smaller`、`not-new-extreme`、`no-same-direction-entry`、`no-entry-segment`、`breaks-first-class-price`、`touch-edge`（第三类的回试低点／高点恰等于核心边界）。需要面积或价格比较的原因必须带 `comparison`，检查器用重算值核对原因成立。
+- `events`：该前缀新提交的信号 ID，按提交顺序，同批顺序为第一类／盘整背驰点 → 第二类 → 第三类（B-005）。
+- `reason`：人工推导理由。
+
+检查器**不判断某个信号是否应该出现**，只核对数据契约、重算算术和不变量；预期必须人工推导，禁止由待测实现回填。样例是合成的，部件区间等于两端点；价格以 30 为轴翻转的镜像样例（名称带 `-down`）覆盖买入侧。

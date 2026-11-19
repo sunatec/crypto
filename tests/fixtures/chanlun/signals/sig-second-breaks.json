@@ -1,0 +1,1313 @@
+{
+ "schemaVersion": 1,
+ "id": "SIG-SECOND-BREAKS",
+ "ruleVersion": "chanlun-signals-0.1",
+ "ruleIds": [
+  "M-002",
+  "M-003",
+  "D-001",
+  "D-002",
+  "B-001",
+  "B-002",
+  "B-003"
+ ],
+ "expectationStatus": "reviewed",
+ "construction": "synthetic",
+ "source": {
+  "category": "author-body",
+  "sourceIds": [
+   "C21-45",
+   "C53-126",
+   "C61-154"
+  ],
+  "lesson": 21,
+  "pdfPages": [
+   45,
+   127,
+   155
+  ],
+  "figure": null,
+  "note": "第二类点反例：回试越过第一类价格则永不输出；并含后续同向关闭的第三类点。 合成输入：已完成部件的区间等于两端点，逐根 MACD 柱值直接给出，不经过 MACD 计算（任务 2.1）；价格单位为 1 tick。中枢与离开／回抽归属按 Z-001/002 与 E-010 人工推导，信号按 rules.md 的 D-001～D-004、B-001～B-005 人工推导，未使用待测实现的输出。"
+ },
+ "tickSize": "1",
+ "input": {
+  "kind": "signal-components",
+  "macd": {
+   "fast": 12,
+   "slow": 26,
+   "signal": 9,
+   "warmupBars": 0
+  },
+  "layer": 1,
+  "bars": [
+   {
+    "time": 1701000000000,
+    "closeTime": 1701000060000,
+    "hist": 0,
+    "dif": 0,
+    "dea": 0
+   },
+   {
+    "time": 1701000060000,
+    "closeTime": 1701000120000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000120000,
+    "closeTime": 1701000180000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000180000,
+    "closeTime": 1701000240000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000240000,
+    "closeTime": 1701000300000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000300000,
+    "closeTime": 1701000360000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   },
+   {
+    "time": 1701000360000,
+    "closeTime": 1701000420000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000420000,
+    "closeTime": 1701000480000,
+    "hist": 1,
+    "dif": 2,
+    "dea": 1
+   },
+   {
+    "time": 1701000480000,
+    "closeTime": 1701000540000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000540000,
+    "closeTime": 1701000600000,
+    "hist": 1,
+    "dif": 2,
+    "dea": 1
+   },
+   {
+    "time": 1701000600000,
+    "closeTime": 1701000660000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000660000,
+    "closeTime": 1701000720000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000720000,
+    "closeTime": 1701000780000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000780000,
+    "closeTime": 1701000840000,
+    "hist": 3,
+    "dif": 6,
+    "dea": 3
+   },
+   {
+    "time": 1701000840000,
+    "closeTime": 1701000900000,
+    "hist": 5,
+    "dif": 10,
+    "dea": 5
+   },
+   {
+    "time": 1701000900000,
+    "closeTime": 1701000960000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000960000,
+    "closeTime": 1701001020000,
+    "hist": 4,
+    "dif": 8,
+    "dea": 4
+   },
+   {
+    "time": 1701001020000,
+    "closeTime": 1701001080000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   },
+   {
+    "time": 1701001080000,
+    "closeTime": 1701001140000,
+    "hist": -4,
+    "dif": -8,
+    "dea": -4
+   },
+   {
+    "time": 1701001140000,
+    "closeTime": 1701001200000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701001200000,
+    "closeTime": 1701001260000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701001260000,
+    "closeTime": 1701001320000,
+    "hist": 3,
+    "dif": 6,
+    "dea": 3
+   },
+   {
+    "time": 1701001320000,
+    "closeTime": 1701001380000,
+    "hist": 1,
+    "dif": 2,
+    "dea": 1
+   },
+   {
+    "time": 1701001380000,
+    "closeTime": 1701001440000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701001440000,
+    "closeTime": 1701001500000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701001500000,
+    "closeTime": 1701001560000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701001560000,
+    "closeTime": 1701001620000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701001620000,
+    "closeTime": 1701001680000,
+    "hist": 3,
+    "dif": 6,
+    "dea": 3
+   },
+   {
+    "time": 1701001680000,
+    "closeTime": 1701001740000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701001740000,
+    "closeTime": 1701001800000,
+    "hist": 3,
+    "dif": 6,
+    "dea": 3
+   },
+   {
+    "time": 1701001800000,
+    "closeTime": 1701001860000,
+    "hist": -4,
+    "dif": -8,
+    "dea": -4
+   },
+   {
+    "time": 1701001860000,
+    "closeTime": 1701001920000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   },
+   {
+    "time": 1701001920000,
+    "closeTime": 1701001980000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701001980000,
+    "closeTime": 1701002040000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701002040000,
+    "closeTime": 1701002100000,
+    "hist": 3,
+    "dif": 6,
+    "dea": 3
+   },
+   {
+    "time": 1701002100000,
+    "closeTime": 1701002160000,
+    "hist": 3,
+    "dif": 6,
+    "dea": 3
+   },
+   {
+    "time": 1701002160000,
+    "closeTime": 1701002220000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   },
+   {
+    "time": 1701002220000,
+    "closeTime": 1701002280000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   },
+   {
+    "time": 1701002280000,
+    "closeTime": 1701002340000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701002340000,
+    "closeTime": 1701002400000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   }
+  ],
+  "items": [
+   {
+    "id": "c1",
+    "startTime": 1701000000000,
+    "endTime": 1701000180000,
+    "completedAt": 1701000300000,
+    "startTicks": 0,
+    "endTicks": 10,
+    "lowTicks": 0,
+    "highTicks": 10,
+    "direction": "up",
+    "dependencies": [
+     "L0:c1"
+    ]
+   },
+   {
+    "id": "c2",
+    "startTime": 1701000180000,
+    "endTime": 1701000360000,
+    "completedAt": 1701000480000,
+    "startTicks": 10,
+    "endTicks": 6,
+    "lowTicks": 6,
+    "highTicks": 10,
+    "direction": "down",
+    "dependencies": [
+     "L0:c2"
+    ]
+   },
+   {
+    "id": "c3",
+    "startTime": 1701000360000,
+    "endTime": 1701000540000,
+    "completedAt": 1701000660000,
+    "startTicks": 6,
+    "endTicks": 10,
+    "lowTicks": 6,
+    "highTicks": 10,
+    "direction": "up",
+    "dependencies": [
+     "L0:c3"
+    ]
+   },
+   {
+    "id": "c4",
+    "startTime": 1701000540000,
+    "endTime": 1701000720000,
+    "completedAt": 1701000840000,
+    "startTicks": 10,
+    "endTicks": 8,
+    "lowTicks": 8,
+    "highTicks": 10,
+    "direction": "down",
+    "dependencies": [
+     "L0:c4"
+    ]
+   },
+   {
+    "id": "c5",
+    "startTime": 1701000720000,
+    "endTime": 1701000960000,
+    "completedAt": 1701001080000,
+    "startTicks": 8,
+    "endTicks": 16,
+    "lowTicks": 8,
+    "highTicks": 16,
+    "direction": "up",
+    "dependencies": [
+     "L0:c5"
+    ]
+   },
+   {
+    "id": "c6",
+    "startTime": 1701000960000,
+    "endTime": 1701001140000,
+    "completedAt": 1701001260000,
+    "startTicks": 16,
+    "endTicks": 13,
+    "lowTicks": 13,
+    "highTicks": 16,
+    "direction": "down",
+    "dependencies": [
+     "L0:c6"
+    ]
+   },
+   {
+    "id": "c7",
+    "startTime": 1701001140000,
+    "endTime": 1701001320000,
+    "completedAt": 1701001440000,
+    "startTicks": 13,
+    "endTicks": 15,
+    "lowTicks": 13,
+    "highTicks": 15,
+    "direction": "up",
+    "dependencies": [
+     "L0:c7"
+    ]
+   },
+   {
+    "id": "c8",
+    "startTime": 1701001320000,
+    "endTime": 1701001500000,
+    "completedAt": 1701001620000,
+    "startTicks": 15,
+    "endTicks": 14,
+    "lowTicks": 14,
+    "highTicks": 15,
+    "direction": "down",
+    "dependencies": [
+     "L0:c8"
+    ]
+   },
+   {
+    "id": "c9",
+    "startTime": 1701001500000,
+    "endTime": 1701001740000,
+    "completedAt": 1701001860000,
+    "startTicks": 14,
+    "endTicks": 24,
+    "lowTicks": 14,
+    "highTicks": 24,
+    "direction": "up",
+    "dependencies": [
+     "L0:c9"
+    ]
+   },
+   {
+    "id": "c10",
+    "startTime": 1701001740000,
+    "endTime": 1701001920000,
+    "completedAt": 1701002040000,
+    "startTicks": 24,
+    "endTicks": 15,
+    "lowTicks": 15,
+    "highTicks": 24,
+    "direction": "down",
+    "dependencies": [
+     "L0:c10"
+    ]
+   },
+   {
+    "id": "c11",
+    "startTime": 1701001920000,
+    "endTime": 1701002100000,
+    "completedAt": 1701002220000,
+    "startTicks": 15,
+    "endTicks": 26,
+    "lowTicks": 15,
+    "highTicks": 26,
+    "direction": "up",
+    "dependencies": [
+     "L0:c11"
+    ]
+   },
+   {
+    "id": "c12",
+    "startTime": 1701002100000,
+    "endTime": 1701002220000,
+    "completedAt": 1701002340000,
+    "startTicks": 26,
+    "endTicks": 20,
+    "lowTicks": 20,
+    "highTicks": 26,
+    "direction": "down",
+    "dependencies": [
+     "L0:c12"
+    ]
+   },
+   {
+    "id": "c13",
+    "startTime": 1701002220000,
+    "endTime": 1701002340000,
+    "completedAt": 1701002460000,
+    "startTicks": 20,
+    "endTicks": 23,
+    "lowTicks": 20,
+    "highTicks": 23,
+    "direction": "up",
+    "dependencies": [
+     "L0:c13"
+    ]
+   }
+  ]
+ },
+ "expected": [
+  {
+   "prefix": 1,
+   "state": {
+    "processedCount": 1,
+    "centers": []
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "只有 c1，没有中枢，没有信号。"
+  },
+  {
+   "prefix": 2,
+   "state": {
+    "processedCount": 2,
+    "centers": []
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "两个部件不足以形成中枢。"
+  },
+  {
+   "prefix": 3,
+   "state": {
+    "processedCount": 3,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "open",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "c1、c2、c3 的区间交集形成 Z1，核心 [6,10]（Z-001）。只有一个中枢、没有离开部件，没有信号。"
+  },
+  {
+   "prefix": 4,
+   "state": {
+    "processedCount": 4,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "open",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "c4 的终点在核心内，Z1 不变。"
+  },
+  {
+   "prefix": 5,
+   "state": {
+    "processedCount": 5,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "open",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": null,
+      "departureId": "c5",
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [
+    {
+     "type": "consolidation-divergence-point",
+     "reason": "no-entry-segment",
+     "comparison": null,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5"
+     ]
+    }
+   ],
+   "events": [],
+   "reason": "c5 的终点 16 越过 ZG=10，成为 Z1 的离开部件（待定）。W 只有一个中枢，进入段应是 c1 之前的部件，但 c1 是输入的第一个部件，没有进入段，D-003 不产生信号。"
+  },
+  {
+   "prefix": 6,
+   "state": {
+    "processedCount": 6,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    }
+   ],
+   "suppressed": [],
+   "events": [
+    "SIG-SECOND-BREAKS/L1/third/c6"
+   ],
+   "reason": "c6 的区间 [13,16] 完全高于 ZG=10，不触及核心，Z1 按 E-010 关闭（离开 c5、回试 c6）。这是第三类买点（B-003），价格取回试部件终点 13，在 c6 确认时提交；背驰类信号不受影响，Z2 尚未形成。"
+  },
+  {
+   "prefix": 7,
+   "state": {
+    "processedCount": 7,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    }
+   ],
+   "suppressed": [],
+   "events": [],
+   "reason": "Z1 已关闭，Z2 的种子取自回试部件 c6；c6、c7 共两个部件，尚不足三个。"
+  },
+  {
+   "prefix": 8,
+   "state": {
+    "processedCount": 8,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     },
+     {
+      "id": "SIG-SECOND-BREAKS/Z/2",
+      "status": "open",
+      "coreLowTicks": 14,
+      "coreHighTicks": 15,
+      "ggTicks": 16,
+      "ddTicks": 13,
+      "formationIds": [
+       "c6",
+       "c7",
+       "c8"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    }
+   ],
+   "suppressed": [],
+   "events": [],
+   "reason": "c6、c7、c8 的区间交集形成 Z2，核心 [14,15]；Z2 的 Z 波动为 c6、c8，DD=13 严格大于 Z1 的 GG=10（趋势方向严格分离）。离开部件尚未出现，不产生背驰；数据到此为止，不补发。"
+  },
+  {
+   "prefix": 9,
+   "state": {
+    "processedCount": 9,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     },
+     {
+      "id": "SIG-SECOND-BREAKS/Z/2",
+      "status": "open",
+      "coreLowTicks": 14,
+      "coreHighTicks": 15,
+      "ggTicks": 16,
+      "ddTicks": 13,
+      "formationIds": [
+       "c6",
+       "c7",
+       "c8"
+      ],
+      "closeDirection": null,
+      "departureId": "c9",
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    },
+    {
+     "id": "SIG-SECOND-BREAKS/L1/first/c9",
+     "type": "first",
+     "layer": 1,
+     "side": "sell",
+     "priceTicks": 24,
+     "occurredAt": 1701001740000,
+     "confirmedAt": 1701001860000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c9"
+     ],
+     "comparison": {
+      "kind": "trend",
+      "aIds": [
+       "c5"
+      ],
+      "cId": "c9",
+      "a": {
+       "startTime": 1701000720000,
+       "endTime": 1701000960000,
+       "direction": "up",
+       "areaUnits": 12,
+       "extremeTicks": 16
+      },
+      "c": {
+       "startTime": 1701001500000,
+       "endTime": 1701001740000,
+       "direction": "up",
+       "areaUnits": 8,
+       "extremeTicks": 24
+      }
+     }
+    }
+   ],
+   "suppressed": [],
+   "events": [
+    "SIG-SECOND-BREAKS/L1/first/c9"
+   ],
+   "reason": "c9 成为 Z2 的离开部件，与 SIG-TREND-DIV 相同：A 面积 12、C 面积 8、24 越过 16，提交第一类点（卖，24）。"
+  },
+  {
+   "prefix": 10,
+   "state": {
+    "processedCount": 10,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     },
+     {
+      "id": "SIG-SECOND-BREAKS/Z/2",
+      "status": "open",
+      "coreLowTicks": 14,
+      "coreHighTicks": 15,
+      "ggTicks": 24,
+      "ddTicks": 13,
+      "formationIds": [
+       "c6",
+       "c7",
+       "c8"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    },
+    {
+     "id": "SIG-SECOND-BREAKS/L1/first/c9",
+     "type": "first",
+     "layer": 1,
+     "side": "sell",
+     "priceTicks": 24,
+     "occurredAt": 1701001740000,
+     "confirmedAt": 1701001860000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c9"
+     ],
+     "comparison": {
+      "kind": "trend",
+      "aIds": [
+       "c5"
+      ],
+      "cId": "c9",
+      "a": {
+       "startTime": 1701000720000,
+       "endTime": 1701000960000,
+       "direction": "up",
+       "areaUnits": 12,
+       "extremeTicks": 16
+      },
+      "c": {
+       "startTime": 1701001500000,
+       "endTime": 1701001740000,
+       "direction": "up",
+       "areaUnits": 8,
+       "extremeTicks": 24
+      }
+     }
+    }
+   ],
+   "suppressed": [
+    {
+     "type": "third",
+     "reason": "touch-edge",
+     "comparison": null,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "c9",
+      "c10"
+     ]
+    }
+   ],
+   "events": [],
+   "reason": "c10 24→15 低点恰等于 ZG=15，触边，Z2 延伸，GG=24，没有第三类点。"
+  },
+  {
+   "prefix": 11,
+   "state": {
+    "processedCount": 11,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     },
+     {
+      "id": "SIG-SECOND-BREAKS/Z/2",
+      "status": "open",
+      "coreLowTicks": 14,
+      "coreHighTicks": 15,
+      "ggTicks": 24,
+      "ddTicks": 13,
+      "formationIds": [
+       "c6",
+       "c7",
+       "c8"
+      ],
+      "closeDirection": null,
+      "departureId": "c11",
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    },
+    {
+     "id": "SIG-SECOND-BREAKS/L1/first/c9",
+     "type": "first",
+     "layer": 1,
+     "side": "sell",
+     "priceTicks": 24,
+     "occurredAt": 1701001740000,
+     "confirmedAt": 1701001860000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c9"
+     ],
+     "comparison": {
+      "kind": "trend",
+      "aIds": [
+       "c5"
+      ],
+      "cId": "c9",
+      "a": {
+       "startTime": 1701000720000,
+       "endTime": 1701000960000,
+       "direction": "up",
+       "areaUnits": 12,
+       "extremeTicks": 16
+      },
+      "c": {
+       "startTime": 1701001500000,
+       "endTime": 1701001740000,
+       "direction": "up",
+       "areaUnits": 8,
+       "extremeTicks": 24
+      }
+     }
+    }
+   ],
+   "suppressed": [
+    {
+     "type": "second",
+     "reason": "breaks-first-class-price",
+     "comparison": null,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/L1/first/c9",
+      "c10",
+      "c11"
+     ]
+    }
+   ],
+   "events": [],
+   "reason": "c11 15→26 的终点 26 高于第一类价格 24，越过第一类价格，不输出第二类点，且此后不再向后寻找下一个同向部件（B-002）。c11 越过 ZG，是 Z2 新的离开部件，但每个中枢至多一个背驰类信号，不新增信号。"
+  },
+  {
+   "prefix": 12,
+   "state": {
+    "processedCount": 12,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     },
+     {
+      "id": "SIG-SECOND-BREAKS/Z/2",
+      "status": "closed",
+      "coreLowTicks": 14,
+      "coreHighTicks": 15,
+      "ggTicks": 24,
+      "ddTicks": 13,
+      "formationIds": [
+       "c6",
+       "c7",
+       "c8"
+      ],
+      "closeDirection": "up",
+      "departureId": "c11",
+      "returnId": "c12"
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    },
+    {
+     "id": "SIG-SECOND-BREAKS/L1/first/c9",
+     "type": "first",
+     "layer": 1,
+     "side": "sell",
+     "priceTicks": 24,
+     "occurredAt": 1701001740000,
+     "confirmedAt": 1701001860000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c9"
+     ],
+     "comparison": {
+      "kind": "trend",
+      "aIds": [
+       "c5"
+      ],
+      "cId": "c9",
+      "a": {
+       "startTime": 1701000720000,
+       "endTime": 1701000960000,
+       "direction": "up",
+       "areaUnits": 12,
+       "extremeTicks": 16
+      },
+      "c": {
+       "startTime": 1701001500000,
+       "endTime": 1701001740000,
+       "direction": "up",
+       "areaUnits": 8,
+       "extremeTicks": 24
+      }
+     }
+    },
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c12",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 20,
+     "occurredAt": 1701002220000,
+     "confirmedAt": 1701002340000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "c11",
+      "c12"
+     ],
+     "comparison": null
+    }
+   ],
+   "suppressed": [],
+   "events": [
+    "SIG-SECOND-BREAKS/L1/third/c12"
+   ],
+   "reason": "c12 的区间 [20,26] 完全高于 ZG=15，Z2 关闭（离开 c11、回试 c12），第三类买点，价格取回试终点 20（B-003）。此时原文预期的\"背驰后回到 B 中\"没有出现；第一类点保持不变，只在研究视图派生诊断标签。"
+  },
+  {
+   "prefix": 13,
+   "state": {
+    "processedCount": 13,
+    "centers": [
+     {
+      "id": "SIG-SECOND-BREAKS/Z/1",
+      "status": "closed",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": "up",
+      "departureId": "c5",
+      "returnId": "c6"
+     },
+     {
+      "id": "SIG-SECOND-BREAKS/Z/2",
+      "status": "closed",
+      "coreLowTicks": 14,
+      "coreHighTicks": 15,
+      "ggTicks": 24,
+      "ddTicks": 13,
+      "formationIds": [
+       "c6",
+       "c7",
+       "c8"
+      ],
+      "closeDirection": "up",
+      "departureId": "c11",
+      "returnId": "c12"
+     }
+    ]
+   },
+   "signals": [
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c6",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 13,
+     "occurredAt": 1701001140000,
+     "confirmedAt": 1701001260000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c6"
+     ],
+     "comparison": null
+    },
+    {
+     "id": "SIG-SECOND-BREAKS/L1/first/c9",
+     "type": "first",
+     "layer": 1,
+     "side": "sell",
+     "priceTicks": 24,
+     "occurredAt": 1701001740000,
+     "confirmedAt": 1701001860000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "SIG-SECOND-BREAKS/Z/1",
+      "c5",
+      "c9"
+     ],
+     "comparison": {
+      "kind": "trend",
+      "aIds": [
+       "c5"
+      ],
+      "cId": "c9",
+      "a": {
+       "startTime": 1701000720000,
+       "endTime": 1701000960000,
+       "direction": "up",
+       "areaUnits": 12,
+       "extremeTicks": 16
+      },
+      "c": {
+       "startTime": 1701001500000,
+       "endTime": 1701001740000,
+       "direction": "up",
+       "areaUnits": 8,
+       "extremeTicks": 24
+      }
+     }
+    },
+    {
+     "id": "SIG-SECOND-BREAKS/L1/third/c12",
+     "type": "third",
+     "layer": 1,
+     "side": "buy",
+     "priceTicks": 20,
+     "occurredAt": 1701002220000,
+     "confirmedAt": 1701002340000,
+     "dependencies": [
+      "SIG-SECOND-BREAKS/Z/2",
+      "c11",
+      "c12"
+     ],
+     "comparison": null
+    }
+   ],
+   "suppressed": [],
+   "events": [],
+   "reason": "c13 20→23 与 c12 构成 Z3 的种子，仍不足三个部件。第二类点此前已因越过而作废，不再寻找。"
+  }
+ ]
+}

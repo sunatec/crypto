@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateFeatureFixture } from './feature-fixtures.mjs';
 import { validateNormalizationSnapshots } from './normalization-fixtures.mjs';
+import { validateSignalFixture } from './signal-fixtures.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const categories = ['author-body', 'author-correction', 'editorial', 'unverified-annotation', 'engineering'];
@@ -94,6 +95,10 @@ export function validateFixture(fixture, knownRules, knownSources) {
   assert.equal(new Set(source.pdfPages).size, source.pdfPages.length);
   if (source.figure !== null) string(source.figure);
   string(source.note);
+  if (fixture.input.kind === 'signal-components') {
+    validateSignalFixture(fixture, { fields, time, integer, string, strings, list });
+    return fixture;
+  }
   fields(fixture.input, fixture.input.kind === 'feature-strokes' ? ['kind', 'context', 'items'] : ['kind', 'items']);
   const { kind, items } = fixture.input;
   assert(['ohlc', 'completed-components', 'fractal-pairs', 'confirmed-fractals', 'feature-strokes', 'normalization-strokes'].includes(kind));
@@ -220,9 +225,28 @@ export function validateFixture(fixture, knownRules, knownSources) {
   return fixture;
 }
 
+export function checkSignalDirectory(directory = path.join(root, 'tests/fixtures/chanlun/signals')) {
+  const rules = new Set(fs.readFileSync(path.join(root, 'docs/chanlun/rules.md'), 'utf8').match(/\b[KFPSNRZEMDB]-\d{3}\b/g));
+  const sources = new Set(fs.readFileSync(path.join(root, 'docs/chanlun/sources.md'), 'utf8').match(/\b(?:(?:C|A)\d+-\d+|WD-\d+-\d+)\b/g));
+  const files = fs.readdirSync(directory).filter(name => name.endsWith('.json')).sort();
+  assert(files.length > 0, 'no signal fixtures');
+  const ids = new Set();
+  let reviewed = 0, draft = 0, prefixes = 0;
+  for (const file of files) {
+    try {
+      const fixture = validateFixture(JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')), rules, sources);
+      assert.equal(fixture.input.kind, 'signal-components', 'signals directory only holds signal fixtures');
+      assert(!ids.has(fixture.id), 'duplicate fixture ID'); ids.add(fixture.id);
+      if (fixture.expectationStatus === 'reviewed') reviewed++; else draft++;
+      prefixes += fixture.expected.length;
+    } catch (error) { throw new Error(`signals/${file}: ${error.message}`, { cause: error }); }
+  }
+  return { fixtures: files.length, reviewed, draft, prefixes, scope: 'contract-only; signals are hand-derived, no Pine execution' };
+}
+
 export function checkDirectory(directory = path.join(root, 'tests/fixtures/chanlun')) {
-  const rules = new Set(fs.readFileSync(path.join(root, 'docs/chanlun/rules.md'), 'utf8').match(/\b[KFPSNRZE]-\d{3}\b/g));
-  const sources = new Set(fs.readFileSync(path.join(root, 'docs/chanlun/sources.md'), 'utf8').match(/\b(?:C|A)\d+-\d+\b/g));
+  const rules = new Set(fs.readFileSync(path.join(root, 'docs/chanlun/rules.md'), 'utf8').match(/\b[KFPSNRZEMDB]-\d{3}\b/g));
+  const sources = new Set(fs.readFileSync(path.join(root, 'docs/chanlun/sources.md'), 'utf8').match(/\b(?:(?:C|A)\d+-\d+|WD-\d+-\d+)\b/g));
   const files = fs.readdirSync(directory).filter(name => name.endsWith('.json')).sort();
   assert(files.length > 0, 'no fixtures');
   const ids = new Set();
@@ -239,6 +263,11 @@ export function checkDirectory(directory = path.join(root, 'tests/fixtures/chanl
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try { console.log(JSON.stringify(checkDirectory(process.argv[2]), null, 2)); }
+  try {
+    const result = checkDirectory(process.argv[2]);
+    const signalsPath = path.join(root, 'tests/fixtures/chanlun/signals');
+    if (!process.argv[2] && fs.existsSync(signalsPath)) result.signals = checkSignalDirectory(signalsPath);
+    console.log(JSON.stringify(result, null, 2));
+  }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }

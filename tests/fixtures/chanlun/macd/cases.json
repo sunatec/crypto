@@ -1,0 +1,478 @@
+{
+  "schemaVersion": 1,
+  "note": "人工推导的 MACD 前缀和预期（规则 M-001／M-002），与实现无关。ema：参数 2/3/2 的小样本，按平台 ta.ema 的起算方式——前 length-1 个输入为空，第 length 个取简单平均，之后 alpha*src+(1-alpha)*上一值；系数快 2/3、慢 1/2、信号 2/3。收盘 10,13,11,12,14,13 的手算分数：快线 EMA（—,11.5,67/6,211/18,715/54,2119/162），慢线 EMA（—,—,34/3,35/3,77/6,155/12），dif（—,—,-1/6,1/18,11/27,53/324），dea（—,—,—,-1/18,41/162,47/243）；预期 [dif,dea]，null 表示 na。warmup=3 时只存后三根。areas：bars 为 [开盘时间,dif,dea]，hist=dif-dea；warmup 为自首根起不存储的预热根数；capacity 为前缀容量；查询区间为左开右闭 (ts,te]，direction 1=向上（红柱），-1=向下（绿柱）。平台实测：内置 ta.macd(12,26,9) 的 macd 自第 25 根（0 起）有值，signal 与 hist 自第 33 根有值。",
+  "ema": {
+    "config": {
+      "fast": 2,
+      "slow": 3,
+      "signal": 2,
+      "warmup": 3
+    },
+    "closes": [
+      [
+        1000,
+        10
+      ],
+      [
+        2000,
+        13
+      ],
+      [
+        3000,
+        11
+      ],
+      [
+        4000,
+        12
+      ],
+      [
+        5000,
+        14
+      ],
+      [
+        6000,
+        13
+      ]
+    ],
+    "expected": [
+      [
+        null,
+        null
+      ],
+      [
+        null,
+        null
+      ],
+      [
+        -0.16666666666666666,
+        null
+      ],
+      [
+        0.05555555555555555,
+        -0.05555555555555555
+      ],
+      [
+        0.4074074074074074,
+        0.25308641975308643
+      ],
+      [
+        0.16358024691358025,
+        0.1934156378600823
+      ]
+    ],
+    "expectStored": 3
+  },
+  "areas": [
+    {
+      "id": "M-AREA-SIGNED",
+      "config": {
+        "fast": 2,
+        "slow": 3,
+        "signal": 2,
+        "warmup": 0,
+        "capacity": 10
+      },
+      "bars": [
+        [
+          1000,
+          6,
+          1
+        ],
+        [
+          2000,
+          5,
+          3
+        ],
+        [
+          3000,
+          7,
+          4
+        ],
+        [
+          4000,
+          4,
+          5
+        ],
+        [
+          5000,
+          8,
+          4
+        ],
+        [
+          6000,
+          2,
+          5
+        ]
+      ],
+      "expectSize": 6,
+      "expectDropped": 0,
+      "queries": [
+        {
+          "ts": 1000,
+          "te": 5000,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 9,
+          "bars": 4,
+          "difExtreme": 8,
+          "deaExtreme": 5
+        },
+        {
+          "ts": 1000,
+          "te": 5000,
+          "direction": -1,
+          "available": true,
+          "reason": "ok",
+          "area": 1,
+          "bars": 4,
+          "difExtreme": 4,
+          "deaExtreme": 3
+        },
+        {
+          "ts": 1000,
+          "te": 6000,
+          "direction": -1,
+          "available": true,
+          "reason": "ok",
+          "area": 4,
+          "bars": 5,
+          "difExtreme": 2,
+          "deaExtreme": 3
+        },
+        {
+          "ts": 2000,
+          "te": 5000,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 7,
+          "bars": 3,
+          "difExtreme": 8,
+          "deaExtreme": 5
+        },
+        {
+          "ts": 1000,
+          "te": 2000,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 2,
+          "bars": 1,
+          "difExtreme": 5,
+          "deaExtreme": 3
+        },
+        {
+          "ts": 1000,
+          "te": 2000,
+          "direction": -1,
+          "available": true,
+          "reason": "ok",
+          "area": 0,
+          "bars": 1,
+          "difExtreme": 5,
+          "deaExtreme": 3
+        },
+        {
+          "ts": 3000,
+          "te": 3000,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 0,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        },
+        {
+          "ts": 2500,
+          "te": 5500,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 7,
+          "bars": 3,
+          "difExtreme": 8,
+          "deaExtreme": 5
+        },
+        {
+          "ts": 4000,
+          "te": 3000,
+          "direction": 1,
+          "available": false,
+          "reason": "bad-range",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        },
+        {
+          "ts": 500,
+          "te": 5000,
+          "direction": 1,
+          "available": false,
+          "reason": "before-start",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        },
+        {
+          "ts": 1000,
+          "te": 7000,
+          "direction": 1,
+          "available": false,
+          "reason": "not-closed",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        }
+      ]
+    },
+    {
+      "id": "M-AREA-WARMUP",
+      "config": {
+        "fast": 2,
+        "slow": 3,
+        "signal": 2,
+        "warmup": 3,
+        "capacity": 10
+      },
+      "bars": [
+        [
+          1000,
+          9,
+          0
+        ],
+        [
+          2000,
+          9,
+          0
+        ],
+        [
+          3000,
+          9,
+          0
+        ],
+        [
+          4000,
+          4,
+          2
+        ],
+        [
+          5000,
+          1,
+          2
+        ],
+        [
+          6000,
+          6,
+          2
+        ]
+      ],
+      "expectSize": 3,
+      "expectDropped": 0,
+      "queries": [
+        {
+          "ts": 4000,
+          "te": 6000,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 4,
+          "bars": 2,
+          "difExtreme": 6,
+          "deaExtreme": 2
+        },
+        {
+          "ts": 4000,
+          "te": 6000,
+          "direction": -1,
+          "available": true,
+          "reason": "ok",
+          "area": 1,
+          "bars": 2,
+          "difExtreme": 1,
+          "deaExtreme": 2
+        },
+        {
+          "ts": 4000,
+          "te": 4000,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 0,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        },
+        {
+          "ts": 3000,
+          "te": 6000,
+          "direction": 1,
+          "available": false,
+          "reason": "before-start",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        },
+        {
+          "ts": 1000,
+          "te": 5000,
+          "direction": 1,
+          "available": false,
+          "reason": "before-start",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        }
+      ]
+    },
+    {
+      "id": "M-AREA-ONLY-WARMUP",
+      "config": {
+        "fast": 2,
+        "slow": 3,
+        "signal": 2,
+        "warmup": 3,
+        "capacity": 10
+      },
+      "bars": [
+        [
+          1000,
+          9,
+          0
+        ],
+        [
+          2000,
+          9,
+          0
+        ],
+        [
+          3000,
+          9,
+          0
+        ]
+      ],
+      "expectSize": 0,
+      "expectDropped": 0,
+      "queries": [
+        {
+          "ts": 1000,
+          "te": 3000,
+          "direction": 1,
+          "available": false,
+          "reason": "warmup",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        }
+      ]
+    },
+    {
+      "id": "M-AREA-RECYCLE",
+      "config": {
+        "fast": 2,
+        "slow": 3,
+        "signal": 2,
+        "warmup": 0,
+        "capacity": 3
+      },
+      "bars": [
+        [
+          1000,
+          1,
+          0
+        ],
+        [
+          2000,
+          2,
+          0
+        ],
+        [
+          3000,
+          3,
+          0
+        ],
+        [
+          4000,
+          -1,
+          0
+        ],
+        [
+          5000,
+          4,
+          0
+        ],
+        [
+          6000,
+          -2,
+          0
+        ]
+      ],
+      "expectSize": 3,
+      "expectDropped": 3,
+      "queries": [
+        {
+          "ts": 4000,
+          "te": 6000,
+          "direction": 1,
+          "available": true,
+          "reason": "ok",
+          "area": 4,
+          "bars": 2,
+          "difExtreme": 4,
+          "deaExtreme": 0
+        },
+        {
+          "ts": 4000,
+          "te": 6000,
+          "direction": -1,
+          "available": true,
+          "reason": "ok",
+          "area": 2,
+          "bars": 2,
+          "difExtreme": -2,
+          "deaExtreme": 0
+        },
+        {
+          "ts": 4000,
+          "te": 5000,
+          "direction": -1,
+          "available": true,
+          "reason": "ok",
+          "area": 0,
+          "bars": 1,
+          "difExtreme": 4,
+          "deaExtreme": 0
+        },
+        {
+          "ts": 3000,
+          "te": 6000,
+          "direction": 1,
+          "available": false,
+          "reason": "recycled",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        },
+        {
+          "ts": 1000,
+          "te": 2000,
+          "direction": 1,
+          "available": false,
+          "reason": "recycled",
+          "area": null,
+          "bars": 0,
+          "difExtreme": null,
+          "deaExtreme": null
+        }
+      ]
+    }
+  ]
+}

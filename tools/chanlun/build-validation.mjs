@@ -14,7 +14,7 @@ const q = value => JSON.stringify(value);
 const raw = r => `ChanRaw.new(${r.time}, ${r.closeTime}, ${r.openTicks}, ${r.highTicks}, ${r.lowTicks}, ${r.closeTicks})`;
 const fractal = f => `ChanFractal.new(${q(f.id)}, ${f.kind === 'top' ? 1 : -1}, ${f.endpointTime}, ${f.priceTicks}, ${f.confirmedAt}, ${q(f.leftId)}, ${q(f.middleId)}, ${q(f.rightId)}, "F-001/F-002", ${f.leftOrdinal}, ${f.middleOrdinal}, ${f.rightOrdinal}, ${f.middleHighTicks}, ${f.middleLowTicks})`;
 export function extractSection(source, section) {
-  assert(['CORE', 'RENDERER'].includes(section), 'unknown shared section');
+  assert(['CORE', 'SIGNALS', 'DIVERGENCE', 'RENDERER'].includes(section), 'unknown shared section');
   const start = `// BEGIN CHANLUN ${section}`, end = `// END CHANLUN ${section}`;
   assert.equal(source.split(start).length, 2, 'expected exactly one core start');
   assert.equal(source.split(end).length, 2, 'expected exactly one core end');

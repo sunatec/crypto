@@ -1,0 +1,352 @@
+{
+ "schemaVersion": 1,
+ "id": "SIG-CONS-AREA-LARGER",
+ "ruleVersion": "chanlun-signals-0.1",
+ "ruleIds": [
+  "M-002",
+  "M-003",
+  "D-001",
+  "D-003",
+  "B-004",
+  "Z-001",
+  "E-010"
+ ],
+ "expectationStatus": "reviewed",
+ "construction": "synthetic",
+ "source": {
+  "category": "author-body",
+  "sourceIds": [
+   "C53-126",
+   "C61-154",
+   "C27-66",
+   "C24-52"
+  ],
+  "lesson": 53,
+  "pdfPages": [
+   126,
+   127,
+   154
+  ],
+  "figure": null,
+  "note": "盘整背驰：力度未减弱的反例。 合成输入：已完成部件的区间等于两端点，逐根 MACD 柱值直接给出，不经过 MACD 计算（任务 2.1）；价格单位为 1 tick。中枢与离开／回抽归属按 Z-001/002 与 E-010 人工推导，信号按 rules.md 的 D-001～D-004、B-001～B-005 人工推导，未使用待测实现的输出。"
+ },
+ "tickSize": "1",
+ "input": {
+  "kind": "signal-components",
+  "macd": {
+   "fast": 12,
+   "slow": 26,
+   "signal": 9,
+   "warmupBars": 0
+  },
+  "layer": 1,
+  "bars": [
+   {
+    "time": 1701000000000,
+    "closeTime": 1701000060000,
+    "hist": 0,
+    "dif": 0,
+    "dea": 0
+   },
+   {
+    "time": 1701000060000,
+    "closeTime": 1701000120000,
+    "hist": 4,
+    "dif": 8,
+    "dea": 4
+   },
+   {
+    "time": 1701000120000,
+    "closeTime": 1701000180000,
+    "hist": 5,
+    "dif": 10,
+    "dea": 5
+   },
+   {
+    "time": 1701000180000,
+    "closeTime": 1701000240000,
+    "hist": 6,
+    "dif": 12,
+    "dea": 6
+   },
+   {
+    "time": 1701000240000,
+    "closeTime": 1701000300000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000300000,
+    "closeTime": 1701000360000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000360000,
+    "closeTime": 1701000420000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000420000,
+    "closeTime": 1701000480000,
+    "hist": 1,
+    "dif": 2,
+    "dea": 1
+   },
+   {
+    "time": 1701000480000,
+    "closeTime": 1701000540000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000540000,
+    "closeTime": 1701000600000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000600000,
+    "closeTime": 1701000660000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000660000,
+    "closeTime": 1701000720000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000720000,
+    "closeTime": 1701000780000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000780000,
+    "closeTime": 1701000840000,
+    "hist": 8,
+    "dif": 16,
+    "dea": 8
+   },
+   {
+    "time": 1701000840000,
+    "closeTime": 1701000900000,
+    "hist": 9,
+    "dif": 18,
+    "dea": 9
+   },
+   {
+    "time": 1701000900000,
+    "closeTime": 1701000960000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   }
+  ],
+  "items": [
+   {
+    "id": "a",
+    "startTime": 1701000000000,
+    "endTime": 1701000180000,
+    "completedAt": 1701000300000,
+    "startTicks": 10,
+    "endTicks": 22,
+    "lowTicks": 10,
+    "highTicks": 22,
+    "direction": "up",
+    "dependencies": [
+     "L0:a"
+    ]
+   },
+   {
+    "id": "X1",
+    "startTime": 1701000180000,
+    "endTime": 1701000360000,
+    "completedAt": 1701000480000,
+    "startTicks": 22,
+    "endTicks": 4,
+    "lowTicks": 4,
+    "highTicks": 22,
+    "direction": "down",
+    "dependencies": [
+     "L0:X1"
+    ]
+   },
+   {
+    "id": "X2",
+    "startTime": 1701000360000,
+    "endTime": 1701000540000,
+    "completedAt": 1701000660000,
+    "startTicks": 4,
+    "endTicks": 8,
+    "lowTicks": 4,
+    "highTicks": 8,
+    "direction": "up",
+    "dependencies": [
+     "L0:X2"
+    ]
+   },
+   {
+    "id": "X3",
+    "startTime": 1701000540000,
+    "endTime": 1701000720000,
+    "completedAt": 1701000840000,
+    "startTicks": 8,
+    "endTicks": 5,
+    "lowTicks": 5,
+    "highTicks": 8,
+    "direction": "down",
+    "dependencies": [
+     "L0:X3"
+    ]
+   },
+   {
+    "id": "X4",
+    "startTime": 1701000720000,
+    "endTime": 1701000900000,
+    "completedAt": 1701001020000,
+    "startTicks": 5,
+    "endTicks": 24,
+    "lowTicks": 5,
+    "highTicks": 24,
+    "direction": "up",
+    "dependencies": [
+     "L0:X4"
+    ]
+   }
+  ]
+ },
+ "expected": [
+  {
+   "prefix": 1,
+   "state": {
+    "processedCount": 1,
+    "centers": []
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "只有进入段 a，没有中枢。"
+  },
+  {
+   "prefix": 2,
+   "state": {
+    "processedCount": 2,
+    "centers": []
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "a、X1 不足以形成中枢。"
+  },
+  {
+   "prefix": 3,
+   "state": {
+    "processedCount": 3,
+    "centers": []
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "a、X1、X2 的区间没有公共部分（a 的低点 10 高于 X2 终点 8），所以 a 不是形成部件，没有中枢。"
+  },
+  {
+   "prefix": 4,
+   "state": {
+    "processedCount": 4,
+    "centers": [
+     {
+      "id": "SIG-CONS-AREA-LARGER/Z/1",
+      "status": "open",
+      "coreLowTicks": 5,
+      "coreHighTicks": 8,
+      "ggTicks": 22,
+      "ddTicks": 4,
+      "formationIds": [
+       "X1",
+       "X2",
+       "X3"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "X1、X2、X3 的区间交集形成 Z，核心 [5,8]，Z 波动为 X1、X3（向下），GG=22、DD=4。Z 首个形成部件之前的部件是 a（向上），即进入段。没有离开部件，不产生信号。"
+  },
+  {
+   "prefix": 5,
+   "state": {
+    "processedCount": 5,
+    "centers": [
+     {
+      "id": "SIG-CONS-AREA-LARGER/Z/1",
+      "status": "open",
+      "coreLowTicks": 5,
+      "coreHighTicks": 8,
+      "ggTicks": 22,
+      "ddTicks": 4,
+      "formationIds": [
+       "X1",
+       "X2",
+       "X3"
+      ],
+      "closeDirection": null,
+      "departureId": "X4",
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [
+    {
+     "type": "consolidation-divergence-point",
+     "reason": "area-not-smaller",
+     "comparison": {
+      "kind": "consolidation",
+      "aIds": [
+       "a"
+      ],
+      "cId": "X4",
+      "a": {
+       "startTime": 1701000000000,
+       "endTime": 1701000180000,
+       "direction": "up",
+       "areaUnits": 15,
+       "extremeTicks": 22
+      },
+      "c": {
+       "startTime": 1701000720000,
+       "endTime": 1701000900000,
+       "direction": "up",
+       "areaUnits": 17,
+       "extremeTicks": 24
+      }
+     },
+     "dependencies": [
+      "SIG-CONS-AREA-LARGER/Z/1",
+      "a",
+      "X4"
+     ]
+    }
+   ],
+   "events": [],
+   "reason": "X4 成为离开部件、终点 24 越过 a 的极值 22，但 C 的面积 17（8、9）不小于 a 的面积 15，M-003 不成立，不产生信号。"
+  }
+ ]
+}

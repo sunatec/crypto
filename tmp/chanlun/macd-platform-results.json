@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-12",
+  "task": "add-chanlun-divergence-signals 3.1/3.2",
+  "observedBy": "assistant, in the Claude app built-in browser, logged in with the user's own TradingView account (not a user-pasted result)",
+  "chart": "BINANCE:BTCUSDT 1h, 25112 closed bars loaded",
+  "source": "tmp/chanlun/macd-validation.pine",
+  "generatedFileSha256": "b9d8583cc1ee89833500d96c2b5d65814573a8f8aa85b444f5161b8665c29da5",
+  "sectionHash": "f5869e11d7ccf2784cf9c66019167facfe4bf15c261020f22db3a422a8f0b178",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
+  "pastedVariant": "generated file without comment/blank lines: 421 lines, 28326 UTF-16 units, char-code sum 3828885 (equal to the page copy)",
+  "status": "PASS (green verdict, no runtime error)",
+  "verdictText": "25112 bars vs ta.macd, 120 probes (96 available / 24 unavailable), recycled 24077, worst gap 0.0000000001019",
+  "verdictNote": "the leading 'PASS: MACD, ' is covered by the indicator title in the screenshot; PASS is read from the green text colour, which the script uses only for a PASS verdict",
+  "screenshot": "tmp/chanlun/macd-btcusdt-60-pass.jpg",
+  "platformFacts": {
+    "builtinFirstValidIndex0Based": {"ema12": 11, "ema26": 25, "macd": 25, "signal": 33, "hist": 33},
+    "emaDefinition": "na for the first length-1 inputs, SMA of the first length inputs as the seed, then alpha*src+(1-alpha)*previous"
+  },
+  "history": [
+    {"run": 1, "result": "FAIL: LIVE/builtin-na bar=0", "cause": "first implementation seeded EMA with the first source value; ta.macd is na until bar slow-1", "fixed": "SMA-seeded EMA, na pattern compared bar by bar"},
+    {"run": 2, "result": "PASS but 0 available / 120 unavailable probes", "cause": "chart has 25112 bars, capacity 1000, random probes fell in recycled history", "fixed": "4 of 5 probes inside the kept window and an assertion available >= 60"}
+  ],
+  "notLoadedOnPlatform": "chanlun_original.pine itself (the new inputs, the MACD push call and the research status line) has not been compiled on the platform; the SIGNALS section was compiled as part of the validation script"
+}

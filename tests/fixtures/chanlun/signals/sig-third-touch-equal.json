@@ -1,0 +1,425 @@
+{
+ "schemaVersion": 1,
+ "id": "SIG-THIRD-TOUCH-EQUAL",
+ "ruleVersion": "chanlun-signals-0.1",
+ "ruleIds": [
+  "D-003",
+  "B-003",
+  "Z-001",
+  "Z-002",
+  "E-010"
+ ],
+ "expectationStatus": "reviewed",
+ "construction": "synthetic",
+ "source": {
+  "category": "author-body",
+  "sourceIds": [
+   "C20-43",
+   "C20-44",
+   "C18-40"
+  ],
+  "lesson": 20,
+  "pdfPages": [
+   43,
+   44
+  ],
+  "figure": null,
+  "note": "第三类点失效例：回试低点等于 ZG。E-010 的触边约定是工程约定。 合成输入：已完成部件的区间等于两端点，逐根 MACD 柱值直接给出，不经过 MACD 计算（任务 2.1）；价格单位为 1 tick。中枢与离开／回抽归属按 Z-001/002 与 E-010 人工推导，信号按 rules.md 的 D-001～D-004、B-001～B-005 人工推导，未使用待测实现的输出。"
+ },
+ "tickSize": "1",
+ "input": {
+  "kind": "signal-components",
+  "macd": {
+   "fast": 12,
+   "slow": 26,
+   "signal": 9,
+   "warmupBars": 0
+  },
+  "layer": 1,
+  "bars": [
+   {
+    "time": 1701000000000,
+    "closeTime": 1701000060000,
+    "hist": 0,
+    "dif": 0,
+    "dea": 0
+   },
+   {
+    "time": 1701000060000,
+    "closeTime": 1701000120000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000120000,
+    "closeTime": 1701000180000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000180000,
+    "closeTime": 1701000240000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000240000,
+    "closeTime": 1701000300000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000300000,
+    "closeTime": 1701000360000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   },
+   {
+    "time": 1701000360000,
+    "closeTime": 1701000420000,
+    "hist": -2,
+    "dif": -4,
+    "dea": -2
+   },
+   {
+    "time": 1701000420000,
+    "closeTime": 1701000480000,
+    "hist": 1,
+    "dif": 2,
+    "dea": 1
+   },
+   {
+    "time": 1701000480000,
+    "closeTime": 1701000540000,
+    "hist": 2,
+    "dif": 4,
+    "dea": 2
+   },
+   {
+    "time": 1701000540000,
+    "closeTime": 1701000600000,
+    "hist": 1,
+    "dif": 2,
+    "dea": 1
+   },
+   {
+    "time": 1701000600000,
+    "closeTime": 1701000660000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000660000,
+    "closeTime": 1701000720000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000720000,
+    "closeTime": 1701000780000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000780000,
+    "closeTime": 1701000840000,
+    "hist": 3,
+    "dif": 6,
+    "dea": 3
+   },
+   {
+    "time": 1701000840000,
+    "closeTime": 1701000900000,
+    "hist": 5,
+    "dif": 10,
+    "dea": 5
+   },
+   {
+    "time": 1701000900000,
+    "closeTime": 1701000960000,
+    "hist": -1,
+    "dif": -2,
+    "dea": -1
+   },
+   {
+    "time": 1701000960000,
+    "closeTime": 1701001020000,
+    "hist": 4,
+    "dif": 8,
+    "dea": 4
+   },
+   {
+    "time": 1701001020000,
+    "closeTime": 1701001080000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   },
+   {
+    "time": 1701001080000,
+    "closeTime": 1701001140000,
+    "hist": -4,
+    "dif": -8,
+    "dea": -4
+   },
+   {
+    "time": 1701001140000,
+    "closeTime": 1701001200000,
+    "hist": -3,
+    "dif": -6,
+    "dea": -3
+   }
+  ],
+  "items": [
+   {
+    "id": "c1",
+    "startTime": 1701000000000,
+    "endTime": 1701000180000,
+    "completedAt": 1701000300000,
+    "startTicks": 0,
+    "endTicks": 10,
+    "lowTicks": 0,
+    "highTicks": 10,
+    "direction": "up",
+    "dependencies": [
+     "L0:c1"
+    ]
+   },
+   {
+    "id": "c2",
+    "startTime": 1701000180000,
+    "endTime": 1701000360000,
+    "completedAt": 1701000480000,
+    "startTicks": 10,
+    "endTicks": 6,
+    "lowTicks": 6,
+    "highTicks": 10,
+    "direction": "down",
+    "dependencies": [
+     "L0:c2"
+    ]
+   },
+   {
+    "id": "c3",
+    "startTime": 1701000360000,
+    "endTime": 1701000540000,
+    "completedAt": 1701000660000,
+    "startTicks": 6,
+    "endTicks": 10,
+    "lowTicks": 6,
+    "highTicks": 10,
+    "direction": "up",
+    "dependencies": [
+     "L0:c3"
+    ]
+   },
+   {
+    "id": "c4",
+    "startTime": 1701000540000,
+    "endTime": 1701000720000,
+    "completedAt": 1701000840000,
+    "startTicks": 10,
+    "endTicks": 8,
+    "lowTicks": 8,
+    "highTicks": 10,
+    "direction": "down",
+    "dependencies": [
+     "L0:c4"
+    ]
+   },
+   {
+    "id": "c5",
+    "startTime": 1701000720000,
+    "endTime": 1701000960000,
+    "completedAt": 1701001080000,
+    "startTicks": 8,
+    "endTicks": 16,
+    "lowTicks": 8,
+    "highTicks": 16,
+    "direction": "up",
+    "dependencies": [
+     "L0:c5"
+    ]
+   },
+   {
+    "id": "c6",
+    "startTime": 1701000960000,
+    "endTime": 1701001140000,
+    "completedAt": 1701001260000,
+    "startTicks": 16,
+    "endTicks": 10,
+    "lowTicks": 10,
+    "highTicks": 16,
+    "direction": "down",
+    "dependencies": [
+     "L0:c6"
+    ]
+   }
+  ]
+ },
+ "expected": [
+  {
+   "prefix": 1,
+   "state": {
+    "processedCount": 1,
+    "centers": []
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "只有 c1，没有中枢，没有信号。"
+  },
+  {
+   "prefix": 2,
+   "state": {
+    "processedCount": 2,
+    "centers": []
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "两个部件不足以形成中枢。"
+  },
+  {
+   "prefix": 3,
+   "state": {
+    "processedCount": 3,
+    "centers": [
+     {
+      "id": "SIG-THIRD-TOUCH-EQUAL/Z/1",
+      "status": "open",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "c1、c2、c3 的区间交集形成 Z1，核心 [6,10]（Z-001）。只有一个中枢、没有离开部件，没有信号。"
+  },
+  {
+   "prefix": 4,
+   "state": {
+    "processedCount": 4,
+    "centers": [
+     {
+      "id": "SIG-THIRD-TOUCH-EQUAL/Z/1",
+      "status": "open",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [],
+   "events": [],
+   "reason": "c4 的终点在核心内，Z1 不变。"
+  },
+  {
+   "prefix": 5,
+   "state": {
+    "processedCount": 5,
+    "centers": [
+     {
+      "id": "SIG-THIRD-TOUCH-EQUAL/Z/1",
+      "status": "open",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 10,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": null,
+      "departureId": "c5",
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [
+    {
+     "type": "consolidation-divergence-point",
+     "reason": "no-entry-segment",
+     "comparison": null,
+     "dependencies": [
+      "SIG-THIRD-TOUCH-EQUAL/Z/1",
+      "c5"
+     ]
+    }
+   ],
+   "events": [],
+   "reason": "c5 的终点 16 越过 ZG=10，成为 Z1 的离开部件（待定）。W 只有一个中枢，进入段应是 c1 之前的部件，但 c1 是输入的第一个部件，没有进入段，D-003 不产生信号。"
+  },
+  {
+   "prefix": 6,
+   "state": {
+    "processedCount": 6,
+    "centers": [
+     {
+      "id": "SIG-THIRD-TOUCH-EQUAL/Z/1",
+      "status": "open",
+      "coreLowTicks": 6,
+      "coreHighTicks": 10,
+      "ggTicks": 16,
+      "ddTicks": 0,
+      "formationIds": [
+       "c1",
+       "c2",
+       "c3"
+      ],
+      "closeDirection": null,
+      "departureId": null,
+      "returnId": null
+     }
+    ]
+   },
+   "signals": [],
+   "suppressed": [
+    {
+     "type": "third",
+     "reason": "touch-edge",
+     "comparison": null,
+     "dependencies": [
+      "SIG-THIRD-TOUCH-EQUAL/Z/1",
+      "c5",
+      "c6"
+     ]
+    }
+   ],
+   "events": [],
+   "reason": "c6 16→10 的区间 [10,16] 低点恰等于 ZG=10，触边算回到中枢（E-010，与中心定理一的严格不等式一致）：c5 归属 Z1（c5 向上，与形成方向相同，是 Z 波动，GG 更新为 16），Z1 延伸；没有第三类点。研究视图标明原因\"触边\"。"
+  }
+ ]
+}

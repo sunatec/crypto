@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-13",
+  "task": "add-chanlun-divergence-signals 5.1 (D5: first / consolidation / second / third classes + preview / repeat / reload)",
+  "observedBy": "assistant, in the Claude app built-in browser; the user pasted the script into the Pine editor from the system clipboard, the assistant clicked Update on chart and read the result",
+  "chart": "BINANCE:BTCUSDT 1h (the script runs once at the first bar on fixture data, independent of the chart)",
+  "source": "tmp/chanlun/divergence-validation.pine",
+  "generatedFileSha256": "0b2f01f584c24b4addc0cdf503e648f05f5f36e92c3a140e8139db49d3e6e048",
+  "pastedVariant": "tmp/chanlun/divergence-validation.pine.lean (generated file without comment and blank lines): 1224 lines, 72181 UTF-16 units, char-code sum 10349959, sha256 bd68435a48a35dd60d9693bd79b084944a8818821b559c212c050aec51bd1c9c as bytes; the editor showed Line 1225, Col 1 after paste",
+  "coreHash": "7bea4f3a789c862e6beaa3ea2f21e60843f21b52c13cc4e7f9a7db61ba5479d0",
+  "status": "PASS (green verdict, no compile error, no runtime error)",
+  "verdictText": "PASS: D5, 19 fixtures, 154 prefixes, 25 signals / 28 notes, preview / repeat / reload / preview parts",
+  "verdictNote": "the leading \"PASS: D5, 19 fixtures,\" is partly covered by the indicator title in the screenshot; the visible lines (154 prefixes, 25 signals / 28 notes, preview / repeat / reload / preview parts) and the green colour exist only in the PASS string, which is assigned after every prefix of every fixture compared equal",
+  "screenshot": "tmp/chanlun/divergence-btcusdt-60-pass.jpg",
+  "history": [
+    "first paste of the 1220-line variant failed to compile: Could not find function chan_normalization_new (CE10271). Cause: the generator computed the CORE dependency closure without the harness text, which calls chan_normalization_new in chan_dv_preview_parts. Fixed in tools/chanlun/build-divergence-validation.mjs and a test now requires every chan_* function and Chan* type used in the script to be defined in it; regenerated to 1224 lines and re-run",
+    "earlier D4 run (2026-11-12, 4.1/4.2): PASS: D4, 19 fixtures, 154 prefixes, 7 signals / 22 notes"
+  ],
+  "compared": "per prefix: new signals of all four types and suppressed notes as canonical strings (type, side, price, occurred/confirmed time, dependencies with centers normalised to Z#n, comparison kind, A/C ids, A/C start/end/direction/area/extreme); preview equals the later confirmed result; engine untouched by preview; same part twice commits once; whole replay equals the online result; two synthetic hypothetical segments convert to parts without touching the normalization state",
+  "notLoadedOnPlatform": "chanlun_original.pine itself (inputs, signal runtime, per-part call, status lines, candidate block) has not been compiled on the platform; the BTC 1-minute live observation for 5.2 has not been done"
+}

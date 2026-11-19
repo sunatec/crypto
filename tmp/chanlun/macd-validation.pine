@@ -1,0 +1,479 @@
+//@version=6
+indicator("缠论MACD前缀和共享验证", overlay=false)
+// SIGNALS section SHA-256: f5869e11d7ccf2784cf9c66019167facfe4bf15c261020f22db3a422a8f0b178
+// Generated from hand-derived cases and independent signal samples. Run in TradingView; generation is not a test pass.
+// Signal layer (change add-chanlun-divergence-signals, rules M/D/B). It is read-only with
+// respect to the pattern CORE: nothing below writes into a CORE state.
+//
+// M-001/M-002: MACD over closed bars only, kept as prefix sums keyed by bar open time.
+// One entry per usable closed bar: (time, cumPos, cumNeg, dif, dea). The first `warmup`
+// bars advance the EMAs but are not stored. A segment (ts, te] is a difference of two
+// prefix entries found by binary search on time, never by bar_index offsets.
+// The arrays are bounded by `capacity`; the oldest entry is recycled when it is full,
+// and any segment that starts before the oldest kept entry is "area unavailable".
+type ChanMacd
+    int fast
+    int slow
+    int signal
+    int warmup
+    int capacity
+    int seen = 0
+    int dropped = 0
+    int lastTime = na
+    float emaFast = na
+    float emaSlow = na
+    float emaSignal = na
+    float sumFast = 0.0
+    float sumSlow = 0.0
+    float sumSignal = 0.0
+    int difCount = 0
+    float sumPos = 0.0
+    float sumNeg = 0.0
+    array<int> times
+    array<float> cumPos
+    array<float> cumNeg
+    array<float> difs
+    array<float> deas
+
+type ChanMacdBar
+    float emaFast
+    float emaSlow
+    float emaSignal
+    float sumFast
+    float sumSlow
+    float sumSignal
+    int difCount
+    float dif
+    float dea
+    float hist
+
+// direction: 1 = up (red bars), -1 = down (green bars).
+type ChanMacdArea
+    bool available = false
+    string reason = "no-data"
+    float area = na
+    float difExtreme = na
+    float deaExtreme = na
+    int bars = 0
+    int fast
+    int slow
+    int signal
+
+chan_macd_new(int fast, int slow, int signal, int capacity) =>
+    if fast < 1 or slow <= fast or signal < 1
+        runtime.error("MACD参数无效：需要 快线 < 慢线 且信号线 ≥ 1")
+    if capacity < 1 or capacity > 100000
+        runtime.error("MACD前缀容量须在1到100000之间")
+    ChanMacd state = ChanMacd.new()
+    state.fast := fast
+    state.slow := slow
+    state.signal := signal
+    state.warmup := slow + signal
+    state.capacity := capacity
+    state.times := array.new<int>()
+    state.cumPos := array.new<float>()
+    state.cumNeg := array.new<float>()
+    state.difs := array.new<float>()
+    state.deas := array.new<float>()
+    state
+
+// Same definition as ta.ema/ta.macd (checked against the platform, see signal-validation.md):
+// an EMA is na for its first length-1 inputs, its first value is the simple average of the first
+// length inputs, and every later value is alpha * src + (1 - alpha) * previous. The signal line
+// applies the same rule to the dif values, so dif is valid from input slow, and dea and hist from
+// input slow + signal - 1 (1-based). Pure: it never changes `source`, so a not-yet-closed bar can be
+// previewed without entering the confirmed series.
+chan_macd_peek(ChanMacd source, float price) =>
+    ChanMacdBar bar = ChanMacdBar.new()
+    int count = source.seen + 1
+    float alphaFast = 2.0 / (source.fast + 1)
+    float alphaSlow = 2.0 / (source.slow + 1)
+    float alphaSignal = 2.0 / (source.signal + 1)
+    bar.sumFast := count <= source.fast ? source.sumFast + price : source.sumFast
+    bar.sumSlow := count <= source.slow ? source.sumSlow + price : source.sumSlow
+    bar.emaFast := count < source.fast ? na : (count == source.fast ? bar.sumFast / source.fast : alphaFast * price + (1.0 - alphaFast) * source.emaFast)
+    bar.emaSlow := count < source.slow ? na : (count == source.slow ? bar.sumSlow / source.slow : alphaSlow * price + (1.0 - alphaSlow) * source.emaSlow)
+    bar.dif := (na(bar.emaFast) or na(bar.emaSlow)) ? na : bar.emaFast - bar.emaSlow
+    bar.difCount := source.difCount + (na(bar.dif) ? 0 : 1)
+    bar.sumSignal := (not na(bar.dif) and bar.difCount <= source.signal) ? source.sumSignal + bar.dif : source.sumSignal
+    bar.emaSignal := na(bar.dif) ? na : (bar.difCount < source.signal ? na : (bar.difCount == source.signal ? bar.sumSignal / source.signal : alphaSignal * bar.dif + (1.0 - alphaSignal) * source.emaSignal))
+    bar.dea := bar.emaSignal
+    bar.hist := (na(bar.dif) or na(bar.dea)) ? na : bar.dif - bar.dea
+    bar
+
+// Shared storage path for the chart and for validation fixtures that supply dif/dea
+// directly. Mutates in place, so callers use it only for closed bars.
+chan_macd_store(ChanMacd state, int openTime, float dif, float dea) =>
+    float hist = dif - dea
+    state.seen += 1
+    if state.seen > state.warmup and not na(hist)
+        if hist > 0.0
+            state.sumPos += hist
+        if hist < 0.0
+            state.sumNeg -= hist
+        if state.times.size() >= state.capacity
+            state.times.shift()
+            state.cumPos.shift()
+            state.cumNeg.shift()
+            state.difs.shift()
+            state.deas.shift()
+            state.dropped += 1
+        state.times.push(openTime)
+        state.cumPos.push(state.sumPos)
+        state.cumNeg.push(state.sumNeg)
+        state.difs.push(dif)
+        state.deas.push(dea)
+    state.lastTime := openTime
+    true
+
+// One closed bar. A repeated or older open time is ignored, so re-running the same
+// bar (redraw, reload of the same data) cannot append twice. Returns whether it was taken.
+chan_macd_push(ChanMacd state, int openTime, float price) =>
+    bool accepted = na(state.lastTime) or openTime > state.lastTime
+    if accepted
+        ChanMacdBar bar = chan_macd_peek(state, price)
+        state.emaFast := bar.emaFast
+        state.emaSlow := bar.emaSlow
+        state.emaSignal := bar.emaSignal
+        state.sumFast := bar.sumFast
+        state.sumSlow := bar.sumSlow
+        state.sumSignal := bar.sumSignal
+        state.difCount := bar.difCount
+        chan_macd_store(state, openTime, bar.dif, bar.dea)
+    accepted
+
+// Index of the last kept entry whose open time is not later than target, or -1.
+chan_macd_index(ChanMacd state, int target) =>
+    int low = 0
+    int high = state.times.size() - 1
+    int found = -1
+    while low <= high
+        int mid = int(math.floor((low + high) / 2.0))
+        if state.times.get(mid) <= target
+            found := mid
+            low := mid + 1
+        else
+            high := mid - 1
+    found
+
+// M-002: same-sign area over the half-open interval (startTime, endTime].
+// Unavailable (never degraded to another definition) when the start precedes the
+// first kept entry (warm-up, before the window, or recycled), the interval is
+// reversed, or its end lies beyond the last closed bar.
+chan_macd_area(ChanMacd state, int startTime, int endTime, int direction) =>
+    if direction != 1 and direction != -1
+        runtime.error("MACD面积方向只能是1或-1")
+    ChanMacdArea result = ChanMacdArea.new()
+    result.fast := state.fast
+    result.slow := state.slow
+    result.signal := state.signal
+    if endTime < startTime
+        result.reason := "bad-range"
+    else if state.times.size() == 0
+        result.reason := "warmup"
+    else if startTime < state.times.first()
+        result.reason := state.dropped > 0 ? "recycled" : "before-start"
+    else if endTime > state.lastTime
+        result.reason := "not-closed"
+    else
+        int startIndex = chan_macd_index(state, startTime)
+        int endIndex = chan_macd_index(state, endTime)
+        array<float> cumulative = direction == 1 ? state.cumPos : state.cumNeg
+        result.available := true
+        result.reason := "ok"
+        result.area := cumulative.get(endIndex) - cumulative.get(startIndex)
+        result.bars := endIndex - startIndex
+        if endIndex > startIndex
+            float difValue = state.difs.get(startIndex + 1)
+            float deaValue = state.deas.get(startIndex + 1)
+            // A Pine for loop counts downward when start > end, so guard the range.
+            if endIndex > startIndex + 1
+                for i = startIndex + 2 to endIndex
+                    difValue := direction == 1 ? math.max(difValue, state.difs.get(i)) : math.min(difValue, state.difs.get(i))
+                    deaValue := direction == 1 ? math.max(deaValue, state.deas.get(i)) : math.min(deaValue, state.deas.get(i))
+            result.difExtreme := difValue
+            result.deaExtreme := deaValue
+    result
+
+chan_macd_signature(ChanMacd state) =>
+    int size = state.times.size()
+    str.tostring(state.fast) + "/" + str.tostring(state.slow) + "/" + str.tostring(state.signal) + "/" + str.tostring(state.warmup) + "/" + str.tostring(state.capacity) + "/" + str.tostring(state.seen) + "/" + str.tostring(state.dropped) + "/" + str.tostring(state.lastTime) + "/" + str.tostring(size) + "/" + (size > 0 ? str.tostring(state.times.first()) + "/" + str.tostring(state.times.last()) + "/" + str.tostring(state.cumPos.last(), "#.##########") + "/" + str.tostring(state.cumNeg.last(), "#.##########") : "empty") + "/" + str.tostring(state.emaFast, "#.##########") + "/" + str.tostring(state.emaSlow, "#.##########") + "/" + str.tostring(state.emaSignal, "#.##########")
+
+chan_ma_assert(bool value, string context) =>
+    if not value
+        runtime.error("FAIL: " + context)
+    true
+chan_ma_near(float actual, float expected) =>
+    na(expected) ? na(actual) : (not na(actual) and math.abs(actual - expected) <= 1e-9 * math.max(1.0, math.abs(expected)))
+chan_ma_query(ChanMacd state, int ts, int te, int direction, bool available, string reason, float area, int bars, float difExtreme, float deaExtreme, string context) =>
+    ChanMacdArea r = chan_macd_area(state, ts, te, direction)
+    chan_ma_assert(r.available == available, context + "/available actual=" + str.tostring(r.available) + " reason=" + r.reason)
+    chan_ma_assert(r.reason == reason, context + "/reason actual=" + r.reason)
+    chan_ma_assert(chan_ma_near(r.area, area), context + "/area actual=" + str.tostring(r.area) + " expected=" + str.tostring(area))
+    chan_ma_assert(r.bars == bars, context + "/bars actual=" + str.tostring(r.bars))
+    chan_ma_assert(chan_ma_near(r.difExtreme, difExtreme) and chan_ma_near(r.deaExtreme, deaExtreme), context + "/extremes")
+    chan_ma_assert(r.fast == state.fast and r.slow == state.slow and r.signal == state.signal, context + "/params")
+    true
+// A signal-sample segment: a number is the area the sample records, na means "area unavailable".
+chan_ma_fixture_query(ChanMacd state, int ts, int te, int direction, float area, string context) =>
+    ChanMacdArea r = chan_macd_area(state, ts, te, direction)
+    if na(area)
+        chan_ma_assert(not r.available and r.reason != "ok" and na(r.area), context + "/should-be-unavailable reason=" + r.reason)
+    else
+        chan_ma_assert(r.available and chan_ma_near(r.area, area), context + "/area actual=" + str.tostring(r.area) + " expected=" + str.tostring(area))
+    true
+// Signal sample driver: store every bar, ask each segment right after its closing bar (prefix sums are
+// append-only, so that answer must already be final), then ask again after the last bar.
+chan_ma_fixture_run(string id, int fast, int slow, int signal, int warmup, int base, int step, string barsText, string queryText) =>
+    array<string> rows = str.split(barsText, ";")
+    array<string> segments = str.split(queryText, ";")
+    array<int> times = array.new<int>()
+    ChanMacd state = chan_macd_new(fast, slow, signal, rows.size() + 1)
+    state.warmup := warmup
+    for i = 0 to rows.size() - 1
+        array<string> f = str.split(rows.get(i), ",")
+        int t = base + int(str.tonumber(f.get(0))) * step
+        times.push(t)
+        chan_macd_store(state, t, str.tonumber(f.get(1)), str.tonumber(f.get(2)))
+        for q = 0 to segments.size() - 1
+            array<string> g = str.split(segments.get(q), ",")
+            if int(str.tonumber(g.get(1))) == i
+                chan_ma_fixture_query(state, times.get(int(str.tonumber(g.get(0)))), t, int(str.tonumber(g.get(2))), str.tonumber(g.get(3)), id + "/segment-" + str.tostring(q + 1) + "/at-close")
+    for q = 0 to segments.size() - 1
+        array<string> g = str.split(segments.get(q), ",")
+        chan_ma_fixture_query(state, times.get(int(str.tonumber(g.get(0)))), times.get(int(str.tonumber(g.get(1)))), int(str.tonumber(g.get(2))), str.tonumber(g.get(3)), id + "/segment-" + str.tostring(q + 1) + "/final")
+    true
+
+chan_ma_ema_case() =>
+    ChanMacd state = chan_macd_new(2, 3, 2, 10)
+    state.warmup := 3
+    string before0 = chan_macd_signature(state)
+    ChanMacdBar peek0 = chan_macd_peek(state, 10.0)
+    chan_ma_assert(chan_macd_signature(state) == before0, "EMA/bar-1" + "/peek-immutable")
+    chan_ma_assert(chan_ma_near(peek0.dif, na) and chan_ma_near(peek0.dea, na) and chan_ma_near(peek0.hist, na), "EMA/bar-1" + "/values dif=" + str.tostring(peek0.dif) + " dea=" + str.tostring(peek0.dea))
+    chan_ma_assert(chan_macd_push(state, 1000, 10.0), "EMA/bar-1" + "/accepted")
+    string after0 = chan_macd_signature(state)
+    chan_ma_assert(not chan_macd_push(state, 1000, 11.0), "EMA/bar-1" + "/duplicate-rejected")
+    chan_ma_assert(not chan_macd_push(state, 999, 11.0), "EMA/bar-1" + "/older-rejected")
+    chan_ma_assert(chan_macd_signature(state) == after0, "EMA/bar-1" + "/rejected-no-change")
+    string before1 = chan_macd_signature(state)
+    ChanMacdBar peek1 = chan_macd_peek(state, 13.0)
+    chan_ma_assert(chan_macd_signature(state) == before1, "EMA/bar-2" + "/peek-immutable")
+    chan_ma_assert(chan_ma_near(peek1.dif, na) and chan_ma_near(peek1.dea, na) and chan_ma_near(peek1.hist, na), "EMA/bar-2" + "/values dif=" + str.tostring(peek1.dif) + " dea=" + str.tostring(peek1.dea))
+    chan_ma_assert(chan_macd_push(state, 2000, 13.0), "EMA/bar-2" + "/accepted")
+    string after1 = chan_macd_signature(state)
+    chan_ma_assert(not chan_macd_push(state, 2000, 14.0), "EMA/bar-2" + "/duplicate-rejected")
+    chan_ma_assert(not chan_macd_push(state, 1999, 14.0), "EMA/bar-2" + "/older-rejected")
+    chan_ma_assert(chan_macd_signature(state) == after1, "EMA/bar-2" + "/rejected-no-change")
+    string before2 = chan_macd_signature(state)
+    ChanMacdBar peek2 = chan_macd_peek(state, 11.0)
+    chan_ma_assert(chan_macd_signature(state) == before2, "EMA/bar-3" + "/peek-immutable")
+    chan_ma_assert(chan_ma_near(peek2.dif, -0.16666666666666666) and chan_ma_near(peek2.dea, na) and chan_ma_near(peek2.hist, na), "EMA/bar-3" + "/values dif=" + str.tostring(peek2.dif) + " dea=" + str.tostring(peek2.dea))
+    chan_ma_assert(chan_macd_push(state, 3000, 11.0), "EMA/bar-3" + "/accepted")
+    string after2 = chan_macd_signature(state)
+    chan_ma_assert(not chan_macd_push(state, 3000, 12.0), "EMA/bar-3" + "/duplicate-rejected")
+    chan_ma_assert(not chan_macd_push(state, 2999, 12.0), "EMA/bar-3" + "/older-rejected")
+    chan_ma_assert(chan_macd_signature(state) == after2, "EMA/bar-3" + "/rejected-no-change")
+    string before3 = chan_macd_signature(state)
+    ChanMacdBar peek3 = chan_macd_peek(state, 12.0)
+    chan_ma_assert(chan_macd_signature(state) == before3, "EMA/bar-4" + "/peek-immutable")
+    chan_ma_assert(chan_ma_near(peek3.dif, 0.05555555555555555) and chan_ma_near(peek3.dea, -0.05555555555555555) and chan_ma_near(peek3.hist, 0.1111111111111111), "EMA/bar-4" + "/values dif=" + str.tostring(peek3.dif) + " dea=" + str.tostring(peek3.dea))
+    chan_ma_assert(chan_macd_push(state, 4000, 12.0), "EMA/bar-4" + "/accepted")
+    string after3 = chan_macd_signature(state)
+    chan_ma_assert(not chan_macd_push(state, 4000, 13.0), "EMA/bar-4" + "/duplicate-rejected")
+    chan_ma_assert(not chan_macd_push(state, 3999, 13.0), "EMA/bar-4" + "/older-rejected")
+    chan_ma_assert(chan_macd_signature(state) == after3, "EMA/bar-4" + "/rejected-no-change")
+    string before4 = chan_macd_signature(state)
+    ChanMacdBar peek4 = chan_macd_peek(state, 14.0)
+    chan_ma_assert(chan_macd_signature(state) == before4, "EMA/bar-5" + "/peek-immutable")
+    chan_ma_assert(chan_ma_near(peek4.dif, 0.4074074074074074) and chan_ma_near(peek4.dea, 0.25308641975308643) and chan_ma_near(peek4.hist, 0.15432098765432095), "EMA/bar-5" + "/values dif=" + str.tostring(peek4.dif) + " dea=" + str.tostring(peek4.dea))
+    chan_ma_assert(chan_macd_push(state, 5000, 14.0), "EMA/bar-5" + "/accepted")
+    string after4 = chan_macd_signature(state)
+    chan_ma_assert(not chan_macd_push(state, 5000, 15.0), "EMA/bar-5" + "/duplicate-rejected")
+    chan_ma_assert(not chan_macd_push(state, 4999, 15.0), "EMA/bar-5" + "/older-rejected")
+    chan_ma_assert(chan_macd_signature(state) == after4, "EMA/bar-5" + "/rejected-no-change")
+    string before5 = chan_macd_signature(state)
+    ChanMacdBar peek5 = chan_macd_peek(state, 13.0)
+    chan_ma_assert(chan_macd_signature(state) == before5, "EMA/bar-6" + "/peek-immutable")
+    chan_ma_assert(chan_ma_near(peek5.dif, 0.16358024691358025) and chan_ma_near(peek5.dea, 0.1934156378600823) and chan_ma_near(peek5.hist, -0.02983539094650206), "EMA/bar-6" + "/values dif=" + str.tostring(peek5.dif) + " dea=" + str.tostring(peek5.dea))
+    chan_ma_assert(chan_macd_push(state, 6000, 13.0), "EMA/bar-6" + "/accepted")
+    string after5 = chan_macd_signature(state)
+    chan_ma_assert(not chan_macd_push(state, 6000, 14.0), "EMA/bar-6" + "/duplicate-rejected")
+    chan_ma_assert(not chan_macd_push(state, 5999, 14.0), "EMA/bar-6" + "/older-rejected")
+    chan_ma_assert(chan_macd_signature(state) == after5, "EMA/bar-6" + "/rejected-no-change")
+    chan_ma_assert(state.times.size() == 3, "EMA/stored")
+    true
+
+chan_ma_area_case_0() =>
+    ChanMacd state = chan_macd_new(2, 3, 2, 10)
+    state.warmup := 0
+    chan_macd_store(state, 1000, 6.0, 1.0)
+    chan_macd_store(state, 2000, 5.0, 3.0)
+    chan_macd_store(state, 3000, 7.0, 4.0)
+    chan_macd_store(state, 4000, 4.0, 5.0)
+    chan_macd_store(state, 5000, 8.0, 4.0)
+    chan_macd_store(state, 6000, 2.0, 5.0)
+    chan_ma_assert(state.times.size() == 6 and state.dropped == 0, "M-AREA-SIGNED/retention")
+    chan_ma_query(state, 1000, 5000, 1, true, "ok", 9.0, 4, 8.0, 5.0, "M-AREA-SIGNED/query-1")
+    chan_ma_query(state, 1000, 5000, -1, true, "ok", 1.0, 4, 4.0, 3.0, "M-AREA-SIGNED/query-2")
+    chan_ma_query(state, 1000, 6000, -1, true, "ok", 4.0, 5, 2.0, 3.0, "M-AREA-SIGNED/query-3")
+    chan_ma_query(state, 2000, 5000, 1, true, "ok", 7.0, 3, 8.0, 5.0, "M-AREA-SIGNED/query-4")
+    chan_ma_query(state, 1000, 2000, 1, true, "ok", 2.0, 1, 5.0, 3.0, "M-AREA-SIGNED/query-5")
+    chan_ma_query(state, 1000, 2000, -1, true, "ok", 0.0, 1, 5.0, 3.0, "M-AREA-SIGNED/query-6")
+    chan_ma_query(state, 3000, 3000, 1, true, "ok", 0.0, 0, na, na, "M-AREA-SIGNED/query-7")
+    chan_ma_query(state, 2500, 5500, 1, true, "ok", 7.0, 3, 8.0, 5.0, "M-AREA-SIGNED/query-8")
+    chan_ma_query(state, 4000, 3000, 1, false, "bad-range", na, 0, na, na, "M-AREA-SIGNED/query-9")
+    chan_ma_query(state, 500, 5000, 1, false, "before-start", na, 0, na, na, "M-AREA-SIGNED/query-10")
+    chan_ma_query(state, 1000, 7000, 1, false, "not-closed", na, 0, na, na, "M-AREA-SIGNED/query-11")
+    true
+
+chan_ma_area_case_1() =>
+    ChanMacd state = chan_macd_new(2, 3, 2, 10)
+    state.warmup := 3
+    chan_macd_store(state, 1000, 9.0, 0.0)
+    chan_macd_store(state, 2000, 9.0, 0.0)
+    chan_macd_store(state, 3000, 9.0, 0.0)
+    chan_macd_store(state, 4000, 4.0, 2.0)
+    chan_macd_store(state, 5000, 1.0, 2.0)
+    chan_macd_store(state, 6000, 6.0, 2.0)
+    chan_ma_assert(state.times.size() == 3 and state.dropped == 0, "M-AREA-WARMUP/retention")
+    chan_ma_query(state, 4000, 6000, 1, true, "ok", 4.0, 2, 6.0, 2.0, "M-AREA-WARMUP/query-1")
+    chan_ma_query(state, 4000, 6000, -1, true, "ok", 1.0, 2, 1.0, 2.0, "M-AREA-WARMUP/query-2")
+    chan_ma_query(state, 4000, 4000, 1, true, "ok", 0.0, 0, na, na, "M-AREA-WARMUP/query-3")
+    chan_ma_query(state, 3000, 6000, 1, false, "before-start", na, 0, na, na, "M-AREA-WARMUP/query-4")
+    chan_ma_query(state, 1000, 5000, 1, false, "before-start", na, 0, na, na, "M-AREA-WARMUP/query-5")
+    true
+
+chan_ma_area_case_2() =>
+    ChanMacd state = chan_macd_new(2, 3, 2, 10)
+    state.warmup := 3
+    chan_macd_store(state, 1000, 9.0, 0.0)
+    chan_macd_store(state, 2000, 9.0, 0.0)
+    chan_macd_store(state, 3000, 9.0, 0.0)
+    chan_ma_assert(state.times.size() == 0 and state.dropped == 0, "M-AREA-ONLY-WARMUP/retention")
+    chan_ma_query(state, 1000, 3000, 1, false, "warmup", na, 0, na, na, "M-AREA-ONLY-WARMUP/query-1")
+    true
+
+chan_ma_area_case_3() =>
+    ChanMacd state = chan_macd_new(2, 3, 2, 3)
+    state.warmup := 0
+    chan_macd_store(state, 1000, 1.0, 0.0)
+    chan_macd_store(state, 2000, 2.0, 0.0)
+    chan_macd_store(state, 3000, 3.0, 0.0)
+    chan_macd_store(state, 4000, -1.0, 0.0)
+    chan_macd_store(state, 5000, 4.0, 0.0)
+    chan_macd_store(state, 6000, -2.0, 0.0)
+    chan_ma_assert(state.times.size() == 3 and state.dropped == 3, "M-AREA-RECYCLE/retention")
+    chan_ma_query(state, 4000, 6000, 1, true, "ok", 4.0, 2, 4.0, 0.0, "M-AREA-RECYCLE/query-1")
+    chan_ma_query(state, 4000, 6000, -1, true, "ok", 2.0, 2, -2.0, 0.0, "M-AREA-RECYCLE/query-2")
+    chan_ma_query(state, 4000, 5000, -1, true, "ok", 0.0, 1, 4.0, 0.0, "M-AREA-RECYCLE/query-3")
+    chan_ma_query(state, 3000, 6000, 1, false, "recycled", na, 0, na, na, "M-AREA-RECYCLE/query-4")
+    chan_ma_query(state, 1000, 2000, 1, false, "recycled", na, 0, na, na, "M-AREA-RECYCLE/query-5")
+    true
+
+
+// Live part: the module against the built-in ta.macd on the loaded chart, then the
+// prefix-sum answer against a plain scan of the stored built-in histogram.
+type ChanMaLive
+    ChanMacd state
+    int compared = 0
+    int worstBar = na
+    float worstGap = 0.0
+chan_ma_live_new(int fast, int slow, int signal, int capacity) =>
+    ChanMaLive result = ChanMaLive.new()
+    result.state := chan_macd_new(fast, slow, signal, capacity)
+    result
+chan_ma_live_step(ChanMaLive live, int openTime, float price, float builtinDif, float builtinDea, float builtinHist, int barIndex) =>
+    ChanMacdBar peek = chan_macd_peek(live.state, price)
+    // The first valid bar of each line must be the same as the platform's, not only the values after it.
+    chan_ma_assert(na(peek.dif) == na(builtinDif) and na(peek.dea) == na(builtinDea) and na(peek.hist) == na(builtinHist), "LIVE/na-pattern bar=" + str.tostring(barIndex) + " mine=" + str.tostring(peek.hist) + " builtin=" + str.tostring(builtinHist))
+    float gap = na(builtinHist) ? 0.0 : math.max(math.abs(peek.dif - builtinDif), math.max(math.abs(peek.dea - builtinDea), math.abs(peek.hist - builtinHist)))
+    chan_ma_assert(gap <= 1e-9 * math.max(1.0, math.abs(nz(builtinDif))), "LIVE/" + str.tostring(live.state.fast) + "-" + str.tostring(live.state.slow) + "-" + str.tostring(live.state.signal) + "/bar=" + str.tostring(barIndex) + " mine=" + str.tostring(peek.hist) + " builtin=" + str.tostring(builtinHist) + " gap=" + str.tostring(gap))
+    if gap > live.worstGap
+        live.worstGap := gap
+        live.worstBar := barIndex
+    chan_ma_assert(chan_macd_push(live.state, openTime, price), "LIVE/push-accepted bar=" + str.tostring(barIndex))
+    live.compared += 1
+    true
+
+
+if barstate.isfirst
+    chan_ma_ema_case()
+    chan_ma_area_case_0()
+    chan_ma_area_case_1()
+    chan_ma_area_case_2()
+    chan_ma_area_case_3()
+    chan_ma_fixture_run("SIG-CONS-AREA-LARGER", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,8,4;2,10,5;3,12,6;4,-4,-2;5,-4,-2;6,-4,-2;7,2,1;8,4,2;9,4,2;10,-2,-1;11,-4,-2;12,-2,-1;13,16,8;14,18,9;15,-2,-1", "0,3,1,15;12,15,1,17")
+    chan_ma_fixture_run("SIG-CONS-DIV", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,8,4;2,10,5;3,12,6;4,-4,-2;5,-4,-2;6,-4,-2;7,2,1;8,4,2;9,4,2;10,-2,-1;11,-4,-2;12,-2,-1;13,6,3;14,-2,-1;15,8,4;16,-6,-3;17,-6,-3;18,-4,-2;19,2,1;20,4,2;21,2,1", "0,3,1,15;12,15,1,7")
+    chan_ma_fixture_run("SIG-CONS-NO-NEW-HIGH", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,8,4;2,10,5;3,12,6;4,-4,-2;5,-4,-2;6,-4,-2;7,2,1;8,4,2;9,4,2;10,-2,-1;11,-4,-2;12,-2,-1;13,2,1;14,2,1;15,2,1", "0,3,1,15;12,15,1,3")
+    chan_ma_fixture_run("SIG-SECOND-BREAKS", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,4,2;27,6,3;28,-2,-1;29,6,3;30,-8,-4;31,-6,-3;32,-4,-2;33,4,2;34,6,3;35,6,3;36,-6,-3;37,-6,-3;38,4,2;39,4,2", "12,16,1,12;25,29,1,8")
+    chan_ma_fixture_run("SIG-SECOND-THIRD-COINCIDE", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,4,2;27,6,3;28,-2,-1;29,6,3;30,-8,-4;31,-8,-4;32,-6,-3;33,2,1;34,2,1;35,2,1", "12,16,1,12;25,29,1,8")
+    chan_ma_fixture_run("SIG-SECOND", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,4,2;27,6,3;28,-2,-1;29,6,3;30,-8,-4;31,-6,-3;32,-4,-2;33,4,2;34,4,2;35,4,2", "12,16,1,12;25,29,1,8")
+    chan_ma_fixture_run("SIG-THIRD-BUY-AFTER-DIVERGENCE", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,4,2;27,6,3;28,-2,-1;29,6,3;30,-6,-3;31,-6,-3;32,-4,-2", "12,16,1,12;25,29,1,8")
+    chan_ma_fixture_run("SIG-TREND-AREA-EQUAL", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,6,3;27,6,3;28,-2,-1;29,12,6", "12,16,1,12;25,29,1,12")
+    chan_ma_fixture_run("SIG-TREND-AREA-LARGER", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,8,4;27,10,5;28,-2,-1;29,8,4", "12,16,1,12;25,29,1,13")
+    chan_ma_fixture_run("SIG-TREND-AREA-UNAVAILABLE", 12, 26, 9, 13, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,4,2;27,6,3;28,-2,-1;29,6,3", "12,16,1,na;25,29,1,8")
+    chan_ma_fixture_run("SIG-TREND-DIV-DOWN", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,-4,-2;2,-4,-2;3,-4,-2;4,4,2;5,6,3;6,4,2;7,-2,-1;8,-4,-2;9,-2,-1;10,2,1;11,2,1;12,2,1;13,-6,-3;14,-10,-5;15,2,1;16,-8,-4;17,6,3;18,8,4;19,4,2;20,-4,-2;21,-6,-3;22,-2,-1;23,4,2;24,2,1;25,2,1;26,-4,-2;27,-6,-3;28,2,1;29,-6,-3;30,8,4;31,6,3;32,4,2", "12,16,-1,12;25,29,-1,8")
+    chan_ma_fixture_run("SIG-TREND-DIV", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,4,2;27,6,3;28,-2,-1;29,6,3;30,-8,-4;31,-6,-3;32,-4,-2", "12,16,1,12;25,29,1,8")
+    chan_ma_fixture_run("SIG-TREND-NO-NEW-HIGH", 12, 26, 9, 0, 1701000000000, 60000, "0,0,0;1,4,2;2,4,2;3,4,2;4,-4,-2;5,-6,-3;6,-4,-2;7,2,1;8,4,2;9,2,1;10,-2,-1;11,-2,-1;12,-2,-1;13,6,3;14,10,5;15,-2,-1;16,8,4;17,-6,-3;18,-8,-4;19,-4,-2;20,4,2;21,6,3;22,2,1;23,-4,-2;24,-2,-1;25,-2,-1;26,2,1;27,4,2;28,-2,-1;29,2,1", "12,16,1,12;25,29,1,4")
+
+[builtinDif, builtinDea, builtinHist] = ta.macd(close, 12, 26, 9)
+[builtinDif2, builtinDea2, builtinHist2] = ta.macd(close, 5, 35, 5)
+var ChanMaLive primary = chan_ma_live_new(12, 26, 9, 1000)
+var ChanMaLive secondary = chan_ma_live_new(5, 35, 5, 1000)
+var array<int> allTimes = array.new<int>()
+var array<float> allHist = array.new<float>()
+if barstate.isconfirmed and not na(time)
+    chan_ma_live_step(primary, time, close, builtinDif, builtinDea, builtinHist, bar_index)
+    chan_ma_live_step(secondary, time, close, builtinDif2, builtinDea2, builtinHist2, bar_index)
+    allTimes.push(time)
+    allHist.push(builtinHist)
+
+var string verdict = "RUNNING"
+if barstate.islast
+    int total = allTimes.size()
+    chan_ma_assert(total >= 150, "LIVE/need at least 150 closed bars, have " + str.tostring(total))
+    ChanMacd subject = primary.state
+    chan_ma_assert(subject.seen == total, "LIVE/seen")
+    int keptFrom = math.max(subject.warmup, total - subject.capacity)
+    chan_ma_assert(subject.dropped == math.max(0, total - subject.warmup - subject.capacity), "LIVE/dropped count")
+    chan_ma_assert(subject.times.size() == total - keptFrom, "LIVE/kept size")
+    int checked = 0
+    int available = 0
+    int unavailable = 0
+    int seed = 20261112
+    for probe = 0 to 119
+        seed := (seed * 1103515245 + 12345) % 2147483648
+        // Four probes in five stay inside the kept window so the area really is compared; the fifth reaches back into recycled history.
+        int i = probe % 5 == 0 ? seed % total : keptFrom + seed % (total - keptFrom)
+        seed := (seed * 1103515245 + 12345) % 2147483648
+        int j = probe % 5 == 0 ? seed % total : keptFrom + seed % (total - keptFrom)
+        int lo = math.min(i, j)
+        int hi = math.max(i, j)
+        // Half of the probes sit between two bars, to check the "last bar not later than" rule.
+        int startOffset = probe % 2 == 0 ? 0 : 1
+        int ts = allTimes.get(lo) + startOffset
+        int te = allTimes.get(hi) + (probe % 3 == 0 ? 1 : 0)
+        int direction = probe % 4 < 2 ? 1 : -1
+        float expected = 0.0
+        for k = lo to hi
+            float h = allHist.get(k)
+            int t = allTimes.get(k)
+            if t > ts and t <= te and ((direction == 1 and h > 0.0) or (direction == -1 and h < 0.0))
+                expected += math.abs(h)
+        bool expectAvailable = te >= ts and keptFrom < total and ts >= allTimes.get(keptFrom) and te <= allTimes.last()
+        ChanMacdArea r = chan_macd_area(subject, ts, te, direction)
+        chan_ma_assert(r.available == expectAvailable, "LIVE/probe-" + str.tostring(probe) + "/available actual=" + str.tostring(r.available) + " reason=" + r.reason)
+        if expectAvailable
+            chan_ma_assert(math.abs(r.area - expected) <= 1e-6 * math.max(1.0, expected), "LIVE/probe-" + str.tostring(probe) + "/area actual=" + str.tostring(r.area) + " scan=" + str.tostring(expected))
+            available += 1
+        else
+            unavailable += 1
+        checked += 1
+    chan_ma_assert(available >= 60 and unavailable >= 5, "LIVE/probe mix available=" + str.tostring(available) + " unavailable=" + str.tostring(unavailable))
+    verdict := "PASS: MACD, " + str.tostring(primary.compared) + " bars vs ta.macd,\n" + str.tostring(checked) + " probes\n(" + str.tostring(available) + " available / " + str.tostring(unavailable) + " unavailable),\nrecycled " + str.tostring(subject.dropped) + ",\nworst gap " + str.tostring(math.max(primary.worstGap, secondary.worstGap), "#.#############")
+var table panel = table.new(position.top_left, 1, 2)
+table.cell(panel, 0, 0, verdict, text_color = str.startswith(verdict, "PASS") ? color.green : color.orange)
+table.cell(panel, 0, 1, "手算用例 18 组 · 样例面积 26 段 · 需 ≥150 根已收盘图表K线")
+plot(na)
+
